@@ -1,635 +1,412 @@
-📦 Module: InventoryConfig (ReplicatedStorage.Modules.InventoryConfig)
-{
-  ["MaxEquippedSlots"] = 3,
-  ["MaxSlots"] = 100,
+-- animedice.lua
+-- Perubahan: menambahkan fitur client-side UI helpers yang terhubung ke RemoteEvents/RemoteFunctions
+-- Fitur yang ditambahkan:
+--  - Debounce/disable Roll button saat request berjalan
+--  - Auto-refresh inventory & market saat membuka panel
+--  - Sinkronisasi toggle (AutoSell, AutoRoll, AutoDungeon) dengan server
+--  - Listener untuk update Inventory/Items (realtime)
+--  - Handler aman untuk RemoteFunction (pcall)
+--  - Tempat konfigurasi nama GUI agar mudah disesuaikan
+-- Catatan: Script ini adalah LocalScript untuk dijalankan di client (StarterPlayerScripts / PlayerGui).
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+
+local localPlayer = Players.LocalPlayer
+if not localPlayer then
+    -- Jika dijalankan sebelum LocalPlayer tersedia (mis. command line), tunggu
+    Players:GetPropertyChangedSignal("LocalPlayer"):Wait()
+    localPlayer = Players.LocalPlayer
+end
+
+-- PATHS / NAMES (sesuaikan jika GUI punya nama lain di projectmu)
+local REMOTES_FOLDER = ReplicatedStorage:WaitForChild("Remotes")
+-- Remotes yang digunakan (boleh ditambah/ubah sesuai repo)
+local Remotes = {
+    RollRequest = REMOTES_FOLDER:FindFirstChild("RollRequest"),
+    RollResult = REMOTES_FOLDER:FindFirstChild("RollResult"),
+    RequestInventorySnapshot = REMOTES_FOLDER:FindFirstChild("RequestInventorySnapshot"),
+    InventoryUpdated = REMOTES_FOLDER:FindFirstChild("InventoryUpdated"),
+    RequestMarketSpawn = REMOTES_FOLDER:FindFirstChild("RequestMarketSpawn"),
+    AutoSellState = REMOTES_FOLDER:FindFirstChild("AutoSellStateChanged"),
+    RequestAutoSellState = REMOTES_FOLDER:FindFirstChild("RequestAutoSellState"),
+    AutoRollState = REMOTES_FOLDER:FindFirstChild("AutoRollState"),
+    AutoRollResume = REMOTES_FOLDER:FindFirstChild("AutoRollResume"),
+    RequestRollSpeedState = REMOTES_FOLDER:FindFirstChild("RequestRollSpeedState"),
+    RequestMultiRollState = REMOTES_FOLDER:FindFirstChild("RequestMultiRollState"),
+    InventorySpaceUpdate = REMOTES_FOLDER:FindFirstChild("InventorySpaceUpgradeResult"),
+    ItemsUpdated = REMOTES_FOLDER:FindFirstChild("ItemsUpdated"),
 }
 
-📦 Module: BrainrotVisuals (ReplicatedStorage.Modules.BrainrotVisuals)
-{
-  ["GetLevelStage"] = function: 0xcb3d5533a0274273,
-  ["SetMarkLine"] = function: 0xa82258979caf78bf,
-  ["IsFloatingRig"] = function: 0x8e1da32b568fb30e,
-  ["ScaleToLongestSide"] = function: 0x31552a24e3a1ad7c,
-  ["DecorFxTag"] = "DecorFx",
-  ["MakeUnclickable"] = function: 0x4a1c6cbded7bdc3d,
-  ["ComputeRestingCFrame"] = function: 0xb64e3e71c0765325,
-  ["SetViewportModel"] = function: 0xa9a7a0a5650593dd,
-  ["GrowToLevel"] = function: 0x93c69eb53d497129,
-  ["PlaceViewportModel"] = function: 0x2bd561045cea3bbd,
-  ["CARD_FILL"] = 1.15,
-  ["StartFloatAnimation"] = function: 0xe2c72dbeea65328a,
-  ["MutatedTag"] = "MutatedBrainrot",
-  ["SetPodiumLevelFx"] = function: 0xe3fb05c75691b3a6,
-  ["AddBeyondAura"] = function: 0xed9cbdc480dc9fd1,
-  ["GetPlacedTargetSize"] = function: 0xf420be63d8f0693c,
-  ["AddMutationAura"] = function: 0x4d1d8f38d586b0c0,
-  ["IsGroupRig"] = function: 0xe7f2c449cb548110,
-  ["SetAdminLine"] = function: 0x1336cca15fb27410,
-  ["MarkDecorFx"] = function: 0x90a372396987dad1,
-  ["CreateDisplayModel"] = function: 0xa0344221963c994c,
-  ["CreateEmptyViewport"] = function: 0x135504183e7413e6,
-  ["FormatCommas"] = function: 0xc6930979516d75cc,
-  ["FitFootprint"] = function: 0x2f15368d6a2ae9b7,
-  ["CreateItemViewport"] = function: 0x82ebc2706a344d0f,
-  ["RefreshInfoBillboard"] = function: 0xe568c7f8804e9a88,
-  ["UpdateIncomeLabel"] = function: 0x4bdecc401cdb8cb4,
-  ["GetVisibleCenter"] = function: 0x62d840ae2e06f0ba,
+-- Safety helper: invoke remote function if exists
+local function safeInvoke(remoteFunc, ...)
+    if not remoteFunc then return nil, "MissingRemote" end
+    local ok, result = pcall(function()
+        return remoteFunc:InvokeServer(...)
+    end)
+    if not ok then
+        warn("Invoke failed:", result)
+        return nil, result
+    end
+    return result
+end
+
+-- Fire RemoteEvent safely
+local function safeFire(remoteEvent, ...)
+    if not remoteEvent then return false end
+    local ok, err = pcall(function()
+        remoteEvent:FireServer(...)
+    end)
+    if not ok then
+        warn("FireServer failed:", err)
+        return false
+    end
+    return true
+end
+
+-- GUI lookup (modular) - coba cari di PlayerGui
+local function findGui(name)
+    local pg = localPlayer:FindFirstChild("PlayerGui")
+    if not pg then return nil end
+    return pg:FindFirstChild(name, true) -- search descendants
+end
+
+-- CONFIG: sesuaikan nama GUI dan elemen
+local CONFIG = {
+    GuiName = "AnimeDiceGui", -- ganti sesuai nama GUI di PlayerGui
+    RollButtonName = "RollButton",
+    InventoryPanelName = "InventoryPanel",
+    MarketPanelName = "MarketPanel",
+    SpinnerName = "Spinner",
+    ToggleNames = {
+        AutoSell = "ToggleAutoSell",
+        AutoRoll = "ToggleAutoRoll",
+        AutoDungeon = "ToggleAutoDungeon",
+    },
 }
 
-📦 Module: RollSpeedConfig (ReplicatedStorage.Modules.RollSpeedConfig)
-{
-  ["Tiers"] = {
-    [1] = {
-      ["Name"] = "Standard Roll",
-      ["IconAccent"] = 0.313726, 0.321569, 0.345098,
-      ["IconColor"] = 0.54902, 0.556863, 0.580392,
-      ["SpinDuration"] = 1.6,
-      ["UpgradeCost"] = 0,
-    },
-    [2] = {
-      ["Name"] = "Quick Roll",
-      ["IconAccent"] = 0.196078, 0.470588, 0.666667,
-      ["IconColor"] = 0.470588, 0.784314, 1,
-      ["SpinDuration"] = 1.5,
-      ["UpgradeCost"] = 150,
-    },
-    [3] = {
-      ["Name"] = "Fast Roll",
-      ["IconAccent"] = 0.156863, 0.588235, 0.431373,
-      ["IconColor"] = 0.470588, 0.862745, 0.705882,
-      ["SpinDuration"] = 1.4,
-      ["UpgradeCost"] = 750,
-    },
-    [4] = {
-      ["Name"] = "Rapid Roll",
-      ["IconAccent"] = 0.627451, 0.470588, 0.0784314,
-      ["IconColor"] = 0.921569, 0.745098, 0.235294,
-      ["SpinDuration"] = 1.3,
-      ["UpgradeCost"] = 25000,
-    },
-    [5] = {
-      ["Name"] = "Blazing Roll",
-      ["IconAccent"] = 0.705882, 0.313726, 0.0784314,
-      ["IconColor"] = 1, 0.54902, 0.235294,
-      ["SpinDuration"] = 1.2,
-      ["UpgradeCost"] = 10000000,
-    },
-    [6] = {
-      ["Name"] = "Instant Roll",
-      ["IconAccent"] = 0.705882, 0.117647, 0.117647,
-      ["IconColor"] = 1, 0.313726, 0.313726,
-      ["SpinDuration"] = 1.1,
-      ["UpgradeCost"] = 300000000,
-    },
-  },
-  ["MaxLevel"] = 6,
-  ["GetTier"] = function: 0xd21d384b1bfc6bc5,
+-- State
+local state = {
+    rolling = false,
+    gui = nil,
+    elements = {},
 }
 
-📦 Module: MultiRollConfig (ReplicatedStorage.Modules.MultiRollConfig)
-{
-  ["Tiers"] = {
-    [1] = {
-      ["RollCount"] = 1,
-      ["Name"] = "Single Roll",
-      ["IconAccent"] = 0.313726, 0.321569, 0.345098,
-      ["IconColor"] = 0.54902, 0.556863, 0.580392,
-      ["UpgradeCost"] = 0,
-    },
-    [2] = {
-      ["RollCount"] = 2,
-      ["Name"] = "Double Roll",
-      ["IconAccent"] = 1, 0.843137, 0,
-      ["IconColor"] = 1, 1, 1,
-      ["UpgradeCost"] = 10000000000000000,
-    },
-  },
-  ["MaxLevel"] = 2,
-  ["GetTier"] = function: 0x200f7afec91ee186,
-}
+-- Utility: set enabled/disabled visual pada tombol
+local function setButtonEnabled(button, enabled)
+    if not button then return end
+    -- Jika button punya Active property (ImageButton / TextButton), gunakan
+    if button:IsA("GuiButton") then
+        button.Active = enabled
+        button.AutoButtonColor = enabled
+        -- tween opacity for feedback
+        local target = enabled and 1 or 0.5
+        pcall(function()
+            TweenService:Create(button, TweenInfo.new(0.15), {BackgroundTransparency = 1 - target}):Play()
+        end)
+    end
+end
 
-📦 Module: RarityVisuals (ReplicatedStorage.Modules.RarityVisuals)
-{
-  ["ClearWave"] = function: 0xf6d0833e1ae8de1e,
-  ["IsAnimated"] = function: 0x3cba03ec3ce37368,
-  ["SetRarityColor"] = function: 0x5354e6f4f9d866a5,
-  ["ApplyWave"] = function: 0x083bb1171867e894,
-}
+-- Show / hide spinner
+local function setSpinnerVisible(visible)
+    local spinner = state.elements[CONFIG.SpinnerName]
+    if spinner then
+        spinner.Visible = visible
+    end
+end
 
-📦 Module: UiSoundConfig (ReplicatedStorage.Modules.UiSoundConfig)
-{
-  ["RareReveal"] = "rbxassetid://0",
-  ["SpinTick"] = "rbxassetid://0",
-  ["Reveal"] = "rbxassetid://0",
-  ["Pop"] = "rbxassetid://0",
-  ["Toggle"] = "rbxassetid://0",
-  ["Error"] = "rbxassetid://0",
-  ["Click"] = "rbxassetid://0",
-}
+-- Update inventory UI (simple) - ini placeholder, sesuaikan dengan struktur GUI mu
+local function updateInventoryUI(snapshot)
+    if not snapshot then return end
+    -- jika ada panel list, bersihkan dan tambahkan entries
+    local invPanel = state.elements[CONFIG.InventoryPanelName]
+    if not invPanel then return end
+    local list = invPanel:FindFirstChild("ItemList")
+    if not list then return end
 
-📦 Module: BrainrotModels (ReplicatedStorage.Modules.BrainrotModels)
-{
-  ["Folder"] = function: 0x04e30305ea2ac238,
-  ["AnimatedTag"] = "AnimatedBrainrot",
-  ["RigAsAttribute"] = "RigAs",
-  ["IdleAutoAttribute"] = "IdleAuto",
-  ["GetRig"] = function: 0xa6997097fdcf58c2,
-}
+    -- clear existing
+    for _, child in pairs(list:GetChildren()) do
+        if child:IsA("Frame") and child.Name ~= "Template" then
+            child:Destroy()
+        end
+    end
 
-📦 Module: BrainrotLevelConfig (ReplicatedStorage.Modules.BrainrotLevelConfig)
-{
-  ["GetUpgradeCost"] = function: 0x278a4765ca1f2d3b,
-  ["IncomeGrowthRate"] = 1.15,
-  ["LevelIncomeMultiplier"] = 3,
-  ["GetCashPerSecond"] = function: 0x05ec36d90ab9f452,
-  ["IsMaxLevel"] = function: 0x99274976f2858d06,
-  ["MaxLevel"] = 20,
-  ["BaseUpgradeCostMultiplier"] = 8,
-  ["CostGrowthRate"] = 1.18,
-  ["GetIncomePerLevelBonus"] = function: 0x5f59b71393e106a2,
-}
+    local template = list:FindFirstChild("Template")
+    if not template then return end
 
-📦 Module: TraitConfig (ReplicatedStorage.Modules.TraitConfig)
-{
-  ["GetCritChance"] = function: 0x2a4163beadcd8e09,
-  ["GetHex"] = function: 0x50caa087ee7847b3,
-  ["DisarmPity"] = function: 0x7392500589f7f0f1,
-  ["HexOf"] = function: 0xc7aa92d2ff074fc7,
-  ["GetCritMultiplier"] = function: 0xccf441126d64c2ed,
-  ["IsTopTier"] = function: 0xacd36d7f0531a87e,
-  ["GetAllTraitIds"] = function: 0xaa5490a10882bbd0,
-  ["GetAllHexIds"] = function: 0xa78955b8d101ce73,
-  ["RegisterHex"] = function: 0x690e8f020e494889,
-  ["ApplySellValue"] = function: 0x831cb2305645e5d0,
-  ["ApplyDamage"] = function: 0xa01675512c8b442a,
-  ["ForceNextRoll"] = function: 0xf26e5e6b55fd5b27,
-  ["GetHexOddsPercent"] = function: 0x160c3193fe94da86,
-  ["ApplyCashPerSecond"] = function: 0xcd3c1a60d27f2e32,
-  ["RollTrait"] = function: 0x5cf05a2c9b995054,
-  ["RollHex"] = function: 0xb01ea9dac4e16fc2,
-  ["RollTraitWithPity"] = function: 0x5e5a4873aab94885,
-  ["GetPity"] = function: 0x6b3cd3618aa96a33,
-  ["Pity"] = {
-    [1] = {
-      ["Spins"] = 1000,
-      ["TraitId"] = "Ultimate",
-    },
-    [2] = {
-      ["Spins"] = 600,
-      ["TraitId"] = "Celestial",
-    },
-    [3] = {
-      ["Spins"] = 250,
-      ["TraitId"] = "Divine",
-    },
-  },
-  ["RarityColors"] = {
-    ["Common"] = 0.745098, 0.745098, 0.764706,
-    ["Mythic"] = 1, 0.352941, 0.470588,
-    ["Uncommon"] = 0.431373, 0.843137, 0.470588,
-    ["Rare"] = 0.352941, 0.627451, 0.960784,
-    ["Headless"] = 1, 0.235294, 0.235294,
-    ["Legendary"] = 0.921569, 0.72549, 0.235294,
-    ["Epic"] = 0.686275, 0.352941, 0.921569,
-    ["Pumpkin"] = 1, 0.588235, 0.117647,
-    ["Celestial"] = 0.470588, 0.862745, 1,
-    ["Ultimate"] = 1, 1, 1,
-  },
-  ["ApplyUpgradeCost"] = function: 0xab193e31e04f26d9,
-  ["RegisterTrait"] = function: 0x3ef6780c301645fc,
-  ["WithHex"] = function: 0x381b2c4fd00146dd,
-  ["RarityOrder"] = {
-    [1] = "Common",
-    [2] = "Uncommon",
-    [3] = "Rare",
-    [4] = "Epic",
-    [5] = "Legendary",
-    [6] = "Mythic",
-    [7] = "Celestial",
-    [8] = "Ultimate",
-  },
-  ["BaseOf"] = function: 0x40c99101240bca41,
-  ["GetDisplayName"] = function: 0xc4ab20fb09448c5c,
-  ["GetById"] = function: 0xe3a4e4568850c1b6,
-  ["GetOddsPercent"] = function: 0xc9ce7c92acc6cc5c,
-  ["SplitHex"] = function: 0xe385fea75c1c17a8,
-  ["ArmPity"] = function: 0x1494935cccaace39,
-  ["GetLuckBonus"] = function: 0x4ceb1aabcfce1c6f,
-}
+    for i, item in ipairs(snapshot or {}) do
+        local clone = template:Clone()
+        clone.Name = "Item_"..tostring(i)
+        clone.Parent = list
+        clone.Visible = true
+        local title = clone:FindFirstChild("Title")
+        if title then title.Text = tostring(item.Name or "Item") end
+        local qty = clone:FindFirstChild("Qty")
+        if qty then qty.Text = tostring(item.Quantity or 1) end
+    end
+end
 
-📦 Module: UiIconConfig (ReplicatedStorage.Modules.UiIconConfig)
-{
-  ["DiceTier8"] = "",
-  ["RollButton"] = "99787463413818",
-  ["DiceTier2"] = "",
-  ["DiceTier14"] = "",
-  ["SkillTreeHexNode"] = "15191584823",
-  ["DiceTier4"] = "",
-  ["DiceTier13"] = "",
-  ["DiceTier6"] = "",
-  ["InventoryPanelHeader"] = "18224282281",
-  ["DiceTier9"] = "",
-  ["DiceTier11"] = "",
-  ["TraitIndexPanelHeader"] = "",
-  ["DiceTier10"] = "",
-  ["UpgradesToggle"] = "82741329688839",
-  ["DiceTier7"] = "",
-  ["SettingsToggle"] = "18801194979",
-  ["DiceTier12"] = "",
-  ["DiceTier1"] = "",
-  ["MarketTeleportToggle"] = "112466768203929",
-  ["UpgradesPanelHeader"] = "82741329688839",
-  ["BackpackToggle"] = "18224282281",
-  ["BaseTeleportToggle"] = "75270905712390",
-  ["RollSpeedNodeIcon"] = "",
-  ["DiceTier5"] = "",
-  ["DiceTier3"] = "",
-  ["TraitShopPanelHeader"] = "",
-  ["SettingsPanelHeader"] = "18801194979",
-}
+-- Refresh inventory snapshot from server
+local function refreshInventory()
+    if not Remotes.RequestInventorySnapshot then return end
+    setSpinnerVisible(true)
+    spawn(function()
+        local snapshot, err = safeInvoke(Remotes.RequestInventorySnapshot)
+        if snapshot then
+            pcall(updateInventoryUI, snapshot)
+        else
+            warn("Failed RequestInventorySnapshot:", err)
+        end
+        setSpinnerVisible(false)
+    end)
+end
 
-📦 Module: DiceIconBuilder (ReplicatedStorage.Modules.DiceIconBuilder)
-{
-  ["Build"] = function: 0xfb83d7b6dbda9ee7,
-  ["Styles"] = {
-    ["wood"] = function: 0x8ddc6c19798a65f9,
-    ["holy"] = function: 0x152bc3a7a8672d5e,
-    ["cosmic"] = function: 0x546168c8b0f25f0a,
-    ["celestial"] = function: 0xf17cdb305c327672,
-    ["omnipotent"] = function: 0xd117d3c4f3ed2e8e,
-    ["gem"] = function: 0x04d1f1b84a729e78,
-    ["stone"] = function: 0x7b5504a5beaed21a,
-    ["brainrot"] = function: 0x73e9802ccd635111,
-    ["blackhole"] = function: 0xc04ebbd07147f650,
-    ["metal"] = function: 0x09a0383e2963307b,
-  },
-}
+-- Open market/panel: request server to spawn market and refresh data
+local function openMarketPanel()
+    if Remotes.RequestMarketSpawn then
+        spawn(function()
+            setSpinnerVisible(true)
+            local ok, err = pcall(function()
+                Remotes.RequestMarketSpawn:InvokeServer()
+            end)
+            if not ok then warn("RequestMarketSpawn failed:", err) end
+            refreshInventory()
+            setSpinnerVisible(false)
+        end)
+    else
+        -- fall back: just refresh inventory
+        refreshInventory()
+    end
+end
 
-📦 Module: BrainrotVariantConfig (ReplicatedStorage.Modules.BrainrotVariantConfig)
-{
-  ["GetDisplayScale"] = function: 0x72fb4e9ac2d8c772,
-  ["Tiers"] = {
-    [1] = {
-      ["IncomeMultiplier"] = 3.999999999999999,
-      ["OneIn"] = 10,
-      ["MaxMultiplier"] = 1.4,
-      ["OneInN"] = 10,
-      ["Color"] = 0.352941, 0.862745, 0.470588,
-      ["Name"] = "Giant",
-      ["DisplayScale"] = 1.2,
-      ["Id"] = "Giant",
-      ["MinMultiplier"] = 1.1,
-    },
-    [2] = {
-      ["IncomeMultiplier"] = 15.999999999999993,
-      ["OneIn"] = 100,
-      ["MaxMultiplier"] = 2.4,
-      ["OneInN"] = 100,
-      ["Color"] = 1, 0.588235, 0.235294,
-      ["Name"] = "Titan",
-      ["DisplayScale"] = 1.45,
-      ["Id"] = "Titan",
-      ["MinMultiplier"] = 2,
-    },
-    [3] = {
-      ["IncomeMultiplier"] = 1023.9999999999987,
-      ["OneIn"] = 100000,
-      ["MaxMultiplier"] = 15,
-      ["OneInN"] = 100000,
-      ["Color"] = 1, 0.843137, 0,
-      ["Animated"] = true,
-      ["Name"] = "Colossal",
-      ["DisplayScale"] = 2.5,
-      ["Id"] = "Colossal",
-      ["MinMultiplier"] = 10,
-    },
-  },
-  ["RollVariant"] = function: 0xa3e61793032c2aa1,
-  ["GetDisplayName"] = function: 0xeef6b3c9aaf6e6b4,
-  ["GetById"] = function: 0x5e8f7d85fffe0827,
-  ["GetIncomeMultiplier"] = function: 0x8000ab8d84c864b9,
-  ["GetOneIn"] = function: 0xf5a5fbfaf1cdd344,
-  ["GetRank"] = function: 0x748a6de96e18bcc4,
-  ["RollMultiplier"] = function: 0x16af914397bf3699,
-}
+-- Roll button logic with debounce and result handling
+local function onRollPressed()
+    if state.rolling then return end
+    local rollBtn = state.elements[CONFIG.RollButtonName]
+    if not rollBtn then return end
 
-📦 Module: QuestConfig (ReplicatedStorage.Modules.QuestConfig)
-{
-  ["GetCurrentDay"] = function: 0x5da578b058ff47d2,
-  ["DAILY_ACTIVE_COUNT"] = 3,
-  ["WEEKLY_ACTIVE_COUNT"] = 3,
-  ["Achievements"] = {
-    [1] = {
-      ["BaseRewardCash"] = 500,
-      ["BaseRewardGems"] = 1,
-      ["BaseTarget"] = 100,
-      ["Kind"] = "RollDice",
-      ["RewardCashGrowth"] = 1.45,
-      ["TargetGrowth"] = 1.35,
-    },
-    [2] = {
-      ["BaseRewardCash"] = 2000,
-      ["BaseRewardGems"] = 2,
-      ["BaseTarget"] = 3,
-      ["Kind"] = "RollGiant",
-      ["RewardCashGrowth"] = 1.5,
-      ["TargetGrowth"] = 1.3,
-    },
-    [3] = {
-      ["BaseRewardCash"] = 15000,
-      ["BaseRewardGems"] = 3,
-      ["BaseTarget"] = 1,
-      ["Kind"] = "RollTitan",
-      ["RewardCashGrowth"] = 1.55,
-      ["TargetGrowth"] = 1.25,
-    },
-    [4] = {
-      ["BaseRewardCash"] = 100000,
-      ["BaseRewardGems"] = 5,
-      ["BaseTarget"] = 1,
-      ["Kind"] = "RollBehemoth",
-      ["RewardCashGrowth"] = 1.6,
-      ["TargetGrowth"] = 1.2,
-    },
-    [5] = {
-      ["BaseRewardCash"] = 1000000,
-      ["BaseRewardGems"] = 10,
-      ["BaseTarget"] = 1,
-      ["Kind"] = "RollColossal",
-      ["RewardCashGrowth"] = 1.7,
-      ["TargetGrowth"] = 1.15,
-    },
-    [6] = {
-      ["BaseRewardCash"] = 800,
-      ["BaseRewardGems"] = 1,
-      ["BaseTarget"] = 5,
-      ["Kind"] = "SpinTrait",
-      ["RewardCashGrowth"] = 1.45,
-      ["TargetGrowth"] = 1.35,
-    },
-    [7] = {
-      ["BaseRewardCash"] = 8000,
-      ["BaseRewardGems"] = 3,
-      ["BaseTarget"] = 1,
-      ["Kind"] = "SpinRareTrait",
-      ["RewardCashGrowth"] = 1.5,
-      ["TargetGrowth"] = 1.3,
-    },
-    [8] = {
-      ["BaseRewardCash"] = 500,
-      ["BaseRewardGems"] = 1,
-      ["BaseTarget"] = 10,
-      ["Kind"] = "SellBrainrot",
-      ["RewardCashGrowth"] = 1.45,
-      ["TargetGrowth"] = 1.35,
-    },
-    [9] = {
-      ["BaseRewardCash"] = 1000,
-      ["BaseRewardGems"] = 1,
-      ["BaseTarget"] = 5000,
-      ["Kind"] = "EarnCash",
-      ["RewardCashGrowth"] = 1.5,
-      ["TargetGrowth"] = 1.6,
-    },
-    [10] = {
-      ["BaseRewardCash"] = 1000,
-      ["BaseRewardGems"] = 1,
-      ["BaseTarget"] = 5,
-      ["Kind"] = "UpgradeBrainrot",
-      ["RewardCashGrowth"] = 1.45,
-      ["TargetGrowth"] = 1.35,
-    },
-    [11] = {
-      ["BaseRewardCash"] = 500,
-      ["BaseRewardGems"] = 1,
-      ["BaseTarget"] = 2,
-      ["Kind"] = "PlaceBrainrot",
-      ["RewardCashGrowth"] = 1.4,
-      ["TargetGrowth"] = 1.3,
-    },
-  },
-  ["GetActiveWeeklyQuests"] = function: 0x1e18817223074cda,
-  ["GetProgressionFraction"] = function: 0x463969d8ec8f6705,
-  ["EventKinds"] = {
-    ["RollTitan"] = {
-      ["Verb"] = "Roll Titans",
-      ["Icon"] = "🟠",
-      ["ObjectiveFormat"] = "Roll %s Titan brainrots",
-    },
-    ["SellBrainrot"] = {
-      ["Verb"] = "Sell Brainrots",
-      ["Icon"] = "💰",
-      ["ObjectiveFormat"] = "Sell %s brainrots",
-    },
-    ["SpinRareTrait"] = {
-      ["Verb"] = "Spin Rare Traits",
-      ["Icon"] = "✨",
-      ["ObjectiveFormat"] = "Spin %s Legendary+ traits",
-    },
-    ["RollGiant"] = {
-      ["Verb"] = "Roll Giants",
-      ["Icon"] = "🟢",
-      ["ObjectiveFormat"] = "Roll %s Giant brainrots",
-    },
-    ["PlaceBrainrot"] = {
-      ["Verb"] = "Place Brainrots",
-      ["Icon"] = "🏆",
-      ["ObjectiveFormat"] = "Place %s brainrots on podiums",
-    },
-    ["RollColossal"] = {
-      ["Verb"] = "Roll Colossals",
-      ["Icon"] = "🟡",
-      ["ObjectiveFormat"] = "Roll %s Colossal brainrots",
-    },
-    ["UpgradeBrainrot"] = {
-      ["Verb"] = "Upgrade Brainrots",
-      ["Icon"] = "⬆",
-      ["ObjectiveFormat"] = "Upgrade brainrots %s times",
-    },
-    ["EarnCash"] = {
-      ["IsCurrency"] = true,
-      ["Verb"] = "Earn Cash",
-      ["Icon"] = "💵",
-      ["ObjectiveFormat"] = "Earn %s",
-    },
-    ["SpinTrait"] = {
-      ["Verb"] = "Spin Traits",
-      ["Icon"] = "🍀",
-      ["ObjectiveFormat"] = "Spin %s traits",
-    },
-    ["RollDice"] = {
-      ["Verb"] = "Roll Dice",
-      ["Icon"] = "🎲",
-      ["ObjectiveFormat"] = "Roll %s dice",
-    },
-    ["RollBehemoth"] = {
-      ["Verb"] = "Roll Behemoths",
-      ["Icon"] = "🟣",
-      ["ObjectiveFormat"] = "Roll %s Behemoth brainrots",
-    },
-  },
-  ["DailyPool"] = {
-    [1] = {
-      ["TargetMin"] = 100,
-      ["RewardCashMax"] = 400000,
-      ["RewardGemsMax"] = 2,
-      ["RewardGemsMin"] = 1,
-      ["Kind"] = "RollDice",
-      ["RewardCashMin"] = 500,
-      ["TargetMax"] = 1500,
-    },
-    [2] = {
-      ["TargetMin"] = 2,
-      ["RewardCashMax"] = 1500000,
-      ["RewardGemsMax"] = 4,
-      ["RewardGemsMin"] = 2,
-      ["Kind"] = "RollGiant",
-      ["RewardCashMin"] = 2000,
-      ["TargetMax"] = 15,
-    },
-    [3] = {
-      ["TargetMin"] = 3,
-      ["RewardCashMax"] = 600000,
-      ["RewardGemsMax"] = 3,
-      ["RewardGemsMin"] = 1,
-      ["Kind"] = "SpinTrait",
-      ["RewardCashMin"] = 800,
-      ["TargetMax"] = 20,
-    },
-    [4] = {
-      ["TargetMin"] = 10,
-      ["RewardCashMax"] = 500000,
-      ["RewardGemsMax"] = 2,
-      ["RewardGemsMin"] = 1,
-      ["Kind"] = "SellBrainrot",
-      ["RewardCashMin"] = 600,
-      ["TargetMax"] = 100,
-    },
-    [5] = {
-      ["TargetMin"] = 5000,
-      ["RewardCashMax"] = 900000,
-      ["RewardGemsMax"] = 2,
-      ["RewardGemsMin"] = 1,
-      ["Kind"] = "EarnCash",
-      ["RewardCashMin"] = 1000,
-      ["TargetMax"] = 8000000,
-    },
-    [6] = {
-      ["TargetMin"] = 3,
-      ["RewardCashMax"] = 700000,
-      ["RewardGemsMax"] = 3,
-      ["RewardGemsMin"] = 1,
-      ["Kind"] = "UpgradeBrainrot",
-      ["RewardCashMin"] = 1000,
-      ["TargetMax"] = 30,
-    },
-    [7] = {
-      ["TargetMin"] = 2,
-      ["RewardCashMax"] = 300000,
-      ["RewardGemsMax"] = 2,
-      ["RewardGemsMin"] = 1,
-      ["Kind"] = "PlaceBrainrot",
-      ["RewardCashMin"] = 500,
-      ["TargetMax"] = 10,
-    },
-  },
-  ["GetCollectionTarget"] = function: 0x695d3d13dc581149,
-  ["GetPoolRewardGems"] = function: 0xb6c7c8c944267e50,
-  ["GetPoolRewardCash"] = function: 0x6faa9454a95e4c48,
-  ["FormatAmount"] = function: 0xde9a2fd2a7b791b9,
-  ["GetAchievementDef"] = function: 0x34ce9ce8678caf78,
-  ["CollectAllReward"] = {
-    ["Gems"] = 50,
-    ["Cash"] = 50000000,
-  },
-  ["GetAchievementRewardGems"] = function: 0xeee9244c7016a9c7,
-  ["GetObjectiveText"] = function: 0x70b16d6296f2abc4,
-  ["WeeklyPool"] = {
-    [1] = {
-      ["TargetMin"] = 1000,
-      ["RewardCashMax"] = 3000000,
-      ["RewardGemsMax"] = 8,
-      ["RewardGemsMin"] = 4,
-      ["Kind"] = "RollDice",
-      ["RewardCashMin"] = 4000,
-      ["TargetMax"] = 15000,
-    },
-    [2] = {
-      ["TargetMin"] = 15,
-      ["RewardCashMax"] = 10000000,
-      ["RewardGemsMax"] = 12,
-      ["RewardGemsMin"] = 6,
-      ["Kind"] = "RollGiant",
-      ["RewardCashMin"] = 15000,
-      ["TargetMax"] = 100,
-    },
-    [3] = {
-      ["TargetMin"] = 1,
-      ["RewardCashMax"] = 25000000,
-      ["RewardGemsMax"] = 15,
-      ["RewardGemsMin"] = 8,
-      ["Kind"] = "RollTitan",
-      ["RewardCashMin"] = 40000,
-      ["TargetMax"] = 8,
-    },
-    [4] = {
-      ["TargetMin"] = 1,
-      ["RewardCashMax"] = 80000000,
-      ["RewardGemsMax"] = 20,
-      ["RewardGemsMin"] = 12,
-      ["Kind"] = "RollBehemoth",
-      ["RewardCashMin"] = 150000,
-      ["TargetMax"] = 2,
-    },
-    [5] = {
-      ["TargetMin"] = 15,
-      ["RewardCashMax"] = 4000000,
-      ["RewardGemsMax"] = 8,
-      ["RewardGemsMin"] = 4,
-      ["Kind"] = "SpinTrait",
-      ["RewardCashMin"] = 6000,
-      ["TargetMax"] = 120,
-    },
-    [6] = {
-      ["TargetMin"] = 1,
-      ["RewardCashMax"] = 8000000,
-      ["RewardGemsMax"] = 12,
-      ["RewardGemsMin"] = 6,
-      ["Kind"] = "SpinRareTrait",
-      ["RewardCashMin"] = 12000,
-      ["TargetMax"] = 6,
-    },
-    [7] = {
-      ["TargetMin"] = 60,
-      ["RewardCashMax"] = 3500000,
-      ["RewardGemsMax"] = 8,
-      ["RewardGemsMin"] = 4,
-      ["Kind"] = "SellBrainrot",
-      ["RewardCashMin"] = 5000,
-      ["TargetMax"] = 600,
-    },
-    [8] = {
-      ["TargetMin"] = 40000,
-      ["RewardCashMax"] = 6000000,
-      ["RewardGemsMax"] = 8,
-      ["RewardGemsMin"] = 4,
-      ["Kind"] = "EarnCash",
-      ["RewardCashMin"] = 8000,
-      ["TargetMax"] = 60000000,
-    },
-    [9] = {
-      ["TargetMin"] = 20,
-      ["RewardCashMax"] = 5000000,
-      ["RewardGemsMax"] = 8,
-      ["RewardGemsMin"] = 4,
-      ["Kind"] = "UpgradeBrainrot",
-      ["RewardCashMin"] = 8000,
-      ["TargetMax"] = 200,
-    },
-  },
-  ["GetAchievementRewardCash"] = function: 0x1e12a5155d2ae945,
-  ["GetAchievementTarget"] = function: 0x9960a4a462e6dc54,
-  ["GetPoolTarget"] = function: 0x848409b6431f5ec6,
-  ["GetActiveDailyQuests"] = function: 0x8020196a26c3692e,
-  ["GetCurrentWeek"] = function: 0x9ba84cb0eebcb488,
-}
+    -- disable UI & set state
+    state.rolling = true
+    setButtonEnabled(rollBtn, false)
+    setSpinnerVisible(true)
+
+    -- fire RollRequest (as RemoteEvent); if RemoteFunction use Invoke
+    if Remotes.RollRequest and Remotes.RollRequest:IsA("RemoteEvent") then
+        safeFire(Remotes.RollRequest)
+    elseif Remotes.RollRequest and Remotes.RollRequest:IsA("RemoteFunction") then
+        spawn(function()
+            local res, err = safeInvoke(Remotes.RollRequest)
+            if res == nil then warn("RollRequest invoke error:", err) end
+        end)
+    else
+        warn("RollRequest remote not found")
+        state.rolling = false
+        setButtonEnabled(rollBtn, true)
+        setSpinnerVisible(false)
+        return
+    end
+
+    -- Wait for RollResult event to re-enable in the listener below
+end
+
+-- Listener for RollResult
+local function onRollResultReceived(data)
+    -- data could be nil or table; play fx / update UI
+    setSpinnerVisible(false)
+    state.rolling = false
+    local rollBtn = state.elements[CONFIG.RollButtonName]
+    setButtonEnabled(rollBtn, true)
+
+    -- Example: jika ada field InventorySnapshot di data, refresh
+    if type(data) == "table" then
+        if data.InventorySnapshot then
+            pcall(updateInventoryUI, data.InventorySnapshot)
+        end
+        -- play reveal sound / visual jika perlu (implement jika ada suara/FX)
+    end
+end
+
+-- Toggle handlers: sync toggle with server and update local UI
+local function handleToggle(toggleName, remoteSet, remoteRequest)
+    local togg = state.elements[toggleName]
+    if not togg then return end
+    local function setValue(v)
+        -- togg might be ImageButton with different states; this is placeholder
+        if togg:IsA("GuiButton") then
+            togg.Active = v
+        end
+        -- set visual state e.g. change image or fill
+        if togg:FindFirstChild("Fill") then
+            togg.Fill.Visible = v
+        end
+    end
+
+    local function onClicked()
+        local current = not togg.Active
+        setValue(current)
+        -- send request to server to change state
+        if remoteSet and remoteSet:IsA("RemoteEvent") then
+            safeFire(remoteSet, current)
+        elseif remoteSet and remoteSet:IsA("RemoteFunction") then
+            spawn(function() safeInvoke(remoteSet, current) end)
+        end
+    end
+
+    -- initial request to fetch state from server if available
+    if remoteRequest then
+        spawn(function()
+            local res, err = safeInvoke(remoteRequest)
+            if res ~= nil then
+                pcall(setValue, res)
+            end
+        end)
+    end
+
+    -- connect click
+    if togg:IsA("GuiButton") then
+        togg.Activated:Connect(onClicked)
+    else
+        -- fallback: catch InputBegan
+        if togg:IsA("GuiObject") then
+            togg.InputBegan:Connect(function(input)
+                if input.UserInputType.Name == "MouseButton1" or input.UserInputType.Name == "Touch" then
+                    onClicked()
+                end
+            end)
+        end
+    end
+end
+
+-- Utility: wire up listeners from Remotes
+local function wireRemotes()
+    -- RollResult
+    if Remotes.RollResult and Remotes.RollResult:IsA("RemoteEvent") then
+        Remotes.RollResult.OnClientEvent:Connect(onRollResultReceived)
+    end
+
+    -- InventoryUpdated
+    if Remotes.InventoryUpdated and Remotes.InventoryUpdated:IsA("RemoteEvent") then
+        Remotes.InventoryUpdated.OnClientEvent:Connect(function(data)
+            -- data could be delta; easiest is to re-request snapshot
+            pcall(refreshInventory)
+        end)
+    end
+
+    -- ItemsUpdated
+    if Remotes.ItemsUpdated and Remotes.ItemsUpdated:IsA("RemoteEvent") then
+        Remotes.ItemsUpdated.OnClientEvent:Connect(function()
+            pcall(refreshInventory)
+        end)
+    end
+
+    -- AutoRollState update -> update toggle visual if exists
+    if Remotes.AutoRollState and Remotes.AutoRollState:IsA("RemoteEvent") then
+        Remotes.AutoRollState.OnClientEvent:Connect(function(stateVal)
+            local togg = state.elements[CONFIG.ToggleNames.AutoRoll]
+            if togg and togg:IsA("GuiButton") then
+                togg.Active = stateVal
+            end
+        end)
+    end
+
+    -- AutoSellStateChanged
+    if Remotes.AutoSellState and Remotes.AutoSellState:IsA("RemoteEvent") then
+        Remotes.AutoSellState.OnClientEvent:Connect(function(stateVal)
+            local togg = state.elements[CONFIG.ToggleNames.AutoSell]
+            if togg and togg:IsA("GuiButton") then
+                togg.Active = stateVal
+            end
+        end)
+    end
+
+    -- InventorySpaceUpdate (inform user)
+    if Remotes.InventorySpaceUpdate and Remotes.InventorySpaceUpdate:IsA("RemoteEvent") then
+        Remotes.InventorySpaceUpdate.OnClientEvent:Connect(function(info)
+            -- contoh: tampil notifikasi kecil
+            print("Inventory space update:", info)
+        end)
+    end
+end
+
+-- Find GUI elements based on CONFIG and cache them
+local function cacheGuiElements()
+    local gui = findGui(CONFIG.GuiName)
+    if not gui then
+        warn("GUI not found: "..tostring(CONFIG.GuiName))
+        return false
+    end
+    state.gui = gui
+    -- try to find elements
+    local function tryGet(name)
+        local obj = gui:FindFirstChild(name, true)
+        if obj then state.elements[name] = obj end
+        return obj
+    end
+
+    tryGet(CONFIG.RollButtonName)
+    tryGet(CONFIG.InventoryPanelName)
+    tryGet(CONFIG.MarketPanelName)
+    tryGet(CONFIG.SpinnerName)
+
+    for k,v in pairs(CONFIG.ToggleNames) do
+        tryGet(v)
+    end
+
+    return true
+end
+
+-- Hook up UI after GUI exists
+local function setupUI()
+    if not cacheGuiElements() then return end
+
+    -- Roll button
+    local rollBtn = state.elements[CONFIG.RollButtonName]
+    if rollBtn and rollBtn:IsA("GuiButton") then
+        rollBtn.Activated:Connect(onRollPressed)
+    end
+
+    -- Toggle handlers
+    handleToggle(CONFIG.ToggleNames.AutoSell, Remotes.SetAutoSellUnderRequest or Remotes.ToggleAutoSellRarityRequest, Remotes.RequestAutoSellState)
+    handleToggle(CONFIG.ToggleNames.AutoRoll, Remotes.AutoRollState or Remotes.AutoRollResume, Remotes.RequestMultiRollState)
+    handleToggle(CONFIG.ToggleNames.AutoDungeon, Remotes.RequestDungeonTeleport, nil) -- contoh: customize
+
+    -- Market open button (jika ada)
+    local marketBtn = state.gui:FindFirstChild("OpenMarketButton", true)
+    if marketBtn and marketBtn:IsA("GuiButton") then
+        marketBtn.Activated:Connect(openMarketPanel)
+    end
+
+    -- Show initial inventory when opening panel or on load
+    refreshInventory()
+
+    -- wire remotes listeners
+    wireRemotes()
+end
+
+-- Watch for Gui being added to PlayerGui (useful if GUI spawned later)
+local function watchForGui()
+    local pg = localPlayer:WaitForChild("PlayerGui")
+    -- immediate attempt
+    if pg:FindFirstChild(CONFIG.GuiName, true) then
+        setupUI()
+        return
+    end
+
+    -- listen for descendants added
+    pg.DescendantAdded:Connect(function(desc)
+        if desc.Name == CONFIG.GuiName then
+            -- small wait for full hierarchy
+            wait(0.1)
+            setupUI()
+        end
+    end)
+end
+
+-- Start
+spawn(function()
+    pcall(watchForGui)
+end)
+
+-- End of script
