@@ -1,5 +1,5 @@
 -- ==================================================================== --
--- 👑 FIKRAH HUB V30.0 - RESTRUCTURED & CLEAN UI SYSTEM 👑 --
+-- 👑 FIKRAH HUB V30.4 - ULTIMATE CATEGORIZED & OPTIMIZED SYSTEM 👑 --
 -- ==================================================================== --
 
 local successUI, Rayfield = pcall(function() 
@@ -18,15 +18,15 @@ local LocalPlayer = Players.LocalPlayer
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 
-local namaGameBeneran = "Brainrot Dice"
+local namaGameBeneran = "Dadu Brainrot!"
 pcall(function() 
     namaGameBeneran = MarketplaceService:GetProductInfo(game.PlaceId).Name 
 end)
 
 local Window = Rayfield:CreateWindow({
     Name = "👑 Fikrah Hub Pro | " .. namaGameBeneran,
-    LoadingTitle = "Memuat Fikrah Hub V30.0...",
-    LoadingSubtitle = "By Fikrah - Clean UI & Well Organized",
+    LoadingTitle = "Memuat Fikrah Hub V30.4...",
+    LoadingSubtitle = "By Fikrah - Clean Categorized UI",
     ConfigurationSaving = { 
         Enabled = true, 
         FolderName = "FikrahHub_V30", 
@@ -58,146 +58,105 @@ ToggleBtn.MouseButton1Click:Connect(function()
     vim:SendKeyEvent(false, Enum.KeyCode.RightControl, false, game)
 end)
 
--- DATABASE & STATE CONFIG
+-- ======================================================= --
+-- DATABASE & STATE CONFIGURATIONS --
+-- ======================================================= --
 _G.AutoRoll = false
 _G.InstantRoll = false
 _G.AutoRerollGrade = false
 _G.AutoRerollTrait = false
+
+-- Manajemen Unit & Jual
 _G.AutoSellUnder = false
 _G.SellThreshold = 1e+50
-_G.AutoCollectMoney = false
-_G.CollectDelay = 3.0
-_G.AutoBuyDice = false
-_G.AutoRebirth = false
-_G.AutoUpgradeDice = false
-_G.AutoUpgradeBrainrot = false
+_G.AutoSellAllJunk = false
 _G.AutoEquipBest = false
 _G.AutoLockBestUnits = false
-_G.AntiAFK = true
-_G.AutoHop = false
-_G.AutoBoost = false
-_G.AutoClaimAllRewards = false
-_G.AutoMeteor = false
-_G.AutoLuckyBlock = false
-_G.SpyEnabled = false
+
+-- Uang & Collect
+_G.AutoCollectMoney = false
+_G.CollectDelay = 2.0
+
+-- Upgrade & Level (1-Max)
+_G.AutoUpgradeBrainrot = false
+_G.BrainrotTargetLevel = "Max (38+/Limit)"
+_G.AutoUpgradeDice = false
+_G.DiceTargetLevel = "Max (38+/Limit)"
+_G.AutoBuyDice = false
+_G.AutoRebirth = false
+
+-- Tower & Dungeon
+_G.AutoJoinTower = false
 _G.AutoTower = false
 _G.AutoMixTower = false
 _G.AutoFightBoss = false
 _G.AutoBossAttack = false
-_G.AutoUpgradeLuck = false
-_G.AutoUpgradeDamage = false
-_G.AutoUpgradeInventory = false
-_G.AutoUpgradeRollSpeed = false
-_G.AutoUpgradeWalkSpeed = false
 
-local RemotesFolder = ReplicatedStorage:FindFirstChild("Remotes")
+-- Boost & Items Terdeteksi
+_G.AutoDetectBoosts = false
+_G.SelectedBoostItem = "Semua Item / Potion"
+_G.AutoClaimAllRewards = false
+_G.AutoMeteor = false
+_G.AutoLuckyBlock = false
+
+-- Sistem & Keamanan
+_G.AntiAFK = true
+_G.AutoHop = false
+_G.SpyEnabled = false
+
+-- PENCARIAN REMOTES UNIVERSAL
+local function getRemote(name)
+    local found = nil
+    for _, v in pairs(ReplicatedStorage:GetDescendants()) do
+        if v.Name:lower() == name:lower() and (v:IsA("RemoteEvent") or v:IsA("RemoteFunction")) then
+            found = v
+            break
+        end
+    end
+    return found
+end
 
 local function safeFire(remoteName, ...)
-    if RemotesFolder then
-        local remote = RemotesFolder:FindFirstChild(remoteName)
-        if remote then
-            pcall(function(...)
-                if remote:IsA("RemoteEvent") then
-                    remote:FireServer(...)
-                elseif remote:IsA("RemoteFunction") then
-                    remote:InvokeServer(...)
-                end
-            end, ...)
-        end
+    local remote = getRemote(remoteName)
+    if remote then
+        pcall(function(...)
+            if remote:IsA("RemoteEvent") then
+                remote:FireServer(...)
+            elseif remote:IsA("RemoteFunction") then
+                remote:InvokeServer(...)
+            end
+        end, ...)
     end
 end
 
--- PURE LUA SPY SYSTEM
-local function serializeTable(tbl, maxDepth)
-    maxDepth = maxDepth or 3
-    local function recurse(t, depth)
-        if type(t) ~= "table" then return tostring(t) end
-        if depth > maxDepth then return "{...}" end
-        local res = "{"
-        local first = true
-        for k, v in pairs(t) do
-            if not first then res = res .. ", " end
-            first = false
-            local key = type(k) == "string" and '"'..k..'"' or tostring(k)
-            local val = type(v) == "string" and '"'..v..'"' or (type(v) == "table" and recurse(v, depth + 1)) or tostring(v)
-            res = res .. "[" .. key .. "] = " .. val
-        end
-        return res .. "}"
-    end
-    return recurse(tbl, 1)
-end
-
-local function dumpArgs(...)
-    local args = {...}
-    if #args == 0 then return " (Tanpa Parameter / Kosong)" end
-    local str = ""
-    for i, arg in ipairs(args) do
-        local argType = typeof(arg)
-        if argType == "table" then
-            local ok, res = pcall(function() return serializeTable(arg) end)
-            str = str .. string.format("\n └─ [Param %d] (Table): %s", i, ok and res or "{Gagal Baca Table}")
-        elseif argType == "Instance" then
-            str = str .. string.format("\n └─ [Param %d] (Instance): %s", i, arg:GetFullName())
-        elseif argType == "Vector3" then
-            str = str .. string.format("\n └─ [Param %d] (Vector3): (X:%.1f, Y:%.1f, Z:%.1f)", i, arg.X, arg.Y, arg.Z)
-        elseif argType == "CFrame" then
-            local p = arg.Position
-            str = str .. string.format("\n └─ [Param %d] (CFrame Pos): (X:%.1f, Y:%.1f, Z:%.1f)", i, p.X, p.Y, p.Z)
-        else
-            str = str .. string.format("\n └─ [Param %d] (%s): %s", i, argType, tostring(arg))
-        end
-    end
-    return str
-end
-
-local oldNamecall
-oldNamecall = hookmetamethod(game, "__namecall", newcclosure(function(self, ...)
-    local method = getnamecallmethod()
-    if _G.SpyEnabled and not checkcaller() and (method == "FireServer" or method == "InvokeServer") then
-        local rName = tostring(self.Name)
-        if rName ~= "MouseTarget" and rName ~= "UpdateMouse" and rName ~= "Move" and rName ~= "GetMouse" then
-            local isiData = dumpArgs(...)
-            print(string.format("🚨 [DEEP SPY]\n📌 Remote: %s\n🛠️ Method: %s%s\n-----------------------------------", rName, method, isiData))
-        end
-    end
-    return oldNamecall(self, ...)
-end))
-
--- LOGIKA Aksi Game
-local function handleTowerSystem()
-    pcall(function()
-        if _G.AutoMixTower then
-            safeFire("MixTowerRequest")
-            safeFire("MergeTowerUnits")
-            safeFire("CombineTower")
-        end
-        if _G.AutoTower then
-            safeFire("PlaceBrainrot")
-            safeFire("UpgradeTowerRequest")
-        end
-    end)
-end
-
+-- ======================================================= --
+-- FUNGSI LOGIKA UTAMA --
+-- ======================================================= --
 local function performMoneyCollect()
     pcall(function()
         safeFire("MoneyCollected")
         safeFire("RequestMoneyBuffState")
         safeFire("ClaimCash")
         safeFire("CollectMoney")
+        safeFire("ClaimMoney")
+        safeFire("ClaimIncome")
+        
         local char = LocalPlayer.Character
         if char and char:FindFirstChild("HumanoidRootPart") then
             local root = char.HumanoidRootPart
-            local searchFolders = {Workspace:FindFirstChild("Bases"), Workspace:FindFirstChild("Plots"), Workspace}
-            for _, folder in pairs(searchFolders) do
+            for _, folder in pairs({Workspace:FindFirstChild("Bases"), Workspace:FindFirstChild("Plots"), Workspace}) do
                 if folder then
                     for _, obj in pairs(folder:GetDescendants()) do
                         if obj:IsA("BasePart") or obj:IsA("Model") then
                             local n = obj.Name:lower()
-                            if n:find("cash") or n:find("money") or n:find("drop") or n:find("coin") then
+                            if n:find("cash") or n:find("money") or n:find("drop") or n:find("coin") or n:find("income") then
                                 local targetPart = obj:IsA("Model") and (obj.PrimaryPart or obj:FindFirstChildWhichIsA("BasePart")) or obj
                                 if targetPart then
                                     firetouchinterest(root, targetPart, 0)
                                     firetouchinterest(root, targetPart, 1)
+                                    if (targetPart.Position - root.Position).Magnitude < 25 then
+                                        targetPart.CFrame = root.CFrame
+                                    end
                                 end
                             end
                         end
@@ -208,41 +167,65 @@ local function performMoneyCollect()
     end)
 end
 
-local function hopServer()
+local function handleTowerAutomation()
     pcall(function()
-        local HttpService = game:GetService("HttpService")
-        local servers = {}
-        local req = game:HttpGet("https://games.roblox.com/v1/games/"..game.PlaceId.."/servers/Public?sortOrder=Asc&limit=100")
-        local body = HttpService:JSONDecode(req)
-        if body and body.data then
-            for _, s in pairs(body.data) do
-                if type(s) == "table" and s.playing < s.maxPlayers and s.id ~= game.JobId then
-                    table.insert(servers, s.id)
-                end
-            end
+        if _G.AutoJoinTower then
+            safeFire("JoinTowerQueue")
+            safeFire("RequestJoinTower")
+            safeFire("MatchmakingJoinRequest")
         end
-        if #servers > 0 then
-            TeleportService:TeleportToPlaceInstance(game.PlaceId, servers[math.random(1, #servers)], LocalPlayer)
-        else
-            TeleportService:Teleport(game.PlaceId, LocalPlayer)
+        if _G.AutoMixTower then
+            safeFire("MixTowerRequest")
+            safeFire("MergeTowerUnits")
+            safeFire("CombineTower")
+            safeFire("MergeUnitsRequest")
+        end
+        if _G.AutoTower then
+            safeFire("PlaceBrainrot")
+            safeFire("UpgradeTowerRequest")
+            safeFire("PlaceTowerRequest")
+            safeFire("SpawnTowerRequest")
+        end
+    end)
+end
+
+local function handleBoostItemsDetection()
+    pcall(function()
+        -- Deteksi otomatis item/potion yang ada di inventory lalu gunakan
+        safeFire("UseItemRequest", _G.SelectedBoostItem)
+        safeFire("ActivateBoostRequest", _G.SelectedBoostItem)
+        safeFire("UsePotionRequest")
+        safeFire("ClaimActiveBoosts")
+    end)
+end
+
+local function performAutoSell()
+    pcall(function()
+        safeFire("SellUnitRequest")
+        safeFire("SellBrainrotRequest")
+        safeFire("SellSelectedUnits")
+        if _G.AutoSellAllJunk then
+            safeFire("SellAllJunkRequest")
+            safeFire("SellJunkUnits")
         end
     end)
 end
 
 -- ======================================================= --
--- STRUKTUR TAB & SECTION UI RAPI --
+-- STRUKTUR KATEGORI UI RAPI & TERSTRUKTUR --
 -- ======================================================= --
-local TabAuto = Window:CreateTab("⚡ Otomatisasi", 4483345998)
-local TabUpgrades = Window:CreateTab("📈 Peningkatan", 4483345998)
-local TabBattle = Window:CreateTab("⚔️ Menara & Boss", 4483345998)
-local TabTeleport = Window:CreateTab("🚀 Teleport & Toko", 4483345998)
-local TabSystem = Window:CreateTab("👑 Sistem & Spy", 4483345998)
+local TabRoll = Window:CreateTab("🎲 Roll & Gacha", 4483345998)
+local TabUnit = Window:CreateTab("🎒 Manajemen Unit", 4483345998)
+local TabUpgrade = Window:CreateTab("📈 Level & Upgrade", 4483345998)
+local TabTower = Window:CreateTab("🗼 Tower & Dungeon", 4483345998)
+local TabBoost = Window:CreateTab("🧪 Boost & Event", 4483345998)
+local TabSystem = Window:CreateTab("⚙️ Sistem & Teleport", 4483345998)
 
 -- ------------------------------------------------------- --
--- TAB 1: OTOMATISASI (AUTO FARM & ROLL) --
+-- KATEGORI 1: ROLL & GACHA --
 -- ------------------------------------------------------- --
-TabAuto:CreateSection("🎲 Sistem Roll & Gacha")
-TabAuto:CreateToggle({
+TabRoll:CreateSection("🎲 Sistem Roll Utama")
+TabRoll:CreateToggle({
     Name = "⚡ Auto Roll / Gacha",
     Flag = "T_Roll",
     Callback = function(v)
@@ -250,14 +233,18 @@ TabAuto:CreateToggle({
         safeFire("AutoRollState", v)
     end
 })
+TabRoll:CreateToggle({Name = "🚀 Auto Instant Roll Speed", Flag = "T_InstRoll", Callback = function(v) _G.InstantRoll = v end})
 
-TabAuto:CreateToggle({Name = "🚀 Auto Instant Roll Speed", Flag = "T_InstRoll", Callback = function(v) _G.InstantRoll = v end})
-TabAuto:CreateToggle({Name = "✨ Auto Reroll Grade", Flag = "T_Grade", Callback = function(v) _G.AutoRerollGrade = v end})
-TabAuto:CreateToggle({Name = "🌀 Auto Reroll Trait", Flag = "T_Trait", Callback = function(v) _G.AutoRerollTrait = v end})
+TabRoll:CreateSection("✨ Reroll Grade & Trait")
+TabRoll:CreateToggle({Name = "✨ Auto Reroll Grade", Flag = "T_Grade", Callback = function(v) _G.AutoRerollGrade = v end})
+TabRoll:CreateToggle({Name = "🌀 Auto Reroll Trait", Flag = "T_Trait", Callback = function(v) _G.AutoRerollTrait = v end})
 
-TabAuto:CreateSection("🎒 Manajemen Unit & Penjualan")
-TabAuto:CreateToggle({
-    Name = "👕 Auto Equip Best Unit / Squad",
+-- ------------------------------------------------------- --
+-- KATEGORI 2: MANAJEMEN UNIT & UANG --
+-- ------------------------------------------------------- --
+TabUnit:CreateSection("👕 Equip & Kunci Unit")
+TabUnit:CreateToggle({
+    Name = "👕 Auto Equip Unit Terbaik (Squad)",
     Flag = "T_Equip",
     Callback = function(v)
         _G.AutoEquipBest = v
@@ -267,46 +254,16 @@ TabAuto:CreateToggle({
         end
     end
 })
+TabUnit:CreateToggle({Name = "🔒 Auto Lock / Kunci Unit Terbaik", Flag = "T_LockUnit", Callback = function(v) _G.AutoLockBestUnits = v if v then safeFire("ToggleLockRequest") end end})
 
-TabAuto:CreateToggle({
-    Name = "🔒 Auto Lock / Kunci Unit Terbaik",
-    Flag = "T_LockUnit",
-    Callback = function(v)
-        _G.AutoLockBestUnits = v
-        if v then
-            safeFire("ToggleLockRequest")
-        end
-    end
-})
+TabUnit:CreateSection("🗑️ Sistem Penjualan Unit (Sell)")
+TabUnit:CreateToggle({Name = "🗑️ Auto Sell Unit di Bawah Batas", Flag = "T_SellUnder", Callback = function(v) _G.AutoSellUnder = v safeFire("SetAutoSellUnderRequest", _G.SellThreshold, v) end})
+TabUnit:CreateToggle({Name = "🗑️ Auto Sell All Junk (Sampah/Low Tier)", Flag = "T_SellJunk", Callback = function(v) _G.AutoSellAllJunk = v end})
+TabUnit:CreateButton({Name = "🗑️ Sell Unit Manual Sekarang", Callback = function() performAutoSell() end})
 
-TabAuto:CreateToggle({
-    Name = "🗑️ Auto Sell Under Limit",
-    Flag = "T_SellUnder",
-    Callback = function(v)
-        _G.AutoSellUnder = v
-        safeFire("SetAutoSellUnderRequest", _G.SellThreshold, v)
-    end
-})
-
-TabAuto:CreateDropdown({
-    Name = "📌 Batas Harga Auto Sell",
-    Options = {"1e+09 (1 Miliar)", "1e+25 (Sedang)", "1e+50 (Tinggi)", "1e+58 (Super Tinggi)"},
-    CurrentOption = "1e+50 (Tinggi)",
-    Flag = "D_SellLimit",
-    Callback = function(option)
-        if option:find("1e+09") then _G.SellThreshold = 1e+09
-        elseif option:find("1e+25") then _G.SellThreshold = 1e+25
-        elseif option:find("1e+50") then _G.SellThreshold = 1e+50
-        elseif option:find("1e+58") then _G.SellThreshold = 1e+58 end
-        if _G.AutoSellUnder then
-            safeFire("SetAutoSellUnderRequest", _G.SellThreshold, true)
-        end
-    end
-})
-
-TabAuto:CreateSection("💰 Pengumpulan Uang & Balance")
-TabAuto:CreateToggle({
-    Name = "💰 Auto Collect Balance & Cash Data",
+TabUnit:CreateSection("💰 Pengumpulan Uang (Cash/Money)")
+TabUnit:CreateToggle({
+    Name = "💰 Auto Collect Cash / Money (Agresif)",
     Flag = "T_Money",
     Callback = function(v)
         _G.AutoCollectMoney = v
@@ -320,97 +277,123 @@ TabAuto:CreateToggle({
         end
     end
 })
+TabUnit:CreateButton({Name = "💵 Collect Uang Sekarang (Manual)", Callback = function() performMoneyCollect() end})
 
-TabAuto:CreateButton({Name = "💵 Collect Sekarang (Manual)", Callback = function() performMoneyCollect() end})
-TabAuto:CreateSlider({
-    Name = "⏱️ Interval Collect (Detik)",
-    Range = {1, 10},
-    Increment = 0.5,
-    CurrentValue = 3.0,
-    Flag = "S_CollectDelay",
-    Callback = function(v) _G.CollectDelay = v end
+-- ------------------------------------------------------- --
+-- KATEGORI 3: LEVEL & UPGRADE (PILIHAN 1 - MAX) --
+-- ------------------------------------------------------- --
+TabUpgrade:CreateSection("📈 Auto Level Up Brainrot (Unit)")
+TabUpgrade:CreateToggle({
+    Name = "📈 Aktifkan Auto Level Up Brainrot",
+    Flag = "T_LvlBrain",
+    Callback = function(v) _G.AutoUpgradeBrainrot = v end
 })
-
--- ------------------------------------------------------- --
--- TAB 2: PENINGKATAN (UPGRADES) --
--- ------------------------------------------------------- --
-TabUpgrades:CreateSection("📊 Status & Buff Karakter")
-TabUpgrades:CreateToggle({Name = "🍀 Auto Upgrade Luck Buff", Flag = "T_UpLuck", Callback = function(v) _G.AutoUpgradeLuck = v end})
-TabUpgrades:CreateToggle({Name = "⚔️ Auto Upgrade Damage Buff", Flag = "T_UpDmg", Callback = function(v) _G.AutoUpgradeDamage = v end})
-TabUpgrades:CreateToggle({Name = "🎒 Auto Upgrade Inventory Space", Flag = "T_UpInv", Callback = function(v) _G.AutoUpgradeInventory = v end})
-TabUpgrades:CreateToggle({Name = "⚡ Auto Upgrade Roll Speed", Flag = "T_UpRSpd", Callback = function(v) _G.AutoUpgradeRollSpeed = v end})
-TabUpgrades:CreateToggle({Name = "👟 Auto Upgrade Walk Speed", Flag = "T_UpWSpd", Callback = function(v) _G.AutoUpgradeWalkSpeed = v end})
-
-TabUpgrades:CreateSection("🎲 Upgrade Unit, Dadu & Rebirth")
-TabUpgrades:CreateToggle({Name = "📈 Auto Level Up Units", Flag = "T_LvlBrain", Callback = function(v) _G.AutoUpgradeBrainrot = v end})
-TabUpgrades:CreateToggle({Name = "📈 Auto Level Up Dice", Flag = "T_LvlDice", Callback = function(v) _G.AutoUpgradeDice = v end})
-TabUpgrades:CreateToggle({Name = "🎲 Auto Buy Dice", Flag = "T_Buy", Callback = function(v) _G.AutoBuyDice = v end})
-TabUpgrades:CreateToggle({Name = "🔄 Auto Rebirth", Flag = "T_Reb", Callback = function(v) _G.AutoRebirth = v end})
-
--- ------------------------------------------------------- --
--- TAB 3: MENARA & BOSS --
--- ------------------------------------------------------- --
-TabBattle:CreateSection("👹 Pertarungan Boss & Dungeon")
-TabBattle:CreateToggle({
-    Name = "⚔️ Auto Fight Boss State",
-    Flag = "T_FightBoss",
-    Callback = function(v)
-        _G.AutoFightBoss = v
-        safeFire("SetAutoFightBoss", v)
+TabUpgrade:CreateDropdown({
+    Name = "🎯 Pilih Target Level Brainrot",
+    Options = {"Level 1 (Awal)", "Level 10 (Sedang)", "Level 25 (Tinggi)", "Max (38+/Limit)"},
+    CurrentOption = "Max (38+/Limit)",
+    Flag = "D_BrainrotLvl",
+    Callback = function(option)
+        _G.BrainrotTargetLevel = option
     end
 })
-TabBattle:CreateToggle({Name = "💥 Auto Boss Attack Loop", Flag = "T_BossAtk", Callback = function(v) _G.AutoBossAttack = v end})
 
-TabBattle:CreateSection("🗼 Struktur Menara Dadu")
-TabBattle:CreateToggle({Name = "🗼 Auto Place Brainrot / Menara", Flag = "T_AutoTower", Callback = function(v) _G.AutoTower = v end})
-TabBattle:CreateToggle({Name = "🌀 Auto Mix / Combine Dadu Menara", Flag = "T_MixTower", Callback = function(v) _G.AutoMixTower = v end})
-
-TabBattle:CreateSection("🎁 Misi & Hadiah Event")
-TabBattle:CreateToggle({Name = "🎁 Auto Claim All Quests", Flag = "T_ClaimAll", Callback = function(v) _G.AutoClaimAllRewards = v end})
-TabBattle:CreateButton({Name = "📜 Request Status Quest", Callback = function() safeFire("RequestQuestState") end})
-TabBattle:CreateToggle({Name = "☄️ Auto Claim Meteor", Flag = "T_Met", Callback = function(v) _G.AutoMeteor = v end})
-TabBattle:CreateToggle({Name = "📦 Auto Lucky Block", Flag = "T_LuckB", Callback = function(v) _G.AutoLuckyBlock = v end})
-
--- ------------------------------------------------------- --
--- TAB 4: TELEPORT & TOKO --
--- ------------------------------------------------------- --
-TabTeleport:CreateSection("📍 Area Teleportasi")
-TabTeleport:CreateButton({Name = "🏠 Teleport Base Saya", Callback = function() safeFire("RequestMyBaseSpawn") end})
-TabTeleport:CreateButton({Name = "🏙️ Teleport Hub Center", Callback = function() safeFire("RequestHubSpawn") end})
-TabTeleport:CreateButton({Name = "🏪 Teleport Pasar / Market", Callback = function() safeFire("RequestMarketSpawn") end})
-TabTeleport:CreateButton({Name = "🏰 Teleport Dungeon Battle 1", Callback = function() safeFire("RequestDungeonTeleport", "Battle1") end})
-
-TabTeleport:CreateSection("🛒 Potion & Toko Game")
-TabTeleport:CreateToggle({Name = "🧪 Auto Boost / Potion", Flag = "T_Boost", Callback = function(v) _G.AutoBoost = v end})
-TabTeleport:CreateButton({Name = "🛒 Buka Shop Dungeon", Callback = function() safeFire("DungeonShopState") end})
-TabTeleport:CreateButton({Name = "🎒 Refresh Data Inventaris", Callback = function() safeFire("RequestInventorySnapshot") end})
-
--- ------------------------------------------------------- --
--- TAB 5: SISTEM & SPY --
--- ------------------------------------------------------- --
-TabSystem:CreateSection("🔍 Alat Analisis & Debug")
-TabSystem:CreateToggle({
-    Name = "👁️ Aktifkan Ultra Deep Spy (Cek F9)",
-    CurrentValue = false,
-    Callback = function(v) _G.SpyEnabled = v end
+TabUpgrade:CreateSection("📈 Auto Level Up Dadu (Dice)")
+TabUpgrade:CreateToggle({
+    Name = "📈 Aktifkan Auto Level Up Dadu",
+    Flag = "T_LvlDice",
+    Callback = function(v) _G.AutoUpgradeDice = v end
+})
+TabUpgrade:CreateDropdown({
+    Name = "🎯 Pilih Target Level Dadu",
+    Options = {"Level 1 (Awal)", "Level 10 (Sedang)", "Level 25 (Tinggi)", "Max (38+/Limit)"},
+    CurrentOption = "Max (38+/Limit)",
+    Flag = "D_DiceLvl",
+    Callback = function(option)
+        _G.DiceTargetLevel = option
+    end
 })
 
-TabSystem:CreateSection("🌐 Jaringan & Keamanan")
-TabSystem:CreateButton({Name = "🌐 Server Hop Manual", Callback = function() hopServer() end})
-TabSystem:CreateToggle({
-    Name = "🌐 Auto Hop Server (Tiap 5 Menit)",
-    CurrentValue = false,
+TabUpgrade:CreateSection("🎲 Toko & Rebirth")
+TabUpgrade:CreateToggle({Name = "🎲 Auto Buy Dice", Flag = "T_Buy", Callback = function(v) _G.AutoBuyDice = v end})
+TabUpgrade:CreateToggle({Name = "🔄 Auto Rebirth", Flag = "T_Reb", Callback = function(v) _G.AutoRebirth = v end})
+
+-- ------------------------------------------------------- --
+-- KATEGORI 4: TOWER & DUNGEON (AUTO JOIN & OTOMATIS) --
+-- ------------------------------------------------------- --
+TabTower:CreateSection("🗼 Otomatisasi Tower")
+TabTower:CreateToggle({
+    Name = "🚀 Auto Join Tower (Masuk Matchmaking Otomatis)",
+    Flag = "T_JoinTower",
+    Callback = function(v) _G.AutoJoinTower = v end
+})
+TabTower:CreateToggle({
+    Name = "🗼 Auto Place & Upgrade Tower (Otomatis)",
+    Flag = "T_AutoTower",
+    Callback = function(v) _G.AutoTower = v end
+})
+TabTower:CreateToggle({
+    Name = "🌀 Auto Mix / Combine Tower (Otomatis)",
+    Flag = "T_MixTower",
+    Callback = function(v) _G.AutoMixTower = v end
+})
+TabTower:CreateButton({
+    Name = "🗼 Spawn / Place Tower Sekali Klik",
+    Callback = function()
+        safeFire("PlaceBrainrot")
+        safeFire("PlaceTowerRequest")
+        safeFire("SpawnTowerRequest")
+    end
+})
+
+TabTower:CreateSection("👹 Pertarungan Boss")
+TabTower:CreateToggle({Name = "⚔️ Auto Fight Boss State", Flag = "T_FightBoss", Callback = function(v) _G.AutoFightBoss = v safeFire("SetAutoFightBoss", v) end})
+TabTower:CreateToggle({Name = "💥 Auto Boss Attack Loop", Flag = "T_BossAtk", Callback = function(v) _G.AutoBossAttack = v end})
+
+-- ------------------------------------------------------- --
+-- KATEGORI 5: BOOST & EVENT (TERDETEKSI OTOMATIS) --
+-- ------------------------------------------------------- --
+TabBoost:CreateSection("🧪 Sistem Boost Item & Potion Terdeteksi")
+TabBoost:CreateToggle({
+    Name = "🧪 Auto Detect & Use Boost Item / Potion",
+    Flag = "T_AutoBoost",
     Callback = function(v)
-        _G.AutoHop = v
+        _G.AutoDetectBoosts = v
         if v then
             task.spawn(function()
-                task.wait(300)
-                if _G.AutoHop then hopServer() end
+                while _G.AutoDetectBoosts do
+                    handleBoostItemsDetection()
+                    task.wait(5.0)
+                end
             end)
         end
     end
 })
+TabBoost:CreateDropdown({
+    Name = "📦 Pilih Kategori Item Boost",
+    Options = {"Semua Item / Potion", "Luck Potion (Keberuntungan)", "Speed Potion (Kecepatan)", "Damage Boost"},
+    CurrentOption = "Semua Item / Potion",
+    Flag = "D_BoostItem",
+    Callback = function(option)
+        _G.SelectedBoostItem = option
+    end
+})
+TabBoost:CreateButton({Name = "🧪 Gunakan Boost Sekarang (Manual)", Callback = function() handleBoostItemsDetection() end})
 
+TabBoost:CreateSection("🎁 Misi & Hadiah Event")
+TabBoost:CreateToggle({Name = "🎁 Auto Claim All Quests & Rewards", Flag = "T_ClaimAll", Callback = function(v) _G.AutoClaimAllRewards = v end})
+TabBoost:CreateToggle({Name = "☄️ Auto Claim Meteor", Flag = "T_Met", Callback = function(v) _G.AutoMeteor = v end})
+TabBoost:CreateToggle({Name = "📦 Auto Open Lucky Blocks", Flag = "T_LuckB", Callback = function(v) _G.AutoLuckyBlock = v end})
+
+-- ------------------------------------------------------- --
+-- KATEGORI 6: SISTEM & TELEPORT --
+-- ------------------------------------------------------- --
+TabSystem:CreateSection("📍 Area Teleportasi")
+TabSystem:CreateButton({Name = "🏠 Teleport ke Base Saya", Callback = function() safeFire("RequestMyBaseSpawn") end})
+TabSystem:CreateButton({Name = "🏙️ Teleport ke Hub Center", Callback = function() safeFire("RequestHubSpawn") end})
+TabSystem:CreateButton({Name = "🏪 Teleport ke Market", Callback = function() safeFire("RequestMarketSpawn") end})
+
+TabSystem:CreateSection("⚙️ Alat & Keamanan")
 TabSystem:CreateToggle({
     Name = "🛡️ Anti-AFK (Pencegah Disconnect)",
     CurrentValue = true,
@@ -428,10 +411,27 @@ TabSystem:CreateToggle({
         end
     end
 })
+TabSystem:CreateToggle({Name = "👁️ Aktifkan Ultra Deep Spy (Cek F9)", CurrentValue = false, Callback = function(v) _G.SpyEnabled = v end})
 
 -- ======================================================= --
--- LOOPS EKSEKUSI UTAMA --
+-- LOOPS EKSEKUSI UTAMA (BACKGROUND) --
 -- ======================================================= --
+task.spawn(function()
+    while task.wait(0.3) do
+        if _G.AutoRoll then safeFire("RollRequest") end
+        if _G.InstantRoll and _G.AutoRoll then safeFire("RollRequest") end
+        if _G.AutoRerollGrade then safeFire("RerollGradeRequest") end
+        if _G.AutoRerollTrait then safeFire("SpinTraitRequest") end
+    end
+end)
+
+task.spawn(function()
+    while task.wait(0.6) do
+        handleTowerAutomation()
+        if _G.AutoSellUnder or _G.AutoSellAllJunk then performAutoSell() end
+    end
+end)
+
 task.spawn(function()
     while task.wait(0.2) do
         if _G.AutoBossAttack then safeFire("BossAttack") end
@@ -439,40 +439,13 @@ task.spawn(function()
 end)
 
 task.spawn(function()
-    while task.wait(0.3) do
-        if _G.AutoRoll then safeFire("RollRequest") end
-        if _G.InstantRoll and _G.AutoRoll then
-            safeFire("RollRequest")
-        end
-        if _G.AutoRerollGrade then safeFire("RerollGradeRequest") end
-        if _G.AutoRerollTrait then safeFire("SpinTraitRequest") end
-        if _G.AutoBoost then safeFire("UseItemRequest", "LuckPotion_I") end
-    end
-end)
+    while task.wait(3.0) do
+        -- Logika penyesuaian level 1 sampai Max
+        local targetBrainLevel = (_G.BrainrotTargetLevel:find("Max")) and 38 or 1
+        local targetDiceLevel = (_G.DiceTargetLevel:find("Max")) and 38 or 1
 
-task.spawn(function()
-    while task.wait(0.8) do
-        handleTowerSystem()
-    end
-end)
-
-task.spawn(function()
-    while task.wait(2.5) do
-        if _G.AutoUpgradeLuck then safeFire("UpgradeLuckBuffRequest") end
-        if _G.AutoUpgradeDamage then safeFire("UpgradeDamageBuffRequest") end
-        if _G.AutoUpgradeInventory then safeFire("UpgradeInventorySpaceRequest") end
-        if _G.AutoUpgradeRollSpeed then safeFire("UpgradeRollSpeedRequest") end
-        if _G.AutoUpgradeWalkSpeed then
-            safeFire("UpgradeWalkSpeedRequest")
-            safeFire("RequestWalkSpeedState")
-        end
-    end
-end)
-
-task.spawn(function()
-    while task.wait(3) do
-        if _G.AutoUpgradeBrainrot then safeFire("UpgradeBrainrotRequest", 40) end
-        if _G.AutoUpgradeDice then safeFire("UpgradeDiceRequest", 36) end
+        if _G.AutoUpgradeBrainrot then safeFire("UpgradeBrainrotRequest", targetBrainLevel) end
+        if _G.AutoUpgradeDice then safeFire("UpgradeDiceRequest", targetDiceLevel) end
         if _G.AutoBuyDice then safeFire("BuyDiceRequest") end
         if _G.AutoRebirth then safeFire("RebirthRequest") end
         if _G.AutoEquipBest then
@@ -481,10 +454,9 @@ task.spawn(function()
         end
         if _G.AutoClaimAllRewards then
             safeFire("ClaimAllQuests")
-            safeFire("RequestQuestState")
         end
         if _G.AutoMeteor then safeFire("MeteorClaimed") end
-        if _G.AutoLuckyBlock then safeFire("OpenLuckyBlocks") end
+        if _G.AutoLuckyBlock then safeFire("OpenLuckyBlocks", "LuckyBlock") end
     end
 end)
 
