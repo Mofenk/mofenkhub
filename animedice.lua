@@ -1,6 +1,7 @@
 -- animedice.lua
 -- Perubahan: menambahkan fitur musik playlist, SFX, ping, AFK/reconnect, remote binding lengkap,
 -- serta sinkronisasi GUI dengan nama MofenkHub.
+-- Diperkuat agar lebih defensif terhadap environment (mis. executor/console) dan tidak memanggil nilai nil.
 -- Catatan: script ini dibuat untuk dijalankan sebagai LocalScript di client (mis. StarterPlayerScripts / PlayerGui).
 
 local Players = game:GetService("Players")
@@ -8,56 +9,90 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 
-local localPlayer = Players.LocalPlayer
-if not localPlayer then
-    Players:GetPropertyChangedSignal("LocalPlayer"):Wait()
-    localPlayer = Players.LocalPlayer
+-- Compatibility helpers (fall back when task/spawn/wait/delay not available)
+local safeSpawn
+local safeDelay
+local safeWait
+if type(task) == "table" and type(task.spawn) == "function" then
+    safeSpawn = task.spawn
+    safeDelay = task.delay
+    safeWait = task.wait
+else
+    safeSpawn = spawn or function(fn) coroutine.wrap(fn)() end
+    safeDelay = delay or function(t, fn) spawn(function() wait(t) fn() end) end
+    safeWait = wait
 end
 
-local REMOTES_FOLDER = ReplicatedStorage:WaitForChild("Remotes")
+local localPlayer = Players.LocalPlayer
+-- If LocalPlayer not available immediately (shouldn't happen in a proper LocalScript environment), try briefly
+if not localPlayer then
+    -- Wait a short amount; avoid indefinite yields in hostile/executor environments
+    local ok = pcall(function() Players:GetPropertyChangedSignal("LocalPlayer"):Wait() end)
+    if ok then
+        localPlayer = Players.LocalPlayer
+    else
+        -- last resort: try a short wait
+        safeWait(0.2)
+        localPlayer = Players.LocalPlayer
+    end
+end
+
+-- If still not present, bail out gracefully.
+if not localPlayer or not localPlayer:IsA("Player") then
+    warn("animedice.lua: LocalPlayer not found. This script must run as a LocalScript in the client (StarterPlayerScripts/PlayerGui). Aborting to avoid runtime errors.")
+    return
+end
+
+-- Try to find remotes folder defensively; don't yield indefinitely.
+local REMOTES_FOLDER = ReplicatedStorage:FindFirstChild("Remotes")
+
+local function safeFindRemote(name)
+    if not REMOTES_FOLDER then return nil end
+    return REMOTES_FOLDER:FindFirstChild(name)
+end
 
 local Remotes = {
-    RollRequest = REMOTES_FOLDER:FindFirstChild("RollRequest"),
-    RollResult = REMOTES_FOLDER:FindFirstChild("RollResult"),
+    RollRequest = safeFindRemote("RollRequest"),
+    RollResult = safeFindRemote("RollResult"),
 
-    RequestInventorySnapshot = REMOTES_FOLDER:FindFirstChild("RequestInventorySnapshot"),
-    InventoryUpdated = REMOTES_FOLDER:FindFirstChild("InventoryUpdated"),
-    RequestItemsSnapshot = REMOTES_FOLDER:FindFirstChild("RequestItemsSnapshot"),
-    ItemsUpdated = REMOTES_FOLDER:FindFirstChild("ItemsUpdated"),
+    RequestInventorySnapshot = safeFindRemote("RequestInventorySnapshot"),
+    InventoryUpdated = safeFindRemote("InventoryUpdated"),
+    RequestItemsSnapshot = safeFindRemote("RequestItemsSnapshot"),
+    ItemsUpdated = safeFindRemote("ItemsUpdated"),
 
-    SellItemRequest = REMOTES_FOLDER:FindFirstChild("SellItemRequest"),
-    SellAllRequest = REMOTES_FOLDER:FindFirstChild("SellAllRequest"),
-    SellSelectedRequest = REMOTES_FOLDER:FindFirstChild("SellSelectedRequest"),
-    BuyDiceRequest = REMOTES_FOLDER:FindFirstChild("BuyDiceRequest"),
-    DiceBuyResult = REMOTES_FOLDER:FindFirstChild("DiceBuyResult"),
-    EquipItem = REMOTES_FOLDER:FindFirstChild("EquipItem"),
-    EquipItemResult = REMOTES_FOLDER:FindFirstChild("EquipItemResult"),
+    SellItemRequest = safeFindRemote("SellItemRequest"),
+    SellAllRequest = safeFindRemote("SellAllRequest"),
+    SellSelectedRequest = safeFindRemote("SellSelectedRequest"),
+    BuyDiceRequest = safeFindRemote("BuyDiceRequest"),
+    DiceBuyResult = safeFindRemote("DiceBuyResult"),
+    EquipItem = safeFindRemote("EquipItem"),
+    EquipItemResult = safeFindRemote("EquipItemResult"),
 
-    AutoSellStateChanged = REMOTES_FOLDER:FindFirstChild("AutoSellStateChanged"),
-    RequestAutoSellState = REMOTES_FOLDER:FindFirstChild("RequestAutoSellState"),
-    SetAutoSellUnderRequest = REMOTES_FOLDER:FindFirstChild("SetAutoSellUnderRequest"),
-    ToggleAutoSellRarityRequest = REMOTES_FOLDER:FindFirstChild("ToggleAutoSellRarityRequest"),
+    AutoSellStateChanged = safeFindRemote("AutoSellStateChanged"),
+    RequestAutoSellState = safeFindRemote("RequestAutoSellState"),
+    SetAutoSellUnderRequest = safeFindRemote("SetAutoSellUnderRequest"),
+    ToggleAutoSellRarityRequest = safeFindRemote("ToggleAutoSellRarityRequest"),
 
-    AutoRollState = REMOTES_FOLDER:FindFirstChild("AutoRollState"),
-    AutoRollResume = REMOTES_FOLDER:FindFirstChild("AutoRollResume"),
-    RequestMultiRollState = REMOTES_FOLDER:FindFirstChild("RequestMultiRollState"),
+    AutoRollState = safeFindRemote("AutoRollState"),
+    AutoRollResume = safeFindRemote("AutoRollResume"),
+    RequestMultiRollState = safeFindRemote("RequestMultiRollState"),
 
-    SpinTraitRequest = REMOTES_FOLDER:FindFirstChild("SpinTraitRequest"),
-    SpinTraitResult = REMOTES_FOLDER:FindFirstChild("SpinTraitResult"),
+    SpinTraitRequest = safeFindRemote("SpinTraitRequest"),
+    SpinTraitResult = safeFindRemote("SpinTraitResult"),
 
-    DungeonShopAutoBuy = REMOTES_FOLDER:FindFirstChild("DungeonShopAutoBuy"),
-    DungeonShopPurchase = REMOTES_FOLDER:FindFirstChild("DungeonShopPurchase"),
-    DungeonShopUpdated = REMOTES_FOLDER:FindFirstChild("DungeonShopUpdated"),
+    DungeonShopAutoBuy = safeFindRemote("DungeonShopAutoBuy"),
+    DungeonShopPurchase = safeFindRemote("DungeonShopPurchase"),
+    DungeonShopUpdated = safeFindRemote("DungeonShopUpdated"),
 
-    RequestMarketSpawn = REMOTES_FOLDER:FindFirstChild("RequestMarketSpawn"),
-    PurchaseAnnounce = REMOTES_FOLDER:FindFirstChild("PurchaseAnnounce"),
+    RequestMarketSpawn = safeFindRemote("RequestMarketSpawn"),
+    PurchaseAnnounce = safeFindRemote("PurchaseAnnounce"),
 
-    PerfTelemetry = REMOTES_FOLDER:FindFirstChild("PerfTelemetry"),
-    PerfTelemetryReport = REMOTES_FOLDER:FindFirstChild("PerfTelemetryReport"),
+    PerfTelemetry = safeFindRemote("PerfTelemetry"),
+    PerfTelemetryReport = safeFindRemote("PerfTelemetryReport"),
 
-    AfkRejoinRequest = REMOTES_FOLDER:FindFirstChild("AfkRejoinRequest"),
-    RequestHubSpawn = REMOTES_FOLDER:FindFirstChild("RequestHubSpawn"),
-    RequestMyBaseSpawn = REMOTES_FOLDER:FindFirstChild("RequestMyBaseSpawn"),
+    AfkRejoinRequest = safeFindRemote("AfkRejoinRequest"),
+    RequestHubSpawn = safeFindRemote("RequestHubSpawn"),
+    RequestMyBaseSpawn = safeFindRemote("RequestMyBaseSpawn"),
 }
 
 local UiSoundConfig = {
@@ -110,7 +145,11 @@ local state = {
 local function safeInvoke(remoteFunc, ...)
     if not remoteFunc then return nil, "MissingRemote" end
     local ok, result = pcall(function()
-        return remoteFunc:InvokeServer(...)
+        if type(remoteFunc.InvokeServer) == "function" then
+            return remoteFunc:InvokeServer(...)
+        else
+            error("Remote is not invokable: " .. tostring(remoteFunc))
+        end
     end)
     if not ok then
         warn("Invoke failed:", result)
@@ -122,7 +161,11 @@ end
 local function safeFire(remoteEvent, ...)
     if not remoteEvent then return false end
     local ok, err = pcall(function()
-        remoteEvent:FireServer(...)
+        if type(remoteEvent.FireServer) == "function" then
+            remoteEvent:FireServer(...)
+        else
+            error("Remote is not a RemoteEvent: " .. tostring(remoteEvent))
+        end
     end)
     if not ok then
         warn("FireServer failed:", err)
@@ -151,14 +194,20 @@ end
 
 local function setSpinnerVisible(visible)
     local spinner = state.elements[CONFIG.SpinnerName]
-    if spinner then spinner.Visible = visible end
+    if spinner then
+        pcall(function() spinner.Visible = visible end)
+    end
 end
 
 local function stopCurrentMusic()
     if state.musicInstance then
         pcall(function()
-            state.musicInstance:Stop()
-            state.musicInstance:Destroy()
+            if type(state.musicInstance.Stop) == "function" then
+                state.musicInstance:Stop()
+            end
+            if type(state.musicInstance.Destroy) == "function" then
+                state.musicInstance:Destroy()
+            end
         end)
         state.musicInstance = nil
         state.musicPlaying = false
@@ -184,7 +233,9 @@ local function playMusicByIndex(index)
     sound.Parent = pg
 
     local ok, err = pcall(function()
-        sound:Play()
+        if type(sound.Play) == "function" then
+            sound:Play()
+        end
     end)
     if not ok then
         warn("Failed to play music:", err)
@@ -193,11 +244,19 @@ local function playMusicByIndex(index)
     state.musicInstance = sound
     state.musicPlaying = true
 
-    sound.Ended:Connect(function()
-        local nextIndex = state.currentMusicIndex + 1
-        if nextIndex > #MUSIC_LIBRARY then nextIndex = 1 end
-        playMusicByIndex(nextIndex)
-    end)
+    -- Connect Ended safely
+    if type(sound.Ended) == "RBXScriptSignal" or sound.Ended then
+        pcall(function()
+            sound.Ended:Connect(function()
+                local nextIndex = state.currentMusicIndex + 1
+                if nextIndex > #MUSIC_LIBRARY then nextIndex = 1 end
+                -- Use safeSpawn to avoid deep recursion
+                safeSpawn(function()
+                    playMusicByIndex(nextIndex)
+                end)
+            end)
+        end)
+    end
 end
 
 local function playMusic(asset)
@@ -220,9 +279,20 @@ local function playSfx(asset)
     s.Looped = false
     s.Volume = 0.85
     s.Parent = pg
-    pcall(function() s:Play() end)
-    s.Ended:Connect(function()
-        pcall(function() s:Destroy() end)
+    pcall(function()
+        if type(s.Play) == "function" then s:Play() end
+    end)
+    pcall(function()
+        if s.Ended then
+            s.Ended:Connect(function()
+                pcall(function() if type(s.Destroy) == "function" then s:Destroy() end end)
+            end)
+        else
+            -- Fallback: destroy after a short delay
+            safeDelay(8, function()
+                pcall(function() if type(s.Destroy) == "function" then s:Destroy() end end)
+            end)
+        end
     end)
 end
 
@@ -241,7 +311,7 @@ local function populateMusicSelector(selector)
 
     for _, child in pairs(selector:GetChildren()) do
         if child.Name:sub(1, 6) == "Track_" then
-            child:Destroy()
+            pcall(function() child:Destroy() end)
         end
     end
 
@@ -278,7 +348,7 @@ local function updateInventoryUI(snapshot)
 
     for _, child in pairs(list:GetChildren()) do
         if child:IsA("Frame") and child.Name ~= "Template" then
-            child:Destroy()
+            pcall(function() child:Destroy() end)
         end
     end
 
@@ -306,7 +376,7 @@ end
 local function refreshInventory()
     if not Remotes.RequestInventorySnapshot then return end
     setSpinnerVisible(true)
-    spawn(function()
+    safeSpawn(function()
         local snapshot, err = safeInvoke(Remotes.RequestInventorySnapshot)
         if snapshot then
             pcall(updateInventoryUI, snapshot)
@@ -319,10 +389,14 @@ end
 
 local function openMarketPanel()
     if Remotes.RequestMarketSpawn then
-        spawn(function()
+        safeSpawn(function()
             setSpinnerVisible(true)
             local ok, err = pcall(function()
-                Remotes.RequestMarketSpawn:InvokeServer()
+                if type(Remotes.RequestMarketSpawn.InvokeServer) == "function" then
+                    Remotes.RequestMarketSpawn:InvokeServer()
+                elseif type(Remotes.RequestMarketSpawn.FireServer) == "function" then
+                    Remotes.RequestMarketSpawn:FireServer()
+                end
             end)
             if not ok then
                 warn("RequestMarketSpawn failed:", err)
@@ -369,10 +443,10 @@ local function onRollPressed()
     setSpinnerVisible(true)
     playSfx(UiSoundConfig.Click)
 
-    if Remotes.RollRequest and Remotes.RollRequest:IsA("RemoteEvent") then
+    if Remotes.RollRequest and type(Remotes.RollRequest.FireServer) == "function" then
         safeFire(Remotes.RollRequest)
-    elseif Remotes.RollRequest and Remotes.RollRequest:IsA("RemoteFunction") then
-        spawn(function()
+    elseif Remotes.RollRequest and type(Remotes.RollRequest.InvokeServer) == "function" then
+        safeSpawn(function()
             local res, err = safeInvoke(Remotes.RollRequest)
             if not res then
                 warn(err)
@@ -405,10 +479,10 @@ local function handleToggle(toggleName, remoteSet, remoteRequest)
 
     local function setValue(v)
         if togg:IsA("GuiButton") then
-            togg.Active = v
+            pcall(function() togg.Active = v end)
         end
         if togg:FindFirstChild("Fill") then
-            togg.Fill.Visible = v
+            pcall(function() togg.Fill.Visible = v end)
         end
     end
 
@@ -417,17 +491,17 @@ local function handleToggle(toggleName, remoteSet, remoteRequest)
         setValue(current)
         playSfx(UiSoundConfig.Toggle)
 
-        if remoteSet and remoteSet:IsA("RemoteEvent") then
+        if remoteSet and type(remoteSet.FireServer) == "function" then
             safeFire(remoteSet, current)
-        elseif remoteSet and remoteSet:IsA("RemoteFunction") then
-            spawn(function()
+        elseif remoteSet and type(remoteSet.InvokeServer) == "function" then
+            safeSpawn(function()
                 safeInvoke(remoteSet, current)
             end)
         end
     end
 
     if remoteRequest then
-        spawn(function()
+        safeSpawn(function()
             local res = safeInvoke(remoteRequest)
             if res ~= nil then
                 pcall(setValue, res)
@@ -435,89 +509,106 @@ local function handleToggle(toggleName, remoteSet, remoteRequest)
         end)
     end
 
-    if togg:IsA("GuiButton") then
-        togg.Activated:Connect(onClicked)
+    -- Connect input defensively
+    if togg:IsA("GuiButton") and togg.Activated then
+        pcall(function() togg.Activated:Connect(onClicked) end)
     else
-        togg.InputBegan:Connect(function(input)
-            if input.UserInputType.Name == "MouseButton1" or input.UserInputType.Name == "Touch" then
-                onClicked()
-            end
+        pcall(function()
+            togg.InputBegan:Connect(function(input)
+                if input.UserInputType and (input.UserInputType.Name == "MouseButton1" or input.UserInputType.Name == "Touch") then
+                    onClicked()
+                end
+            end)
         end)
     end
 end
 
 local function wireRemotes()
-    if Remotes.RollResult and Remotes.RollResult:IsA("RemoteEvent") then
-        Remotes.RollResult.OnClientEvent:Connect(onRollResultReceived)
+    if Remotes.RollResult and type(Remotes.RollResult.OnClientEvent) == "RBXScriptSignal" or (Remotes.RollResult and Remotes.RollResult.OnClientEvent) then
+        pcall(function() Remotes.RollResult.OnClientEvent:Connect(onRollResultReceived) end)
     end
 
-    if Remotes.InventoryUpdated and Remotes.InventoryUpdated:IsA("RemoteEvent") then
-        Remotes.InventoryUpdated.OnClientEvent:Connect(function()
-            pcall(refreshInventory)
+    if Remotes.InventoryUpdated and Remotes.InventoryUpdated.OnClientEvent then
+        pcall(function()
+            Remotes.InventoryUpdated.OnClientEvent:Connect(function()
+                pcall(refreshInventory)
+            end)
         end)
     end
 
-    if Remotes.ItemsUpdated and Remotes.ItemsUpdated:IsA("RemoteEvent") then
-        Remotes.ItemsUpdated.OnClientEvent:Connect(function()
-            pcall(refreshInventory)
+    if Remotes.ItemsUpdated and Remotes.ItemsUpdated.OnClientEvent then
+        pcall(function()
+            Remotes.ItemsUpdated.OnClientEvent:Connect(function()
+                pcall(refreshInventory)
+            end)
         end)
     end
 
-    if Remotes.AutoRollState and Remotes.AutoRollState:IsA("RemoteEvent") then
-        Remotes.AutoRollState.OnClientEvent:Connect(function(v)
-            local togg = state.elements[CONFIG.ToggleNames.AutoRoll]
-            if togg and togg:IsA("GuiButton") then
-                togg.Active = v
-            end
-        end)
-    end
-
-    if Remotes.AutoSellStateChanged and Remotes.AutoSellStateChanged:IsA("RemoteEvent") then
-        Remotes.AutoSellStateChanged.OnClientEvent:Connect(function(v)
-            local togg = state.elements[CONFIG.ToggleNames.AutoSell]
-            if togg and togg:IsA("GuiButton") then
-                togg.Active = v
-            end
-        end)
-    end
-
-    if Remotes.SpinTraitResult and Remotes.SpinTraitResult:IsA("RemoteEvent") then
-        Remotes.SpinTraitResult.OnClientEvent:Connect(function(payload)
-            print("SpinTraitResult", payload)
-        end)
-    end
-
-    if Remotes.DungeonShopUpdated and Remotes.DungeonShopUpdated:IsA("RemoteEvent") then
-        Remotes.DungeonShopUpdated.OnClientEvent:Connect(function()
-            print("Dungeon shop updated")
-        end)
-    end
-
-    if Remotes.PerfTelemetry and Remotes.PerfTelemetry:IsA("RemoteEvent") then
-        Remotes.PerfTelemetry.OnClientEvent:Connect(function(data)
-            local ms = nil
-            if type(data) == "table" then
-                ms = data.ping or data.pingMs or data.ms or data.Ping
-            elseif type(data) == "number" then
-                ms = data
-            end
-
-            if ms then
-                state.pingMs = ms
-                local pingLabel = state.elements[CONFIG.PingLabelName]
-                if pingLabel then
-                    pingLabel.Text = string.format("Ping: %dms", math.floor(ms))
-                    local c = Color3.new(0, 1, 0)
-                    if ms >= 200 then
-                        c = Color3.new(1, 0, 0)
-                    elseif ms >= 100 then
-                        c = Color3.new(1, 0.8, 0)
-                    end
-                    pcall(function()
-                        pingLabel.TextColor3 = c
-                    end)
+    if Remotes.AutoRollState and Remotes.AutoRollState.OnClientEvent then
+        pcall(function()
+            Remotes.AutoRollState.OnClientEvent:Connect(function(v)
+                local togg = state.elements[CONFIG.ToggleNames.AutoRoll]
+                if togg and togg:IsA("GuiButton") then
+                    pcall(function() togg.Active = v end)
                 end
-            end
+            end)
+        end)
+    end
+
+    if Remotes.AutoSellStateChanged and Remotes.AutoSellStateChanged.OnClientEvent then
+        pcall(function()
+            Remotes.AutoSellStateChanged.OnClientEvent:Connect(function(v)
+                local togg = state.elements[CONFIG.ToggleNames.AutoSell]
+                if togg and togg:IsA("GuiButton") then
+                    pcall(function() togg.Active = v end)
+                end
+            end)
+        end)
+    end
+
+    if Remotes.SpinTraitResult and Remotes.SpinTraitResult.OnClientEvent then
+        pcall(function()
+            Remotes.SpinTraitResult.OnClientEvent:Connect(function(payload)
+                print("SpinTraitResult", payload)
+            end)
+        end)
+    end
+
+    if Remotes.DungeonShopUpdated and Remotes.DungeonShopUpdated.OnClientEvent then
+        pcall(function()
+            Remotes.DungeonShopUpdated.OnClientEvent:Connect(function()
+                print("Dungeon shop updated")
+            end)
+        end)
+    end
+
+    if Remotes.PerfTelemetry and Remotes.PerfTelemetry.OnClientEvent then
+        pcall(function()
+            Remotes.PerfTelemetry.OnClientEvent:Connect(function(data)
+                local ms = nil
+                if type(data) == "table" then
+                    ms = data.ping or data.pingMs or data.ms or data.Ping
+                elseif type(data) == "number" then
+                    ms = data
+                end
+
+                if ms then
+                    state.pingMs = ms
+                    local pingLabel = state.elements[CONFIG.PingLabelName]
+                    if pingLabel then
+                        pcall(function()
+                            pingLabel.Text = string.format("Ping: %dms", math.floor(ms))
+                            local c = Color3.new(0, 1, 0)
+                            if ms >= 200 then
+                                c = Color3.new(1, 0, 0)
+                            elseif ms >= 100 then
+                                c = Color3.new(1, 0.8, 0)
+                            end
+                            pingLabel.TextColor3 = c
+                        end)
+                    end
+                end
+            end)
         end)
     end
 end
@@ -530,46 +621,49 @@ local function markInput()
     if state.afk then
         state.afk = false
         local ai = state.elements[CONFIG.AfkIndicatorName]
-        if ai then ai.Visible = false end
+        if ai then pcall(function() ai.Visible = false end) end
     end
 end
 
-UserInputService.InputBegan:Connect(function() markInput() end)
-UserInputService.InputChanged:Connect(function() markInput() end)
-UserInputService.InputEnded:Connect(function() markInput() end)
+-- Connect user input events defensively
+pcall(function() UserInputService.InputBegan:Connect(markInput) end)
+pcall(function() UserInputService.InputChanged:Connect(markInput) end)
+pcall(function() UserInputService.InputEnded:Connect(markInput) end)
 
-spawn(function()
+-- AFK watcher
+safeSpawn(function()
     while true do
         local now = tick()
         if now - state.lastInput >= AFK_THRESHOLD and not state.afk then
             state.afk = true
             local ai = state.elements[CONFIG.AfkIndicatorName]
-            if ai then ai.Visible = true end
+            if ai then pcall(function() ai.Visible = true end) end
 
-            if Remotes.AfkRejoinRequest and Remotes.AfkRejoinRequest:IsA("RemoteEvent") then
+            if Remotes.AfkRejoinRequest and type(Remotes.AfkRejoinRequest.FireServer) == "function" then
                 safeFire(Remotes.AfkRejoinRequest)
-            elseif Remotes.AfkRejoinRequest and Remotes.AfkRejoinRequest:IsA("RemoteFunction") then
-                spawn(function()
+            elseif Remotes.AfkRejoinRequest and type(Remotes.AfkRejoinRequest.InvokeServer) == "function" then
+                safeSpawn(function()
                     safeInvoke(Remotes.AfkRejoinRequest)
                 end)
             end
         end
-        wait(5)
+        safeWait(5)
     end
 end)
 
-spawn(function()
+-- Reconnect watcher
+safeSpawn(function()
     while true do
         local chr = localPlayer.Character
         if not chr or not chr.Parent then
-            wait(RECONNECT_WAIT)
+            safeWait(RECONNECT_WAIT)
             if not localPlayer.Character or not localPlayer.Character.Parent then
                 if Remotes.RequestHubSpawn then
-                    safeInvoke(Remotes.RequestHubSpawn)
+                    pcall(function() safeInvoke(Remotes.RequestHubSpawn) end)
                 end
             end
         end
-        wait(2)
+        safeWait(2)
     end
 end)
 
@@ -609,8 +703,8 @@ local function setupUI()
     if not cacheGuiElements() then return end
 
     local rollBtn = state.elements[CONFIG.RollButtonName]
-    if rollBtn and rollBtn:IsA("GuiButton") then
-        rollBtn.Activated:Connect(onRollPressed)
+    if rollBtn and rollBtn:IsA("GuiButton") and rollBtn.Activated then
+        pcall(function() rollBtn.Activated:Connect(onRollPressed) end)
     end
 
     handleToggle(CONFIG.ToggleNames.AutoSell, Remotes.SetAutoSellUnderRequest or Remotes.ToggleAutoSellRarityRequest, Remotes.RequestAutoSellState)
@@ -618,38 +712,42 @@ local function setupUI()
     handleToggle(CONFIG.ToggleNames.AutoDungeon, Remotes.DungeonShopAutoBuy, nil)
 
     local marketBtn = state.gui:FindFirstChild("OpenMarketButton", true)
-    if marketBtn and marketBtn:IsA("GuiButton") then
-        marketBtn.Activated:Connect(openMarketPanel)
+    if marketBtn and marketBtn:IsA("GuiButton") and marketBtn.Activated then
+        pcall(function() marketBtn.Activated:Connect(openMarketPanel) end)
     end
 
     if state.elements[CONFIG.MusicSelectorName] then
-        populateMusicSelector(state.elements[CONFIG.MusicSelectorName])
+        pcall(function() populateMusicSelector(state.elements[CONFIG.MusicSelectorName]) end)
     end
 
-    refreshInventory()
-    wireRemotes()
+    pcall(refreshInventory)
+    pcall(wireRemotes)
 
     if #MUSIC_LIBRARY > 0 then
-        playMusicByIndex(1)
+        safeSpawn(function() playMusicByIndex(1) end)
     end
 end
 
 local function watchForGui()
-    local pg = localPlayer:WaitForChild("PlayerGui")
+    local pg = localPlayer:FindFirstChild("PlayerGui") or localPlayer:WaitForChild("PlayerGui")
+    if not pg then return end
     if pg:FindFirstChild(CONFIG.GuiName, true) then
-        setupUI()
+        pcall(setupUI)
         return
     end
 
-    pg.DescendantAdded:Connect(function(desc)
-        if desc.Name == CONFIG.GuiName or desc.Name == CONFIG.RollButtonName then
-            wait(0.05)
-            setupUI()
-        end
+    pcall(function()
+        pg.DescendantAdded:Connect(function(desc)
+            if not desc then return end
+            if desc.Name == CONFIG.GuiName or desc.Name == CONFIG.RollButtonName then
+                safeWait(0.05)
+                pcall(setupUI)
+            end
+        end)
     end)
 end
 
-spawn(function()
+safeSpawn(function()
     pcall(watchForGui)
 end)
 
