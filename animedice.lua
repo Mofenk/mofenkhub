@@ -1,33 +1,39 @@
--- ====================================================================
--- 👑 FIKRAH HUB V30.0 - RESTRUCTURED & CLEAN UI SYSTEM 👑
--- ====================================================================
+-- ==================================================================== --
+-- 👑 FIKRAH HUB V30.0 - RESTRUCTURED & CLEAN UI SYSTEM 👑 --
+-- ==================================================================== --
 
-local successUI, Rayfield = pcall(function()
-    return loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+local successUI, Rayfield = pcall(function() 
+    return loadstring(game:HttpGet('https://sirius.menu/rayfield'))() 
 end)
 
-if not successUI or not Rayfield then
-    task.wait(1)
-    Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+if not successUI or not Rayfield then 
+    task.wait(1) 
+    Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))() 
 end
 
 local MarketplaceService = game:GetService("MarketplaceService")
-local TeleportService    = game:GetService("TeleportService")
-local Players            = game:GetService("Players")
-local LocalPlayer        = Players.LocalPlayer
-local ReplicatedStorage  = game:GetService("ReplicatedStorage")
-local Workspace          = game:GetService("Workspace")
+local TeleportService = game:GetService("TeleportService")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Workspace = game:GetService("Workspace")
 
 local namaGameBeneran = "Brainrot Dice"
-pcall(function() namaGameBeneran = MarketplaceService:GetProductInfo(game.PlaceId).Name end)
+pcall(function() 
+    namaGameBeneran = MarketplaceService:GetProductInfo(game.PlaceId).Name 
+end)
 
 local Window = Rayfield:CreateWindow({
-   Name = "👑 Fikrah Hub Pro | " .. namaGameBeneran,
-   LoadingTitle = "Memuat Fikrah Hub V30.0...",
-   LoadingSubtitle = "By Fikrah - Clean UI & Well Organized",
-   ConfigurationSaving = { Enabled = true, FolderName = "FikrahHub_V30", FileName = LocalPlayer.Name },
-   KeySystem = false,
-   Keybind = Enum.KeyCode.RightControl 
+    Name = "👑 Fikrah Hub Pro | " .. namaGameBeneran,
+    LoadingTitle = "Memuat Fikrah Hub V30.0...",
+    LoadingSubtitle = "By Fikrah - Clean UI & Well Organized",
+    ConfigurationSaving = { 
+        Enabled = true, 
+        FolderName = "FikrahHub_V30", 
+        FileName = LocalPlayer.Name 
+    },
+    KeySystem = false, 
+    Keybind = Enum.KeyCode.RightControl
 })
 
 -- Tombol Mengambang (Floating Toggle UI)
@@ -35,15 +41,16 @@ local parentUI = (gethui and gethui()) or game:GetService("CoreGui")
 local ToggleGui = Instance.new("ScreenGui", parentUI)
 ToggleGui.Name = "FikrahToggleV30"
 ToggleGui.ResetOnSpawn = false
+
 local ToggleBtn = Instance.new("TextButton", ToggleGui)
 ToggleBtn.Size = UDim2.new(0, 42, 0, 42)
-ToggleBtn.Position = UDim2.new(0.5, -21, 0.04, 0) 
+ToggleBtn.Position = UDim2.new(0.5, -21, 0.04, 0)
 ToggleBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 ToggleBtn.TextColor3 = Color3.fromRGB(255, 215, 0)
 ToggleBtn.Text = "👑"
 ToggleBtn.TextSize = 18
-ToggleBtn.Draggable = true 
-Instance.new("UICorner", ToggleBtn).CornerRadius = UDim.new(1, 0) 
+ToggleBtn.Draggable = true
+Instance.new("UICorner", ToggleBtn).CornerRadius = UDim.new(1, 0)
 
 ToggleBtn.MouseButton1Click:Connect(function()
     local vim = game:GetService("VirtualInputManager")
@@ -52,23 +59,31 @@ ToggleBtn.MouseButton1Click:Connect(function()
 end)
 
 -- DATABASE & STATE CONFIG
-_G.AutoRoll = false; _G.InstantRoll = false
-_G.AutoRerollGrade = false; _G.AutoRerollTrait = false
-_G.AutoSellUnder = false; _G.SellThreshold = 1e+50
-_G.AutoCollectMoney = false; _G.CollectDelay = 3.0
-_G.AutoBuyDice = false; _G.AutoRebirth = false
-_G.AutoUpgradeDice = false; _G.AutoUpgradeBrainrot = false
+_G.AutoRoll = false
+_G.InstantRoll = false
+_G.AutoRerollGrade = false
+_G.AutoRerollTrait = false
+_G.AutoSellUnder = false
+_G.SellThreshold = 1e+50
+_G.AutoCollectMoney = false
+_G.CollectDelay = 3.0
+_G.AutoBuyDice = false
+_G.AutoRebirth = false
+_G.AutoUpgradeDice = false
+_G.AutoUpgradeBrainrot = false
 _G.AutoEquipBest = false
 _G.AutoLockBestUnits = false
-_G.AntiAFK = true; _G.AutoHop = false; _G.AutoBoost = false
-_G.AutoClaimAllRewards = false; _G.AutoMeteor = false; _G.AutoLuckyBlock = false
+_G.AntiAFK = true
+_G.AutoHop = false
+_G.AutoBoost = false
+_G.AutoClaimAllRewards = false
+_G.AutoMeteor = false
+_G.AutoLuckyBlock = false
 _G.SpyEnabled = false
-
 _G.AutoTower = false
 _G.AutoMixTower = false
 _G.AutoFightBoss = false
 _G.AutoBossAttack = false
-
 _G.AutoUpgradeLuck = false
 _G.AutoUpgradeDamage = false
 _G.AutoUpgradeInventory = false
@@ -120,16 +135,16 @@ local function dumpArgs(...)
         local argType = typeof(arg)
         if argType == "table" then
             local ok, res = pcall(function() return serializeTable(arg) end)
-            str = str .. string.format("\n  └─ [Param %d] (Table): %s", i, ok and res or "{Gagal Baca Table}")
+            str = str .. string.format("\n └─ [Param %d] (Table): %s", i, ok and res or "{Gagal Baca Table}")
         elseif argType == "Instance" then
-            str = str .. string.format("\n  └─ [Param %d] (Instance): %s", i, arg:GetFullName())
+            str = str .. string.format("\n └─ [Param %d] (Instance): %s", i, arg:GetFullName())
         elseif argType == "Vector3" then
-            str = str .. string.format("\n  └─ [Param %d] (Vector3): (X:%.1f, Y:%.1f, Z:%.1f)", i, arg.X, arg.Y, arg.Z)
+            str = str .. string.format("\n └─ [Param %d] (Vector3): (X:%.1f, Y:%.1f, Z:%.1f)", i, arg.X, arg.Y, arg.Z)
         elseif argType == "CFrame" then
             local p = arg.Position
-            str = str .. string.format("\n  └─ [Param %d] (CFrame Pos): (X:%.1f, Y:%.1f, Z:%.1f)", i, p.X, p.Y, p.Z)
+            str = str .. string.format("\n └─ [Param %d] (CFrame Pos): (X:%.1f, Y:%.1f, Z:%.1f)", i, p.X, p.Y, p.Z)
         else
-            str = str .. string.format("\n  └─ [Param %d] (%s): %s", i, argType, tostring(arg))
+            str = str .. string.format("\n └─ [Param %d] (%s): %s", i, argType, tostring(arg))
         end
     end
     return str
@@ -169,7 +184,6 @@ local function performMoneyCollect()
         safeFire("RequestMoneyBuffState")
         safeFire("ClaimCash")
         safeFire("CollectMoney")
-        
         local char = LocalPlayer.Character
         if char and char:FindFirstChild("HumanoidRootPart") then
             local root = char.HumanoidRootPart
@@ -215,68 +229,65 @@ local function hopServer()
     end)
 end
 
--- =======================================================
--- STRUKTUR TAB & SECTION UI RAPI
--- =======================================================
-local TabAuto     = Window:CreateTab("⚡ Otomatisasi", 4483345998)
+-- ======================================================= --
+-- STRUKTUR TAB & SECTION UI RAPI --
+-- ======================================================= --
+local TabAuto = Window:CreateTab("⚡ Otomatisasi", 4483345998)
 local TabUpgrades = Window:CreateTab("📈 Peningkatan", 4483345998)
-local TabBattle   = Window:CreateTab("⚔️ Menara & Boss", 4483345998)
+local TabBattle = Window:CreateTab("⚔️ Menara & Boss", 4483345998)
 local TabTeleport = Window:CreateTab("🚀 Teleport & Toko", 4483345998)
-local TabSystem   = Window:CreateTab("👑 Sistem & Spy", 4483345998)
+local TabSystem = Window:CreateTab("👑 Sistem & Spy", 4483345998)
 
--- -------------------------------------------------------
--- TAB 1: OTOMATISASI (AUTO FARM & ROLL)
--- -------------------------------------------------------
+-- ------------------------------------------------------- --
+-- TAB 1: OTOMATISASI (AUTO FARM & ROLL) --
+-- ------------------------------------------------------- --
 TabAuto:CreateSection("🎲 Sistem Roll & Gacha")
 TabAuto:CreateToggle({
-    Name = "⚡ Auto Roll / Gacha (Paksa OFF Server)", 
-    Flag = "T_Roll", 
-    Callback = function(v) 
-        _G.AutoRoll = v 
-        if not v then
-            safeFire("AutoRollState", false)
-            safeFire("ToggleAutoRollRequest", false)
-        else
-            safeFire("AutoRollState", true)
-            safeFire("ToggleAutoRollRequest", true)
-        end
+    Name = "⚡ Auto Roll / Gacha",
+    Flag = "T_Roll",
+    Callback = function(v)
+        _G.AutoRoll = v
+        safeFire("AutoRollState", v)
     end
 })
+
 TabAuto:CreateToggle({Name = "🚀 Auto Instant Roll Speed", Flag = "T_InstRoll", Callback = function(v) _G.InstantRoll = v end})
 TabAuto:CreateToggle({Name = "✨ Auto Reroll Grade", Flag = "T_Grade", Callback = function(v) _G.AutoRerollGrade = v end})
 TabAuto:CreateToggle({Name = "🌀 Auto Reroll Trait", Flag = "T_Trait", Callback = function(v) _G.AutoRerollTrait = v end})
 
 TabAuto:CreateSection("🎒 Manajemen Unit & Penjualan")
 TabAuto:CreateToggle({
-    Name = "👕 Auto Equip Best Unit / Squad", 
-    Flag = "T_Equip", 
-    Callback = function(v) 
-        _G.AutoEquipBest = v 
+    Name = "👕 Auto Equip Best Unit / Squad",
+    Flag = "T_Equip",
+    Callback = function(v)
+        _G.AutoEquipBest = v
         if v then
             safeFire("EquipBest")
-            safeFire("EquipBestBattlesquadRequest")
+            safeFire("EquipBestBattleSquadRequest")
         end
     end
 })
+
 TabAuto:CreateToggle({
-    Name = "🔒 Auto Lock / Kunci Unit Terbaik", 
-    Flag = "T_LockUnit", 
-    Callback = function(v) 
-        _G.AutoLockBestUnits = v 
+    Name = "🔒 Auto Lock / Kunci Unit Terbaik",
+    Flag = "T_LockUnit",
+    Callback = function(v)
+        _G.AutoLockBestUnits = v
         if v then
-            safeFire("LockUnitRequest")
-            safeFire("ToggleLockUnit")
+            safeFire("ToggleLockRequest")
         end
     end
 })
+
 TabAuto:CreateToggle({
-    Name = "🗑️ Auto Sell Under Limit", 
-    Flag = "T_SellUnder", 
-    Callback = function(v) 
-        _G.AutoSellUnder = v 
+    Name = "🗑️ Auto Sell Under Limit",
+    Flag = "T_SellUnder",
+    Callback = function(v)
+        _G.AutoSellUnder = v
         safeFire("SetAutoSellUnderRequest", _G.SellThreshold, v)
     end
 })
+
 TabAuto:CreateDropdown({
     Name = "📌 Batas Harga Auto Sell",
     Options = {"1e+09 (1 Miliar)", "1e+25 (Sedang)", "1e+50 (Tinggi)", "1e+58 (Super Tinggi)"},
@@ -286,8 +297,7 @@ TabAuto:CreateDropdown({
         if option:find("1e+09") then _G.SellThreshold = 1e+09
         elseif option:find("1e+25") then _G.SellThreshold = 1e+25
         elseif option:find("1e+50") then _G.SellThreshold = 1e+50
-        elseif option:find("1e+58") then _G.SellThreshold = 1e+58
-        end
+        elseif option:find("1e+58") then _G.SellThreshold = 1e+58 end
         if _G.AutoSellUnder then
             safeFire("SetAutoSellUnderRequest", _G.SellThreshold, true)
         end
@@ -296,10 +306,10 @@ TabAuto:CreateDropdown({
 
 TabAuto:CreateSection("💰 Pengumpulan Uang & Balance")
 TabAuto:CreateToggle({
-    Name = "💰 Auto Collect Balance & Cash Data", 
-    Flag = "T_Money", 
-    Callback = function(v) 
-        _G.AutoCollectMoney = v 
+    Name = "💰 Auto Collect Balance & Cash Data",
+    Flag = "T_Money",
+    Callback = function(v)
+        _G.AutoCollectMoney = v
         if v then
             task.spawn(function()
                 while _G.AutoCollectMoney do
@@ -310,6 +320,7 @@ TabAuto:CreateToggle({
         end
     end
 })
+
 TabAuto:CreateButton({Name = "💵 Collect Sekarang (Manual)", Callback = function() performMoneyCollect() end})
 TabAuto:CreateSlider({
     Name = "⏱️ Interval Collect (Detik)",
@@ -320,9 +331,9 @@ TabAuto:CreateSlider({
     Callback = function(v) _G.CollectDelay = v end
 })
 
--- -------------------------------------------------------
--- TAB 2: PENINGKATAN (UPGRADES)
--- -------------------------------------------------------
+-- ------------------------------------------------------- --
+-- TAB 2: PENINGKATAN (UPGRADES) --
+-- ------------------------------------------------------- --
 TabUpgrades:CreateSection("📊 Status & Buff Karakter")
 TabUpgrades:CreateToggle({Name = "🍀 Auto Upgrade Luck Buff", Flag = "T_UpLuck", Callback = function(v) _G.AutoUpgradeLuck = v end})
 TabUpgrades:CreateToggle({Name = "⚔️ Auto Upgrade Damage Buff", Flag = "T_UpDmg", Callback = function(v) _G.AutoUpgradeDamage = v end})
@@ -336,52 +347,33 @@ TabUpgrades:CreateToggle({Name = "📈 Auto Level Up Dice", Flag = "T_LvlDice", 
 TabUpgrades:CreateToggle({Name = "🎲 Auto Buy Dice", Flag = "T_Buy", Callback = function(v) _G.AutoBuyDice = v end})
 TabUpgrades:CreateToggle({Name = "🔄 Auto Rebirth", Flag = "T_Reb", Callback = function(v) _G.AutoRebirth = v end})
 
--- -------------------------------------------------------
--- TAB 3: MENARA & BOSS
--- -------------------------------------------------------
+-- ------------------------------------------------------- --
+-- TAB 3: MENARA & BOSS --
+-- ------------------------------------------------------- --
 TabBattle:CreateSection("👹 Pertarungan Boss & Dungeon")
 TabBattle:CreateToggle({
     Name = "⚔️ Auto Fight Boss State",
     Flag = "T_FightBoss",
-    Callback = function(v) 
+    Callback = function(v)
         _G.AutoFightBoss = v
         safeFire("SetAutoFightBoss", v)
     end
 })
-TabBattle:CreateToggle({
-    Name = "💥 Auto Boss Attack Loop",
-    Flag = "T_BossAtk",
-    Callback = function(v) _G.AutoBossAttack = v end
-})
+TabBattle:CreateToggle({Name = "💥 Auto Boss Attack Loop", Flag = "T_BossAtk", Callback = function(v) _G.AutoBossAttack = v end})
 
 TabBattle:CreateSection("🗼 Struktur Menara Dadu")
-TabBattle:CreateToggle({
-    Name = "🗼 Auto Place Brainrot / Menara",
-    Flag = "T_AutoTower",
-    Callback = function(v) _G.AutoTower = v end
-})
-TabBattle:CreateToggle({
-    Name = "🌀 Auto Mix / Combine Dadu Menara",
-    Flag = "T_MixTower",
-    Callback = function(v) _G.AutoMixTower = v end
-})
+TabBattle:CreateToggle({Name = "🗼 Auto Place Brainrot / Menara", Flag = "T_AutoTower", Callback = function(v) _G.AutoTower = v end})
+TabBattle:CreateToggle({Name = "🌀 Auto Mix / Combine Dadu Menara", Flag = "T_MixTower", Callback = function(v) _G.AutoMixTower = v end})
 
 TabBattle:CreateSection("🎁 Misi & Hadiah Event")
-TabBattle:CreateToggle({
-    Name = "🎁 Auto Claim All Quests", 
-    Flag = "T_ClaimAll", 
-    Callback = function(v) _G.AutoClaimAllRewards = v end
-})
-TabBattle:CreateButton({
-    Name = "📜 Request Status Quest", 
-    Callback = function() safeFire("RequestQuestState") end
-})
+TabBattle:CreateToggle({Name = "🎁 Auto Claim All Quests", Flag = "T_ClaimAll", Callback = function(v) _G.AutoClaimAllRewards = v end})
+TabBattle:CreateButton({Name = "📜 Request Status Quest", Callback = function() safeFire("RequestQuestState") end})
 TabBattle:CreateToggle({Name = "☄️ Auto Claim Meteor", Flag = "T_Met", Callback = function(v) _G.AutoMeteor = v end})
 TabBattle:CreateToggle({Name = "📦 Auto Lucky Block", Flag = "T_LuckB", Callback = function(v) _G.AutoLuckyBlock = v end})
 
--- -------------------------------------------------------
--- TAB 4: TELEPORT & TOKO
--- -------------------------------------------------------
+-- ------------------------------------------------------- --
+-- TAB 4: TELEPORT & TOKO --
+-- ------------------------------------------------------- --
 TabTeleport:CreateSection("📍 Area Teleportasi")
 TabTeleport:CreateButton({Name = "🏠 Teleport Base Saya", Callback = function() safeFire("RequestMyBaseSpawn") end})
 TabTeleport:CreateButton({Name = "🏙️ Teleport Hub Center", Callback = function() safeFire("RequestHubSpawn") end})
@@ -391,11 +383,11 @@ TabTeleport:CreateButton({Name = "🏰 Teleport Dungeon Battle 1", Callback = fu
 TabTeleport:CreateSection("🛒 Potion & Toko Game")
 TabTeleport:CreateToggle({Name = "🧪 Auto Boost / Potion", Flag = "T_Boost", Callback = function(v) _G.AutoBoost = v end})
 TabTeleport:CreateButton({Name = "🛒 Buka Shop Dungeon", Callback = function() safeFire("DungeonShopState") end})
-TabTeleport:CreateButton({Name = "🎒 Refresh Data Inventaris", Callback = function() safeFire("RequestInventoryData") safeFire("GetInventory") end})
+TabTeleport:CreateButton({Name = "🎒 Refresh Data Inventaris", Callback = function() safeFire("RequestInventorySnapshot") end})
 
--- -------------------------------------------------------
--- TAB 5: SISTEM & SPY
--- -------------------------------------------------------
+-- ------------------------------------------------------- --
+-- TAB 5: SISTEM & SPY --
+-- ------------------------------------------------------- --
 TabSystem:CreateSection("🔍 Alat Analisis & Debug")
 TabSystem:CreateToggle({
     Name = "👁️ Aktifkan Ultra Deep Spy (Cek F9)",
@@ -412,17 +404,18 @@ TabSystem:CreateToggle({
         _G.AutoHop = v
         if v then
             task.spawn(function()
-                task.wait(300) 
+                task.wait(300)
                 if _G.AutoHop then hopServer() end
             end)
         end
     end
 })
+
 TabSystem:CreateToggle({
-   Name = "🛡️ Anti-AFK (Pencegah Disconnect)", 
-   CurrentValue = true, 
-   Flag = "T_AntiAFK",
-   Callback = function(v)
+    Name = "🛡️ Anti-AFK (Pencegah Disconnect)",
+    CurrentValue = true,
+    Flag = "T_AntiAFK",
+    Callback = function(v)
         _G.AntiAFK = v
         if v then
             local VirtualUser = game:GetService("VirtualUser")
@@ -433,12 +426,12 @@ TabSystem:CreateToggle({
                 end
             end)
         end
-   end
+    end
 })
 
--- =======================================================
--- LOOPS EKSEKUSI UTAMA
--- =======================================================
+-- ======================================================= --
+-- LOOPS EKSEKUSI UTAMA --
+-- ======================================================= --
 task.spawn(function()
     while task.wait(0.2) do
         if _G.AutoBossAttack then safeFire("BossAttack") end
@@ -450,11 +443,10 @@ task.spawn(function()
         if _G.AutoRoll then safeFire("RollRequest") end
         if _G.InstantRoll and _G.AutoRoll then
             safeFire("RollRequest")
-            safeFire("MultiRollRequest")
         end
         if _G.AutoRerollGrade then safeFire("RerollGradeRequest") end
-        if _G.AutoRerollTrait then safeFire("RerollTraitRequest") end
-        if _G.AutoBoost then safeFire("UseBoostRequest") end
+        if _G.AutoRerollTrait then safeFire("SpinTraitRequest") end
+        if _G.AutoBoost then safeFire("UseItemRequest", "LuckPotion_I") end
     end
 end)
 
@@ -470,7 +462,7 @@ task.spawn(function()
         if _G.AutoUpgradeDamage then safeFire("UpgradeDamageBuffRequest") end
         if _G.AutoUpgradeInventory then safeFire("UpgradeInventorySpaceRequest") end
         if _G.AutoUpgradeRollSpeed then safeFire("UpgradeRollSpeedRequest") end
-        if _G.AutoUpgradeWalkSpeed then 
+        if _G.AutoUpgradeWalkSpeed then
             safeFire("UpgradeWalkSpeedRequest")
             safeFire("RequestWalkSpeedState")
         end
@@ -483,16 +475,16 @@ task.spawn(function()
         if _G.AutoUpgradeDice then safeFire("UpgradeDiceRequest", 36) end
         if _G.AutoBuyDice then safeFire("BuyDiceRequest") end
         if _G.AutoRebirth then safeFire("RebirthRequest") end
-        if _G.AutoEquipBest then 
+        if _G.AutoEquipBest then
             safeFire("EquipBest")
-            safeFire("EquipBestBattlesquadRequest")
+            safeFire("EquipBestBattleSquadRequest")
         end
-        if _G.AutoClaimAllRewards then 
+        if _G.AutoClaimAllRewards then
             safeFire("ClaimAllQuests")
             safeFire("RequestQuestState")
         end
         if _G.AutoMeteor then safeFire("MeteorClaimed") end
-        if _G.AutoLuckyBlock then safeFire("OpenLuckyBlock") end
+        if _G.AutoLuckyBlock then safeFire("OpenLuckyBlocks") end
     end
 end)
 
