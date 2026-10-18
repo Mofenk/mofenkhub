@@ -1,375 +1,398 @@
--- ==================================================================== --
--- 👑 FIKRAH HUB V36 - MASTERPIECE ULTIMATE EDITION (FULL UNCOMPRESSED)
--- Game: Dadu Brainrot! | Fitur: 100% Data Synced, Spy, Auto Reconnect
--- ==================================================================== --
-
-local successUI, Rayfield = pcall(function()
-    return loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
-end)
-
-if not successUI or not Rayfield then
-    task.wait(1)
-    Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
-end
+-- =====================================================================
+-- DADU BRAINROT! ULTIMATE HUB V1.0
+-- Features: Auto Roll, Auto Upgrade, Dungeon Bot, & Indo Music Profile Player
+-- =====================================================================
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local Workspace = game:GetService("Workspace")
-local HttpService = game:GetService("HttpService")
-local VirtualUser = game:GetService("VirtualUser")
+local TweenService = game:GetService("TweenService")
+local CoreGui = game:GetService("CoreGui")
 local RunService = game:GetService("RunService")
-local TeleportService = game:GetService("TeleportService")
-local StarterGui = game:GetService("StarterGui")
+
 local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
--- ======================================================= --
--- 1. FUNGSI UTILITAS LENGKAP (KEMBALI KE V30.4 ASLI)
--- ======================================================= --
-local function notifyUI(title, text, duration)
-    pcall(function()
-        StarterGui:SetCore("SendNotification", {
-            Title = title or "👑 Fikrah Hub",
-            Text = text or "",
-            Duration = duration or 3,
-            Button1 = "OK"
-        })
+-- Hapus UI lama jika ada agar tidak duplikat
+if CoreGui:FindFirstChild("DaduBrainrotHub") then
+    CoreGui.DaduBrainrotHub:Destroy()
+end
+
+-- ScreenGui Utama
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "DaduBrainrotHub"
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.Parent = CoreGui
+
+-- =====================================================================
+-- 1. BACKGROUND MUSIC PLAYER SYSTEM (INDONESIAN SONGS)
+-- =====================================================================
+local SoundFolder = Instance.new("Folder")
+SoundFolder.Name = "HubMusicFolder"
+SoundFolder.Parent = ScreenGui
+
+local BackgroundMusic = Instance.new("Sound")
+BackgroundMusic.Name = "BGM_Player"
+-- Contoh ID Lagu Indonesia populer di Roblox (bisa diganti ID lagu lain)
+-- Sialan / Sampai Jadi Debu / Melawan Restu / Kenangan Manis
+BackgroundMusic.SoundId = "rbxassetid://1845773120" 
+BackgroundMusic.Looped = true
+BackgroundMusic.Volume = 0.5
+BackgroundMusic.Parent = SoundFolder
+
+-- List Playlist Lagu Indonesia (Roblox Audio IDs)
+local Playlist = {
+    {Name = "Sialan - Mahalini", ID = "rbxassetid://1845773120"},
+    {Name = "Sampai Jadi Debu - Banda Neira", ID = "rbxassetid://1837424289"},
+    {Name = "Evaluasi - Hindia", ID = "rbxassetid://1839245102"},
+    {Name = "Hati-Hati di Jalan - Tulus", ID = "rbxassetid://1843345129"}
+}
+local currentSongIndex = 1
+
+BackgroundMusic:Play()
+
+-- =====================================================================
+-- 2. MAIN UI DESIGN & LAYOUT (DARK MINIMALIST)
+-- =====================================================================
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Size = UDim2.new(0, 580, 0, 360)
+MainFrame.Position = UDim2.new(0.5, -290, 0.5, -180)
+MainFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 24)
+MainFrame.BorderSizePixel = 0
+MainFrame.Parent = ScreenGui
+
+-- Efek Sudut Melengkung (UICorner)
+local MainCorner = Instance.new("UICorner")
+MainCorner.CornerRadius = UDim.new(0, 10)
+MainCorner.Parent = MainFrame
+
+-- Garis Pinggir / Border Elegan
+local MainStroke = Instance.new("UIStroke")
+MainStroke.Color = Color3.fromRGB(80, 70, 140)
+MainStroke.Thickness = 1.5
+MainStroke.Parent = MainFrame
+
+-- Topbar (Header)
+local TopBar = Instance.new("Frame")
+TopBar.Name = "TopBar"
+TopBar.Size = UDim2.new(1, 0, 0, 40)
+TopBar.BackgroundColor3 = Color3.fromRGB(24, 24, 32)
+TopBar.BorderSizePixel = 0
+TopBar.Parent = MainFrame
+
+local TopCorner = Instance.new("UICorner")
+TopCorner.CornerRadius = UDim.new(0, 10)
+TopCorner.Parent = TopBar
+
+-- Judul Hub
+local TitleLabel = Instance.new("TextLabel")
+TitleLabel.Size = UDim2.new(0, 300, 1, 0)
+TitleLabel.Position = UDim2.new(0, 15, 0, 0)
+TitleLabel.BackgroundTransparency = 1
+TitleLabel.Font = Enum.Font.GothamBold
+TitleLabel.Text = "🎲 DADU BRAINROT! | Ultimate Hub"
+TitleLabel.TextColor3 = Color3.fromRGB(240, 240, 255)
+TitleLabel.TextSize = 14
+TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+TitleLabel.Parent = TopBar
+
+-- Tombol Close (X)
+local CloseBtn = Instance.new("TextButton")
+CloseBtn.Size = UDim2.new(0, 30, 0, 30)
+CloseBtn.Position = UDim2.new(1, -35, 0, 5)
+CloseBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.Text = "X"
+CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseBtn.TextSize = 12
+CloseBtn.Parent = TopBar
+
+local CloseCorner = Instance.new("UICorner")
+CloseCorner.CornerRadius = UDim.new(0, 6)
+CloseCorner.Parent = CloseBtn
+
+CloseBtn.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
+end)
+
+-- =====================================================================
+-- 3. SIDEBAR NAVIGATION (MENU KIRI)
+-- =====================================================================
+local Sidebar = Instance.new("Frame")
+Sidebar.Size = UDim2.new(0, 140, 1, -40)
+Sidebar.Position = UDim2.new(0, 0, 0, 40)
+Sidebar.BackgroundColor3 = Color3.fromRGB(22, 22, 30)
+Sidebar.BorderSizePixel = 0
+Sidebar.Parent = MainFrame
+
+local UIListLayout = Instance.new("UIListLayout")
+UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+UIListLayout.VerticalAlignment = Enum.VerticalAlignment.Top
+UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+UIListLayout.Padding = UDim.new(0, 5)
+UIListLayout.Parent = Sidebar
+
+-- Container Halaman (Pages)
+local Container = Instance.new("Frame")
+Container.Size = UDim2.new(1, -145, 1, -45)
+Container.Position = UDim2.new(0, 145, 0, 43)
+Container.BackgroundTransparency = 1
+Container.Parent = MainFrame
+
+-- Fungsi untuk membuat tombol Tab Menu
+local function createTabButton(name, order)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1, -10, 0, 35)
+    btn.BackgroundColor3 = Color3.fromRGB(30, 30, 42)
+    btn.Font = Enum.Font.GothamMedium
+    btn.Text = name
+    btn.TextColor3 = Color3.fromRGB(180, 180, 200)
+    btn.TextSize = 12
+    btn.LayoutOrder = order
+    btn.Parent = Sidebar
+
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 6)
+    corner.Parent = btn
+    return btn
+end
+
+local tabAuto = createTabButton("Auto Farm", 1)
+local tabDungeon = createTabButton("Dungeon Bot", 2)
+local tabProfile = createTabButton("Profil & Musik", 3)
+
+-- Fungsi untuk membuat Halaman Konten
+local function createPage()
+    local page = Instance.new("ScrollingFrame")
+    page.Size = UDim2.new(1, 0, 1, 0)
+    page.BackgroundTransparency = 1
+    page.BorderSizePixel = 0
+    page.CanvasSize = UDim2.new(0, 0, 1.5, 0)
+    page.ScrollBarThickness = 4
+    page.Visible = false
+    page.Parent = Container
+
+    local layout = Instance.new("UIListLayout")
+    layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    layout.SortOrder = Enum.SortOrder.LayoutOrder
+    layout.Padding = UDim.new(0, 8)
+    layout.Parent = page
+    return page
+end
+
+local pageAuto = createPage()
+local pageDungeon = createPage()
+local pageProfile = createPage()
+
+-- Tampilkan halaman default
+pageAuto.Visible = true
+
+tabAuto.MouseButton1Click:Connect(function()
+    pageAuto.Visible = true
+    pageDungeon.Visible = false
+    pageProfile.Visible = false
+end)
+
+tabDungeon.MouseButton1Click:Connect(function()
+    pageAuto.Visible = false
+    pageDungeon.Visible = true
+    pageProfile.Visible = false
+end)
+
+tabProfile.MouseButton1Click:Connect(function()
+    pageAuto.Visible = false
+    pageDungeon.Visible = false
+    pageProfile.Visible = true
+end)
+
+-- =====================================================================
+-- 4. KONTEN HALAMAN 1: AUTO FARM & ROLL
+-- =====================================================================
+local function createToggle(parent, text, callback)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0, 415, 0, 35)
+    btn.BackgroundColor3 = Color3.fromRGB(32, 32, 46)
+    btn.Font = Enum.Font.GothamSemibold
+    btn.Text = "  " .. text .. " [OFF]"
+    btn.TextColor3 = Color3.fromRGB(220, 220, 220)
+    btn.TextSize = 12
+    btn.TextXAlignment = Enum.TextXAlignment.Left
+    btn.Parent = parent
+
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 6)
+    corner.Parent = btn
+
+    local active = false
+    btn.MouseButton1Click:Connect(function()
+        active = not active
+        if active then
+            btn.BackgroundColor3 = Color3.fromRGB(60, 140, 90)
+            btn.Text = "  " .. text .. " [ON]"
+        else
+            btn.BackgroundColor3 = Color3.fromRGB(32, 32, 46)
+            btn.Text = "  " .. text .. " [OFF]"
+        end
+        callback(active)
     end)
 end
 
-local function tryRequireModule(pathSegments)
-    local ok, mod
-    pcall(function()
-        local node = ReplicatedStorage
-        for _, seg in ipairs(pathSegments) do
-            node = node:FindFirstChild(seg)
-            if not node then return end
-        end
-        mod = require(node)
-        ok = true
-    end)
-    return ok and mod or nil
-end
-
-local function getRemote(name)
-    for _, v in pairs(ReplicatedStorage:GetDescendants()) do
-        if v.Name:lower() == tostring(name):lower() and (v:IsA("RemoteEvent") or v:IsA("RemoteFunction")) then
-            return v
-        end
-    end
-    return nil
-end
-
-local function safeFire(remoteName, ...)
-    local remote = getRemote(remoteName)
-    if remote then
-        if _G.Fikrah.SpyEnabled then
-            warn("[Fikrah Spy] Remote Fired: " .. tostring(remoteName))
-        end
-        pcall(function(...)
-            if remote:IsA("RemoteEvent") then remote:FireServer(...)
-            elseif remote:IsA("RemoteFunction") then remote:InvokeServer(...) end
-        end, ...)
-    end
-end
-
-local function safeInvoke(remoteName, ...)
-    local remote = getRemote(remoteName)
-    if remote and remote:IsA("RemoteFunction") then
-        local ok, res = pcall(function(...) return remote:InvokeServer(...) end, ...)
-        return ok and res or nil
-    end
-    return nil
-end
-
--- ======================================================= --
--- 2. SINKRONISASI 100% SEMUA MODUL GAME
--- ======================================================= --
-local GameData = {
-    BattleSquad = tryRequireModule({"Shared", "BattleSquadConfig"}),
-    Dungeon = tryRequireModule({"Shared", "DungeonConfig"}),
-    Inventory = tryRequireModule({"Modules", "InventoryConfig"}),
-    BrainrotLevel = tryRequireModule({"Modules", "BrainrotLevelConfig"}),
-    Trait = tryRequireModule({"Modules", "TraitConfig"}),
-    Quest = tryRequireModule({"Modules", "QuestConfig"}) or tryRequireModule({"QuestConfig"}),
-    CandyShop = tryRequireModule({"ReleasedContent", "Update2", "Client", "CandyShop"}) or tryRequireModule({"CandyShop"})
-}
-
--- ======================================================= --
--- 3. DATABASE STATE UTAMA
--- ======================================================= --
-_G.Fikrah = {
-    -- Uang & Gacha
-    AutoCollect = false, CollectDelay = 1.0,
-    AutoRoll = false, InstantRoll = false, AutoTrait = false, AutoGrade = false,
-    
-    -- Manajemen Unit
-    AutoEquipBest = false, AutoLock = false,
-    
-    -- Auto Sell
-    AutoSellUnder = false, SellThreshold = 100000, AutoSellJunk = false,
-    AutoSellByRarity = false, SellRarities = {},
-    AutoSellByName = false, SellNames = {},
-    
-    -- Level & Rebirth
-    AutoUpBrainrot = false, BrainrotMax = 38,
-    AutoUpDice = false, DiceMax = 38, AutoBuyDice = false, AutoRebirth = false,
-    
-    -- Tower & Boss
-    AutoJoinTower = false, AutoMixTower = false, AutoPlaceTower = false, AutoBoss = false,
-    
-    -- Event & Boost
-    AutoQuest = false, AutoCandy = false, AutoMeteor = false, AutoLuckyBlock = false, AutoBoost = false,
-    
-    -- Keamanan & Sistem
-    AutoReconnect = true, ReduceCPU = false, SpyEnabled = false, AutoHop = false
-}
-
--- ======================================================= --
--- 4. ANTARMUKA RAYFIELD (FULL BANYAK KATEGORI)
--- ======================================================= --
-local Window = Rayfield:CreateWindow({
-    Name = "👑 Fikrah Hub V36 | Dadu Brainrot",
-    LoadingTitle = "Memuat Full Masterpiece Edition...",
-    LoadingSubtitle = "Menyinkronkan semua data remote...",
-    ConfigurationSaving = { Enabled = true, FolderName = "FikrahV36", FileName = LocalPlayer.Name },
-    KeySystem = false
-})
-
-local TabInfo = Window:CreateTab("🏠 Beranda", 4483345998)
-local TabFarm = Window:CreateTab("💰 Farm & Gacha", 4483345998)
-local TabUnit = Window:CreateTab("🎒 Unit & Equip", 4483345998)
-local TabSell = Window:CreateTab("🗑️ Auto Sell Cerdas", 4483345998)
-local TabUp = Window:CreateTab("📈 Level & Upgrade", 4483345998)
-local TabTower = Window:CreateTab("🗼 Tower & Arena", 4483345998)
-local TabEvent = Window:CreateTab("🎯 Event & Hadiah", 4483345998)
-local TabSys = Window:CreateTab("⚙️ System & Optimasi", 4483345998)
-
--- --- TAB: BERANDA ---
-TabInfo:CreateSection("Status Sinkronisasi Game Data")
-TabInfo:CreateLabel("Battle Squad Module: " .. (GameData.BattleSquad and "✅ Aktif" or "❌ Gagal"))
-TabInfo:CreateLabel("Brainrot Level Module: " .. (GameData.BrainrotLevel and "✅ Aktif" or "❌ Gagal"))
-TabInfo:CreateLabel("Quest Module: " .. (GameData.Quest and "✅ Aktif" or "❌ Gagal"))
-TabInfo:CreateLabel("Candy Shop Module: " .. (GameData.CandyShop and "✅ Aktif" or "❌ Gagal"))
-
--- --- TAB: FARM & GACHA ---
-TabFarm:CreateSection("💸 Ekstraktor Uang")
-TabFarm:CreateToggle({Name = "Auto Collect Cash & Item (Magnet Extreme)", Flag = "T_Collect", Callback = function(v) _G.Fikrah.AutoCollect = v end})
-TabFarm:CreateSlider({Name = "Kecepatan Collect (Detik)", Range = {0.5, 5.0}, Increment = 0.5, CurrentValue = 1.0, Flag = "S_Delay", Callback = function(v) _G.Fikrah.CollectDelay = v end})
-
-TabFarm:CreateSection("🎲 Automasi Gacha")
-TabFarm:CreateToggle({Name = "Auto Roll Dadu", Flag = "T_Roll", Callback = function(v) _G.Fikrah.AutoRoll = v end})
-TabFarm:CreateToggle({Name = "Instant Roll (Skip Animasi)", Flag = "T_InstaRoll", Callback = function(v) _G.Fikrah.InstantRoll = v end})
-TabFarm:CreateToggle({Name = "Auto Reroll Grade", Flag = "T_Grade", Callback = function(v) _G.Fikrah.AutoGrade = v end})
-TabFarm:CreateToggle({Name = "Auto Reroll Trait", Flag = "T_Trait", Callback = function(v) _G.Fikrah.AutoTrait = v end})
-
--- --- TAB: UNIT & EQUIP ---
-TabUnit:CreateSection("Manajemen Pasukan Tempur")
-TabUnit:CreateToggle({Name = "Auto Equip Unit Terbaik (Best Squad)", Flag = "T_Equip", Callback = function(v) _G.Fikrah.AutoEquipBest = v end})
-TabUnit:CreateToggle({Name = "Auto Lock / Kunci Unit Terbaik", Flag = "T_Lock", Callback = function(v) _G.Fikrah.AutoLock = v end})
-
--- --- TAB: AUTO SELL CERDAS ---
-TabSell:CreateSection("Sapu Bersih Otomatis")
-TabSell:CreateToggle({Name = "Auto Sell Semua Sampah (Junk)", Flag = "T_SellJunk", Callback = function(v) _G.Fikrah.AutoSellJunk = v end})
-TabSell:CreateToggle({Name = "Auto Sell di Bawah Threshold", Flag = "T_SellUnder", Callback = function(v) _G.Fikrah.AutoSellUnder = v end})
-TabSell:CreateSlider({Name = "Batas Threshold", Range = {1000, 10000000}, Increment = 5000, CurrentValue = 100000, Flag = "S_Thresh", Callback = function(v) _G.Fikrah.SellThreshold = v end})
-
-TabSell:CreateSection("Filter Rarity Otomatis (Tanpa Ketik)")
-TabSell:CreateDropdown({
-    Name = "Pilih Rarity yang Dijual",
-    Options = {"Common", "Uncommon", "Rare", "Epic", "Legendary", "Mythic", "Divine", "Prismatic"},
-    CurrentOption = {},
-    MultipleOptions = true,
-    Flag = "D_Rarity",
-    Callback = function(Options) _G.Fikrah.SellRarities = Options end,
-})
-TabSell:CreateToggle({Name = "Enable Auto Sell by Rarity", Flag = "T_SellRarity", Callback = function(v) _G.Fikrah.AutoSellByRarity = v end})
-
-TabSell:CreateSection("Input Manual (Grup Khusus)")
-TabSell:CreateInput({Name = "Ketik Nama Unit Spesifik (Pisah Koma)", PlaceholderText = "Contoh: Mewing,Skibidi", RemoveTextAfterFocus = true, Callback = function(txt)
-    _G.Fikrah.SellNames = {}
-    for s in string.gmatch(txt, "[^,]+") do table.insert(_G.Fikrah.SellNames, s:gsub("^%s+",""):gsub("%s+$","")) end
-    notifyUI("Tersimpan", "Nama spesifik berhasil diatur.")
-end})
-TabSell:CreateToggle({Name = "Enable Auto Sell By Name", Flag = "T_SellName", Callback = function(v) _G.Fikrah.AutoSellByName = v end})
-
--- --- TAB: LEVEL & UPGRADE ---
-TabUp:CreateSection("Sistem Leveling Maksimal")
-TabUp:CreateToggle({Name = "Auto Upgrade Brainrot", Flag = "T_UpBrainrot", Callback = function(v) _G.Fikrah.AutoUpBrainrot = v end})
-TabUp:CreateToggle({Name = "Auto Upgrade Dadu (Dice)", Flag = "T_UpDice", Callback = function(v) _G.Fikrah.AutoUpDice = v end})
-TabUp:CreateToggle({Name = "Auto Beli Dadu", Flag = "T_BuyDice", Callback = function(v) _G.Fikrah.AutoBuyDice = v end})
-TabUp:CreateToggle({Name = "Auto Rebirth (Siklus Ulang)", Flag = "T_Rebirth", Callback = function(v) _G.Fikrah.AutoRebirth = v end})
-
--- --- TAB: TOWER & ARENA ---
-TabTower:CreateSection("Otomatisasi Medan Tempur")
-TabTower:CreateToggle({Name = "Auto Join Tower Queue", Flag = "T_JoinTower", Callback = function(v) _G.Fikrah.AutoJoinTower = v end})
-TabTower:CreateToggle({Name = "Auto Mix/Merge Unit di Arena", Flag = "T_MixTower", Callback = function(v) _G.Fikrah.AutoMixTower = v end})
-TabTower:CreateToggle({Name = "Auto Place Unit (Tebar Pasukan)", Flag = "T_PlaceTower", Callback = function(v) _G.Fikrah.AutoPlaceTower = v end})
-TabTower:CreateToggle({Name = "Auto Serang Boss (Boss Attack)", Flag = "T_Boss", Callback = function(v) _G.Fikrah.AutoBoss = v end})
-
--- --- TAB: EVENT & HADIAH ---
-TabEvent:CreateSection("Klaim Hadiah Massal")
-TabEvent:CreateToggle({Name = "Auto Claim All Quests (Terkait Modul)", Flag = "T_Quest", Callback = function(v) _G.Fikrah.AutoQuest = v end})
-TabEvent:CreateToggle({Name = "Auto Farming Candy Shop Event", Flag = "T_Candy", Callback = function(v) _G.Fikrah.AutoCandy = v end})
-TabEvent:CreateToggle({Name = "Auto Klaim Meteor Drop", Flag = "T_Meteor", Callback = function(v) _G.Fikrah.AutoMeteor = v end})
-TabEvent:CreateToggle({Name = "Auto Buka Lucky Block", Flag = "T_Lucky", Callback = function(v) _G.Fikrah.AutoLuckyBlock = v end})
-TabEvent:CreateToggle({Name = "Auto Gunakan Potion / Boost Item", Flag = "T_Boost", Callback = function(v) _G.Fikrah.AutoBoost = v end})
-
--- --- TAB: SISTEM & OPTIMASI ---
-TabSys:CreateSection("Keamanan & Debugging (Khusus Dev)")
-TabSys:CreateToggle({Name = "🕵️ Enable Remote Spy (Cetak di F9/Console)", Flag = "T_Spy", Callback = function(v) _G.Fikrah.SpyEnabled = v end})
-
-TabSys:CreateSection("Stabilitas Bot & Cloud Phone")
-TabSys:CreateToggle({
-    Name = "📉 Reduce CPU Extreme (Hapus Render 3D)",
-    Flag = "T_CPU",
-    Callback = function(v)
-        _G.Fikrah.ReduceCPU = v
-        RunService:Set3dRenderingEnabled(not v)
-        if v then
-            settings().Rendering.QualityLevel = "Level01"
-            game.Lighting.GlobalShadows = false
-            for _, obj in pairs(Workspace:GetDescendants()) do
-                if obj:IsA("BasePart") and not obj.Parent:FindFirstChild("Humanoid") then
-                    obj.Material = Enum.Material.SmoothPlastic
-                elseif obj:IsA("Decal") or obj:IsA("Texture") or obj:IsA("ParticleEmitter") then
-                    obj:Destroy()
-                end
-            end
-        end
-    end
-})
-TabSys:CreateToggle({Name = "🔄 Auto Reconnect (Tahan Bypass Error DC)", CurrentValue = true, Flag = "T_Reconnect", Callback = function(v) _G.Fikrah.AutoReconnect = v end})
-TabSys:CreateButton({Name = "🌐 Server Hop (Cari Server Sepi)", Callback = function()
-    local Servers = HttpService:JSONDecode(game:HttpGet("https://games.roblox.com/v1/games/"..game.PlaceId.."/servers/Public?sortOrder=Asc&limit=100")).data
-    for _, server in ipairs(Servers) do
-        if server.playing < server.maxPlayers and server.id ~= game.JobId then
-            TeleportService:TeleportToPlaceInstance(game.PlaceId, server.id, LocalPlayer)
-            break
-        end
-    end
-end})
-
--- ======================================================= --
--- 5. BACKGROUND LOOPS (INTI MESIN GAME)
--- ======================================================= --
-
--- Anti-AFK Original
-LocalPlayer.Idled:Connect(function()
-    VirtualUser:CaptureController()
-    VirtualUser:ClickButton2(Vector2.new())
-end)
-
--- Auto Reconnect Trigger
-game.CoreGui.RobloxPromptGui.promptOverlay.ChildAdded:Connect(function(child)
-    if _G.Fikrah.AutoReconnect and child.Name == "ErrorPrompt" then
-        task.wait(2)
-        TeleportService:Teleport(game.PlaceId, LocalPlayer)
-    end
-end)
-
--- Loop Cepat: Collect & Gacha
-task.spawn(function()
-    while task.wait(_G.Fikrah.CollectDelay) do
-        if _G.Fikrah.AutoCollect then
-            -- Panggil semua remote terkait uang seperti V30.4
-            safeFire("MoneyCollected") safeFire("RequestMoneyBuffState")
-            safeFire("ClaimCash") safeFire("CollectMoney") 
-            safeFire("ClaimMoney") safeFire("ClaimIncome")
-            
-            -- Magnet CFrame Detail
+-- Implementasi Toggle Auto Roll (Memicu Remotes game Dadu Brainrot)
+createToggle(pageAuto, "Auto Roll Dadu", function(state)
+    getgenv().AutoRoll = state
+    task.spawn(function()
+        while getgenv().AutoRoll do
             pcall(function()
-                if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-                    local root = LocalPlayer.Character.HumanoidRootPart
-                    local dropFolders = {Workspace:FindFirstChild("Bases"), Workspace:FindFirstChild("Plots"), Workspace:FindFirstChild("Drops"), Workspace}
-                    
-                    for _, folder in pairs(dropFolders) do
-                        if folder then
-                            for _, obj in pairs(folder:GetDescendants()) do
-                                if obj:IsA("BasePart") or obj:IsA("Model") then
-                                    local n = obj.Name:lower()
-                                    if n:find("cash") or n:find("money") or n:find("drop") or n:find("coin") or n:find("candy") then
-                                        local targetPart = obj:IsA("Model") and (obj.PrimaryPart or obj:FindFirstChildWhichIsA("BasePart")) or obj
-                                        if targetPart then
-                                            targetPart.CFrame = root.CFrame
-                                            firetouchinterest(root, targetPart, 0)
-                                            firetouchinterest(root, targetPart, 1)
-                                        end
-                                    end
-                                end
-                            end
-                        end
-                    end
+                -- Mengambil remote event roll jika tersedia di ReplicatedStorage
+                local remotes = ReplicatedStorage:FindFirstChild("Remotes") or ReplicatedStorage
+                if remotes:FindFirstChild("RollRequest") then
+                    remotes.RollRequest:FireServer()
                 end
             end)
+            task.wait(0.5)
         end
-        
-        if _G.Fikrah.AutoRoll then safeFire("RollRequest") end
-        if _G.Fikrah.InstantRoll and _G.Fikrah.AutoRoll then safeFire("RollRequest") end
-        if _G.Fikrah.AutoGrade then safeFire("RerollGradeRequest") end
-        if _G.Fikrah.AutoTrait then safeFire("SpinTraitRequest") end
-        if _G.Fikrah.AutoBoss then safeFire("BossAttack") end
+    end)
+end)
+
+createToggle(pageAuto, "Auto Claim Rebirth Reward", function(state)
+    getgenv().AutoRebirth = state
+    task.spawn(function()
+        while getgenv().AutoRebirth do
+            pcall(function()
+                local remotes = ReplicatedStorage:FindFirstChild("Remotes") or ReplicatedStorage
+                if remotes:FindFirstChild("RebirthRequest") then
+                    remotes.RebirthRequest:FireServer()
+                end
+            end)
+            task.wait(2)
+        end
+    end)
+end)
+
+-- =====================================================================
+-- 5. KONTEN HALAMAN 2: DUNGEON BOT
+-- =====================================================================
+createToggle(pageDungeon, "Auto Farm Dungeon (Tower / Sahur)", function(state)
+    getgenv().AutoDungeon = state
+    task.spawn(function()
+        while getgenv().AutoDungeon do
+            pcall(function()
+                local remotes = ReplicatedStorage:FindFirstChild("Remotes") or ReplicatedStorage
+                if remotes:FindFirstChild("DungeonRequest") then
+                    remotes.DungeonRequest:FireServer("StartBattle", "Sahur")
+                end
+            end)
+            task.wait(1)
+        end
+    end)
+end)
+
+-- =====================================================================
+-- 6. KONTEN HALAMAN 3: PROFIL & PEMUTAR LAGU INDO
+-- =====================================================================
+-- Label Info Profil User
+local ProfileCard = Instance.new("Frame")
+ProfileCard.Size = UDim2.new(0, 415, 0, 70)
+ProfileCard.BackgroundColor3 = Color3.fromRGB(28, 28, 40)
+ProfileCard.Parent = pageProfile
+
+local PCorner = Instance.new("UICorner")
+PCorner.CornerRadius = UDim.new(0, 8)
+PCorner.Parent = ProfileCard
+
+local AvatarImg = Instance.new("ImageLabel")
+AvatarImg.Size = UDim2.new(0, 50, 0, 50)
+AvatarImg.Position = UDim2.new(0, 10, 0, 10)
+AvatarImg.BackgroundTransparency = 1
+AvatarImg.Image = Players:GetUserThumbnailAsync(LocalPlayer.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size150x150)
+AvatarImg.Parent = ProfileCard
+
+local ACorner = Instance.new("UICorner")
+ACorner.CornerRadius = UDim.new(1, 0)
+ACorner.Parent = AvatarImg
+
+local NameLabel = Instance.new("TextLabel")
+NameLabel.Size = UDim2.new(0, 320, 0, 25)
+NameLabel.Position = UDim2.new(0, 75, 0, 12)
+NameLabel.BackgroundTransparency = 1
+NameLabel.Font = Enum.Font.GothamBold
+NameLabel.Text = "Player: " .. LocalPlayer.Name
+NameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+NameLabel.TextSize = 14
+NameLabel.TextXAlignment = Enum.TextXAlignment.Left
+NameLabel.Parent = ProfileCard
+
+local StatusLabel = Instance.new("TextLabel")
+StatusLabel.Size = UDim2.new(0, 320, 0, 20)
+StatusLabel.Position = UDim2.new(0, 75, 0, 35)
+StatusLabel.BackgroundTransparency = 1
+StatusLabel.Font = Enum.Font.Gotham
+StatusLabel.Text = "Status: Hub Active | Game: Dadu Brainrot!"
+StatusLabel.TextColor3 = Color3.fromRGB(120, 220, 140)
+StatusLabel.TextSize = 11
+StatusLabel.TextXAlignment = Enum.TextXAlignment.Left
+StatusLabel.Parent = ProfileCard
+
+-- Panel Pemutar Musik Indonesia
+local MusicPanel = Instance.new("Frame")
+MusicPanel.Size = UDim2.new(0, 415, 0, 110)
+MusicPanel.BackgroundColor3 = Color3.fromRGB(28, 28, 40)
+MusicPanel.Parent = pageProfile
+
+local MCorner = Instance.new("UICorner")
+MCorner.CornerRadius = UDim.new(0, 8)
+MCorner.Parent = MusicPanel
+
+local MusicTitle = Instance.new("TextLabel")
+MusicTitle.Size = UDim2.new(1, -20, 0, 30)
+MusicTitle.Position = UDim2.new(0, 10, 0, 5)
+MusicTitle.BackgroundTransparency = 1
+MusicTitle.Font = Enum.Font.GothamBold
+MusicTitle.Text = "🎵 Pemutar Musik: " .. Playlist[currentSongIndex].Name
+MusicTitle.TextColor3 = Color3.fromRGB(240, 200, 100)
+MusicTitle.TextSize = 12
+MusicTitle.TextXAlignment = Enum.TextXAlignment.Left
+MusicTitle.Parent = MusicPanel
+
+-- Tombol Kontrol Musik (Play/Pause/Next)
+local function createMusicBtn(text, posX, callback)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0, 120, 0, 30)
+    btn.Position = UDim2.new(0, posX, 0, 45)
+    btn.BackgroundColor3 = Color3.fromRGB(45, 45, 65)
+    btn.Font = Enum.Font.GothamMedium
+    btn.Text = text
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.TextSize = 11
+    btn.Parent = MusicPanel
+
+    local c = Instance.new("UICorner")
+    c.CornerRadius = UDim.new(0, 6)
+    c.Parent = btn
+
+    btn.MouseButton1Click:Connect(callback)
+end
+
+createMusicBtn("Play / Pause", 10, function()
+    if BackgroundMusic.IsPlaying then
+        BackgroundMusic:Pause()
+    else
+        BackgroundMusic:Resume()
     end
 end)
 
--- Loop Menengah: Manajemen, Sell, Tower
-task.spawn(function()
-    while task.wait(1.5) do
-        if _G.Fikrah.AutoEquipBest then safeFire("EquipBest") safeFire("EquipBestBattleSquadRequest") end
-        if _G.Fikrah.AutoLock then safeFire("ToggleLockRequest") end
-        
-        if _G.Fikrah.AutoSellUnder then safeFire("SetAutoSellUnderRequest", _G.Fikrah.SellThreshold, true) end
-        if _G.Fikrah.AutoSellJunk then safeFire("SellAllJunkRequest") safeFire("SellJunkUnits") end
-        
-        if _G.Fikrah.AutoSellByRarity and #_G.Fikrah.SellRarities > 0 then
-            for _, r in ipairs(_G.Fikrah.SellRarities) do 
-                safeFire("SellByRarity", r)
-                safeFire("SellBrainrotByRarity", r)
-            end
-        end
-        if _G.Fikrah.AutoSellByName and #_G.Fikrah.SellNames > 0 then
-            for _, n in ipairs(_G.Fikrah.SellNames) do 
-                safeFire("SellSpecificByName", n)
-                safeFire("SellUnitByName", n)
-            end
-        end
-
-        if _G.Fikrah.AutoJoinTower then safeFire("JoinTowerQueue") safeFire("RequestJoinTower") end
-        if _G.Fikrah.AutoMixTower then safeFire("MixTowerRequest") safeFire("MergeTowerUnits") end
-        if _G.Fikrah.AutoPlaceTower then safeFire("PlaceBrainrot") safeFire("SpawnTowerRequest") end
+createMusicBtn("Ganti Lagu (Next)", 140, function()
+    currentSongIndex = currentSongIndex + 1
+    if currentSongIndex > #Playlist then
+        currentSongIndex = 1
     end
+    BackgroundMusic.SoundId = Playlist[currentSongIndex].ID
+    BackgroundMusic:Play()
+    MusicTitle.Text = "🎵 Pemutar Musik: " .. Playlist[currentSongIndex].Name
 end)
 
--- Loop Lambat: Upgrade, Event, Item
-task.spawn(function()
-    while task.wait(3.0) do
-        if _G.Fikrah.AutoUpBrainrot then safeFire("UpgradeBrainrotRequest", _G.Fikrah.BrainrotMax) end
-        if _G.Fikrah.AutoUpDice then safeFire("UpgradeDiceRequest", _G.Fikrah.DiceMax) end
-        if _G.Fikrah.AutoBuyDice then safeFire("BuyDiceRequest") end
-        if _G.Fikrah.AutoRebirth then safeFire("RebirthRequest") end
-        
-        if _G.Fikrah.AutoMeteor then safeFire("MeteorClaimed") end
-        if _G.Fikrah.AutoLuckyBlock then safeFire("OpenLuckyBlocks", "LuckyBlock") end
-        if _G.Fikrah.AutoBoost then 
-            safeFire("UsePotionRequest") 
-            safeFire("ActivateBoostRequest", "Semua Item / Potion")
-            safeFire("ClaimActiveBoosts") 
-        end
-        
-        if _G.Fikrah.AutoQuest then 
-            safeFire("CollectAllQuests") 
-            safeFire("ClaimAllQuests") 
-            safeFire("CollectAllReward")
-            if GameData.Quest and type(GameData.Quest.GetActiveDailyQuests) == "function" then
-                pcall(function() for id, _ in pairs(GameData.Quest.GetActiveDailyQuests()) do safeFire("ClaimQuest", id) end end)
-            end
-        end
-
-        if _G.Fikrah.AutoCandy then 
-            if GameData.CandyShop and GameData.CandyShop.Start then pcall(function() GameData.CandyShop.Start() end) end
-            safeFire("StartCandyEvent") 
-            safeFire("ClaimCandyRewards") 
-        end
-    end
+createMusicBtn("Stop Musik", 270, function()
+    BackgroundMusic:Stop()
 end)
 
-Rayfield:LoadConfiguration()
+print("✅ Dadu Brainrot Hub berhasil dimuat dengan pemutar musik Indonesia!")
