@@ -1,14 +1,16 @@
 -- ==================================================================== --
--- 👑 FIKRAH HUB V30.4 - ULTIMATE CATEGORIZED & OPTIMIZED SYSTEM 👑 --
+-- 👑 FIKRAH HUB V30.4 - ULTIMATE CATEGORIZED & OPTIMIZED SYSTEM (UPDATED)
+-- Added: Custom tab, presets (Lite/Pro/Premium/Full Set), error notifications,
+--        explicit toggles for many remotes, save/load custom profiles.
 -- ==================================================================== --
 
-local successUI, Rayfield = pcall(function() 
-    return loadstring(game:HttpGet('https://sirius.menu/rayfield'))() 
+local successUI, Rayfield = pcall(function()
+    return loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 end)
 
-if not successUI or not Rayfield then 
-    task.wait(1) 
-    Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))() 
+if not successUI or not Rayfield then
+    task.wait(1)
+    Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 end
 
 local MarketplaceService = game:GetService("MarketplaceService")
@@ -17,22 +19,24 @@ local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
+local HttpService = game:GetService("HttpService")
+local StarterGui = game:GetService("StarterGui")
 
 local namaGameBeneran = "Dadu Brainrot!"
-pcall(function() 
-    namaGameBeneran = MarketplaceService:GetProductInfo(game.PlaceId).Name 
+pcall(function()
+    namaGameBeneran = MarketplaceService:GetProductInfo(game.PlaceId).Name
 end)
 
 local Window = Rayfield:CreateWindow({
     Name = "👑 Fikrah Hub Pro | " .. namaGameBeneran,
     LoadingTitle = "Memuat Fikrah Hub V30.4...",
     LoadingSubtitle = "By Fikrah - Clean Categorized UI",
-    ConfigurationSaving = { 
-        Enabled = true, 
-        FolderName = "FikrahHub_V30", 
-        FileName = LocalPlayer.Name 
+    ConfigurationSaving = {
+        Enabled = true,
+        FolderName = "FikrahHub_V30",
+        FileName = LocalPlayer.Name
     },
-    KeySystem = false, 
+    KeySystem = false,
     Keybind = Enum.KeyCode.RightControl
 })
 
@@ -104,11 +108,18 @@ _G.AntiAFK = true
 _G.AutoHop = false
 _G.SpyEnabled = false
 
--- PENCARIAN REMOTES UNIVERSAL
+-- CUSTOM FLAGS (for explicit remotes & notifications)
+_G.SetMusicEnabled = true
+_G.SetPerformanceAuto = false
+_G.SetPerformanceMode = "Default"
+
+-- ======================================================= --
+-- UTILITY: Safe Remote Finder / Fire / Notify / File Save --
+-- ======================================================= --
 local function getRemote(name)
     local found = nil
     for _, v in pairs(ReplicatedStorage:GetDescendants()) do
-        if v.Name:lower() == name:lower() and (v:IsA("RemoteEvent") or v:IsA("RemoteFunction")) then
+        if v.Name:lower() == tostring(name):lower() and (v:IsA("RemoteEvent") or v:IsA("RemoteFunction")) then
             found = v
             break
         end
@@ -119,18 +130,61 @@ end
 local function safeFire(remoteName, ...)
     local remote = getRemote(remoteName)
     if remote then
-        pcall(function(...)
+        local ok, err = pcall(function(...)
             if remote:IsA("RemoteEvent") then
                 remote:FireServer(...)
             elseif remote:IsA("RemoteFunction") then
                 remote:InvokeServer(...)
             end
         end, ...)
+        if not ok then
+            warn("[FikrahHub] safeFire error for " .. tostring(remoteName) .. ": " .. tostring(err))
+            pcall(function()
+                StarterGui:SetCore("SendNotification", {
+                    Title = "Fikrah Hub - Error",
+                    Text = "Remote '" .. tostring(remoteName) .. "' gagal dipanggil.",
+                    Duration = 4
+                })
+            end)
+        end
+    else
+        -- remote not found -> warn user
+        warn("[FikrahHub] remote not found: " .. tostring(remoteName))
+        pcall(function()
+            StarterGui:SetCore("SendNotification", {
+                Title = "Fikrah Hub - Missing Remote",
+                Text = "Remote '" .. tostring(remoteName) .. "' tidak ditemukan.",
+                Duration = 3
+            })
+        end)
     end
 end
 
+local function notifyUI(title, text, duration)
+    duration = duration or 3
+    pcall(function()
+        StarterGui:SetCore("SendNotification", {
+            Title = title or "Fikrah Hub",
+            Text = text or "",
+            Duration = duration,
+            Button1 = "OK"
+        })
+    end)
+end
+
+local function safeWarn(msg)
+    if msg then
+        warn("[Fikrah Hub] " .. tostring(msg))
+    end
+end
+
+local function isfile_wrapper(path)
+    local ok, res = pcall(function() return isfile(path) end)
+    return ok and res
+end
+
 -- ======================================================= --
--- FUNGSI LOGIKA UTAMA --
+-- FUNGSI LOGIKA UTAMA (existing helper actions)
 -- ======================================================= --
 local function performMoneyCollect()
     pcall(function()
@@ -140,7 +194,7 @@ local function performMoneyCollect()
         safeFire("CollectMoney")
         safeFire("ClaimMoney")
         safeFire("ClaimIncome")
-        
+
         local char = LocalPlayer.Character
         if char and char:FindFirstChild("HumanoidRootPart") then
             local root = char.HumanoidRootPart
@@ -257,7 +311,14 @@ TabUnit:CreateToggle({
 TabUnit:CreateToggle({Name = "🔒 Auto Lock / Kunci Unit Terbaik", Flag = "T_LockUnit", Callback = function(v) _G.AutoLockBestUnits = v if v then safeFire("ToggleLockRequest") end end})
 
 TabUnit:CreateSection("🗑️ Sistem Penjualan Unit (Sell)")
-TabUnit:CreateToggle({Name = "🗑️ Auto Sell Unit di Bawah Batas", Flag = "T_SellUnder", Callback = function(v) _G.AutoSellUnder = v safeFire("SetAutoSellUnderRequest", _G.SellThreshold, v) end})
+TabUnit:CreateToggle({
+    Name = "🗑️ Auto Sell Unit di Bawah Batas",
+    Flag = "T_SellUnder",
+    Callback = function(v)
+        _G.AutoSellUnder = v
+        safeFire("SetAutoSellUnderRequest", _G.SellThreshold, v)
+    end
+})
 TabUnit:CreateToggle({Name = "🗑️ Auto Sell All Junk (Sampah/Low Tier)", Flag = "T_SellJunk", Callback = function(v) _G.AutoSellAllJunk = v end})
 TabUnit:CreateButton({Name = "🗑️ Sell Unit Manual Sekarang", Callback = function() performAutoSell() end})
 
@@ -411,10 +472,440 @@ TabSystem:CreateToggle({
         end
     end
 })
-TabSystem:CreateToggle({Name = "👁️ Aktifkan Ultra Deep Spy (Cek F9)", CurrentValue = false, Callback = function(v) _G.SpyEnabled = v end})
+TabSystem:CreateToggle({Name = "👁️ Aktifkan Ultra Deep Spy (Cek F9)", CurrentValue = false, Flag = "T_Spy", Callback = function(v) _G.SpyEnabled = v end})
 
 -- ======================================================= --
--- LOOPS EKSEKUSI UTAMA (BACKGROUND) --
+-- TAB: CUSTOM / PRESETS / EXPLICIT OPTIONS / ERROR MONITOR
+-- ======================================================= --
+-- Helper: build/apply/save/load custom profile
+local function buildCustomProfile()
+    return {
+        -- roll/gacha
+        AutoRoll = _G.AutoRoll or false,
+        InstantRoll = _G.InstantRoll or false,
+        AutoRerollGrade = _G.AutoRerollGrade or false,
+        AutoRerollTrait = _G.AutoRerollTrait or false,
+        -- sell/inventory
+        AutoSellUnder = _G.AutoSellUnder or false,
+        AutoSellAllJunk = _G.AutoSellAllJunk or false,
+        AutoEquipBest = _G.AutoEquipBest or false,
+        AutoLockBestUnits = _G.AutoLockBestUnits or false,
+        -- money / collect
+        AutoCollectMoney = _G.AutoCollectMoney or false,
+        CollectDelay = _G.CollectDelay or 2.0,
+        -- upgrade/shop
+        AutoUpgradeBrainrot = _G.AutoUpgradeBrainrot or false,
+        BrainrotTargetLevel = _G.BrainrotTargetLevel or "Max (38+/Limit)",
+        AutoUpgradeDice = _G.AutoUpgradeDice or false,
+        DiceTargetLevel = _G.DiceTargetLevel or "Max (38+/Limit)",
+        AutoBuyDice = _G.AutoBuyDice or false,
+        AutoRebirth = _G.AutoRebirth or false,
+        -- tower / boss
+        AutoJoinTower = _G.AutoJoinTower or false,
+        AutoTower = _G.AutoTower or false,
+        AutoMixTower = _G.AutoMixTower or false,
+        AutoFightBoss = _G.AutoFightBoss or false,
+        AutoBossAttack = _G.AutoBossAttack or false,
+        -- boosts / events
+        AutoDetectBoosts = _G.AutoDetectBoosts or false,
+        SelectedBoostItem = _G.SelectedBoostItem or "Semua Item / Potion",
+        AutoClaimAllRewards = _G.AutoClaimAllRewards or false,
+        AutoMeteor = _G.AutoMeteor or false,
+        AutoLuckyBlock = _G.AutoLuckyBlock or false,
+        -- system
+        AntiAFK = _G.AntiAFK or true,
+        SpyEnabled = _G.SpyEnabled or false,
+        -- misc
+        SetMusicEnabled = _G.SetMusicEnabled or true,
+        SetPerformanceAuto = _G.SetPerformanceAuto or false,
+        SetPerformanceMode = _G.SetPerformanceMode or "Default"
+    }
+end
+
+local function applyCustomProfile(profile)
+    if type(profile) ~= "table" then
+        safeWarn("Custom profile invalid.")
+        notifyUI("❌ Error", "Custom profile invalid.", 3)
+        return false
+    end
+
+    -- apply values (with safe defaults)
+    _G.AutoRoll = profile.AutoRoll or false
+    _G.InstantRoll = profile.InstantRoll or false
+    _G.AutoRerollGrade = profile.AutoRerollGrade or false
+    _G.AutoRerollTrait = profile.AutoRerollTrait or false
+
+    _G.AutoSellUnder = profile.AutoSellUnder or false
+    _G.AutoSellAllJunk = profile.AutoSellAllJunk or false
+    _G.AutoEquipBest = profile.AutoEquipBest or false
+    _G.AutoLockBestUnits = profile.AutoLockBestUnits or false
+
+    _G.AutoCollectMoney = profile.AutoCollectMoney or false
+    _G.CollectDelay = profile.CollectDelay or 2.0
+
+    _G.AutoUpgradeBrainrot = profile.AutoUpgradeBrainrot or false
+    _G.BrainrotTargetLevel = profile.BrainrotTargetLevel or "Max (38+/Limit)"
+    _G.AutoUpgradeDice = profile.AutoUpgradeDice or false
+    _G.DiceTargetLevel = profile.DiceTargetLevel or "Max (38+/Limit)"
+    _G.AutoBuyDice = profile.AutoBuyDice or false
+    _G.AutoRebirth = profile.AutoRebirth or false
+
+    _G.AutoJoinTower = profile.AutoJoinTower or false
+    _G.AutoTower = profile.AutoTower or false
+    _G.AutoMixTower = profile.AutoMixTower or false
+    _G.AutoFightBoss = profile.AutoFightBoss or false
+    _G.AutoBossAttack = profile.AutoBossAttack or false
+
+    _G.AutoDetectBoosts = profile.AutoDetectBoosts or false
+    _G.SelectedBoostItem = profile.SelectedBoostItem or "Semua Item / Potion"
+    _G.AutoClaimAllRewards = profile.AutoClaimAllRewards or false
+    _G.AutoMeteor = profile.AutoMeteor or false
+    _G.AutoLuckyBlock = profile.AutoLuckyBlock or false
+
+    _G.AntiAFK = profile.AntiAFK ~= false
+    _G.SpyEnabled = profile.SpyEnabled or false
+    _G.SetMusicEnabled = profile.SetMusicEnabled or true
+    _G.SetPerformanceAuto = profile.SetPerformanceAuto or false
+    _G.SetPerformanceMode = profile.SetPerformanceMode or "Default"
+
+    -- Attempt to push some quick remote state updates where relevant
+    if _G.SetMusicEnabled ~= nil then
+        safeFire("SetMusicEnabled", _G.SetMusicEnabled)
+    end
+    if _G.SetPerformanceAuto ~= nil then
+        safeFire("SetPerformanceAuto", _G.SetPerformanceAuto)
+    end
+    if _G.SetPerformanceMode then
+        safeFire("SetPerformanceMode", _G.SetPerformanceMode)
+    end
+
+    notifyUI("✅ Applied", "Custom profile diterapkan.", 2.2)
+    return true
+end
+
+local function getActiveCustomCount()
+    local profile = buildCustomProfile()
+    local total = 0
+    for _, value in pairs(profile) do
+        if value == true then
+            total = total + 1
+        end
+    end
+    return total
+end
+
+local function saveCustomProfile(profile)
+    if not profile then
+        profile = buildCustomProfile()
+    end
+    local saveKey = "FikrahHub_CustomSet_" .. tostring(LocalPlayer.Name) .. ".json"
+    local ok, err = pcall(function()
+        writefile(saveKey, HttpService:JSONEncode({
+            saved = true,
+            profile = profile,
+            updatedAt = os.date("%Y-%m-%d %H:%M:%S")
+        }))
+    end)
+    if not ok then
+        safeWarn("Gagal menyimpan custom profile: " .. tostring(err))
+        notifyUI("❌ Error Save", "Gagal menyimpan custom profile.", 4)
+        return false
+    end
+    notifyUI("✅ Saved", "Custom profile berhasil disimpan.", 2.5)
+    return true
+end
+
+local function loadCustomProfile()
+    local saveKey = "FikrahHub_CustomSet_" .. tostring(LocalPlayer.Name) .. ".json"
+    if not isfile_wrapper(saveKey) then
+        return nil
+    end
+    local ok, raw = pcall(function() return readfile(saveKey) end)
+    if not ok or not raw then
+        safeWarn("Gagal membaca file profile custom.")
+        notifyUI("❌ Error Load", "Gagal membaca file profile custom.", 3)
+        return nil
+    end
+    local suc, data = pcall(function() return HttpService:JSONDecode(raw) end)
+    if not suc or type(data) ~= "table" then
+        safeWarn("Profile custom corrupt atau invalid JSON.")
+        notifyUI("❌ Error Load", "Profile custom corrupt.", 3)
+        return nil
+    end
+    return data.profile or nil
+end
+
+local function setCustomPreset(name)
+    local preset = {
+        Lite = {
+            AutoRoll = true,
+            InstantRoll = false,
+            AutoRerollGrade = false,
+            AutoRerollTrait = false,
+            AutoSellUnder = false,
+            AutoSellAllJunk = true,
+            AutoEquipBest = true,
+            AutoLockBestUnits = true,
+            AutoCollectMoney = true,
+            CollectDelay = 2.0,
+            AutoUpgradeBrainrot = true,
+            AutoUpgradeDice = false,
+            AutoBuyDice = false,
+            AutoRebirth = false,
+            AutoJoinTower = false,
+            AutoTower = false,
+            AutoMixTower = false,
+            AutoFightBoss = false,
+            AutoBossAttack = true,
+            AutoDetectBoosts = true,
+            SelectedBoostItem = "Semua Item / Potion",
+            AutoClaimAllRewards = false,
+            AutoMeteor = false,
+            AutoLuckyBlock = false,
+            AntiAFK = true,
+            SpyEnabled = false,
+            SetMusicEnabled = true
+        },
+        Pro = {
+            AutoRoll = true,
+            InstantRoll = true,
+            AutoRerollGrade = true,
+            AutoRerollTrait = true,
+            AutoSellUnder = true,
+            AutoSellAllJunk = true,
+            AutoEquipBest = true,
+            AutoLockBestUnits = true,
+            AutoCollectMoney = true,
+            CollectDelay = 1.5,
+            AutoUpgradeBrainrot = true,
+            AutoUpgradeDice = true,
+            AutoBuyDice = true,
+            AutoRebirth = false,
+            AutoJoinTower = true,
+            AutoTower = true,
+            AutoMixTower = true,
+            AutoFightBoss = true,
+            AutoBossAttack = true,
+            AutoDetectBoosts = true,
+            SelectedBoostItem = "Semua Item / Potion",
+            AutoClaimAllRewards = true,
+            AutoMeteor = true,
+            AutoLuckyBlock = true,
+            AntiAFK = true,
+            SpyEnabled = false,
+            SetMusicEnabled = false,
+            SetPerformanceAuto = true
+        },
+        Premium = {
+            AutoRoll = true,
+            InstantRoll = true,
+            AutoRerollGrade = true,
+            AutoRerollTrait = true,
+            AutoSellUnder = true,
+            AutoSellAllJunk = true,
+            AutoEquipBest = true,
+            AutoLockBestUnits = true,
+            AutoCollectMoney = true,
+            CollectDelay = 1.0,
+            AutoUpgradeBrainrot = true,
+            AutoUpgradeDice = true,
+            AutoBuyDice = true,
+            AutoRebirth = true,
+            AutoJoinTower = true,
+            AutoTower = true,
+            AutoMixTower = true,
+            AutoFightBoss = true,
+            AutoBossAttack = true,
+            AutoDetectBoosts = true,
+            SelectedBoostItem = "Semua Item / Potion",
+            AutoClaimAllRewards = true,
+            AutoMeteor = true,
+            AutoLuckyBlock = true,
+            AntiAFK = true,
+            SpyEnabled = false,
+            SetMusicEnabled = false,
+            SetPerformanceAuto = true
+        },
+        ["Full Set"] = {
+            AutoRoll = true,
+            InstantRoll = true,
+            AutoRerollGrade = true,
+            AutoRerollTrait = true,
+            AutoSellUnder = true,
+            AutoSellAllJunk = true,
+            AutoEquipBest = true,
+            AutoLockBestUnits = true,
+            AutoCollectMoney = true,
+            CollectDelay = 0.6,
+            AutoUpgradeBrainrot = true,
+            AutoUpgradeDice = true,
+            AutoBuyDice = true,
+            AutoRebirth = true,
+            AutoJoinTower = true,
+            AutoTower = true,
+            AutoMixTower = true,
+            AutoFightBoss = true,
+            AutoBossAttack = true,
+            AutoDetectBoosts = true,
+            SelectedBoostItem = "Semua Item / Potion",
+            AutoClaimAllRewards = true,
+            AutoMeteor = true,
+            AutoLuckyBlock = true,
+            AntiAFK = true,
+            SpyEnabled = true,
+            SetMusicEnabled = false,
+            SetPerformanceAuto = true
+        }
+    }
+    return preset[name]
+end
+
+local TabCustom = Window:CreateTab("💎 Custom", 4483345998)
+
+-- Presets
+TabCustom:CreateSection("🧩 Custom Preset")
+TabCustom:CreateDropdown({
+    Name = "🎯 Pilih Preset",
+    Options = {"Lite", "Pro", "Premium", "Full Set"},
+    CurrentOption = "Lite",
+    Flag = "CustomPreset",
+    Callback = function(option)
+        local preset = setCustomPreset(option)
+        if preset then
+            applyCustomProfile(preset)
+            notifyUI("✅ Preset Applied", "Preset " .. option .. " berhasil diterapkan.", 2.5)
+        else
+            notifyUI("❌ Error", "Preset tidak ditemukan.", 2.5)
+        end
+    end
+})
+
+TabCustom:CreateButton({
+    Name = "⚡ Apply Full Set",
+    Callback = function()
+        local full = setCustomPreset("Full Set")
+        if full and applyCustomProfile(full) then
+            notifyUI("✅ Full Set Activated", "Semua fitur custom full set aktif.", 2.5)
+        end
+    end
+})
+
+TabCustom:CreateButton({
+    Name = "🧹 Reset All Custom",
+    Callback = function()
+        local profile = {
+            AutoRoll = false, InstantRoll = false, AutoRerollGrade = false, AutoRerollTrait = false,
+            AutoSellUnder = false, AutoSellAllJunk = false, AutoEquipBest = false, AutoLockBestUnits = false,
+            AutoCollectMoney = false, CollectDelay = 2.0,
+            AutoUpgradeBrainrot = false, BrainrotTargetLevel = "Max (38+/Limit)",
+            AutoUpgradeDice = false, DiceTargetLevel = "Max (38+/Limit)",
+            AutoBuyDice = false, AutoRebirth = false,
+            AutoJoinTower = false, AutoTower = false, AutoMixTower = false,
+            AutoFightBoss = false, AutoBossAttack = false,
+            AutoDetectBoosts = false, SelectedBoostItem = "Semua Item / Potion",
+            AutoClaimAllRewards = false, AutoMeteor = false, AutoLuckyBlock = false,
+            AntiAFK = true, SpyEnabled = false, SetMusicEnabled = true, SetPerformanceAuto = false
+        }
+        applyCustomProfile(profile)
+        notifyUI("✅ Reset", "Semua custom set di-reset.", 2.5)
+    end
+})
+
+TabCustom:CreateButton({
+    Name = "💾 Save Profile",
+    Callback = function()
+        local profile = buildCustomProfile()
+        saveCustomProfile(profile)
+    end
+})
+
+TabCustom:CreateButton({
+    Name = "📂 Load Profile",
+    Callback = function()
+        local loaded = loadCustomProfile()
+        if loaded then
+            applyCustomProfile(loaded)
+            notifyUI("✅ Loaded", "Custom profile berhasil dimuat.", 2.5)
+        else
+            notifyUI("⚠️ No Saved Profile", "Belum ada saved custom profile.", 3)
+        end
+    end
+})
+
+-- Status & monitor
+TabCustom:CreateSection("📊 Status & Error Monitor")
+TabCustom:CreateButton({
+    Name = "🔎 Check Active Count",
+    Callback = function()
+        local active = getActiveCustomCount()
+        notifyUI("📊 Status", "Aktif: " .. active .. " fitur.", 2.2)
+    end
+})
+
+TabCustom:CreateButton({
+    Name = "⚠️ Test Error Notification",
+    Callback = function()
+        safeWarn("Simulasi notifikasi error untuk custom UI.")
+        notifyUI("⚠️ Error", "Contoh error: remote tidak ditemukan atau custom set gagal.", 3)
+    end
+})
+
+-- Explicit category toggles inside Custom tab for quick control
+TabCustom:CreateSection("🎲 Roll & Gacha (Custom)")
+TabCustom:CreateToggle({Name = "⚡ Auto Roll", Flag = "C_AutoRoll", Callback = function(v) _G.AutoRoll = v safeFire("AutoRollState", v) end})
+TabCustom:CreateToggle({Name = "🚀 Instant Roll", Flag = "C_Instant", Callback = function(v) _G.InstantRoll = v end})
+TabCustom:CreateToggle({Name = "✨ Reroll Grade", Flag = "C_RerollGrade", Callback = function(v) _G.AutoRerollGrade = v end})
+TabCustom:CreateToggle({Name = "🌀 Reroll Trait", Flag = "C_RerollTrait", Callback = function(v) _G.AutoRerollTrait = v end})
+
+TabCustom:CreateSection("🗃️ Sell / Inventory (Custom)")
+TabCustom:CreateToggle({Name = "🗑️ Auto Sell Under Threshold", Flag = "C_SellUnder", Callback = function(v) _G.AutoSellUnder = v safeFire("SetAutoSellUnderRequest", _G.SellThreshold, v) end})
+TabCustom:CreateToggle({Name = "🗑️ Auto Sell All Junk", Flag = "C_SellJunk", Callback = function(v) _G.AutoSellAllJunk = v end})
+TabCustom:CreateToggle({Name = "👕 Auto Equip Best", Flag = "C_EquipBest", Callback = function(v) _G.AutoEquipBest = v if v then safeFire("EquipBest") end end})
+TabCustom:CreateToggle({Name = "🔒 Auto Lock Best", Flag = "C_Lock", Callback = function(v) _G.AutoLockBestUnits = v if v then safeFire("ToggleLockRequest") end end})
+
+TabCustom:CreateSection("📈 Upgrade & Shop")
+TabCustom:CreateToggle({Name = "📈 Auto Upgrade Brainrot", Flag = "C_UpBrain", Callback = function(v) _G.AutoUpgradeBrainrot = v end})
+TabCustom:CreateToggle({Name = "📈 Auto Upgrade Dice", Flag = "C_UpDice", Callback = function(v) _G.AutoUpgradeDice = v end})
+TabCustom:CreateToggle({Name = "🎲 Auto Buy Dice", Flag = "C_BuyDice", Callback = function(v) _G.AutoBuyDice = v end})
+TabCustom:CreateToggle({Name = "🔄 Auto Rebirth", Flag = "C_Rebirth", Callback = function(v) _G.AutoRebirth = v end})
+
+TabCustom:CreateSection("🗼 Tower & Boss")
+TabCustom:CreateToggle({Name = "🚀 Auto Join Tower", Flag = "C_JoinTower", Callback = function(v) _G.AutoJoinTower = v end})
+TabCustom:CreateToggle({Name = "🗼 Auto Tower Ops", Flag = "C_TowerOps", Callback = function(v) _G.AutoTower = v end})
+TabCustom:CreateToggle({Name = "👹 Auto Fight Boss", Flag = "C_AutoFightBoss", Callback = function(v) _G.AutoFightBoss = v safeFire("SetAutoFightBoss", v) end})
+TabCustom:CreateToggle({Name = "💥 Auto Boss Attack", Flag = "C_BossAtk", Callback = function(v) _G.AutoBossAttack = v end})
+
+TabCustom:CreateSection("🧪 Boost & Events")
+TabCustom:CreateToggle({Name = "🧪 Auto Detect Boosts", Flag = "C_DetectBoost", Callback = function(v) _G.AutoDetectBoosts = v if v then task.spawn(function() while _G.AutoDetectBoosts do handleBoostItemsDetection() task.wait(5) end end) end end})
+TabCustom:CreateDropdown({Name = "📦 Boost Item", Options = {"Semua Item / Potion", "Luck Potion (Keberuntungan)", "Speed Potion (Kecepatan)", "Damage Boost"}, CurrentOption = _G.SelectedBoostItem, Flag = "C_BoostSelect", Callback = function(option) _G.SelectedBoostItem = option end})
+TabCustom:CreateToggle({Name = "🎁 Auto Claim Events", Flag = "C_ClaimAllEvents", Callback = function(v) _G.AutoClaimAllRewards = v end})
+
+TabCustom:CreateSection("⚙️ System & Telemetry")
+TabCustom:CreateToggle({Name = "🛡️ AntiAFK", Flag = "C_AntiAFK", Callback = function(v) _G.AntiAFK = v end})
+TabCustom:CreateToggle({Name = "🔔 Enable Notifications For Errors", Flag = "C_ErrorNotif", Callback = function(v) _G.EnableErrorNotif = v end})
+TabCustom:CreateToggle({Name = "🔇 Music Enabled", Flag = "C_Music", CurrentValue = _G.SetMusicEnabled, Callback = function(v) _G.SetMusicEnabled = v safeFire("SetMusicEnabled", v) end})
+TabCustom:CreateToggle({Name = "⚡ Performance Auto", Flag = "C_PerfAuto", CurrentValue = _G.SetPerformanceAuto, Callback = function(v) _G.SetPerformanceAuto = v safeFire("SetPerformanceAuto", v) end})
+
+TabCustom:CreateSection("🧩 Quick Actions & Debug")
+TabCustom:CreateButton({Name = "🔁 Apply Current Profile", Callback = function() applyCustomProfile(buildCustomProfile()) end})
+TabCustom:CreateButton({Name = "🧾 Print Current Profile (Console)", Callback = function() print(HttpService:JSONEncode(buildCustomProfile())) notifyUI("Printed", "Profile dicetak di console.", 2) end})
+TabCustom:CreateButton({Name = "🛠️ Run Quick Remote Check", Callback = function()
+    -- quick check for important remotes and report missing ones
+    local checkList = {"RollRequest","AutoRollState","SetAutoSellUnderRequest","EquipBest","ClaimAllQuests","SetMusicEnabled","SetPerformanceAuto"}
+    local missing = {}
+    for _, name in pairs(checkList) do
+        if not getRemote(name) then table.insert(missing, name) end
+    end
+    if #missing > 0 then
+        notifyUI("⚠️ Missing Remotes", table.concat(missing, ", "), 4)
+        warn("[FikrahHub] Missing remotes: " .. table.concat(missing, ", "))
+    else
+        notifyUI("✅ Remotes OK", "Semua remote penting terdeteksi.", 2.5)
+    end
+end})
+
+-- ======================================================= --
+-- LOOPS EKSEKUSI UTAMA (BACKGROUND) (unchanged but kept consistent)
 -- ======================================================= --
 task.spawn(function()
     while task.wait(0.3) do
@@ -460,4 +951,13 @@ task.spawn(function()
     end
 end)
 
+-- Auto-apply saved custom profile on load (if exists)
 Rayfield:LoadConfiguration()
+local savedCustom = loadCustomProfile()
+if savedCustom then
+    pcall(function()
+        applyCustomProfile(savedCustom)
+    end)
+end
+
+-- End of file
