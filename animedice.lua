@@ -1,21 +1,28 @@
 -- =====================================================================
--- 👑 MOFENKHUB V44 — DELTA/MOBILE OPTIMIZED
--- Game: Dadu Brainrot! | UI Mandiri (Tanpa Spy/Scanner agar tidak Error)
+-- 👑 MOFENKHUB V45 — FAILSAFE UI EDITION (DELTA/ANDROID)
+-- Game: Dadu Brainrot! | Anti-Invisible UI
 -- =====================================================================
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
-local VirtualUser = game:GetService("VirtualUser")
-local CoreGui = game:GetService("CoreGui")
 local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 
-pcall(function()
-    if CoreGui:FindFirstChild("MofenkHubDelta") then
-        CoreGui.MofenkHubDelta:Destroy()
-    end
-end)
+-- Sistem Keamanan UI (Memaksa UI Muncul di Delta)
+local UI_Target
+pcall(function() UI_Target = gethui() end)
+if not UI_Target then
+    pcall(function() UI_Target = game:GetService("CoreGui") end)
+end
+if not UI_Target or (typeof(UI_Target) == "Instance" and not pcall(function() return UI_Target.Name end)) then
+    UI_Target = LocalPlayer:WaitForChild("PlayerGui")
+end
+
+-- Hapus UI lama jika ada
+for _, v in pairs(UI_Target:GetChildren()) do
+    if v.Name == "MofenkHubFailsafe" then v:Destroy() end
+end
 
 _G.Mofenk = {
     AutoCollect = false, AutoRoll = false, AutoDungeon = false, AutoShop = false,
@@ -44,8 +51,10 @@ end
 
 -- ================== UI SETUP ==================
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "MofenkHubDelta"
-ScreenGui.Parent = CoreGui
+ScreenGui.Name = "MofenkHubFailsafe"
+ScreenGui.ResetOnSpawn = false -- Penting agar UI tidak hilang saat mati
+ScreenGui.Parent = UI_Target
+
 local MainFrame = Instance.new("Frame", ScreenGui)
 MainFrame.Size = UDim2.new(0, 480, 0, 320)
 MainFrame.Position = UDim2.new(0.5, -240, 0.5, -160)
@@ -60,7 +69,7 @@ Title.Size = UDim2.new(1, -50, 1, 0)
 Title.Position = UDim2.new(0, 15, 0, 0)
 Title.BackgroundTransparency = 1
 Title.Font = Enum.Font.GothamBold
-Title.Text = "👑 MofenkHub V44 — Delta Edition"
+Title.Text = "👑 MofenkHub V45 — Failsafe UI"
 Title.TextColor3 = Color3.fromRGB(180, 160, 255)
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
@@ -164,4 +173,4 @@ task.spawn(function()
     end
 end)
 
-notifyUI("MofenkHub V44 (Delta) Berhasil Dimuat!")
+notifyUI("MofenkHub V45 Berhasil Dimuat!")
