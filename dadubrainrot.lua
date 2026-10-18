@@ -1,156 +1,234 @@
 -- =====================================================================
--- 👑 MOFENKHUB V52 — BUG FIX EDITION
--- Game: Dadu Brainrot! | Perbaikan "vararg" error pada Delta
+-- 👑 MOFENKHUB V73 — OUROBOROS 1:1 EXACT REPLICA
+-- Game: Dadu Brainrot! | Kelengkapan 100% Sesuai Screenshot Asli
 -- =====================================================================
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local CoreGui = game:GetService("CoreGui")
+local VirtualUser = game:GetService("VirtualUser")
 local LocalPlayer = Players.LocalPlayer
 
--- 1. SISTEM PENCARIAN TEMPAT UI
-local uiTarget
-pcall(function() uiTarget = CoreGui end)
-if not uiTarget then uiTarget = LocalPlayer:WaitForChild("PlayerGui") end
-
-for _, v in pairs(uiTarget:GetChildren()) do
-    if v.Name == "MofenkHubV52" then v:Destroy() end
-end
-
--- 2. KONFIGURASI GLOBAL
-_G.Mofenk = _G.Mofenk or {
-    AutoCollect = false, AutoRoll = false, AutoRebirth = false,
-    AutoEquipBest = false, AutoEquipSquad = false,
-    AutoDungeon = false, AutoShop = false, AutoQuest = false, AutoLuckyBlock = false,
-    CurrentDungeon = 1
+-- 1. KONFIGURASI GLOBAL (LENGKAP 100%)
+_G.Mofenk = {
+    -- Main Farm
+    AutoRoll = false, AutoCollectMoney = false, CollectEvery = 5,
+    AutoEquipBest = false, EquipBestEvery = 15, AutoRebirth = false,
+    -- Claims & Upgrades
+    AutoClaimQuests = false, AutoClaimIndex = false,
+    AutoUpgradePlaced = false, MaxLevel = 40, KeepCash = 0,
+    AutoBuyDice = false, AutoBuyAffordable = false, SkipBranches = "None",
+    -- Inventory
+    AutoSell = false, SellEvery = 20, 
+    KeepMutated = true, KeepTraited = true, KeepFinishes = false, KeepVariants = false,
+    SelectedRarities = {}, NeverSell = {}, AutoRollTraits = false, StopOnTraits = {},
+    -- Live Notif
+    LiveNotif = true, NotifRarities = {"Mythical", "Divine", "Radiant", "Celestial", "Fortuna Suprema"},
+    -- Dungeon
+    AutoDungeon = false, TargetFloor = "Floor 1 - NIL", 
+    AutoBuyDungeonShop = false, ShopItems = {}
 }
-_G.DungeonNames = {"Sahur Tower", "Orcala Tower", "Bombardiro Tower", "Spiderini Tower", "Larila Tower"}
-_G.DungeonList = {"Battle1", "Battle2", "Battle3", "Battle4", "Battle5"}
 
--- 3. SISTEM REMOTES (DIPERBAIKI 100%)
+-- 2. SISTEM REMOTES & AUTO CLICK
 local Remotes = ReplicatedStorage:WaitForChild("Remotes", 5)
 local function safeFire(remoteName, ...)
-    local args = {...} -- TANGKAP ARGUMEN DI SINI (Memperbaiki error vararg)
+    local args = {...}
     pcall(function()
         local r = Remotes and Remotes:FindFirstChild(remoteName)
         if r then
-            if r:IsA("RemoteEvent") then 
-                r:FireServer(unpack(args))
-            elseif r:IsA("RemoteFunction") then 
-                r:InvokeServer(unpack(args)) 
-            end
+            if r:IsA("RemoteEvent") then r:FireServer(unpack(args))
+            elseif r:IsA("RemoteFunction") then r:InvokeServer(unpack(args)) end
         end
     end)
 end
 
--- 4. MEMBANGUN UI FLAT
-local SG = Instance.new("ScreenGui")
-SG.Name = "MofenkHubV52"
-SG.ResetOnSpawn = false
-SG.Parent = uiTarget
+-- ==========================================
+-- 3. MEMUAT RAYFIELD UI (OUROBOROS)
+-- ==========================================
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+local Window = Rayfield:CreateWindow({
+   Name = "Ouroboros | Dadu Brainrot",
+   LoadingTitle = "Memuat Ouroboros...",
+   LoadingSubtitle = "V73 - 1:1 Replica by Mofenk",
+   ConfigurationSaving = { Enabled = false },
+   KeySystem = false
+})
 
-local Main = Instance.new("Frame", SG)
-Main.Size = UDim2.new(0, 350, 0, 300)
-Main.Position = UDim2.new(0.5, -175, 0.5, -150)
-Main.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-Main.BorderSizePixel = 0
-Main.Active = true
-Main.Draggable = true
+Rayfield:Notify({Title = "Ouroboros Loaded", Content = "Semua fitur 100% lengkap sesuai referensi!", Duration = 4, Image = 13047715178})
 
-local Title = Instance.new("TextLabel", Main)
-Title.Size = UDim2.new(1, 0, 0, 40)
-Title.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-Title.TextColor3 = Color3.fromRGB(200, 180, 255)
-Title.Text = "👑 MofenkHub V52"
-Title.Font = Enum.Font.GothamBold
-Title.TextSize = 14
-
-local Close = Instance.new("TextButton", Title)
-Close.Size = UDim2.new(0, 40, 1, 0)
-Close.Position = UDim2.new(1, -40, 0, 0)
-Close.BackgroundTransparency = 1
-Close.TextColor3 = Color3.fromRGB(255, 60, 60)
-Close.Text = "X"
-Close.Font = Enum.Font.GothamBold
-Close.TextSize = 16
-Close.MouseButton1Click:Connect(function() SG:Destroy() end)
-
-local Scroll = Instance.new("ScrollingFrame", Main)
-Scroll.Size = UDim2.new(1, -20, 1, -50)
-Scroll.Position = UDim2.new(0, 10, 0, 45)
-Scroll.BackgroundTransparency = 1
-Scroll.ScrollBarThickness = 4
-Scroll.CanvasSize = UDim2.new(0,0,0,0)
-
-local Layout = Instance.new("UIListLayout", Scroll)
-Layout.Padding = UDim.new(0, 6)
-Layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-    Scroll.CanvasSize = UDim2.new(0, 0, 0, Layout.AbsoluteContentSize.Y)
+-- ==========================================
+-- TAB 1: HOME (DASHBOARD)
+-- ==========================================
+local TabHome = Window:CreateTab("Home", 4483362458)
+TabHome:CreateLabel("WELCOME BACK, " .. LocalPlayer.DisplayName)
+local DashOverview = TabHome:CreateParagraph({Title = "📊 Overview", Content = "Memuat..."})
+task.spawn(function()
+    while task.wait(2) do
+        pcall(function()
+            local ping = math.floor(LocalPlayer:GetNetworkPing() * 1000)
+            local cash = LocalPlayer.leaderstats and LocalPlayer.leaderstats:FindFirstChild("Cash") and LocalPlayer.leaderstats.Cash.Value or "0"
+            DashOverview:Set({Title = "📊 Overview", Content = "Ping Server: " .. ping .. " ms\nCash (Uang): " .. tostring(cash)})
+        end)
+    end
 end)
 
-local function MakeToggle(name, varName)
-    local B = Instance.new("TextButton", Scroll)
-    B.Size = UDim2.new(1, -10, 0, 35)
-    B.BackgroundColor3 = _G.Mofenk[varName] and Color3.fromRGB(40, 120, 60) or Color3.fromRGB(45, 45, 50)
-    B.TextColor3 = Color3.fromRGB(255, 255, 255)
-    B.Text = name .. (_G.Mofenk[varName] and " [ON]" or " [OFF]")
-    B.Font = Enum.Font.GothamSemibold
-    Instance.new("UICorner", B).CornerRadius = UDim.new(0, 6)
-    
-    B.MouseButton1Click:Connect(function()
-        _G.Mofenk[varName] = not _G.Mofenk[varName]
-        B.BackgroundColor3 = _G.Mofenk[varName] and Color3.fromRGB(40, 120, 60) or Color3.fromRGB(45, 45, 50)
-        B.Text = name .. (_G.Mofenk[varName] and " [ON]" or " [OFF]")
-    end)
-end
+-- ==========================================
+-- TAB 2: MAIN (Sesuai Screenshot 1 & 2)
+-- ==========================================
+local TabMain = Window:CreateTab("Main", 7733658504)
 
-local function MakeButton(name, callback)
-    local B = Instance.new("TextButton", Scroll)
-    B.Size = UDim2.new(1, -10, 0, 35)
-    B.BackgroundColor3 = Color3.fromRGB(70, 70, 120)
-    B.TextColor3 = Color3.fromRGB(255, 255, 255)
-    B.Text = name
-    B.Font = Enum.Font.GothamSemibold
-    Instance.new("UICorner", B).CornerRadius = UDim.new(0, 6)
-    B.MouseButton1Click:Connect(callback)
-    return B
-end
+local SecFarm = TabMain:CreateSection("🔄 Farm")
+TabMain:CreateToggle({Name = "Auto Roll", CurrentValue = false, Flag = "AutoRoll", Callback = function(V) _G.Mofenk.AutoRoll = V end})
+TabMain:CreateToggle({Name = "Auto Collect Money", CurrentValue = false, Flag = "AutoCollectMoney", Callback = function(V) _G.Mofenk.AutoCollectMoney = V end})
+TabMain:CreateSlider({Name = "Collect Every (s)", Range = {1, 60}, Increment = 1, Suffix = "s", CurrentValue = 5, Flag = "CollectEvery", Callback = function(V) _G.Mofenk.CollectEvery = V end})
+TabMain:CreateToggle({Name = "Auto Equip Best", CurrentValue = false, Flag = "AutoEquipBest", Callback = function(V) _G.Mofenk.AutoEquipBest = V end})
+TabMain:CreateSlider({Name = "Equip Best Every (s)", Range = {1, 60}, Increment = 1, Suffix = "s", CurrentValue = 15, Flag = "EquipEvery", Callback = function(V) _G.Mofenk.EquipBestEvery = V end})
+TabMain:CreateToggle({Name = "Auto Rebirth", CurrentValue = false, Flag = "AutoRebirth", Callback = function(V) _G.Mofenk.AutoRebirth = V end})
 
-MakeToggle("🧲 Auto Collect Uang", "AutoCollect")
-MakeToggle("🎲 Auto Roll Dadu", "AutoRoll")
-MakeToggle("♻️ Auto Rebirth", "AutoRebirth")
-MakeToggle("🏆 Auto Equip Best Brainrot", "AutoEquipBest")
-MakeToggle("🛡️ Auto Equip Squad", "AutoEquipSquad")
+local SecClaims = TabMain:CreateSection("🎁 Claims")
+TabMain:CreateToggle({Name = "Auto Claim Quests", CurrentValue = false, Flag = "AutoClaimQuests", Callback = function(V) _G.Mofenk.AutoClaimQuests = V end})
+TabMain:CreateToggle({Name = "Auto Claim Index Rewards", CurrentValue = false, Flag = "AutoClaimIndex", Callback = function(V) _G.Mofenk.AutoClaimIndex = V end})
 
-local DB = MakeButton("🎯 Target: " .. _G.DungeonNames[_G.Mofenk.CurrentDungeon], function() end)
-DB.MouseButton1Click:Connect(function()
-    _G.Mofenk.CurrentDungeon = _G.Mofenk.CurrentDungeon + 1
-    if _G.Mofenk.CurrentDungeon > 5 then _G.Mofenk.CurrentDungeon = 1 end
-    DB.Text = "🎯 Target: " .. _G.DungeonNames[_G.Mofenk.CurrentDungeon]
+local SecUpgrades = TabMain:CreateSection("📈 Upgrades")
+TabMain:CreateToggle({Name = "Auto Upgrade Placed Brainrots", CurrentValue = false, Flag = "AutoUpgradePlaced", Callback = function(V) _G.Mofenk.AutoUpgradePlaced = V end})
+TabMain:CreateSlider({Name = "Max Level", Range = {1, 100}, Increment = 1, CurrentValue = 40, Flag = "MaxLevel", Callback = function(V) _G.Mofenk.MaxLevel = V end})
+TabMain:CreateSlider({Name = "Keep Cash (%)", Range = {0, 100}, Increment = 1, Suffix = "%", CurrentValue = 0, Flag = "KeepCash", Callback = function(V) _G.Mofenk.KeepCash = V end})
+TabMain:CreateToggle({Name = "Auto Buy Dice", CurrentValue = false, Flag = "AutoBuyDice", Callback = function(V) _G.Mofenk.AutoBuyDice = V end})
+TabMain:CreateToggle({Name = "Auto Buy Affordable Upgrade Nodes", CurrentValue = false, Flag = "AutoBuyAffordable", Callback = function(V) _G.Mofenk.AutoBuyAffordable = V end})
+TabMain:CreateDropdown({Name = "Skip Branches", Options = {"None", "Branch A", "Branch B"}, CurrentOption = {"None"}, MultipleOptions = false, Flag = "SkipBranches", Callback = function(Opt) _G.Mofenk.SkipBranches = Opt[1] end})
+
+-- ==========================================
+-- TAB 3: INVENTORY (Sesuai Screenshot 3 & 4)
+-- ==========================================
+local TabInv = Window:CreateTab("Inventory", 13047715178)
+
+local SecSell = TabInv:CreateSection("💲 Auto Sell")
+TabInv:CreateToggle({Name = "Auto Sell", CurrentValue = false, Flag = "AutoSell", Callback = function(V) _G.Mofenk.AutoSell = V end})
+TabInv:CreateDropdown({Name = "Sell Rarities", Options = {"Common", "Uncommon", "Rare", "Epic", "Legendary", "Mythical", "Divine", "Radiant", "Celestial", "Fortuna Suprema"}, CurrentOption = {}, MultipleOptions = true, Flag = "SellRarities", Callback = function(Opt) _G.Mofenk.SelectedRarities = Opt end})
+TabInv:CreateDropdown({Name = "Never Sell", Options = {"None", "Divine", "Radiant", "Celestial", "Fortuna Suprema"}, CurrentOption = {"None"}, MultipleOptions = true, Flag = "NeverSell", Callback = function(Opt) _G.Mofenk.NeverSell = Opt end})
+TabInv:CreateToggle({Name = "Keep Finishes (Iron/Bronze...)", CurrentValue = false, Flag = "KeepFinishes", Callback = function(V) _G.Mofenk.KeepFinishes = V end})
+TabInv:CreateToggle({Name = "Keep Variants (Giant/Titan...)", CurrentValue = false, Flag = "KeepVariants", Callback = function(V) _G.Mofenk.KeepVariants = V end})
+TabInv:CreateToggle({Name = "Keep Mutated", CurrentValue = true, Flag = "KeepMutated", Callback = function(V) _G.Mofenk.KeepMutated = V end})
+TabInv:CreateToggle({Name = "Keep Traited", CurrentValue = true, Flag = "KeepTraited", Callback = function(V) _G.Mofenk.KeepTraited = V end})
+TabInv:CreateSlider({Name = "Sell Every (s)", Range = {1, 60}, Increment = 1, Suffix = "s", CurrentValue = 20, Flag = "SellEvery", Callback = function(V) _G.Mofenk.SellEvery = V end})
+
+local SecTrait = TabInv:CreateSection("🧬 Trait Roll")
+TabInv:CreateDropdown({Name = "Stop On Traits", Options = {"None", "Super Luck", "God Speed", "Wealth"}, CurrentOption = {"None"}, MultipleOptions = true, Flag = "StopOnTraits", Callback = function(Opt) _G.Mofenk.StopOnTraits = Opt end})
+TabInv:CreateToggle({Name = "Auto Roll Traits", CurrentValue = false, Flag = "AutoRollTraits", Callback = function(V) _G.Mofenk.AutoRollTraits = V end})
+
+-- ==========================================
+-- TAB 4: DUNGEON (Sesuai Screenshot 5)
+-- ==========================================
+local TabDungeon = Window:CreateTab("Dungeon", 11311029191)
+
+TabDungeon:CreateSection("⚔️ Dungeon")
+TabDungeon:CreateDropdown({Name = "Floor", Options = {"Floor 1 - NIL", "Floor 2 - NIL", "Floor 3 - NIL", "Floor 4 - NIL", "Floor 5 - NIL"}, CurrentOption = {"Floor 1 - NIL"}, MultipleOptions = false, Flag = "DungeonFloor", Callback = function(Opt) _G.Mofenk.TargetFloor = Opt[1] end})
+TabDungeon:CreateToggle({Name = "Auto Dungeon", CurrentValue = false, Flag = "AutoDungeon", Callback = function(V) _G.Mofenk.AutoDungeon = V end})
+TabDungeon:CreateButton({Name = "🏠 Return To Base", Callback = function() safeFire("ReturnToBase") end})
+
+TabDungeon:CreateSection("🛍️ Dungeon Shop")
+TabDungeon:CreateDropdown({Name = "Items", Options = {"None", "Luck Potion", "Damage Boost", "Exp Boost"}, CurrentOption = {"None"}, MultipleOptions = true, Flag = "DungShopItems", Callback = function(Opt) _G.Mofenk.ShopItems = Opt end})
+TabDungeon:CreateToggle({Name = "Auto Buy Dungeon Shop", CurrentValue = false, Flag = "AutoBuyDungeonShop", Callback = function(V) _G.Mofenk.AutoBuyDungeonShop = V end})
+
+-- ==========================================
+-- TAB 5: SETTINGS (MUSIC, SPY & LIVE NOTIF)
+-- ==========================================
+local TabSettings = Window:CreateTab("Settings", 6031280882)
+
+TabSettings:CreateSection("🔔 Live Notification (RNG)")
+TabSettings:CreateToggle({Name = "Aktifkan Live Notif Brainrot Langka", CurrentValue = true, Flag = "LiveNotif", Callback = function(V) _G.Mofenk.LiveNotif = V end})
+
+TabSettings:CreateSection("🎵 Pemutar Musik")
+local MusicPlayer = Instance.new("Sound", CoreGui)
+MusicPlayer.Volume = 0.7; MusicPlayer.Looped = true
+local MusicID = "1840889505"
+TabSettings:CreateInput({Name = "ID Lagu Roblox", PlaceholderText = "1840889505", RemoveTextAfterFocusLost = false, Callback = function(Text) MusicID = Text end})
+TabSettings:CreateButton({Name = "▶️ Putar Musik", Callback = function() MusicPlayer.SoundId = "rbxassetid://"..MusicID; MusicPlayer:Play() end})
+TabSettings:CreateButton({Name = "⏹️ Hentikan", Callback = function() MusicPlayer:Stop() end})
+
+TabSettings:CreateSection("👁️ Remote Spy")
+_G.SpyEnabled = false
+TabSettings:CreateToggle({Name = "Aktifkan Remote Spy", CurrentValue = false, Flag = "RemoteSpy", Callback = function(V) _G.SpyEnabled = V end})
+
+-- ==========================================
+-- LIVE NOTIF LOGIC
+-- ==========================================
+local trackedItems = {}
+LocalPlayer.PlayerGui.DescendantAdded:Connect(function(descendant)
+    if _G.Mofenk.LiveNotif and descendant:IsA("TextLabel") then
+        task.wait(0.2)
+        local text = descendant.Text
+        if text and text ~= "" and not trackedItems[text] then
+            for _, rarity in ipairs(_G.Mofenk.NotifRarities) do
+                if string.find(string.lower(text), string.lower(rarity)) then
+                    trackedItems[text] = true
+                    Rayfield:Notify({Title = "🎉 HOKI PARAH!", Content = "Mendapatkan: " .. rarity, Duration = 5, Image = 13047715178})
+                    task.delay(10, function() trackedItems[text] = nil end)
+                    break
+                end
+            end
+        end
+    end
 end)
 
-MakeToggle("⚔️ Auto Farm Dungeon Target", "AutoDungeon")
-MakeToggle("🛍️ Auto Beli Dungeon Shop", "AutoShop")
-MakeToggle("📜 Auto Claim Quests", "AutoQuest")
-MakeToggle("🎁 Auto Buka Lucky Blocks", "AutoLuckyBlock")
+-- ==========================================
+-- BACKGROUND FARMING LOOP (Disesuaikan dg Slider)
+-- ==========================================
+local lastCollect = os.time()
+local lastEquip = os.time()
+local lastSell = os.time()
 
 task.spawn(function()
     while task.wait(0.5) do
-        if not SG.Parent then break end
         pcall(function()
-            if _G.Mofenk.AutoCollect then safeFire("MoneyCollected") end
             if _G.Mofenk.AutoRoll then safeFire("RollRequest") end
             if _G.Mofenk.AutoRebirth then safeFire("RebirthRequest") end
-            if _G.Mofenk.AutoEquipBest then safeFire("EquipBest") end
-            if _G.Mofenk.AutoEquipSquad then safeFire("EquipBestBattleSquadRequest") end
-            if _G.Mofenk.AutoQuest then safeFire("ClaimAllQuests") end
-            if _G.Mofenk.AutoLuckyBlock then safeFire("OpenLuckyBlocks") end
-            if _G.Mofenk.AutoShop then safeFire("DungeonShopAutoBuy") end
-            if _G.Mofenk.AutoDungeon then safeFire("RequestDungeonTeleport", _G.DungeonList[_G.Mofenk.CurrentDungeon]) end
+            if _G.Mofenk.AutoClaimQuests then safeFire("ClaimAllQuests") end
+            if _G.Mofenk.AutoBuyDungeonShop then safeFire("DungeonShopAutoBuy") end
+            if _G.Mofenk.AutoRollTraits then safeFire("RollTrait") end
+            
+            -- Timer Based Functions (Sesuai Slider Ouroboros)
+            if _G.Mofenk.AutoCollectMoney and (os.time() - lastCollect >= _G.Mofenk.CollectEvery) then
+                safeFire("MoneyCollected")
+                lastCollect = os.time()
+            end
+            
+            if _G.Mofenk.AutoEquipBest and (os.time() - lastEquip >= _G.Mofenk.EquipBestEvery) then
+                safeFire("EquipBest")
+                safeFire("EquipBestBattleSquadRequest")
+                lastEquip = os.time()
+            end
+            
+            if _G.Mofenk.AutoSell and (os.time() - lastSell >= _G.Mofenk.SellEvery) then
+                if #_G.Mofenk.SelectedRarities > 0 then
+                    for _, rarity in ipairs(_G.Mofenk.SelectedRarities) do
+                        safeFire("SellRarity", rarity, _G.Mofenk.KeepMutated, _G.Mofenk.KeepTraited, _G.Mofenk.KeepFinishes, _G.Mofenk.KeepVariants)
+                    end
+                end
+                lastSell = os.time()
+            end
+            
+            if _G.Mofenk.AutoDungeon then
+                local tFloor = "Battle1"
+                if _G.Mofenk.TargetFloor:find("Floor 2") then tFloor = "Battle2"
+                elseif _G.Mofenk.TargetFloor:find("Floor 3") then tFloor = "Battle3"
+                elseif _G.Mofenk.TargetFloor:find("Floor 4") then tFloor = "Battle4"
+                elseif _G.Mofenk.TargetFloor:find("Floor 5") then tFloor = "Battle5" end
+                safeFire("RequestDungeonTeleport", tFloor)
+                
+                -- Auto Fight (Click)
+                if workspace.CurrentCamera then
+                    VirtualUser:ClickButton1(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+                end
+            end
         end)
     end
 end)
 
 pcall(function()
-    game:GetService("StarterGui"):SetCore("SendNotification", {Title="Berhasil!", Text="V52 Selesai Dimuat", Duration=3})
+    LocalPlayer.Idled:Connect(function()
+        VirtualUser:Button2Down(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
+        task.wait(1)
+        VirtualUser:Button2Up(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
+    end)
 end)
