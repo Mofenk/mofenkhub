@@ -2,6 +2,7 @@
 -- 👑 FIKRAH HUB V30.4 - ULTIMATE CATEGORIZED & OPTIMIZED SYSTEM (UPDATED)
 -- Added: Custom tab, presets (Lite/Pro/Premium/Full Set), error notifications,
 --        explicit toggles for many remotes, save/load custom profiles.
+-- Integrated: BattleSquadConfig (UI + auto-upgrade) and DungeonConfig (map info + teleport)
 -- ==================================================================== --
 
 local successUI, Rayfield = pcall(function()
@@ -114,7 +115,7 @@ _G.SetPerformanceAuto = false
 _G.SetPerformanceMode = "Default"
 
 -- ======================================================= --
--- UTILITY: Safe Remote Finder / Fire / Notify / File Save --
+-- UTILITY: Safe Remote Finder / Fire / Invoke / Notify / File Save --
 -- ======================================================= --
 local function getRemote(name)
     local found = nil
@@ -158,6 +159,17 @@ local function safeFire(remoteName, ...)
             })
         end)
     end
+end
+
+local function safeInvoke(remoteName, ...)
+    local remote = getRemote(remoteName)
+    if remote and remote:IsA("RemoteFunction") then
+        local ok, res = pcall(function(...) return remote:InvokeServer(...) end, ...)
+        if ok then return res end
+        warn("[FikrahHub] safeInvoke error for " .. tostring(remoteName) .. ": " .. tostring(res))
+        return nil
+    end
+    return nil
 end
 
 local function notifyUI(title, text, duration)
@@ -263,6 +275,48 @@ local function performAutoSell()
             safeFire("SellJunkUnits")
         end
     end)
+end
+
+-- ======================================================= --
+-- TRY REQUIRE: BattleSquadConfig & DungeonConfig (runtime modules)
+-- ======================================================= --
+local function tryRequireModule(pathSegments)
+    local ok, mod
+    pcall(function()
+        local node = ReplicatedStorage
+        for _, seg in ipairs(pathSegments) do
+            node = node:FindFirstChild(seg)
+            if not node then error("path not found") end
+        end
+        mod = require(node)
+        ok = true
+    end)
+    if not ok then
+        return nil
+    end
+    return mod
+end
+
+local BattleSquadConfig = tryRequireModule({"Shared","BattleSquadConfig"})
+local DungeonConfig = tryRequireModule({"Shared","DungeonConfig"})
+
+-- Helper: attempt to detect player money via common leaderstat names
+local function getPlayerMoney()
+    local stats = LocalPlayer:FindFirstChild("leaderstats") or LocalPlayer
+    local candidates = {"Cash","Money","Coins","Gold","Balance","CashMoney"}
+    for _, name in ipairs(candidates) do
+        local v = stats:FindFirstChild(name)
+        if v and (typeof(v.Value) == "number" or type(v.Value) == "number") then
+            return tonumber(v.Value)
+        end
+    end
+    -- try numeric value fields directly under player
+    for _, child in ipairs(stats:GetChildren()) do
+        if child:IsA("IntValue") or child:IsA("NumberValue") then
+            return tonumber(child.Value)
+        end
+    end
+    return nil
 end
 
 -- ======================================================= --
@@ -379,6 +433,86 @@ TabUpgrade:CreateSection("🎲 Toko & Rebirth")
 TabUpgrade:CreateToggle({Name = "🎲 Auto Buy Dice", Flag = "T_Buy", Callback = function(v) _G.AutoBuyDice = v end})
 TabUpgrade:CreateToggle({Name = "🔄 Auto Rebirth", Flag = "T_Reb", Callback = function(v) _G.AutoRebirth = v end})
 
+-- ======================================================= --
+-- Battle Squad Integration (uses ReplicatedStorage.Shared.BattleSquadConfig)
+-- ======================================================= --
+if BattleSquadConfig then
+    local maxLevel = BattleSquadConfig.MaxLevel or 0
+    local tiers = BattleSquadConfig.Tiers or {}
+
+    TabUpgrade:CreateSection("🛡️ Battle Squad")
+    TabUpgrade:CreateButton({
+        Name = "🔍 Show Squad Config (Console)",
+        Callback = function()
+            pcall(function()
+                print(HttpService:JSONEncode({MaxLevel = maxLevel, Tiers = tiers}))
+                notifyUI("Printed", "BattleSquadConfig dicetak di console.", 2)
+            end)
+        end
+    })
+
+    TabUpgrade:CreateToggle({
+        Name = "⚙️ Auto Upgrade Battle Squad",
+        Flag = "T_AutoBattleSquad",
+        Callback = function(v)
+            _G.AutoUpgradeBattleSquad = v
+            if v then
+                task.spawn(function()
+                    while _G.AutoUpgradeBattleSquad do
+                        -- attempt to get current tier via server state if available
+                        local state = safeInvoke and safeInvoke("RequestBattleSquadUpgradeState")
+                        local currentTier = 0
+                        if type(state) == "table" and state.CurrentTier then
+                            currentTier = state.CurrentTier
+                        end
+                        local nextTier = (currentTier or 0) + 1
+                        if nextTier <= (BattleSquadConfig.MaxLevel or 0) then
+                            local cost
+                            if BattleSquadConfig.GetUpgradeCost then
+                                pcall(function()
+                                    cost = BattleSquadConfig.GetUpgradeCost(nextTier)
+                                end)
+                            else
+                                cost = tiers[nextTier] and tiers[nextTier].UpgradeCost
+                            end
+
+                            local money = getPlayerMoney()
+                            if cost and money and tonumber(money) and tonumber(cost) then
+                                if tonumber(money) >= tonumber(cost) then
+                                    safeFire("UpgradeBattleSquadRequest")
+                                    notifyUI("🔼 Squad Upgrade", "Mencoba upgrade ke tier " .. tostring(nextTier), 2)
+                                else
+                                    -- not enough money
+                                    notifyUI("❌ Squad Upgrade", "Uang tidak cukup untuk upgrade ("..tostring(cost)..")", 2.5)
+                                end
+                            else
+                                -- unknown cost or money: attempt upgrade anyway
+                                safeFire("UpgradeBattleSquadRequest")
+                                notifyUI("🔼 Squad Upgrade", "Mencoba upgrade (cek server).", 2)
+                            end
+                        else
+                            notifyUI("✅ Squad Max", "Battle squad sudah di max tier.", 2.5)
+                            _G.AutoUpgradeBattleSquad = false
+                        end
+                        task.wait(5)
+                    end
+                end)
+            end
+        end
+    })
+
+    TabUpgrade:CreateButton({
+        Name = "⬆️ Upgrade to Next Tier",
+        Callback = function()
+            safeFire("UpgradeBattleSquadRequest")
+        end
+    })
+
+else
+    TabUpgrade:CreateSection("🛡️ Battle Squad")
+    TabUpgrade:CreateButton({Name = "🔍 Show Squad Config (Not Found)", Callback = function() notifyUI("⚠️ Not Found", "BattleSquadConfig module tidak ditemukan.", 3) end})
+end
+
 -- ------------------------------------------------------- --
 -- KATEGORI 4: TOWER & DUNGEON (AUTO JOIN & OTOMATIS) --
 -- ------------------------------------------------------- --
@@ -410,6 +544,79 @@ TabTower:CreateButton({
 TabTower:CreateSection("👹 Pertarungan Boss")
 TabTower:CreateToggle({Name = "⚔️ Auto Fight Boss State", Flag = "T_FightBoss", Callback = function(v) _G.AutoFightBoss = v safeFire("SetAutoFightBoss", v) end})
 TabTower:CreateToggle({Name = "💥 Auto Boss Attack Loop", Flag = "T_BossAtk", Callback = function(v) _G.AutoBossAttack = v end})
+
+-- ======================================================= --
+-- DungeonConfig Integration (ReplicatedStorage.Shared.DungeonConfig)
+-- ======================================================= --
+if DungeonConfig then
+    local maps = DungeonConfig.Maps or {}
+    local mapOptions = {}
+    for id, info in pairs(maps) do
+        table.insert(mapOptions, id)
+    end
+    table.sort(mapOptions)
+
+    TabTower:CreateSection("🗺️ Dungeon Config")
+    local selectedMap = mapOptions[1] or ""
+    TabTower:CreateDropdown({
+        Name = "📍 Pilih Map/Dungeon",
+        Options = mapOptions,
+        CurrentOption = selectedMap,
+        Flag = "D_SelectedDungeon",
+        Callback = function(option)
+            selectedMap = option
+        end
+    })
+
+    TabTower:CreateButton({
+        Name = "🔎 Show Map Info (Console)",
+        Callback = function()
+            if selectedMap == "" then notifyUI("⚠️ No Map", "Tidak ada map ditemukan.", 2) return end
+            local info = DungeonConfig.Maps[selectedMap]
+            if info then
+                pcall(function()
+                    print(HttpService:JSONEncode(info))
+                    notifyUI("Printed", "Dungeon info dicetak di console.", 2)
+                end)
+            else
+                notifyUI("⚠️ Not Found", "Map info tidak ditemukan.", 2.5)
+            end
+        end
+    })
+
+    TabTower:CreateButton({
+        Name = "🚪 Teleport To Dungeon",
+        Callback = function()
+            if selectedMap == "" then notifyUI("⚠️ No Map", "Pilih map terlebih dahulu.", 2) return end
+            safeFire("RequestDungeonTeleport", selectedMap)
+            notifyUI("🔁 Teleport", "Meminta teleport ke " .. tostring(selectedMap), 2)
+        end
+    })
+
+    TabTower:CreateToggle({
+        Name = "🤖 Auto Farm Dungeon (Simple)",
+        Flag = "T_AutoFarmDungeon",
+        Callback = function(v)
+            _G.AutoFarmDungeon = v
+            if v then
+                task.spawn(function()
+                    while _G.AutoFarmDungeon do
+                        if selectedMap ~= "" then
+                            safeFire("RequestDungeonTeleport", selectedMap)
+                            -- optional: start fights / claim rewards (best-effort)
+                            safeFire("ClaimAllQuests")
+                        end
+                        task.wait(10)
+                    end
+                end)
+            end
+        end
+    })
+
+else
+    TabTower:CreateSection("🗺️ Dungeon Config")
+    TabTower:CreateButton({Name = "🔎 DungeonConfig Not Found", Callback = function() notifyUI("⚠️ Not Found", "DungeonConfig module tidak ditemukan.", 3) end})
+end
 
 -- ------------------------------------------------------- --
 -- KATEGORI 5: BOOST & EVENT (TERDETEKSI OTOMATIS) --
