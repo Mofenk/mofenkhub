@@ -1,573 +1,365 @@
 -- ==================================================================== --
--- 👑 FIKRAH HUB V30.4 - ULTIMATE CATEGORIZED & OPTIMIZED SYSTEM (UPDATED)
--- Added: Custom tab, presets (Lite/Pro/Premium/Full Set), error notifications,
---        explicit toggles for many remotes, save/load custom profiles.
--- Integrated: BattleSquadConfig, DungeonConfig, InventoryConfig,
---             RollSpeedConfig, MultiRollConfig, BrainrotVisuals,
---             BrainrotLevelConfig, TraitConfig, UiIconConfig,
---             DiceIconBuilder, BrainrotVariantConfig, QuestConfig, CandyShop
+-- 👑 FIKRAH HUB V33 - PURE CUSTOM UI & FULL DATA SYNC
+-- Target Game: Dadu Brainrot! (No External Libraries)
 -- ==================================================================== --
 
-local successUI, Rayfield = pcall(function()
-    return loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
-end)
-
-if not successUI or not Rayfield then
-    task.wait(1)
-    Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
-end
-
-local MarketplaceService = game:GetService("MarketplaceService")
-local TeleportService = game:GetService("TeleportService")
 local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
+local CoreGui = game:GetService("CoreGui")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
+local RunService = game:GetService("RunService")
+local VirtualUser = game:GetService("VirtualUser")
+local TeleportService = game:GetService("TeleportService")
 local HttpService = game:GetService("HttpService")
-local StarterGui = game:GetService("StarterGui")
-
-local namaGameBeneran = "Dadu Brainrot!"
-pcall(function()
-    namaGameBeneran = MarketplaceService:GetProductInfo(game.PlaceId).Name
-end)
-
-local Window = Rayfield:CreateWindow({
-    Name = "👑 Fikrah Hub Pro | " .. namaGameBeneran,
-    LoadingTitle = "Memuat Fikrah Hub V30.4...",
-    LoadingSubtitle = "By Fikrah - Clean Categorized UI",
-    ConfigurationSaving = {
-        Enabled = true,
-        FolderName = "FikrahHub_V30",
-        FileName = LocalPlayer.Name
-    },
-    KeySystem = false,
-    Keybind = Enum.KeyCode.RightControl
-})
-
--- Tombol Mengambang (Floating Toggle UI)
-local parentUI = (gethui and gethui()) or game:GetService("CoreGui")
-local ToggleGui = Instance.new("ScreenGui", parentUI)
-ToggleGui.Name = "FikrahToggleV30"
-ToggleGui.ResetOnSpawn = false
-
-local ToggleBtn = Instance.new("TextButton", ToggleGui)
-ToggleBtn.Size = UDim2.new(0, 42, 0, 42)
-ToggleBtn.Position = UDim2.new(0.5, -21, 0.04, 0)
-ToggleBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-ToggleBtn.TextColor3 = Color3.fromRGB(255, 215, 0)
-ToggleBtn.Text = "👑"
-ToggleBtn.TextSize = 18
-ToggleBtn.Draggable = true
-Instance.new("UICorner", ToggleBtn).CornerRadius = UDim.new(1, 0)
-
-ToggleBtn.MouseButton1Click:Connect(function()
-    local vim = game:GetService("VirtualInputManager")
-    vim:SendKeyEvent(true, Enum.KeyCode.RightControl, false, game)
-    vim:SendKeyEvent(false, Enum.KeyCode.RightControl, false, game)
-end)
+local LocalPlayer = Players.LocalPlayer
 
 -- ======================================================= --
--- DATABASE & STATE CONFIGURATIONS --
+-- 1. SINKRONISASI DATA GAME (MODULES) & REMOTES
 -- ======================================================= --
-_G.AutoRoll = false
-_G.InstantRoll = false
-_G.AutoRerollGrade = false
-_G.AutoRerollTrait = false
-
--- Manajemen Unit & Jual
-_G.AutoSellUnder = false
-_G.SellThreshold = 1e+50
-_G.AutoSellAllJunk = false
-_G.AutoEquipBest = false
-_G.AutoLockBestUnits = false
-
--- New: selective sell
-_G.AutoSellByRarity = false
-_G.AutoSellByName = false
-_G.SellRarities = {} -- e.g. {"Common", "Uncommon"}
-_G.SellNames = {} -- explicit unit/brainrot names to sell
-
--- Uang & Collect
-_G.AutoCollectMoney = false
-_G.CollectDelay = 2.0
-
--- Upgrade & Level (1-Max)
-_G.AutoUpgradeBrainrot = false
-_G.BrainrotTargetLevel = "Max (38+/Limit)"
-_G.AutoUpgradeDice = false
-_G.DiceTargetLevel = "Max (38+/Limit)"
-_G.AutoBuyDice = false
-_G.AutoRebirth = false
-
--- Tower & Dungeon
-_G.AutoJoinTower = false
-_G.AutoTower = false
-_G.AutoMixTower = false
-_G.AutoFightBoss = false
-_G.AutoBossAttack = false
-
--- Boost & Items Terdeteksi
-_G.AutoDetectBoosts = false
-_G.SelectedBoostItem = "Semua Item / Potion"
-_G.AutoClaimAllRewards = false
-_G.AutoMeteor = false
-_G.AutoLuckyBlock = false
-
--- Sistem & Keamanan
-_G.AntiAFK = true
-_G.AutoHop = false
-_G.SpyEnabled = false
-
--- CUSTOM FLAGS (for explicit remotes & notifications)
-_G.SetMusicEnabled = true
-_G.SetPerformanceAuto = false
-_G.SetPerformanceMode = "Default"
-
--- ======================================================= --
--- UTILITY: Safe Remote Finder / Fire / Invoke / Notify / File Save --
--- ======================================================= --
-local function getRemote(name)
-    local found = nil
-    for _, v in pairs(ReplicatedStorage:GetDescendants()) do
-        if v.Name:lower() == tostring(name):lower() and (v:IsA("RemoteEvent") or v:IsA("RemoteFunction")) then
-            found = v
-            break
-        end
+local function getModule(pathArray)
+    local current = ReplicatedStorage
+    for _, name in ipairs(pathArray) do
+        current = current:FindFirstChild(name)
+        if not current then return nil end
     end
-    return found
+    return require(current)
 end
+
+local GameData = {
+    BattleSquad = getModule({"Shared", "BattleSquadConfig"}),
+    Dungeon = getModule({"Shared", "DungeonConfig"}),
+    Inventory = getModule({"Modules", "InventoryConfig"}),
+    BrainrotLevel = getModule({"Modules", "BrainrotLevelConfig"}),
+    Quest = getModule({"Modules", "QuestConfig"}) or getModule({"QuestConfig"}),
+    CandyShop = getModule({"ReleasedContent", "Update2", "Client", "CandyShop"}) or getModule({"CandyShop"})
+}
 
 local function safeFire(remoteName, ...)
-    local remote = getRemote(remoteName)
-    if remote then
-        local ok, err = pcall(function(...)
-            if remote:IsA("RemoteEvent") then
-                remote:FireServer(...)
-            elseif remote:IsA("RemoteFunction") then
-                remote:InvokeServer(...)
-            end
-        end, ...)
-        if not ok then
-            warn("[FikrahHub] safeFire error for " .. tostring(remoteName) .. ": " .. tostring(err))
-            pcall(function()
-                StarterGui:SetCore("SendNotification", {
-                    Title = "Fikrah Hub - Error",
-                    Text = "Remote '" .. tostring(remoteName) .. "' gagal dipanggil.",
-                    Duration = 4
-                })
-            end)
+    local remotes = ReplicatedStorage:FindFirstChild("Remotes")
+    if remotes then
+        local remote = remotes:FindFirstChild(remoteName)
+        if remote then
+            if remote:IsA("RemoteEvent") then remote:FireServer(...)
+            elseif remote:IsA("RemoteFunction") then remote:InvokeServer(...) end
         end
-    else
-        -- remote not found -> warn user
-        warn("[FikrahHub] remote not found: " .. tostring(remoteName))
-        pcall(function()
-            StarterGui:SetCore("SendNotification", {
-                Title = "Fikrah Hub - Missing Remote",
-                Text = "Remote '" .. tostring(remoteName) .. "' tidak ditemukan.",
-                Duration = 3
-            })
-        end)
     end
 end
 
-local function safeInvoke(remoteName, ...)
-    local remote = getRemote(remoteName)
-    if remote and remote:IsA("RemoteFunction") then
-        local ok, res = pcall(function(...) return remote:InvokeServer(...) end, ...)
-        if ok then return res end
-        warn("[FikrahHub] safeInvoke error for " .. tostring(remoteName) .. ": " .. tostring(res))
-        return nil
-    end
-    return nil
+-- ======================================================= --
+-- 2. STATE & KONFIGURASI BOT
+-- ======================================================= --
+_G.Fikrah = {
+    -- Farm & Gacha
+    AutoCollect = false, CollectDelay = 1.5,
+    AutoRoll = false, AutoTrait = false, AutoGrade = false,
+    -- Units
+    AutoEquipBest = false, AutoLock = false, AutoSellJunk = false, AutoSellByRarity = false,
+    SellRarities = {},
+    -- Upgrade
+    AutoUpgradeUnit = false, AutoUpgradeDice = false, AutoRebirth = false,
+    -- Tower & Event
+    AutoTowerJoin = false, AutoTowerMix = false, AutoTowerPlace = false, AutoBoss = false,
+    AutoQuest = false, AutoCandy = false,
+    -- System
+    AutoReconnect = true, ReduceCPU = false
+}
+
+-- ======================================================= --
+-- 3. FRAMEWORK CUSTOM UI (RINGAN & ANTI-LAG)
+-- ======================================================= --
+local UI = Instance.new("ScreenGui")
+UI.Name = "FikrahHub_V33"
+UI.ResetOnSpawn = false
+UI.Parent = (gethui and gethui()) or CoreGui
+
+-- Tombol Buka/Tutup (Mengambang)
+local ToggleBtn = Instance.new("TextButton")
+ToggleBtn.Size = UDim2.new(0, 45, 0, 45)
+ToggleBtn.Position = UDim2.new(0, 10, 0, 10)
+ToggleBtn.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+ToggleBtn.TextColor3 = Color3.fromRGB(255, 215, 0)
+ToggleBtn.Text = "👑"
+ToggleBtn.TextSize = 20
+ToggleBtn.Font = Enum.Font.GothamBold
+ToggleBtn.Draggable = true
+ToggleBtn.Parent = UI
+Instance.new("UICorner", ToggleBtn).CornerRadius = UDim.new(1, 0)
+
+-- Main Frame
+local Main = Instance.new("Frame")
+Main.Size = UDim2.new(0, 550, 0, 380)
+Main.Position = UDim2.new(0.5, -275, 0.5, -190)
+Main.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+Main.Draggable = true
+Main.Active = true
+Main.Parent = UI
+Instance.new("UICorner", Main)
+Main.Visible = false
+
+ToggleBtn.MouseButton1Click:Connect(function()
+    Main.Visible = not Main.Visible
+end)
+
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, 0, 0, 40)
+Title.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.Text = "  FIKRAH HUB V33 | Dadu Brainrot (Custom Core)"
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 16
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Parent = Main
+Instance.new("UICorner", Title)
+
+local Sidebar = Instance.new("ScrollingFrame")
+Sidebar.Size = UDim2.new(0, 140, 1, -40)
+Sidebar.Position = UDim2.new(0, 0, 0, 40)
+Sidebar.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+Sidebar.ScrollBarThickness = 2
+Sidebar.Parent = Main
+local SidebarLayout = Instance.new("UIListLayout", Sidebar)
+SidebarLayout.Padding = UDim.new(0, 2)
+
+local ContentArea = Instance.new("Frame")
+ContentArea.Size = UDim2.new(1, -145, 1, -45)
+ContentArea.Position = UDim2.new(0, 145, 0, 45)
+ContentArea.BackgroundTransparency = 1
+ContentArea.Parent = Main
+
+local Tabs = {}
+
+local function CreateTab(name)
+    local TabBtn = Instance.new("TextButton")
+    TabBtn.Size = UDim2.new(1, 0, 0, 35)
+    TabBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+    TabBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+    TabBtn.Text = name
+    TabBtn.Font = Enum.Font.GothamSemibold
+    TabBtn.TextSize = 14
+    TabBtn.Parent = Sidebar
+    Instance.new("UICorner", TabBtn)
+
+    local Page = Instance.new("ScrollingFrame")
+    Page.Size = UDim2.new(1, 0, 1, 0)
+    Page.BackgroundTransparency = 1
+    Page.ScrollBarThickness = 4
+    Page.Visible = false
+    Page.Parent = ContentArea
+    local PageLayout = Instance.new("UIListLayout", Page)
+    PageLayout.Padding = UDim.new(0, 6)
+    
+    TabBtn.MouseButton1Click:Connect(function()
+        for _, p in pairs(Tabs) do p.Page.Visible = false p.Btn.BackgroundColor3 = Color3.fromRGB(35, 35, 35) end
+        Page.Visible = true
+        TabBtn.BackgroundColor3 = Color3.fromRGB(60, 120, 200)
+    end)
+
+    table.insert(Tabs, {Page = Page, Btn = TabBtn})
+    return Page
 end
 
-local function notifyUI(title, text, duration)
-    duration = duration or 3
-    pcall(function()
-        StarterGui:SetCore("SendNotification", {
-            Title = title or "Fikrah Hub",
-            Text = text or "",
-            Duration = duration,
-            Button1 = "OK"
-        })
+local function CreateToggle(page, text, flag)
+    local Btn = Instance.new("TextButton")
+    Btn.Size = UDim2.new(1, -10, 0, 35)
+    Btn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    Btn.TextColor3 = Color3.fromRGB(255, 80, 80)
+    Btn.Text = "❌ " .. text
+    Btn.Font = Enum.Font.Gotham
+    Btn.TextSize = 14
+    Btn.TextXAlignment = Enum.TextXAlignment.Left
+    Btn.Parent = page
+    Instance.new("UICorner", Btn)
+    local UIPadding = Instance.new("UIPadding", Btn)
+    UIPadding.PaddingLeft = UDim.new(0, 10)
+
+    Btn.MouseButton1Click:Connect(function()
+        _G.Fikrah[flag] = not _G.Fikrah[flag]
+        if _G.Fikrah[flag] then
+            Btn.TextColor3 = Color3.fromRGB(80, 255, 80)
+            Btn.Text = "✅ " .. text
+            Btn.BackgroundColor3 = Color3.fromRGB(30, 60, 30)
+        else
+            Btn.TextColor3 = Color3.fromRGB(255, 80, 80)
+            Btn.Text = "❌ " .. text
+            Btn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+        end
     end)
 end
 
-local function safeWarn(msg)
-    if msg then
-        warn("[Fikrah Hub] " .. tostring(msg))
+local function CreateButton(page, text, callback)
+    local Btn = Instance.new("TextButton")
+    Btn.Size = UDim2.new(1, -10, 0, 35)
+    Btn.BackgroundColor3 = Color3.fromRGB(60, 100, 160)
+    Btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Btn.Text = "⚡ " .. text
+    Btn.Font = Enum.Font.GothamBold
+    Btn.TextSize = 14
+    Btn.Parent = page
+    Instance.new("UICorner", Btn)
+    Btn.MouseButton1Click:Connect(callback)
+end
+
+local function CreateInput(page, placeholder, callback)
+    local Box = Instance.new("TextBox")
+    Box.Size = UDim2.new(1, -10, 0, 35)
+    Box.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+    Box.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Box.PlaceholderText = placeholder
+    Box.Font = Enum.Font.Gotham
+    Box.TextSize = 13
+    Box.ClearTextOnFocus = false
+    Box.Parent = page
+    Instance.new("UICorner", Box)
+    Box.FocusLost:Connect(function()
+        callback(Box.Text)
+        Box.Text = ""
+    end)
+end
+
+-- ======================================================= --
+-- 4. PENGISIAN MENU UI
+-- ======================================================= --
+local TabFarm = CreateTab("💰 Farm & Gacha")
+local TabUnit = CreateTab("🎒 Unit & Jual")
+local TabUp = CreateTab("📈 Level & Tower")
+local TabEvent = CreateTab("🎯 Event & System")
+
+Tabs[1].Page.Visible = true -- Default Tab
+Tabs[1].Btn.BackgroundColor3 = Color3.fromRGB(60, 120, 200)
+
+-- Tab Farm & Gacha
+CreateToggle(TabFarm, "Auto Collect Money (Magnet Mode)", "AutoCollect")
+CreateToggle(TabFarm, "Auto Roll Dadu", "AutoRoll")
+CreateToggle(TabFarm, "Auto Reroll Trait", "AutoTrait")
+CreateToggle(TabFarm, "Auto Reroll Grade", "AutoGrade")
+
+-- Tab Unit
+CreateToggle(TabUnit, "Auto Equip Squad Terbaik", "AutoEquipBest")
+CreateToggle(TabUnit, "Auto Lock Unit Terbaik", "AutoLock")
+CreateToggle(TabUnit, "Auto Sell Sampah (Junk)", "AutoSellJunk")
+CreateToggle(TabUnit, "Enable Sell By Rarity", "AutoSellByRarity")
+CreateInput(TabUnit, "Ketik Rarity Sell (Contoh: Common,Rare) lalu Enter", function(txt)
+    for s in string.gmatch(txt, "[^,]+") do
+        local r = s:gsub("^%s+",""):gsub("%s+$","")
+        if r ~= "" then table.insert(_G.Fikrah.SellRarities, r) end
     end
-end
+end)
+CreateButton(TabUnit, "Bersihkan Daftar Rarity", function() _G.Fikrah.SellRarities = {} end)
 
-local function isfile_wrapper(path)
-    local ok, res = pcall(function() return isfile(path) end)
-    return ok and res
-end
+-- Tab Upgrades & Tower
+CreateToggle(TabUp, "Auto Upgrade Brainrot (Max)", "AutoUpgradeUnit")
+CreateToggle(TabUp, "Auto Upgrade Dadu (Max)", "AutoUpgradeDice")
+CreateToggle(TabUp, "Auto Rebirth", "AutoRebirth")
+CreateToggle(TabUp, "Auto Join Tower Queue", "AutoTowerJoin")
+CreateToggle(TabUp, "Auto Mix/Merge Unit", "AutoTowerMix")
+CreateToggle(TabUp, "Auto Place Unit Tower", "AutoTowerPlace")
+CreateToggle(TabUp, "Auto Attack Boss", "AutoBoss")
+
+-- Tab Event & System
+CreateToggle(TabEvent, "Auto Claim Quest (Daily/Weekly)", "AutoQuest")
+CreateToggle(TabEvent, "Auto Candy Shop Event", "AutoCandy")
+CreateToggle(TabEvent, "Auto Reconnect (Anti-DC)", "AutoReconnect")
+
+CreateToggle(TabEvent, "📉 Reduce CPU / Hapus Render 3D", "ReduceCPU")
+task.spawn(function()
+    while task.wait(1) do
+        if _G.Fikrah.ReduceCPU then
+            RunService:Set3dRenderingEnabled(false)
+            settings().Rendering.QualityLevel = "Level01"
+            game.Lighting.GlobalShadows = false
+            for _, obj in pairs(Workspace:GetDescendants()) do
+                if obj:IsA("BasePart") and not obj.Parent:FindFirstChild("Humanoid") then
+                    obj.Material = Enum.Material.SmoothPlastic
+                elseif obj:IsA("Decal") or obj:IsA("Texture") or obj:IsA("ParticleEmitter") then
+                    obj:Destroy()
+                end
+            end
+        else
+            RunService:Set3dRenderingEnabled(true)
+        end
+    end
+end)
+
 
 -- ======================================================= --
--- FUNGSI LOGIKA UTAMA (existing helper actions)
+-- 5. BACKGROUND LOOP (INTI LOGIKA GAME)
 -- ======================================================= --
-local function performMoneyCollect()
-    pcall(function()
-        safeFire("MoneyCollected")
-        safeFire("RequestMoneyBuffState")
-        safeFire("ClaimCash")
-        safeFire("CollectMoney")
-        safeFire("ClaimMoney")
-        safeFire("ClaimIncome")
 
-        local char = LocalPlayer.Character
-        if char and char:FindFirstChild("HumanoidRootPart") then
-            local root = char.HumanoidRootPart
-            for _, folder in pairs({Workspace:FindFirstChild("Bases"), Workspace:FindFirstChild("Plots"), Workspace}) do
-                if folder then
-                    for _, obj in pairs(folder:GetDescendants()) do
-                        if obj:IsA("BasePart") or obj:IsA("Model") then
-                            local n = obj.Name:lower()
-                            if n:find("cash") or n:find("money") or n:find("drop") or n:find("coin") or n:find("income") then
-                                local targetPart = obj:IsA("Model") and (obj.PrimaryPart or obj:FindFirstChildWhichIsA("BasePart")) or obj
-                                if targetPart then
-                                    firetouchinterest(root, targetPart, 0)
-                                    firetouchinterest(root, targetPart, 1)
-                                    if (targetPart.Position - root.Position).Magnitude < 25 then
-                                        targetPart.CFrame = root.CFrame
-                                    end
-                                end
+-- Anti-AFK Bawaan & Reconnect
+LocalPlayer.Idled:Connect(function()
+    VirtualUser:CaptureController()
+    VirtualUser:ClickButton2(Vector2.new())
+end)
+
+game.CoreGui.RobloxPromptGui.promptOverlay.ChildAdded:Connect(function(child)
+    if _G.Fikrah.AutoReconnect and child.Name == "ErrorPrompt" then
+        task.wait(2)
+        TeleportService:Teleport(game.PlaceId, LocalPlayer)
+    end
+end)
+
+-- 1. Loop Cepat (Farm, Gacha, Reaksi Cepat)
+task.spawn(function()
+    while task.wait(1) do
+        if _G.Fikrah.AutoCollect then
+            safeFire("ClaimCash") safeFire("CollectMoney") safeFire("ClaimIncome")
+            -- Magnet CFrame
+            if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                local root = LocalPlayer.Character.HumanoidRootPart
+                for _, folder in pairs({Workspace:FindFirstChild("Drops"), Workspace:FindFirstChild("Bases"), Workspace}) do
+                    if folder then
+                        for _, obj in pairs(folder:GetChildren()) do
+                            if obj:IsA("BasePart") and (obj.Name:find("Coin") or obj.Name:find("Candy") or obj.Name:find("Money")) then
+                                obj.CFrame = root.CFrame
+                                firetouchinterest(root, obj, 0)
+                                firetouchinterest(root, obj, 1)
                             end
                         end
                     end
                 end
             end
         end
-    end)
-end
+        if _G.Fikrah.AutoRoll then safeFire("RollRequest") end
+        if _G.Fikrah.AutoTrait then safeFire("SpinTraitRequest") end
+        if _G.Fikrah.AutoGrade then safeFire("RerollGradeRequest") end
+        if _G.Fikrah.AutoBoss then safeFire("BossAttack") end
+    end
+end)
 
-local function handleTowerAutomation()
-    pcall(function()
-        if _G.AutoJoinTower then
-            safeFire("JoinTowerQueue")
-            safeFire("RequestJoinTower")
-            safeFire("MatchmakingJoinRequest")
+-- 2. Loop Sedang (Manajemen, Tower, Upgrade)
+task.spawn(function()
+    while task.wait(3) do
+        if _G.Fikrah.AutoEquipBest then safeFire("EquipBest") safeFire("EquipBestBattleSquadRequest") end
+        if _G.Fikrah.AutoLock then safeFire("ToggleLockRequest") end
+        if _G.Fikrah.AutoSellJunk then safeFire("SellAllJunkRequest") end
+        if _G.Fikrah.AutoSellByRarity and #_G.Fikrah.SellRarities > 0 then
+            for _, rarity in ipairs(_G.Fikrah.SellRarities) do safeFire("SellByRarity", rarity) end
         end
-        if _G.AutoMixTower then
-            safeFire("MixTowerRequest")
-            safeFire("MergeTowerUnits")
-            safeFire("CombineTower")
-            safeFire("MergeUnitsRequest")
-        end
-        if _G.AutoTower then
-            safeFire("PlaceBrainrot")
-            safeFire("UpgradeTowerRequest")
-            safeFire("PlaceTowerRequest")
-            safeFire("SpawnTowerRequest")
-        end
-    end)
-end
+        
+        if _G.Fikrah.AutoUpgradeUnit then safeFire("UpgradeBrainrotRequest", 38) end
+        if _G.Fikrah.AutoUpgradeDice then safeFire("UpgradeDiceRequest", 38) end
+        if _G.Fikrah.AutoRebirth then safeFire("RebirthRequest") end
+        
+        if _G.Fikrah.AutoTowerJoin then safeFire("JoinTowerQueue") safeFire("RequestJoinTower") end
+        if _G.Fikrah.AutoTowerMix then safeFire("MixTowerRequest") safeFire("MergeTowerUnits") end
+        if _G.Fikrah.AutoTowerPlace then safeFire("PlaceBrainrot") safeFire("SpawnTowerRequest") end
+    end
+end)
 
-local function handleBoostItemsDetection()
-    pcall(function()
-        -- Deteksi otomatis item/potion yang ada di inventory lalu gunakan
-        safeFire("UseItemRequest", _G.SelectedBoostItem)
-        safeFire("ActivateBoostRequest", _G.SelectedBoostItem)
-        safeFire("UsePotionRequest")
-        safeFire("ClaimActiveBoosts")
-    end)
-end
-
-local function performAutoSell()
-    pcall(function()
-        -- If selective sell by name/rarity is enabled, attempt best-effort
-        if _G.AutoSellByName and next(_G.SellNames) ~= nil then
-            for _, name in ipairs(_G.SellNames) do
-                -- try remote names commonly used
-                safeFire("SellSpecificByName", name)
-                safeFire("SellUnitByName", name)
-                safeFire("SellBrainrotByName", name)
+-- 3. Loop Event (Quest & CandyShop Synced)
+task.spawn(function()
+    while task.wait(5) do
+        if _G.Fikrah.AutoQuest then
+            safeFire("CollectAllQuests") safeFire("ClaimAllReward")
+            if GameData.Quest and type(GameData.Quest.GetActiveDailyQuests) == "function" then
+                pcall(function()
+                    for id, _ in pairs(GameData.Quest.GetActiveDailyQuests()) do safeFire("ClaimQuest", id) end
+                end)
             end
         end
-
-        if _G.AutoSellByRarity and next(_G.SellRarities) ~= nil then
-            for _, rarity in ipairs(_G.SellRarities) do
-                safeFire("SellByRarity", rarity)
-                safeFire("SellBrainrotByRarity", rarity)
-            end
+        if _G.Fikrah.AutoCandy then
+            if GameData.CandyShop and GameData.CandyShop.Start then pcall(function() GameData.CandyShop.Start() end) end
+            safeFire("StartCandyEvent") safeFire("ClaimCandyRewards")
         end
-
-        -- Generic sell calls as fallback
-        safeFire("SellUnitRequest")
-        safeFire("SellBrainrotRequest")
-        safeFire("SellSelectedUnits")
-        if _G.AutoSellAllJunk then
-            safeFire("SellAllJunkRequest")
-            safeFire("SellJunkUnits")
-        end
-    end)
-end
-
--- ======================================================= --
--- TRY REQUIRE: runtime Modules
--- ======================================================= --
-local function tryRequireModule(pathSegments)
-    local ok, mod
-    pcall(function()
-        local node = ReplicatedStorage
-        for _, seg in ipairs(pathSegments) do
-            node = node:FindFirstChild(seg)
-            if not node then error("path not found") end
-        end
-        mod = require(node)
-        ok = true
-    end)
-    if not ok then
-        return nil
-    end
-    return mod
-end
-
-local BattleSquadConfig = tryRequireModule({"Shared","BattleSquadConfig"})
-local DungeonConfig = tryRequireModule({"Shared","DungeonConfig"})
-
--- Additional modules requested
-local InventoryConfig = tryRequireModule({"Modules","InventoryConfig"})
-local RollSpeedConfig = tryRequireModule({"Modules","RollSpeedConfig"})
-local MultiRollConfig = tryRequireModule({"Modules","MultiRollConfig"})
-local BrainrotVisuals = tryRequireModule({"Modules","BrainrotVisuals"})
-local BrainrotLevelConfig = tryRequireModule({"Modules","BrainrotLevelConfig"})
-local TraitConfig = tryRequireModule({"Modules","TraitConfig"})
-local UiIconConfig = tryRequireModule({"Modules","UiIconConfig"})
-local DiceIconBuilder = tryRequireModule({"Modules","DiceIconBuilder"})
-local BrainrotVariantConfig = tryRequireModule({"Modules","BrainrotVariantConfig"})
-local QuestConfig = tryRequireModule({"Modules","QuestConfig"}) or tryRequireModule({"QuestConfig"}) or tryRequireModule({"Modules","Quests"})
-local CandyShop = tryRequireModule({"ReleasedContent","Update2","Client","CandyShop"}) or tryRequireModule({"ReleasedContent","Update2","Client","CandyShop"}) or tryRequireModule({"CandyShop"})
-
--- Helper: attempt to detect player money via common leaderstat names
-local function getPlayerMoney()
-    local stats = LocalPlayer:FindFirstChild("leaderstats") or LocalPlayer
-    local candidates = {"Cash","Money","Coins","Gold","Balance","CashMoney"}
-    for _, name in ipairs(candidates) do
-        local v = stats:FindFirstChild(name)
-        if v and (typeof(v.Value) == "number" or type(v.Value) == "number") then
-            return tonumber(v.Value)
-        end
-    end
-    -- try numeric value fields directly under player
-    for _, child in ipairs(stats:GetChildren()) do
-        if child:IsA("IntValue") or child:IsA("NumberValue") then
-            return tonumber(child.Value)
-        end
-    end
-    return nil
-end
-
--- ======================================================= --
--- STRUKTUR KATEGORI UI RAPI & TERSTRUKTUR --
--- ======================================================= --
-local TabRoll = Window:CreateTab("🎲 Roll & Gacha", 4483345998)
-local TabUnit = Window:CreateTab("🎒 Manajemen Unit", 4483345998)
-local TabUpgrade = Window:CreateTab("📈 Level & Upgrade", 4483345998)
-local TabTower = Window:CreateTab("🗼 Tower & Dungeon", 4483345998)
-local TabBoost = Window:CreateTab("🧪 Boost & Event", 4483345998)
-local TabSystem = Window:CreateTab("⚙️ Sistem & Teleport", 4483345998)
-
--- ------------------------------------------------------- --
--- KATEGORI 2: MANAJEMEN UNIT & UANG -- (modify: Selective sell UI)
--- ------------------------------------------------------- --
-TabUnit:CreateSection("👕 Equip & Kunci Unit")
-TabUnit:CreateToggle({
-    Name = "👕 Auto Equip Unit Terbaik (Squad)",
-    Flag = "T_Equip",
-    Callback = function(v)
-        _G.AutoEquipBest = v
-        if v then
-            safeFire("EquipBest")
-            safeFire("EquipBestBattleSquadRequest")
-        end
-    end
-})
-TabUnit:CreateToggle({Name = "🔒 Auto Lock / Kunci Unit Terbaik", Flag = "T_LockUnit", Callback = function(v) _G.AutoLockBestUnits = v if v then safeFire("ToggleLockRequest") end end})
-
-TabUnit:CreateSection("🗑️ Sistem Penjualan Unit (Sell)")
-TabUnit:CreateToggle({
-    Name = "🗑️ Auto Sell Unit di Bawah Batas",
-    Flag = "T_SellUnder",
-    Callback = function(v)
-        _G.AutoSellUnder = v
-        safeFire("SetAutoSellUnderRequest", _G.SellThreshold, v)
-    end
-})
-TabUnit:CreateToggle({Name = "🗑️ Auto Sell All Junk (Sampah/Low Tier)", Flag = "T_SellJunk", Callback = function(v) _G.AutoSellAllJunk = v end})
-TabUnit:CreateButton({Name = "🗑️ Sell Unit Manual Sekarang", Callback = function() performAutoSell() end})
-
--- New: selective sell controls
-TabUnit:CreateSection("🔎 Seleksi Penjualan (Advanced)")
-TabUnit:CreateToggle({Name = "🗂️ Auto Sell by Rarity", Flag = "T_SellByRarity", Callback = function(v) _G.AutoSellByRarity = v end})
-TabUnit:CreateInput({Name = "📥 Tambah Rarity (pisah koma)", Placeholder = "Contoh: Common,Rare", RemoveTextAfterFocus = true, Callback = function(text)
-    if text and text:match("%S") then
-        for s in string.gmatch(text, "[^,]+") do
-            local t = s:gsub("^%s+",""):gsub("%s+$","")
-            if t ~= "" then table.insert(_G.SellRarities, t) end
-        end
-        notifyUI("✅ Ditambahkan", "Rarity ditambahkan ke daftar sell.",2)
-    end
-end})
-TabUnit:CreateButton({Name = "📋 Lihat Daftar Rarity Sell (Console)", Callback = function() print(HttpService:JSONEncode(_G.SellRarities)); notifyUI("Dicetak","Daftar rarity dicetak di console.",2) end})
-TabUnit:CreateButton({Name = "🧹 Clear Daftar Rarity Sell", Callback = function() _G.SellRarities = {}; notifyUI("✅ Dikosongkan","Daftar rarity sell dikosongkan.",2) end})
-
-TabUnit:CreateInput({Name = "📥 Tambah Nama Brainrot/Unit (pisah koma)", Placeholder = "Contoh: BrainrotA, BrainrotB", RemoveTextAfterFocus = true, Callback = function(text)
-    if text and text:match("%S") then
-        for s in string.gmatch(text, "[^,]+") do
-            local t = s:gsub("^%s+",""):gsub("%s+$","")
-            if t ~= "" then table.insert(_G.SellNames, t) end
-        end
-        notifyUI("✅ Ditambahkan", "Nama unit ditambahkan ke daftar sell.",2)
-    end
-end})
-TabUnit:CreateButton({Name = "📋 Lihat Daftar Nama Sell (Console)", Callback = function() print(HttpService:JSONEncode(_G.SellNames)); notifyUI("Dicetak","Daftar nama sell dicetak di console.",2) end})
-TabUnit:CreateButton({Name = "🧹 Clear Daftar Nama Sell", Callback = function() _G.SellNames = {}; notifyUI("✅ Dikosongkan","Daftar nama sell dikosongkan.",2) end})
-TabUnit:CreateToggle({Name = "⚙️ Auto Sell by Name", Flag = "T_SellByName", Callback = function(v) _G.AutoSellByName = v end})
-
-TabUnit:CreateSection("💰 Pengumpulan Uang (Cash/Money)")
-TabUnit:CreateToggle({
-    Name = "💰 Auto Collect Cash / Money (Agresif)",
-    Flag = "T_Money",
-    Callback = function(v)
-        _G.AutoCollectMoney = v
-        if v then
-            task.spawn(function()
-                while _G.AutoCollectMoney do
-                    performMoneyCollect()
-                    task.wait(_G.CollectDelay)
-                end
-            end)
-        end
-    end
-})
-TabUnit:CreateButton({Name = "💵 Collect Uang Sekarang (Manual)", Callback = function() performMoneyCollect() end})
-
--- ======================================================= --
--- QUEST & CANDYSHOP INTEGRATION (UI Bahasa Indonesia)
--- ======================================================= --
-local TabEvents = Window:CreateTab("🎯 Quest & Event", 4483345998)
-TabEvents:CreateSection("📜 Quest & Hadiah")
-TabEvents:CreateButton({Name = "🔎 Show Active Daily/Weekly (Console)", Callback = function()
-    if QuestConfig then
-        pcall(function()
-            local daily = QuestConfig.GetActiveDailyQuests and QuestConfig.GetActiveDailyQuests() or {}
-            local weekly = QuestConfig.GetActiveWeeklyQuests and QuestConfig.GetActiveWeeklyQuests() or {}
-            print("Daily:", HttpService:JSONEncode(daily))
-            print("Weekly:", HttpService:JSONEncode(weekly))
-            notifyUI("Dicetak","Active quests dicetak di console.",2)
-        end)
-    else
-        notifyUI("⚠️ Tidak Ditemukan","QuestConfig module tidak ditemukan.",3)
-    end
-end})
-TabEvents:CreateButton({Name = "📥 Auto Claim All Quests (best-effort)", Callback = function()
-    -- try common remotes
-    safeFire("CollectAllQuests")
-    safeFire("ClaimAllQuests")
-    safeFire("CollectAllReward")
-    notifyUI("✅ Dicoba","Mencoba claim semua quest (best-effort).",3)
-end})
-TabEvents:CreateButton({Name = "ℹ️ Show Quest Config (Console)", Callback = function()
-    if QuestConfig then print(HttpService:JSONEncode({DAILY=QuestConfig.DAILY_ACTIVE_COUNT, WEEKLY=QuestConfig.WEEKLY_ACTIVE_COUNT, CollectAll=QuestConfig.CollectAllReward})); notifyUI("Dicetak","QuestConfig dicetak di console.",2) else notifyUI("⚠️ Tidak Ditemukan","QuestConfig module tidak ditemukan.",3) end
-end})
-
-TabEvents:CreateSection("🍬 Candy Shop")
-TabEvents:CreateButton({Name = "🔓 Buka Candy Shop (Client)", Callback = function()
-    if CandyShop and CandyShop.Open then
-        pcall(function() CandyShop.Open() notifyUI("✅ CandyShop","CandyShop dibuka (client).",2) end)
-    else
-        -- try remote fallback
-        safeFire("OpenCandyShop")
-        notifyUI("⚠️ Fallback","Mencoba buka CandyShop via remote.",3)
-    end
-end})
-TabEvents:CreateButton({Name = "▶️ Start Candy Event (Client)", Callback = function()
-    if CandyShop and CandyShop.Start then pcall(function() CandyShop.Start() notifyUI("✅ CandyShop","Candy event dimulai (client).",2) end) else safeFire("StartCandyEvent") notifyUI("⚠️ Fallback","Mencoba start candy via remote.",3) end
-end})
-
--- ======================================================= --
--- STRUKTUR KATEGORI UI RAPI & TERSTRUKTUR (rest kept)
--- ======================================================= --
-local TabRoll = TabRoll
-local TabUnit = TabUnit
-local TabUpgrade = TabUpgrade
-local TabTower = TabTower
-local TabBoost = TabBoost
-local TabSystem = TabSystem
-
--- (rest of file leaves other features intact)
-
--- ======================================================= --
--- LOOPS EKSEKUSI UTAMA (BACKGROUND) (unchanged but kept consistent)
--- ======================================================= --
-task.spawn(function()
-    while task.wait(0.3) do
-        if _G.AutoRoll then safeFire("RollRequest") end
-        if _G.InstantRoll and _G.AutoRoll then safeFire("RollRequest") end
-        if _G.AutoRerollGrade then safeFire("RerollGradeRequest") end
-        if _G.AutoRerollTrait then safeFire("SpinTraitRequest") end
     end
 end)
-
-task.spawn(function()
-    while task.wait(0.6) do
-        handleTowerAutomation()
-        if _G.AutoSellUnder or _G.AutoSellAllJunk or _G.AutoSellByName or _G.AutoSellByRarity then performAutoSell() end
-    end
-end)
-
-task.spawn(function()
-    while task.wait(0.2) do
-        if _G.AutoBossAttack then safeFire("BossAttack") end
-    end
-end)
-
-task.spawn(function()
-    while task.wait(3.0) do
-        -- Logika penyesuaian level 1 sampai Max
-        local targetBrainLevel = (_G.BrainrotTargetLevel:find("Max")) and 38 or 1
-        local targetDiceLevel = (_G.DiceTargetLevel:find("Max")) and 38 or 1
-
-        if _G.AutoUpgradeBrainrot then
-            -- if BrainrotLevelConfig available, use smart cost check
-            if BrainrotLevelConfig and BrainrotLevelConfig.GetUpgradeCost then
-                local state = safeInvoke and safeInvoke("RequestBrainrotState")
-                local cur = 0
-                if type(state) == "table" and state.Level then cur = tonumber(state.Level) or 0 end
-                local nextL = (cur or 0) + 1
-                local ok, cost = pcall(function() return BrainrotLevelConfig.GetUpgradeCost(nextL) end)
-                local money = getPlayerMoney()
-                if ok and cost and money and tonumber(money) and tonumber(money) >= tonumber(cost) then
-                    safeFire("UpgradeBrainrotRequest", nextL)
-                end
-            else
-                safeFire("UpgradeBrainrotRequest", targetBrainLevel)
-            end
-        end
-        if _G.AutoUpgradeDice then safeFire("UpgradeDiceRequest", targetDiceLevel) end
-        if _G.AutoBuyDice then safeFire("BuyDiceRequest") end
-        if _G.AutoRebirth then safeFire("RebirthRequest") end
-        if _G.AutoEquipBest then
-            safeFire("EquipBest")
-            safeFire("EquipBestBattleSquadRequest")
-        end
-        if _G.AutoClaimAllRewards then
-            safeFire("ClaimAllQuests")
-        end
-        if _G.AutoMeteor then safeFire("MeteorClaimed") end
-        if _G.AutoLuckyBlock then safeFire("OpenLuckyBlocks", "LuckyBlock") end
-    end
-end)
-
--- Auto-apply saved custom profile on load (if exists)
-Rayfield:LoadConfiguration()
-local savedCustom = loadCustomProfile and loadCustomProfile()
-if savedCustom then
-    pcall(function()
-        applyCustomProfile(savedCustom)
-    end)
-end
-
--- End of file
