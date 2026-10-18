@@ -1,398 +1,635 @@
--- =====================================================================
--- DADU BRAINROT! ULTIMATE HUB V1.0
--- Features: Auto Roll, Auto Upgrade, Dungeon Bot, & Indo Music Profile Player
--- =====================================================================
-
-local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local TweenService = game:GetService("TweenService")
-local CoreGui = game:GetService("CoreGui")
-local RunService = game:GetService("RunService")
-
-local LocalPlayer = Players.LocalPlayer
-local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
-
--- Hapus UI lama jika ada agar tidak duplikat
-if CoreGui:FindFirstChild("DaduBrainrotHub") then
-    CoreGui.DaduBrainrotHub:Destroy()
-end
-
--- ScreenGui Utama
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "DaduBrainrotHub"
-ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-ScreenGui.Parent = CoreGui
-
--- =====================================================================
--- 1. BACKGROUND MUSIC PLAYER SYSTEM (INDONESIAN SONGS)
--- =====================================================================
-local SoundFolder = Instance.new("Folder")
-SoundFolder.Name = "HubMusicFolder"
-SoundFolder.Parent = ScreenGui
-
-local BackgroundMusic = Instance.new("Sound")
-BackgroundMusic.Name = "BGM_Player"
--- Contoh ID Lagu Indonesia populer di Roblox (bisa diganti ID lagu lain)
--- Sialan / Sampai Jadi Debu / Melawan Restu / Kenangan Manis
-BackgroundMusic.SoundId = "rbxassetid://1845773120" 
-BackgroundMusic.Looped = true
-BackgroundMusic.Volume = 0.5
-BackgroundMusic.Parent = SoundFolder
-
--- List Playlist Lagu Indonesia (Roblox Audio IDs)
-local Playlist = {
-    {Name = "Sialan - Mahalini", ID = "rbxassetid://1845773120"},
-    {Name = "Sampai Jadi Debu - Banda Neira", ID = "rbxassetid://1837424289"},
-    {Name = "Evaluasi - Hindia", ID = "rbxassetid://1839245102"},
-    {Name = "Hati-Hati di Jalan - Tulus", ID = "rbxassetid://1843345129"}
+📦 Module: InventoryConfig (ReplicatedStorage.Modules.InventoryConfig)
+{
+  ["MaxEquippedSlots"] = 3,
+  ["MaxSlots"] = 100,
 }
-local currentSongIndex = 1
 
-BackgroundMusic:Play()
+📦 Module: BrainrotVisuals (ReplicatedStorage.Modules.BrainrotVisuals)
+{
+  ["GetLevelStage"] = function: 0xcb3d5533a0274273,
+  ["SetMarkLine"] = function: 0xa82258979caf78bf,
+  ["IsFloatingRig"] = function: 0x8e1da32b568fb30e,
+  ["ScaleToLongestSide"] = function: 0x31552a24e3a1ad7c,
+  ["DecorFxTag"] = "DecorFx",
+  ["MakeUnclickable"] = function: 0x4a1c6cbded7bdc3d,
+  ["ComputeRestingCFrame"] = function: 0xb64e3e71c0765325,
+  ["SetViewportModel"] = function: 0xa9a7a0a5650593dd,
+  ["GrowToLevel"] = function: 0x93c69eb53d497129,
+  ["PlaceViewportModel"] = function: 0x2bd561045cea3bbd,
+  ["CARD_FILL"] = 1.15,
+  ["StartFloatAnimation"] = function: 0xe2c72dbeea65328a,
+  ["MutatedTag"] = "MutatedBrainrot",
+  ["SetPodiumLevelFx"] = function: 0xe3fb05c75691b3a6,
+  ["AddBeyondAura"] = function: 0xed9cbdc480dc9fd1,
+  ["GetPlacedTargetSize"] = function: 0xf420be63d8f0693c,
+  ["AddMutationAura"] = function: 0x4d1d8f38d586b0c0,
+  ["IsGroupRig"] = function: 0xe7f2c449cb548110,
+  ["SetAdminLine"] = function: 0x1336cca15fb27410,
+  ["MarkDecorFx"] = function: 0x90a372396987dad1,
+  ["CreateDisplayModel"] = function: 0xa0344221963c994c,
+  ["CreateEmptyViewport"] = function: 0x135504183e7413e6,
+  ["FormatCommas"] = function: 0xc6930979516d75cc,
+  ["FitFootprint"] = function: 0x2f15368d6a2ae9b7,
+  ["CreateItemViewport"] = function: 0x82ebc2706a344d0f,
+  ["RefreshInfoBillboard"] = function: 0xe568c7f8804e9a88,
+  ["UpdateIncomeLabel"] = function: 0x4bdecc401cdb8cb4,
+  ["GetVisibleCenter"] = function: 0x62d840ae2e06f0ba,
+}
 
--- =====================================================================
--- 2. MAIN UI DESIGN & LAYOUT (DARK MINIMALIST)
--- =====================================================================
-local MainFrame = Instance.new("Frame")
-MainFrame.Name = "MainFrame"
-MainFrame.Size = UDim2.new(0, 580, 0, 360)
-MainFrame.Position = UDim2.new(0.5, -290, 0.5, -180)
-MainFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 24)
-MainFrame.BorderSizePixel = 0
-MainFrame.Parent = ScreenGui
+📦 Module: RollSpeedConfig (ReplicatedStorage.Modules.RollSpeedConfig)
+{
+  ["Tiers"] = {
+    [1] = {
+      ["Name"] = "Standard Roll",
+      ["IconAccent"] = 0.313726, 0.321569, 0.345098,
+      ["IconColor"] = 0.54902, 0.556863, 0.580392,
+      ["SpinDuration"] = 1.6,
+      ["UpgradeCost"] = 0,
+    },
+    [2] = {
+      ["Name"] = "Quick Roll",
+      ["IconAccent"] = 0.196078, 0.470588, 0.666667,
+      ["IconColor"] = 0.470588, 0.784314, 1,
+      ["SpinDuration"] = 1.5,
+      ["UpgradeCost"] = 150,
+    },
+    [3] = {
+      ["Name"] = "Fast Roll",
+      ["IconAccent"] = 0.156863, 0.588235, 0.431373,
+      ["IconColor"] = 0.470588, 0.862745, 0.705882,
+      ["SpinDuration"] = 1.4,
+      ["UpgradeCost"] = 750,
+    },
+    [4] = {
+      ["Name"] = "Rapid Roll",
+      ["IconAccent"] = 0.627451, 0.470588, 0.0784314,
+      ["IconColor"] = 0.921569, 0.745098, 0.235294,
+      ["SpinDuration"] = 1.3,
+      ["UpgradeCost"] = 25000,
+    },
+    [5] = {
+      ["Name"] = "Blazing Roll",
+      ["IconAccent"] = 0.705882, 0.313726, 0.0784314,
+      ["IconColor"] = 1, 0.54902, 0.235294,
+      ["SpinDuration"] = 1.2,
+      ["UpgradeCost"] = 10000000,
+    },
+    [6] = {
+      ["Name"] = "Instant Roll",
+      ["IconAccent"] = 0.705882, 0.117647, 0.117647,
+      ["IconColor"] = 1, 0.313726, 0.313726,
+      ["SpinDuration"] = 1.1,
+      ["UpgradeCost"] = 300000000,
+    },
+  },
+  ["MaxLevel"] = 6,
+  ["GetTier"] = function: 0xd21d384b1bfc6bc5,
+}
 
--- Efek Sudut Melengkung (UICorner)
-local MainCorner = Instance.new("UICorner")
-MainCorner.CornerRadius = UDim.new(0, 10)
-MainCorner.Parent = MainFrame
+📦 Module: MultiRollConfig (ReplicatedStorage.Modules.MultiRollConfig)
+{
+  ["Tiers"] = {
+    [1] = {
+      ["RollCount"] = 1,
+      ["Name"] = "Single Roll",
+      ["IconAccent"] = 0.313726, 0.321569, 0.345098,
+      ["IconColor"] = 0.54902, 0.556863, 0.580392,
+      ["UpgradeCost"] = 0,
+    },
+    [2] = {
+      ["RollCount"] = 2,
+      ["Name"] = "Double Roll",
+      ["IconAccent"] = 1, 0.843137, 0,
+      ["IconColor"] = 1, 1, 1,
+      ["UpgradeCost"] = 10000000000000000,
+    },
+  },
+  ["MaxLevel"] = 2,
+  ["GetTier"] = function: 0x200f7afec91ee186,
+}
 
--- Garis Pinggir / Border Elegan
-local MainStroke = Instance.new("UIStroke")
-MainStroke.Color = Color3.fromRGB(80, 70, 140)
-MainStroke.Thickness = 1.5
-MainStroke.Parent = MainFrame
+📦 Module: RarityVisuals (ReplicatedStorage.Modules.RarityVisuals)
+{
+  ["ClearWave"] = function: 0xf6d0833e1ae8de1e,
+  ["IsAnimated"] = function: 0x3cba03ec3ce37368,
+  ["SetRarityColor"] = function: 0x5354e6f4f9d866a5,
+  ["ApplyWave"] = function: 0x083bb1171867e894,
+}
 
--- Topbar (Header)
-local TopBar = Instance.new("Frame")
-TopBar.Name = "TopBar"
-TopBar.Size = UDim2.new(1, 0, 0, 40)
-TopBar.BackgroundColor3 = Color3.fromRGB(24, 24, 32)
-TopBar.BorderSizePixel = 0
-TopBar.Parent = MainFrame
+📦 Module: UiSoundConfig (ReplicatedStorage.Modules.UiSoundConfig)
+{
+  ["RareReveal"] = "rbxassetid://0",
+  ["SpinTick"] = "rbxassetid://0",
+  ["Reveal"] = "rbxassetid://0",
+  ["Pop"] = "rbxassetid://0",
+  ["Toggle"] = "rbxassetid://0",
+  ["Error"] = "rbxassetid://0",
+  ["Click"] = "rbxassetid://0",
+}
 
-local TopCorner = Instance.new("UICorner")
-TopCorner.CornerRadius = UDim.new(0, 10)
-TopCorner.Parent = TopBar
+📦 Module: BrainrotModels (ReplicatedStorage.Modules.BrainrotModels)
+{
+  ["Folder"] = function: 0x04e30305ea2ac238,
+  ["AnimatedTag"] = "AnimatedBrainrot",
+  ["RigAsAttribute"] = "RigAs",
+  ["IdleAutoAttribute"] = "IdleAuto",
+  ["GetRig"] = function: 0xa6997097fdcf58c2,
+}
 
--- Judul Hub
-local TitleLabel = Instance.new("TextLabel")
-TitleLabel.Size = UDim2.new(0, 300, 1, 0)
-TitleLabel.Position = UDim2.new(0, 15, 0, 0)
-TitleLabel.BackgroundTransparency = 1
-TitleLabel.Font = Enum.Font.GothamBold
-TitleLabel.Text = "🎲 DADU BRAINROT! | Ultimate Hub"
-TitleLabel.TextColor3 = Color3.fromRGB(240, 240, 255)
-TitleLabel.TextSize = 14
-TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
-TitleLabel.Parent = TopBar
+📦 Module: BrainrotLevelConfig (ReplicatedStorage.Modules.BrainrotLevelConfig)
+{
+  ["GetUpgradeCost"] = function: 0x278a4765ca1f2d3b,
+  ["IncomeGrowthRate"] = 1.15,
+  ["LevelIncomeMultiplier"] = 3,
+  ["GetCashPerSecond"] = function: 0x05ec36d90ab9f452,
+  ["IsMaxLevel"] = function: 0x99274976f2858d06,
+  ["MaxLevel"] = 20,
+  ["BaseUpgradeCostMultiplier"] = 8,
+  ["CostGrowthRate"] = 1.18,
+  ["GetIncomePerLevelBonus"] = function: 0x5f59b71393e106a2,
+}
 
--- Tombol Close (X)
-local CloseBtn = Instance.new("TextButton")
-CloseBtn.Size = UDim2.new(0, 30, 0, 30)
-CloseBtn.Position = UDim2.new(1, -35, 0, 5)
-CloseBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-CloseBtn.Font = Enum.Font.GothamBold
-CloseBtn.Text = "X"
-CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-CloseBtn.TextSize = 12
-CloseBtn.Parent = TopBar
+📦 Module: TraitConfig (ReplicatedStorage.Modules.TraitConfig)
+{
+  ["GetCritChance"] = function: 0x2a4163beadcd8e09,
+  ["GetHex"] = function: 0x50caa087ee7847b3,
+  ["DisarmPity"] = function: 0x7392500589f7f0f1,
+  ["HexOf"] = function: 0xc7aa92d2ff074fc7,
+  ["GetCritMultiplier"] = function: 0xccf441126d64c2ed,
+  ["IsTopTier"] = function: 0xacd36d7f0531a87e,
+  ["GetAllTraitIds"] = function: 0xaa5490a10882bbd0,
+  ["GetAllHexIds"] = function: 0xa78955b8d101ce73,
+  ["RegisterHex"] = function: 0x690e8f020e494889,
+  ["ApplySellValue"] = function: 0x831cb2305645e5d0,
+  ["ApplyDamage"] = function: 0xa01675512c8b442a,
+  ["ForceNextRoll"] = function: 0xf26e5e6b55fd5b27,
+  ["GetHexOddsPercent"] = function: 0x160c3193fe94da86,
+  ["ApplyCashPerSecond"] = function: 0xcd3c1a60d27f2e32,
+  ["RollTrait"] = function: 0x5cf05a2c9b995054,
+  ["RollHex"] = function: 0xb01ea9dac4e16fc2,
+  ["RollTraitWithPity"] = function: 0x5e5a4873aab94885,
+  ["GetPity"] = function: 0x6b3cd3618aa96a33,
+  ["Pity"] = {
+    [1] = {
+      ["Spins"] = 1000,
+      ["TraitId"] = "Ultimate",
+    },
+    [2] = {
+      ["Spins"] = 600,
+      ["TraitId"] = "Celestial",
+    },
+    [3] = {
+      ["Spins"] = 250,
+      ["TraitId"] = "Divine",
+    },
+  },
+  ["RarityColors"] = {
+    ["Common"] = 0.745098, 0.745098, 0.764706,
+    ["Mythic"] = 1, 0.352941, 0.470588,
+    ["Uncommon"] = 0.431373, 0.843137, 0.470588,
+    ["Rare"] = 0.352941, 0.627451, 0.960784,
+    ["Headless"] = 1, 0.235294, 0.235294,
+    ["Legendary"] = 0.921569, 0.72549, 0.235294,
+    ["Epic"] = 0.686275, 0.352941, 0.921569,
+    ["Pumpkin"] = 1, 0.588235, 0.117647,
+    ["Celestial"] = 0.470588, 0.862745, 1,
+    ["Ultimate"] = 1, 1, 1,
+  },
+  ["ApplyUpgradeCost"] = function: 0xab193e31e04f26d9,
+  ["RegisterTrait"] = function: 0x3ef6780c301645fc,
+  ["WithHex"] = function: 0x381b2c4fd00146dd,
+  ["RarityOrder"] = {
+    [1] = "Common",
+    [2] = "Uncommon",
+    [3] = "Rare",
+    [4] = "Epic",
+    [5] = "Legendary",
+    [6] = "Mythic",
+    [7] = "Celestial",
+    [8] = "Ultimate",
+  },
+  ["BaseOf"] = function: 0x40c99101240bca41,
+  ["GetDisplayName"] = function: 0xc4ab20fb09448c5c,
+  ["GetById"] = function: 0xe3a4e4568850c1b6,
+  ["GetOddsPercent"] = function: 0xc9ce7c92acc6cc5c,
+  ["SplitHex"] = function: 0xe385fea75c1c17a8,
+  ["ArmPity"] = function: 0x1494935cccaace39,
+  ["GetLuckBonus"] = function: 0x4ceb1aabcfce1c6f,
+}
 
-local CloseCorner = Instance.new("UICorner")
-CloseCorner.CornerRadius = UDim.new(0, 6)
-CloseCorner.Parent = CloseBtn
+📦 Module: UiIconConfig (ReplicatedStorage.Modules.UiIconConfig)
+{
+  ["DiceTier8"] = "",
+  ["RollButton"] = "99787463413818",
+  ["DiceTier2"] = "",
+  ["DiceTier14"] = "",
+  ["SkillTreeHexNode"] = "15191584823",
+  ["DiceTier4"] = "",
+  ["DiceTier13"] = "",
+  ["DiceTier6"] = "",
+  ["InventoryPanelHeader"] = "18224282281",
+  ["DiceTier9"] = "",
+  ["DiceTier11"] = "",
+  ["TraitIndexPanelHeader"] = "",
+  ["DiceTier10"] = "",
+  ["UpgradesToggle"] = "82741329688839",
+  ["DiceTier7"] = "",
+  ["SettingsToggle"] = "18801194979",
+  ["DiceTier12"] = "",
+  ["DiceTier1"] = "",
+  ["MarketTeleportToggle"] = "112466768203929",
+  ["UpgradesPanelHeader"] = "82741329688839",
+  ["BackpackToggle"] = "18224282281",
+  ["BaseTeleportToggle"] = "75270905712390",
+  ["RollSpeedNodeIcon"] = "",
+  ["DiceTier5"] = "",
+  ["DiceTier3"] = "",
+  ["TraitShopPanelHeader"] = "",
+  ["SettingsPanelHeader"] = "18801194979",
+}
 
-CloseBtn.MouseButton1Click:Connect(function()
-    ScreenGui:Destroy()
-end)
+📦 Module: DiceIconBuilder (ReplicatedStorage.Modules.DiceIconBuilder)
+{
+  ["Build"] = function: 0xfb83d7b6dbda9ee7,
+  ["Styles"] = {
+    ["wood"] = function: 0x8ddc6c19798a65f9,
+    ["holy"] = function: 0x152bc3a7a8672d5e,
+    ["cosmic"] = function: 0x546168c8b0f25f0a,
+    ["celestial"] = function: 0xf17cdb305c327672,
+    ["omnipotent"] = function: 0xd117d3c4f3ed2e8e,
+    ["gem"] = function: 0x04d1f1b84a729e78,
+    ["stone"] = function: 0x7b5504a5beaed21a,
+    ["brainrot"] = function: 0x73e9802ccd635111,
+    ["blackhole"] = function: 0xc04ebbd07147f650,
+    ["metal"] = function: 0x09a0383e2963307b,
+  },
+}
 
--- =====================================================================
--- 3. SIDEBAR NAVIGATION (MENU KIRI)
--- =====================================================================
-local Sidebar = Instance.new("Frame")
-Sidebar.Size = UDim2.new(0, 140, 1, -40)
-Sidebar.Position = UDim2.new(0, 0, 0, 40)
-Sidebar.BackgroundColor3 = Color3.fromRGB(22, 22, 30)
-Sidebar.BorderSizePixel = 0
-Sidebar.Parent = MainFrame
+📦 Module: BrainrotVariantConfig (ReplicatedStorage.Modules.BrainrotVariantConfig)
+{
+  ["GetDisplayScale"] = function: 0x72fb4e9ac2d8c772,
+  ["Tiers"] = {
+    [1] = {
+      ["IncomeMultiplier"] = 3.999999999999999,
+      ["OneIn"] = 10,
+      ["MaxMultiplier"] = 1.4,
+      ["OneInN"] = 10,
+      ["Color"] = 0.352941, 0.862745, 0.470588,
+      ["Name"] = "Giant",
+      ["DisplayScale"] = 1.2,
+      ["Id"] = "Giant",
+      ["MinMultiplier"] = 1.1,
+    },
+    [2] = {
+      ["IncomeMultiplier"] = 15.999999999999993,
+      ["OneIn"] = 100,
+      ["MaxMultiplier"] = 2.4,
+      ["OneInN"] = 100,
+      ["Color"] = 1, 0.588235, 0.235294,
+      ["Name"] = "Titan",
+      ["DisplayScale"] = 1.45,
+      ["Id"] = "Titan",
+      ["MinMultiplier"] = 2,
+    },
+    [3] = {
+      ["IncomeMultiplier"] = 1023.9999999999987,
+      ["OneIn"] = 100000,
+      ["MaxMultiplier"] = 15,
+      ["OneInN"] = 100000,
+      ["Color"] = 1, 0.843137, 0,
+      ["Animated"] = true,
+      ["Name"] = "Colossal",
+      ["DisplayScale"] = 2.5,
+      ["Id"] = "Colossal",
+      ["MinMultiplier"] = 10,
+    },
+  },
+  ["RollVariant"] = function: 0xa3e61793032c2aa1,
+  ["GetDisplayName"] = function: 0xeef6b3c9aaf6e6b4,
+  ["GetById"] = function: 0x5e8f7d85fffe0827,
+  ["GetIncomeMultiplier"] = function: 0x8000ab8d84c864b9,
+  ["GetOneIn"] = function: 0xf5a5fbfaf1cdd344,
+  ["GetRank"] = function: 0x748a6de96e18bcc4,
+  ["RollMultiplier"] = function: 0x16af914397bf3699,
+}
 
-local UIListLayout = Instance.new("UIListLayout")
-UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-UIListLayout.VerticalAlignment = Enum.VerticalAlignment.Top
-UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-UIListLayout.Padding = UDim.new(0, 5)
-UIListLayout.Parent = Sidebar
-
--- Container Halaman (Pages)
-local Container = Instance.new("Frame")
-Container.Size = UDim2.new(1, -145, 1, -45)
-Container.Position = UDim2.new(0, 145, 0, 43)
-Container.BackgroundTransparency = 1
-Container.Parent = MainFrame
-
--- Fungsi untuk membuat tombol Tab Menu
-local function createTabButton(name, order)
-    local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(1, -10, 0, 35)
-    btn.BackgroundColor3 = Color3.fromRGB(30, 30, 42)
-    btn.Font = Enum.Font.GothamMedium
-    btn.Text = name
-    btn.TextColor3 = Color3.fromRGB(180, 180, 200)
-    btn.TextSize = 12
-    btn.LayoutOrder = order
-    btn.Parent = Sidebar
-
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 6)
-    corner.Parent = btn
-    return btn
-end
-
-local tabAuto = createTabButton("Auto Farm", 1)
-local tabDungeon = createTabButton("Dungeon Bot", 2)
-local tabProfile = createTabButton("Profil & Musik", 3)
-
--- Fungsi untuk membuat Halaman Konten
-local function createPage()
-    local page = Instance.new("ScrollingFrame")
-    page.Size = UDim2.new(1, 0, 1, 0)
-    page.BackgroundTransparency = 1
-    page.BorderSizePixel = 0
-    page.CanvasSize = UDim2.new(0, 0, 1.5, 0)
-    page.ScrollBarThickness = 4
-    page.Visible = false
-    page.Parent = Container
-
-    local layout = Instance.new("UIListLayout")
-    layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-    layout.SortOrder = Enum.SortOrder.LayoutOrder
-    layout.Padding = UDim.new(0, 8)
-    layout.Parent = page
-    return page
-end
-
-local pageAuto = createPage()
-local pageDungeon = createPage()
-local pageProfile = createPage()
-
--- Tampilkan halaman default
-pageAuto.Visible = true
-
-tabAuto.MouseButton1Click:Connect(function()
-    pageAuto.Visible = true
-    pageDungeon.Visible = false
-    pageProfile.Visible = false
-end)
-
-tabDungeon.MouseButton1Click:Connect(function()
-    pageAuto.Visible = false
-    pageDungeon.Visible = true
-    pageProfile.Visible = false
-end)
-
-tabProfile.MouseButton1Click:Connect(function()
-    pageAuto.Visible = false
-    pageDungeon.Visible = false
-    pageProfile.Visible = true
-end)
-
--- =====================================================================
--- 4. KONTEN HALAMAN 1: AUTO FARM & ROLL
--- =====================================================================
-local function createToggle(parent, text, callback)
-    local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(0, 415, 0, 35)
-    btn.BackgroundColor3 = Color3.fromRGB(32, 32, 46)
-    btn.Font = Enum.Font.GothamSemibold
-    btn.Text = "  " .. text .. " [OFF]"
-    btn.TextColor3 = Color3.fromRGB(220, 220, 220)
-    btn.TextSize = 12
-    btn.TextXAlignment = Enum.TextXAlignment.Left
-    btn.Parent = parent
-
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 6)
-    corner.Parent = btn
-
-    local active = false
-    btn.MouseButton1Click:Connect(function()
-        active = not active
-        if active then
-            btn.BackgroundColor3 = Color3.fromRGB(60, 140, 90)
-            btn.Text = "  " .. text .. " [ON]"
-        else
-            btn.BackgroundColor3 = Color3.fromRGB(32, 32, 46)
-            btn.Text = "  " .. text .. " [OFF]"
-        end
-        callback(active)
-    end)
-end
-
--- Implementasi Toggle Auto Roll (Memicu Remotes game Dadu Brainrot)
-createToggle(pageAuto, "Auto Roll Dadu", function(state)
-    getgenv().AutoRoll = state
-    task.spawn(function()
-        while getgenv().AutoRoll do
-            pcall(function()
-                -- Mengambil remote event roll jika tersedia di ReplicatedStorage
-                local remotes = ReplicatedStorage:FindFirstChild("Remotes") or ReplicatedStorage
-                if remotes:FindFirstChild("RollRequest") then
-                    remotes.RollRequest:FireServer()
-                end
-            end)
-            task.wait(0.5)
-        end
-    end)
-end)
-
-createToggle(pageAuto, "Auto Claim Rebirth Reward", function(state)
-    getgenv().AutoRebirth = state
-    task.spawn(function()
-        while getgenv().AutoRebirth do
-            pcall(function()
-                local remotes = ReplicatedStorage:FindFirstChild("Remotes") or ReplicatedStorage
-                if remotes:FindFirstChild("RebirthRequest") then
-                    remotes.RebirthRequest:FireServer()
-                end
-            end)
-            task.wait(2)
-        end
-    end)
-end)
-
--- =====================================================================
--- 5. KONTEN HALAMAN 2: DUNGEON BOT
--- =====================================================================
-createToggle(pageDungeon, "Auto Farm Dungeon (Tower / Sahur)", function(state)
-    getgenv().AutoDungeon = state
-    task.spawn(function()
-        while getgenv().AutoDungeon do
-            pcall(function()
-                local remotes = ReplicatedStorage:FindFirstChild("Remotes") or ReplicatedStorage
-                if remotes:FindFirstChild("DungeonRequest") then
-                    remotes.DungeonRequest:FireServer("StartBattle", "Sahur")
-                end
-            end)
-            task.wait(1)
-        end
-    end)
-end)
-
--- =====================================================================
--- 6. KONTEN HALAMAN 3: PROFIL & PEMUTAR LAGU INDO
--- =====================================================================
--- Label Info Profil User
-local ProfileCard = Instance.new("Frame")
-ProfileCard.Size = UDim2.new(0, 415, 0, 70)
-ProfileCard.BackgroundColor3 = Color3.fromRGB(28, 28, 40)
-ProfileCard.Parent = pageProfile
-
-local PCorner = Instance.new("UICorner")
-PCorner.CornerRadius = UDim.new(0, 8)
-PCorner.Parent = ProfileCard
-
-local AvatarImg = Instance.new("ImageLabel")
-AvatarImg.Size = UDim2.new(0, 50, 0, 50)
-AvatarImg.Position = UDim2.new(0, 10, 0, 10)
-AvatarImg.BackgroundTransparency = 1
-AvatarImg.Image = Players:GetUserThumbnailAsync(LocalPlayer.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size150x150)
-AvatarImg.Parent = ProfileCard
-
-local ACorner = Instance.new("UICorner")
-ACorner.CornerRadius = UDim.new(1, 0)
-ACorner.Parent = AvatarImg
-
-local NameLabel = Instance.new("TextLabel")
-NameLabel.Size = UDim2.new(0, 320, 0, 25)
-NameLabel.Position = UDim2.new(0, 75, 0, 12)
-NameLabel.BackgroundTransparency = 1
-NameLabel.Font = Enum.Font.GothamBold
-NameLabel.Text = "Player: " .. LocalPlayer.Name
-NameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-NameLabel.TextSize = 14
-NameLabel.TextXAlignment = Enum.TextXAlignment.Left
-NameLabel.Parent = ProfileCard
-
-local StatusLabel = Instance.new("TextLabel")
-StatusLabel.Size = UDim2.new(0, 320, 0, 20)
-StatusLabel.Position = UDim2.new(0, 75, 0, 35)
-StatusLabel.BackgroundTransparency = 1
-StatusLabel.Font = Enum.Font.Gotham
-StatusLabel.Text = "Status: Hub Active | Game: Dadu Brainrot!"
-StatusLabel.TextColor3 = Color3.fromRGB(120, 220, 140)
-StatusLabel.TextSize = 11
-StatusLabel.TextXAlignment = Enum.TextXAlignment.Left
-StatusLabel.Parent = ProfileCard
-
--- Panel Pemutar Musik Indonesia
-local MusicPanel = Instance.new("Frame")
-MusicPanel.Size = UDim2.new(0, 415, 0, 110)
-MusicPanel.BackgroundColor3 = Color3.fromRGB(28, 28, 40)
-MusicPanel.Parent = pageProfile
-
-local MCorner = Instance.new("UICorner")
-MCorner.CornerRadius = UDim.new(0, 8)
-MCorner.Parent = MusicPanel
-
-local MusicTitle = Instance.new("TextLabel")
-MusicTitle.Size = UDim2.new(1, -20, 0, 30)
-MusicTitle.Position = UDim2.new(0, 10, 0, 5)
-MusicTitle.BackgroundTransparency = 1
-MusicTitle.Font = Enum.Font.GothamBold
-MusicTitle.Text = "🎵 Pemutar Musik: " .. Playlist[currentSongIndex].Name
-MusicTitle.TextColor3 = Color3.fromRGB(240, 200, 100)
-MusicTitle.TextSize = 12
-MusicTitle.TextXAlignment = Enum.TextXAlignment.Left
-MusicTitle.Parent = MusicPanel
-
--- Tombol Kontrol Musik (Play/Pause/Next)
-local function createMusicBtn(text, posX, callback)
-    local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(0, 120, 0, 30)
-    btn.Position = UDim2.new(0, posX, 0, 45)
-    btn.BackgroundColor3 = Color3.fromRGB(45, 45, 65)
-    btn.Font = Enum.Font.GothamMedium
-    btn.Text = text
-    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    btn.TextSize = 11
-    btn.Parent = MusicPanel
-
-    local c = Instance.new("UICorner")
-    c.CornerRadius = UDim.new(0, 6)
-    c.Parent = btn
-
-    btn.MouseButton1Click:Connect(callback)
-end
-
-createMusicBtn("Play / Pause", 10, function()
-    if BackgroundMusic.IsPlaying then
-        BackgroundMusic:Pause()
-    else
-        BackgroundMusic:Resume()
-    end
-end)
-
-createMusicBtn("Ganti Lagu (Next)", 140, function()
-    currentSongIndex = currentSongIndex + 1
-    if currentSongIndex > #Playlist then
-        currentSongIndex = 1
-    end
-    BackgroundMusic.SoundId = Playlist[currentSongIndex].ID
-    BackgroundMusic:Play()
-    MusicTitle.Text = "🎵 Pemutar Musik: " .. Playlist[currentSongIndex].Name
-end)
-
-createMusicBtn("Stop Musik", 270, function()
-    BackgroundMusic:Stop()
-end)
-
-print("✅ Dadu Brainrot Hub berhasil dimuat dengan pemutar musik Indonesia!")
+📦 Module: QuestConfig (ReplicatedStorage.Modules.QuestConfig)
+{
+  ["GetCurrentDay"] = function: 0x5da578b058ff47d2,
+  ["DAILY_ACTIVE_COUNT"] = 3,
+  ["WEEKLY_ACTIVE_COUNT"] = 3,
+  ["Achievements"] = {
+    [1] = {
+      ["BaseRewardCash"] = 500,
+      ["BaseRewardGems"] = 1,
+      ["BaseTarget"] = 100,
+      ["Kind"] = "RollDice",
+      ["RewardCashGrowth"] = 1.45,
+      ["TargetGrowth"] = 1.35,
+    },
+    [2] = {
+      ["BaseRewardCash"] = 2000,
+      ["BaseRewardGems"] = 2,
+      ["BaseTarget"] = 3,
+      ["Kind"] = "RollGiant",
+      ["RewardCashGrowth"] = 1.5,
+      ["TargetGrowth"] = 1.3,
+    },
+    [3] = {
+      ["BaseRewardCash"] = 15000,
+      ["BaseRewardGems"] = 3,
+      ["BaseTarget"] = 1,
+      ["Kind"] = "RollTitan",
+      ["RewardCashGrowth"] = 1.55,
+      ["TargetGrowth"] = 1.25,
+    },
+    [4] = {
+      ["BaseRewardCash"] = 100000,
+      ["BaseRewardGems"] = 5,
+      ["BaseTarget"] = 1,
+      ["Kind"] = "RollBehemoth",
+      ["RewardCashGrowth"] = 1.6,
+      ["TargetGrowth"] = 1.2,
+    },
+    [5] = {
+      ["BaseRewardCash"] = 1000000,
+      ["BaseRewardGems"] = 10,
+      ["BaseTarget"] = 1,
+      ["Kind"] = "RollColossal",
+      ["RewardCashGrowth"] = 1.7,
+      ["TargetGrowth"] = 1.15,
+    },
+    [6] = {
+      ["BaseRewardCash"] = 800,
+      ["BaseRewardGems"] = 1,
+      ["BaseTarget"] = 5,
+      ["Kind"] = "SpinTrait",
+      ["RewardCashGrowth"] = 1.45,
+      ["TargetGrowth"] = 1.35,
+    },
+    [7] = {
+      ["BaseRewardCash"] = 8000,
+      ["BaseRewardGems"] = 3,
+      ["BaseTarget"] = 1,
+      ["Kind"] = "SpinRareTrait",
+      ["RewardCashGrowth"] = 1.5,
+      ["TargetGrowth"] = 1.3,
+    },
+    [8] = {
+      ["BaseRewardCash"] = 500,
+      ["BaseRewardGems"] = 1,
+      ["BaseTarget"] = 10,
+      ["Kind"] = "SellBrainrot",
+      ["RewardCashGrowth"] = 1.45,
+      ["TargetGrowth"] = 1.35,
+    },
+    [9] = {
+      ["BaseRewardCash"] = 1000,
+      ["BaseRewardGems"] = 1,
+      ["BaseTarget"] = 5000,
+      ["Kind"] = "EarnCash",
+      ["RewardCashGrowth"] = 1.5,
+      ["TargetGrowth"] = 1.6,
+    },
+    [10] = {
+      ["BaseRewardCash"] = 1000,
+      ["BaseRewardGems"] = 1,
+      ["BaseTarget"] = 5,
+      ["Kind"] = "UpgradeBrainrot",
+      ["RewardCashGrowth"] = 1.45,
+      ["TargetGrowth"] = 1.35,
+    },
+    [11] = {
+      ["BaseRewardCash"] = 500,
+      ["BaseRewardGems"] = 1,
+      ["BaseTarget"] = 2,
+      ["Kind"] = "PlaceBrainrot",
+      ["RewardCashGrowth"] = 1.4,
+      ["TargetGrowth"] = 1.3,
+    },
+  },
+  ["GetActiveWeeklyQuests"] = function: 0x1e18817223074cda,
+  ["GetProgressionFraction"] = function: 0x463969d8ec8f6705,
+  ["EventKinds"] = {
+    ["RollTitan"] = {
+      ["Verb"] = "Roll Titans",
+      ["Icon"] = "🟠",
+      ["ObjectiveFormat"] = "Roll %s Titan brainrots",
+    },
+    ["SellBrainrot"] = {
+      ["Verb"] = "Sell Brainrots",
+      ["Icon"] = "💰",
+      ["ObjectiveFormat"] = "Sell %s brainrots",
+    },
+    ["SpinRareTrait"] = {
+      ["Verb"] = "Spin Rare Traits",
+      ["Icon"] = "✨",
+      ["ObjectiveFormat"] = "Spin %s Legendary+ traits",
+    },
+    ["RollGiant"] = {
+      ["Verb"] = "Roll Giants",
+      ["Icon"] = "🟢",
+      ["ObjectiveFormat"] = "Roll %s Giant brainrots",
+    },
+    ["PlaceBrainrot"] = {
+      ["Verb"] = "Place Brainrots",
+      ["Icon"] = "🏆",
+      ["ObjectiveFormat"] = "Place %s brainrots on podiums",
+    },
+    ["RollColossal"] = {
+      ["Verb"] = "Roll Colossals",
+      ["Icon"] = "🟡",
+      ["ObjectiveFormat"] = "Roll %s Colossal brainrots",
+    },
+    ["UpgradeBrainrot"] = {
+      ["Verb"] = "Upgrade Brainrots",
+      ["Icon"] = "⬆",
+      ["ObjectiveFormat"] = "Upgrade brainrots %s times",
+    },
+    ["EarnCash"] = {
+      ["IsCurrency"] = true,
+      ["Verb"] = "Earn Cash",
+      ["Icon"] = "💵",
+      ["ObjectiveFormat"] = "Earn %s",
+    },
+    ["SpinTrait"] = {
+      ["Verb"] = "Spin Traits",
+      ["Icon"] = "🍀",
+      ["ObjectiveFormat"] = "Spin %s traits",
+    },
+    ["RollDice"] = {
+      ["Verb"] = "Roll Dice",
+      ["Icon"] = "🎲",
+      ["ObjectiveFormat"] = "Roll %s dice",
+    },
+    ["RollBehemoth"] = {
+      ["Verb"] = "Roll Behemoths",
+      ["Icon"] = "🟣",
+      ["ObjectiveFormat"] = "Roll %s Behemoth brainrots",
+    },
+  },
+  ["DailyPool"] = {
+    [1] = {
+      ["TargetMin"] = 100,
+      ["RewardCashMax"] = 400000,
+      ["RewardGemsMax"] = 2,
+      ["RewardGemsMin"] = 1,
+      ["Kind"] = "RollDice",
+      ["RewardCashMin"] = 500,
+      ["TargetMax"] = 1500,
+    },
+    [2] = {
+      ["TargetMin"] = 2,
+      ["RewardCashMax"] = 1500000,
+      ["RewardGemsMax"] = 4,
+      ["RewardGemsMin"] = 2,
+      ["Kind"] = "RollGiant",
+      ["RewardCashMin"] = 2000,
+      ["TargetMax"] = 15,
+    },
+    [3] = {
+      ["TargetMin"] = 3,
+      ["RewardCashMax"] = 600000,
+      ["RewardGemsMax"] = 3,
+      ["RewardGemsMin"] = 1,
+      ["Kind"] = "SpinTrait",
+      ["RewardCashMin"] = 800,
+      ["TargetMax"] = 20,
+    },
+    [4] = {
+      ["TargetMin"] = 10,
+      ["RewardCashMax"] = 500000,
+      ["RewardGemsMax"] = 2,
+      ["RewardGemsMin"] = 1,
+      ["Kind"] = "SellBrainrot",
+      ["RewardCashMin"] = 600,
+      ["TargetMax"] = 100,
+    },
+    [5] = {
+      ["TargetMin"] = 5000,
+      ["RewardCashMax"] = 900000,
+      ["RewardGemsMax"] = 2,
+      ["RewardGemsMin"] = 1,
+      ["Kind"] = "EarnCash",
+      ["RewardCashMin"] = 1000,
+      ["TargetMax"] = 8000000,
+    },
+    [6] = {
+      ["TargetMin"] = 3,
+      ["RewardCashMax"] = 700000,
+      ["RewardGemsMax"] = 3,
+      ["RewardGemsMin"] = 1,
+      ["Kind"] = "UpgradeBrainrot",
+      ["RewardCashMin"] = 1000,
+      ["TargetMax"] = 30,
+    },
+    [7] = {
+      ["TargetMin"] = 2,
+      ["RewardCashMax"] = 300000,
+      ["RewardGemsMax"] = 2,
+      ["RewardGemsMin"] = 1,
+      ["Kind"] = "PlaceBrainrot",
+      ["RewardCashMin"] = 500,
+      ["TargetMax"] = 10,
+    },
+  },
+  ["GetCollectionTarget"] = function: 0x695d3d13dc581149,
+  ["GetPoolRewardGems"] = function: 0xb6c7c8c944267e50,
+  ["GetPoolRewardCash"] = function: 0x6faa9454a95e4c48,
+  ["FormatAmount"] = function: 0xde9a2fd2a7b791b9,
+  ["GetAchievementDef"] = function: 0x34ce9ce8678caf78,
+  ["CollectAllReward"] = {
+    ["Gems"] = 50,
+    ["Cash"] = 50000000,
+  },
+  ["GetAchievementRewardGems"] = function: 0xeee9244c7016a9c7,
+  ["GetObjectiveText"] = function: 0x70b16d6296f2abc4,
+  ["WeeklyPool"] = {
+    [1] = {
+      ["TargetMin"] = 1000,
+      ["RewardCashMax"] = 3000000,
+      ["RewardGemsMax"] = 8,
+      ["RewardGemsMin"] = 4,
+      ["Kind"] = "RollDice",
+      ["RewardCashMin"] = 4000,
+      ["TargetMax"] = 15000,
+    },
+    [2] = {
+      ["TargetMin"] = 15,
+      ["RewardCashMax"] = 10000000,
+      ["RewardGemsMax"] = 12,
+      ["RewardGemsMin"] = 6,
+      ["Kind"] = "RollGiant",
+      ["RewardCashMin"] = 15000,
+      ["TargetMax"] = 100,
+    },
+    [3] = {
+      ["TargetMin"] = 1,
+      ["RewardCashMax"] = 25000000,
+      ["RewardGemsMax"] = 15,
+      ["RewardGemsMin"] = 8,
+      ["Kind"] = "RollTitan",
+      ["RewardCashMin"] = 40000,
+      ["TargetMax"] = 8,
+    },
+    [4] = {
+      ["TargetMin"] = 1,
+      ["RewardCashMax"] = 80000000,
+      ["RewardGemsMax"] = 20,
+      ["RewardGemsMin"] = 12,
+      ["Kind"] = "RollBehemoth",
+      ["RewardCashMin"] = 150000,
+      ["TargetMax"] = 2,
+    },
+    [5] = {
+      ["TargetMin"] = 15,
+      ["RewardCashMax"] = 4000000,
+      ["RewardGemsMax"] = 8,
+      ["RewardGemsMin"] = 4,
+      ["Kind"] = "SpinTrait",
+      ["RewardCashMin"] = 6000,
+      ["TargetMax"] = 120,
+    },
+    [6] = {
+      ["TargetMin"] = 1,
+      ["RewardCashMax"] = 8000000,
+      ["RewardGemsMax"] = 12,
+      ["RewardGemsMin"] = 6,
+      ["Kind"] = "SpinRareTrait",
+      ["RewardCashMin"] = 12000,
+      ["TargetMax"] = 6,
+    },
+    [7] = {
+      ["TargetMin"] = 60,
+      ["RewardCashMax"] = 3500000,
+      ["RewardGemsMax"] = 8,
+      ["RewardGemsMin"] = 4,
+      ["Kind"] = "SellBrainrot",
+      ["RewardCashMin"] = 5000,
+      ["TargetMax"] = 600,
+    },
+    [8] = {
+      ["TargetMin"] = 40000,
+      ["RewardCashMax"] = 6000000,
+      ["RewardGemsMax"] = 8,
+      ["RewardGemsMin"] = 4,
+      ["Kind"] = "EarnCash",
+      ["RewardCashMin"] = 8000,
+      ["TargetMax"] = 60000000,
+    },
+    [9] = {
+      ["TargetMin"] = 20,
+      ["RewardCashMax"] = 5000000,
+      ["RewardGemsMax"] = 8,
+      ["RewardGemsMin"] = 4,
+      ["Kind"] = "UpgradeBrainrot",
+      ["RewardCashMin"] = 8000,
+      ["TargetMax"] = 200,
+    },
+  },
+  ["GetAchievementRewardCash"] = function: 0x1e12a5155d2ae945,
+  ["GetAchievementTarget"] = function: 0x9960a4a462e6dc54,
+  ["GetPoolTarget"] = function: 0x848409b6431f5ec6,
+  ["GetActiveDailyQuests"] = function: 0x8020196a26c3692e,
+  ["GetCurrentWeek"] = function: 0x9ba84cb0eebcb488,
+}
