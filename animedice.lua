@@ -1,46 +1,112 @@
 -- animedice.lua
--- Perubahan: menambahkan fitur client-side UI helpers yang terhubung ke RemoteEvents/RemoteFunctions
--- Fitur yang ditambahkan:
---  - Debounce/disable Roll button saat request berjalan
---  - Auto-refresh inventory & market saat membuka panel
---  - Sinkronisasi toggle (AutoSell, AutoRoll, AutoDungeon) dengan server
---  - Listener untuk update Inventory/Items (realtime)
---  - Handler aman untuk RemoteFunction (pcall)
---  - Tempat konfigurasi nama GUI agar mudah disesuaikan
--- Catatan: Script ini adalah LocalScript untuk dijalankan di client (StarterPlayerScripts / PlayerGui).
+-- Perubahan: menambahkan fitur musik playlist, SFX, ping, AFK/reconnect, remote binding lengkap,
+-- serta sinkronisasi GUI dengan nama MofenkHub.
+-- Catatan: script ini dibuat untuk dijalankan sebagai LocalScript di client (mis. StarterPlayerScripts / PlayerGui).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
-local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
 
 local localPlayer = Players.LocalPlayer
 if not localPlayer then
-    -- Jika dijalankan sebelum LocalPlayer tersedia (mis. command line), tunggu
     Players:GetPropertyChangedSignal("LocalPlayer"):Wait()
     localPlayer = Players.LocalPlayer
 end
 
--- PATHS / NAMES (sesuaikan jika GUI punya nama lain di projectmu)
 local REMOTES_FOLDER = ReplicatedStorage:WaitForChild("Remotes")
--- Remotes yang digunakan (boleh ditambah/ubah sesuai repo)
+
 local Remotes = {
     RollRequest = REMOTES_FOLDER:FindFirstChild("RollRequest"),
     RollResult = REMOTES_FOLDER:FindFirstChild("RollResult"),
+
     RequestInventorySnapshot = REMOTES_FOLDER:FindFirstChild("RequestInventorySnapshot"),
     InventoryUpdated = REMOTES_FOLDER:FindFirstChild("InventoryUpdated"),
-    RequestMarketSpawn = REMOTES_FOLDER:FindFirstChild("RequestMarketSpawn"),
-    AutoSellState = REMOTES_FOLDER:FindFirstChild("AutoSellStateChanged"),
+    RequestItemsSnapshot = REMOTES_FOLDER:FindFirstChild("RequestItemsSnapshot"),
+    ItemsUpdated = REMOTES_FOLDER:FindFirstChild("ItemsUpdated"),
+
+    SellItemRequest = REMOTES_FOLDER:FindFirstChild("SellItemRequest"),
+    SellAllRequest = REMOTES_FOLDER:FindFirstChild("SellAllRequest"),
+    SellSelectedRequest = REMOTES_FOLDER:FindFirstChild("SellSelectedRequest"),
+    BuyDiceRequest = REMOTES_FOLDER:FindFirstChild("BuyDiceRequest"),
+    DiceBuyResult = REMOTES_FOLDER:FindFirstChild("DiceBuyResult"),
+    EquipItem = REMOTES_FOLDER:FindFirstChild("EquipItem"),
+    EquipItemResult = REMOTES_FOLDER:FindFirstChild("EquipItemResult"),
+
+    AutoSellStateChanged = REMOTES_FOLDER:FindFirstChild("AutoSellStateChanged"),
     RequestAutoSellState = REMOTES_FOLDER:FindFirstChild("RequestAutoSellState"),
+    SetAutoSellUnderRequest = REMOTES_FOLDER:FindFirstChild("SetAutoSellUnderRequest"),
+    ToggleAutoSellRarityRequest = REMOTES_FOLDER:FindFirstChild("ToggleAutoSellRarityRequest"),
+
     AutoRollState = REMOTES_FOLDER:FindFirstChild("AutoRollState"),
     AutoRollResume = REMOTES_FOLDER:FindFirstChild("AutoRollResume"),
-    RequestRollSpeedState = REMOTES_FOLDER:FindFirstChild("RequestRollSpeedState"),
     RequestMultiRollState = REMOTES_FOLDER:FindFirstChild("RequestMultiRollState"),
-    InventorySpaceUpdate = REMOTES_FOLDER:FindFirstChild("InventorySpaceUpgradeResult"),
-    ItemsUpdated = REMOTES_FOLDER:FindFirstChild("ItemsUpdated"),
+
+    SpinTraitRequest = REMOTES_FOLDER:FindFirstChild("SpinTraitRequest"),
+    SpinTraitResult = REMOTES_FOLDER:FindFirstChild("SpinTraitResult"),
+
+    DungeonShopAutoBuy = REMOTES_FOLDER:FindFirstChild("DungeonShopAutoBuy"),
+    DungeonShopPurchase = REMOTES_FOLDER:FindFirstChild("DungeonShopPurchase"),
+    DungeonShopUpdated = REMOTES_FOLDER:FindFirstChild("DungeonShopUpdated"),
+
+    RequestMarketSpawn = REMOTES_FOLDER:FindFirstChild("RequestMarketSpawn"),
+    PurchaseAnnounce = REMOTES_FOLDER:FindFirstChild("PurchaseAnnounce"),
+
+    PerfTelemetry = REMOTES_FOLDER:FindFirstChild("PerfTelemetry"),
+    PerfTelemetryReport = REMOTES_FOLDER:FindFirstChild("PerfTelemetryReport"),
+
+    AfkRejoinRequest = REMOTES_FOLDER:FindFirstChild("AfkRejoinRequest"),
+    RequestHubSpawn = REMOTES_FOLDER:FindFirstChild("RequestHubSpawn"),
+    RequestMyBaseSpawn = REMOTES_FOLDER:FindFirstChild("RequestMyBaseSpawn"),
 }
 
--- Safety helper: invoke remote function if exists
+local UiSoundConfig = {
+    RareReveal = "rbxassetid://0",
+    SpinTick = "rbxassetid://0",
+    Reveal = "rbxassetid://0",
+    Pop = "rbxassetid://0",
+    Toggle = "rbxassetid://0",
+    Error = "rbxassetid://0",
+    Click = "rbxassetid://0",
+}
+
+local MUSIC_LIBRARY = {
+    { title = "NOAH — Walau Habis Terang", asset = "rbxassetid://437537543" },
+    { title = "NOAH — Separuh Aku", asset = "rbxassetid://508366813" },
+    { title = "Sheila On 7 — Melompat Lebih Tinggi", asset = "rbxassetid://1280474324" },
+    { title = "Sheila On 7 — Dan", asset = "rbxassetid://1837802963" },
+    { title = "Armada — Asal Kau Bahagia", asset = "rbxassetid://1274144324" },
+    { title = "Last Child — Seluruh Nafas Ini", asset = "rbxassetid://297132093" },
+}
+
+local CONFIG = {
+    GuiName = "MofenkHub",
+    RollButtonName = "RollButton",
+    InventoryPanelName = "InventoryPanel",
+    MarketPanelName = "MarketPanel",
+    SpinnerName = "Spinner",
+    PingLabelName = "PingLabel",
+    AfkIndicatorName = "AfkIndicator",
+    MusicSelectorName = "MusicSelector",
+    ToggleNames = {
+        AutoSell = "ToggleAutoSell",
+        AutoRoll = "ToggleAutoRoll",
+        AutoDungeon = "ToggleAutoDungeon",
+    },
+}
+
+local state = {
+    rolling = false,
+    gui = nil,
+    elements = {},
+    lastInput = tick(),
+    afk = false,
+    pingMs = nil,
+    musicPlaying = false,
+    musicInstance = nil,
+    currentMusicIndex = 1,
+}
+
 local function safeInvoke(remoteFunc, ...)
     if not remoteFunc then return nil, "MissingRemote" end
     local ok, result = pcall(function()
@@ -53,7 +119,6 @@ local function safeInvoke(remoteFunc, ...)
     return result
 end
 
--- Fire RemoteEvent safely
 local function safeFire(remoteEvent, ...)
     if not remoteEvent then return false end
     local ok, err = pcall(function()
@@ -66,42 +131,17 @@ local function safeFire(remoteEvent, ...)
     return true
 end
 
--- GUI lookup (modular) - coba cari di PlayerGui
 local function findGui(name)
     local pg = localPlayer:FindFirstChild("PlayerGui")
     if not pg then return nil end
-    return pg:FindFirstChild(name, true) -- search descendants
+    return pg:FindFirstChild(name, true)
 end
 
--- CONFIG: sesuaikan nama GUI dan elemen
-local CONFIG = {
-    GuiName = "AnimeDiceGui", -- ganti sesuai nama GUI di PlayerGui
-    RollButtonName = "RollButton",
-    InventoryPanelName = "InventoryPanel",
-    MarketPanelName = "MarketPanel",
-    SpinnerName = "Spinner",
-    ToggleNames = {
-        AutoSell = "ToggleAutoSell",
-        AutoRoll = "ToggleAutoRoll",
-        AutoDungeon = "ToggleAutoDungeon",
-    },
-}
-
--- State
-local state = {
-    rolling = false,
-    gui = nil,
-    elements = {},
-}
-
--- Utility: set enabled/disabled visual pada tombol
 local function setButtonEnabled(button, enabled)
     if not button then return end
-    -- Jika button punya Active property (ImageButton / TextButton), gunakan
     if button:IsA("GuiButton") then
         button.Active = enabled
         button.AutoButtonColor = enabled
-        -- tween opacity for feedback
         local target = enabled and 1 or 0.5
         pcall(function()
             TweenService:Create(button, TweenInfo.new(0.15), {BackgroundTransparency = 1 - target}):Play()
@@ -109,24 +149,133 @@ local function setButtonEnabled(button, enabled)
     end
 end
 
--- Show / hide spinner
 local function setSpinnerVisible(visible)
     local spinner = state.elements[CONFIG.SpinnerName]
-    if spinner then
-        spinner.Visible = visible
+    if spinner then spinner.Visible = visible end
+end
+
+local function stopCurrentMusic()
+    if state.musicInstance then
+        pcall(function()
+            state.musicInstance:Stop()
+            state.musicInstance:Destroy()
+        end)
+        state.musicInstance = nil
+        state.musicPlaying = false
     end
 end
 
--- Update inventory UI (simple) - ini placeholder, sesuaikan dengan struktur GUI mu
+local function playMusicByIndex(index)
+    if not MUSIC_LIBRARY or #MUSIC_LIBRARY == 0 then return end
+    index = ((index - 1) % #MUSIC_LIBRARY) + 1
+    state.currentMusicIndex = index
+    local track = MUSIC_LIBRARY[index]
+    if not track or not track.asset then return end
+
+    stopCurrentMusic()
+    local pg = localPlayer:FindFirstChild("PlayerGui")
+    if not pg then return end
+
+    local sound = Instance.new("Sound")
+    sound.Name = "_AnimeDiceBackgroundMusic"
+    sound.SoundId = track.asset
+    sound.Looped = false
+    sound.Volume = 0.55
+    sound.Parent = pg
+
+    local ok, err = pcall(function()
+        sound:Play()
+    end)
+    if not ok then
+        warn("Failed to play music:", err)
+    end
+
+    state.musicInstance = sound
+    state.musicPlaying = true
+
+    sound.Ended:Connect(function()
+        local nextIndex = state.currentMusicIndex + 1
+        if nextIndex > #MUSIC_LIBRARY then nextIndex = 1 end
+        playMusicByIndex(nextIndex)
+    end)
+end
+
+local function playMusic(asset)
+    for i, track in ipairs(MUSIC_LIBRARY) do
+        if track.asset == asset then
+            playMusicByIndex(i)
+            return
+        end
+    end
+    playMusicByIndex(1)
+end
+
+local function playSfx(asset)
+    if not asset or asset == "" then return end
+    local pg = localPlayer:FindFirstChild("PlayerGui")
+    if not pg then return end
+
+    local s = Instance.new("Sound")
+    s.SoundId = asset
+    s.Looped = false
+    s.Volume = 0.85
+    s.Parent = pg
+    pcall(function() s:Play() end)
+    s.Ended:Connect(function()
+        pcall(function() s:Destroy() end)
+    end)
+end
+
+local function populateMusicSelector(selector)
+    if not selector then return end
+    local template = selector:FindFirstChild("MusicTemplate")
+    if not template then
+        template = Instance.new("TextButton")
+        template.Name = "MusicTemplate"
+        template.Text = "Track"
+        template.Size = UDim2.new(1, 0, 0, 28)
+        template.BackgroundTransparency = 0.6
+        template.Parent = selector
+        template.Visible = false
+    end
+
+    for _, child in pairs(selector:GetChildren()) do
+        if child.Name:sub(1, 6) == "Track_" then
+            child:Destroy()
+        end
+    end
+
+    for i, track in ipairs(MUSIC_LIBRARY) do
+        local clone = template:Clone()
+        clone.Name = "Track_" .. i
+        clone.Text = track.title
+        clone.Visible = true
+        clone.Parent = selector
+
+        clone.MouseButton1Click:Connect(function()
+            playMusicByIndex(i)
+            for _, c in pairs(selector:GetChildren()) do
+                if c:IsA("TextButton") then
+                    c.BackgroundTransparency = 0.6
+                end
+            end
+            clone.BackgroundTransparency = 0.2
+            playSfx(UiSoundConfig.Click)
+        end)
+
+        if i == state.currentMusicIndex then
+            clone.BackgroundTransparency = 0.2
+        end
+    end
+end
+
 local function updateInventoryUI(snapshot)
     if not snapshot then return end
-    -- jika ada panel list, bersihkan dan tambahkan entries
     local invPanel = state.elements[CONFIG.InventoryPanelName]
     if not invPanel then return end
     local list = invPanel:FindFirstChild("ItemList")
     if not list then return end
 
-    -- clear existing
     for _, child in pairs(list:GetChildren()) do
         if child:IsA("Frame") and child.Name ~= "Template" then
             child:Destroy()
@@ -138,17 +287,22 @@ local function updateInventoryUI(snapshot)
 
     for i, item in ipairs(snapshot or {}) do
         local clone = template:Clone()
-        clone.Name = "Item_"..tostring(i)
+        clone.Name = "Item_" .. tostring(i)
         clone.Parent = list
         clone.Visible = true
+
         local title = clone:FindFirstChild("Title")
-        if title then title.Text = tostring(item.Name or "Item") end
+        if title then
+            title.Text = tostring(item.Name or "Item")
+        end
+
         local qty = clone:FindFirstChild("Qty")
-        if qty then qty.Text = tostring(item.Quantity or 1) end
+        if qty then
+            qty.Text = tostring(item.Quantity or 1)
+        end
     end
 end
 
--- Refresh inventory snapshot from server
 local function refreshInventory()
     if not Remotes.RequestInventorySnapshot then return end
     setSpinnerVisible(true)
@@ -157,13 +311,12 @@ local function refreshInventory()
         if snapshot then
             pcall(updateInventoryUI, snapshot)
         else
-            warn("Failed RequestInventorySnapshot:", err)
+            warn("RequestInventorySnapshot error:", err)
         end
         setSpinnerVisible(false)
     end)
 end
 
--- Open market/panel: request server to spawn market and refresh data
 local function openMarketPanel()
     if Remotes.RequestMarketSpawn then
         spawn(function()
@@ -171,177 +324,269 @@ local function openMarketPanel()
             local ok, err = pcall(function()
                 Remotes.RequestMarketSpawn:InvokeServer()
             end)
-            if not ok then warn("RequestMarketSpawn failed:", err) end
+            if not ok then
+                warn("RequestMarketSpawn failed:", err)
+            end
             refreshInventory()
             setSpinnerVisible(false)
         end)
     else
-        -- fall back: just refresh inventory
         refreshInventory()
     end
 end
 
--- Roll button logic with debounce and result handling
+local function sellItem(itemId)
+    if Remotes.SellItemRequest then
+        safeFire(Remotes.SellItemRequest, itemId)
+    end
+end
+
+local function sellAll()
+    if Remotes.SellAllRequest then
+        safeFire(Remotes.SellAllRequest)
+    end
+end
+
+local function buyDice(productId)
+    if Remotes.BuyDiceRequest then
+        safeFire(Remotes.BuyDiceRequest, productId)
+    end
+end
+
+local function equipItem(itemId)
+    if Remotes.EquipItem then
+        safeFire(Remotes.EquipItem, itemId)
+    end
+end
+
 local function onRollPressed()
     if state.rolling then return end
     local rollBtn = state.elements[CONFIG.RollButtonName]
     if not rollBtn then return end
 
-    -- disable UI & set state
     state.rolling = true
     setButtonEnabled(rollBtn, false)
     setSpinnerVisible(true)
+    playSfx(UiSoundConfig.Click)
 
-    -- fire RollRequest (as RemoteEvent); if RemoteFunction use Invoke
     if Remotes.RollRequest and Remotes.RollRequest:IsA("RemoteEvent") then
         safeFire(Remotes.RollRequest)
     elseif Remotes.RollRequest and Remotes.RollRequest:IsA("RemoteFunction") then
         spawn(function()
             local res, err = safeInvoke(Remotes.RollRequest)
-            if res == nil then warn("RollRequest invoke error:", err) end
+            if not res then
+                warn(err)
+            end
         end)
     else
-        warn("RollRequest remote not found")
+        warn("RollRequest not found")
         state.rolling = false
         setButtonEnabled(rollBtn, true)
         setSpinnerVisible(false)
         return
     end
-
-    -- Wait for RollResult event to re-enable in the listener below
 end
 
--- Listener for RollResult
 local function onRollResultReceived(data)
-    -- data could be nil or table; play fx / update UI
     setSpinnerVisible(false)
     state.rolling = false
     local rollBtn = state.elements[CONFIG.RollButtonName]
     setButtonEnabled(rollBtn, true)
+    playSfx(UiSoundConfig.Reveal)
 
-    -- Example: jika ada field InventorySnapshot di data, refresh
-    if type(data) == "table" then
-        if data.InventorySnapshot then
-            pcall(updateInventoryUI, data.InventorySnapshot)
-        end
-        -- play reveal sound / visual jika perlu (implement jika ada suara/FX)
+    if type(data) == "table" and data.InventorySnapshot then
+        pcall(updateInventoryUI, data.InventorySnapshot)
     end
 end
 
--- Toggle handlers: sync toggle with server and update local UI
 local function handleToggle(toggleName, remoteSet, remoteRequest)
     local togg = state.elements[toggleName]
     if not togg then return end
+
     local function setValue(v)
-        -- togg might be ImageButton with different states; this is placeholder
         if togg:IsA("GuiButton") then
             togg.Active = v
         end
-        -- set visual state e.g. change image or fill
         if togg:FindFirstChild("Fill") then
             togg.Fill.Visible = v
         end
     end
 
     local function onClicked()
-        local current = not togg.Active
+        local current = not (togg.Active == true)
         setValue(current)
-        -- send request to server to change state
+        playSfx(UiSoundConfig.Toggle)
+
         if remoteSet and remoteSet:IsA("RemoteEvent") then
             safeFire(remoteSet, current)
         elseif remoteSet and remoteSet:IsA("RemoteFunction") then
-            spawn(function() safeInvoke(remoteSet, current) end)
+            spawn(function()
+                safeInvoke(remoteSet, current)
+            end)
         end
     end
 
-    -- initial request to fetch state from server if available
     if remoteRequest then
         spawn(function()
-            local res, err = safeInvoke(remoteRequest)
+            local res = safeInvoke(remoteRequest)
             if res ~= nil then
                 pcall(setValue, res)
             end
         end)
     end
 
-    -- connect click
     if togg:IsA("GuiButton") then
         togg.Activated:Connect(onClicked)
     else
-        -- fallback: catch InputBegan
-        if togg:IsA("GuiObject") then
-            togg.InputBegan:Connect(function(input)
-                if input.UserInputType.Name == "MouseButton1" or input.UserInputType.Name == "Touch" then
-                    onClicked()
-                end
-            end)
-        end
+        togg.InputBegan:Connect(function(input)
+            if input.UserInputType.Name == "MouseButton1" or input.UserInputType.Name == "Touch" then
+                onClicked()
+            end
+        end)
     end
 end
 
--- Utility: wire up listeners from Remotes
 local function wireRemotes()
-    -- RollResult
     if Remotes.RollResult and Remotes.RollResult:IsA("RemoteEvent") then
         Remotes.RollResult.OnClientEvent:Connect(onRollResultReceived)
     end
 
-    -- InventoryUpdated
     if Remotes.InventoryUpdated and Remotes.InventoryUpdated:IsA("RemoteEvent") then
-        Remotes.InventoryUpdated.OnClientEvent:Connect(function(data)
-            -- data could be delta; easiest is to re-request snapshot
+        Remotes.InventoryUpdated.OnClientEvent:Connect(function()
             pcall(refreshInventory)
         end)
     end
 
-    -- ItemsUpdated
     if Remotes.ItemsUpdated and Remotes.ItemsUpdated:IsA("RemoteEvent") then
         Remotes.ItemsUpdated.OnClientEvent:Connect(function()
             pcall(refreshInventory)
         end)
     end
 
-    -- AutoRollState update -> update toggle visual if exists
     if Remotes.AutoRollState and Remotes.AutoRollState:IsA("RemoteEvent") then
-        Remotes.AutoRollState.OnClientEvent:Connect(function(stateVal)
+        Remotes.AutoRollState.OnClientEvent:Connect(function(v)
             local togg = state.elements[CONFIG.ToggleNames.AutoRoll]
             if togg and togg:IsA("GuiButton") then
-                togg.Active = stateVal
+                togg.Active = v
             end
         end)
     end
 
-    -- AutoSellStateChanged
-    if Remotes.AutoSellState and Remotes.AutoSellState:IsA("RemoteEvent") then
-        Remotes.AutoSellState.OnClientEvent:Connect(function(stateVal)
+    if Remotes.AutoSellStateChanged and Remotes.AutoSellStateChanged:IsA("RemoteEvent") then
+        Remotes.AutoSellStateChanged.OnClientEvent:Connect(function(v)
             local togg = state.elements[CONFIG.ToggleNames.AutoSell]
             if togg and togg:IsA("GuiButton") then
-                togg.Active = stateVal
+                togg.Active = v
             end
         end)
     end
 
-    -- InventorySpaceUpdate (inform user)
-    if Remotes.InventorySpaceUpdate and Remotes.InventorySpaceUpdate:IsA("RemoteEvent") then
-        Remotes.InventorySpaceUpdate.OnClientEvent:Connect(function(info)
-            -- contoh: tampil notifikasi kecil
-            print("Inventory space update:", info)
+    if Remotes.SpinTraitResult and Remotes.SpinTraitResult:IsA("RemoteEvent") then
+        Remotes.SpinTraitResult.OnClientEvent:Connect(function(payload)
+            print("SpinTraitResult", payload)
+        end)
+    end
+
+    if Remotes.DungeonShopUpdated and Remotes.DungeonShopUpdated:IsA("RemoteEvent") then
+        Remotes.DungeonShopUpdated.OnClientEvent:Connect(function()
+            print("Dungeon shop updated")
+        end)
+    end
+
+    if Remotes.PerfTelemetry and Remotes.PerfTelemetry:IsA("RemoteEvent") then
+        Remotes.PerfTelemetry.OnClientEvent:Connect(function(data)
+            local ms = nil
+            if type(data) == "table" then
+                ms = data.ping or data.pingMs or data.ms or data.Ping
+            elseif type(data) == "number" then
+                ms = data
+            end
+
+            if ms then
+                state.pingMs = ms
+                local pingLabel = state.elements[CONFIG.PingLabelName]
+                if pingLabel then
+                    pingLabel.Text = string.format("Ping: %dms", math.floor(ms))
+                    local c = Color3.new(0, 1, 0)
+                    if ms >= 200 then
+                        c = Color3.new(1, 0, 0)
+                    elseif ms >= 100 then
+                        c = Color3.new(1, 0.8, 0)
+                    end
+                    pcall(function()
+                        pingLabel.TextColor3 = c
+                    end)
+                end
+            end
         end)
     end
 end
 
--- Find GUI elements based on CONFIG and cache them
+local AFK_THRESHOLD = 60 * 5
+local RECONNECT_WAIT = 10
+
+local function markInput()
+    state.lastInput = tick()
+    if state.afk then
+        state.afk = false
+        local ai = state.elements[CONFIG.AfkIndicatorName]
+        if ai then ai.Visible = false end
+    end
+end
+
+UserInputService.InputBegan:Connect(function() markInput() end)
+UserInputService.InputChanged:Connect(function() markInput() end)
+UserInputService.InputEnded:Connect(function() markInput() end)
+
+spawn(function()
+    while true do
+        local now = tick()
+        if now - state.lastInput >= AFK_THRESHOLD and not state.afk then
+            state.afk = true
+            local ai = state.elements[CONFIG.AfkIndicatorName]
+            if ai then ai.Visible = true end
+
+            if Remotes.AfkRejoinRequest and Remotes.AfkRejoinRequest:IsA("RemoteEvent") then
+                safeFire(Remotes.AfkRejoinRequest)
+            elseif Remotes.AfkRejoinRequest and Remotes.AfkRejoinRequest:IsA("RemoteFunction") then
+                spawn(function()
+                    safeInvoke(Remotes.AfkRejoinRequest)
+                end)
+            end
+        end
+        wait(5)
+    end
+end)
+
+spawn(function()
+    while true do
+        local chr = localPlayer.Character
+        if not chr or not chr.Parent then
+            wait(RECONNECT_WAIT)
+            if not localPlayer.Character or not localPlayer.Character.Parent then
+                if Remotes.RequestHubSpawn then
+                    safeInvoke(Remotes.RequestHubSpawn)
+                end
+            end
+        end
+        wait(2)
+    end
+end)
+
 local function cacheGuiElements()
     local gui = findGui(CONFIG.GuiName)
     if not gui then
-        warn("GUI not found: "..tostring(CONFIG.GuiName))
+        warn("GUI not found: " .. tostring(CONFIG.GuiName))
         return false
     end
+
     state.gui = gui
-    -- try to find elements
+
     local function tryGet(name)
         local obj = gui:FindFirstChild(name, true)
-        if obj then state.elements[name] = obj end
+        if obj then
+            state.elements[name] = obj
+        end
         return obj
     end
 
@@ -349,64 +594,63 @@ local function cacheGuiElements()
     tryGet(CONFIG.InventoryPanelName)
     tryGet(CONFIG.MarketPanelName)
     tryGet(CONFIG.SpinnerName)
+    tryGet(CONFIG.PingLabelName)
+    tryGet(CONFIG.AfkIndicatorName)
+    tryGet(CONFIG.MusicSelectorName)
 
-    for k,v in pairs(CONFIG.ToggleNames) do
+    for _, v in pairs(CONFIG.ToggleNames) do
         tryGet(v)
     end
 
     return true
 end
 
--- Hook up UI after GUI exists
 local function setupUI()
     if not cacheGuiElements() then return end
 
-    -- Roll button
     local rollBtn = state.elements[CONFIG.RollButtonName]
     if rollBtn and rollBtn:IsA("GuiButton") then
         rollBtn.Activated:Connect(onRollPressed)
     end
 
-    -- Toggle handlers
     handleToggle(CONFIG.ToggleNames.AutoSell, Remotes.SetAutoSellUnderRequest or Remotes.ToggleAutoSellRarityRequest, Remotes.RequestAutoSellState)
     handleToggle(CONFIG.ToggleNames.AutoRoll, Remotes.AutoRollState or Remotes.AutoRollResume, Remotes.RequestMultiRollState)
-    handleToggle(CONFIG.ToggleNames.AutoDungeon, Remotes.RequestDungeonTeleport, nil) -- contoh: customize
+    handleToggle(CONFIG.ToggleNames.AutoDungeon, Remotes.DungeonShopAutoBuy, nil)
 
-    -- Market open button (jika ada)
     local marketBtn = state.gui:FindFirstChild("OpenMarketButton", true)
     if marketBtn and marketBtn:IsA("GuiButton") then
         marketBtn.Activated:Connect(openMarketPanel)
     end
 
-    -- Show initial inventory when opening panel or on load
-    refreshInventory()
+    if state.elements[CONFIG.MusicSelectorName] then
+        populateMusicSelector(state.elements[CONFIG.MusicSelectorName])
+    end
 
-    -- wire remotes listeners
+    refreshInventory()
     wireRemotes()
+
+    if #MUSIC_LIBRARY > 0 then
+        playMusicByIndex(1)
+    end
 end
 
--- Watch for Gui being added to PlayerGui (useful if GUI spawned later)
 local function watchForGui()
     local pg = localPlayer:WaitForChild("PlayerGui")
-    -- immediate attempt
     if pg:FindFirstChild(CONFIG.GuiName, true) then
         setupUI()
         return
     end
 
-    -- listen for descendants added
     pg.DescendantAdded:Connect(function(desc)
-        if desc.Name == CONFIG.GuiName then
-            -- small wait for full hierarchy
-            wait(0.1)
+        if desc.Name == CONFIG.GuiName or desc.Name == CONFIG.RollButtonName then
+            wait(0.05)
             setupUI()
         end
     end)
 end
 
--- Start
 spawn(function()
     pcall(watchForGui)
 end)
 
--- End of script
+-- End of file
