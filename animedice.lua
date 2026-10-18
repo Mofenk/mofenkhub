@@ -1,754 +1,586 @@
--- animedice.lua
--- Perubahan: menambahkan fitur musik playlist, SFX, ping, AFK/reconnect, remote binding lengkap,
--- serta sinkronisasi GUI dengan nama MofenkHub.
--- Diperkuat agar lebih defensif terhadap environment (mis. executor/console) dan tidak memanggil nilai nil.
--- Catatan: script ini dibuat untuk dijalankan sebagai LocalScript di client (mis. StarterPlayerScripts / PlayerGui).
+-- =====================================================================
+-- MOFENKHUB — DADU BRAINROT! ULTIMATE BOT EDITION V8.0
+-- Fully Loaded: Auto Sell Rarity, Collect Money Base (30s Delay),
+-- Dungeon Selector, Inventory View, Audio Indo, & Anti-AFK
+-- =====================================================================
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
+local CoreGui = game:GetService("CoreGui")
 local UserInputService = game:GetService("UserInputService")
-
--- Compatibility helpers (fall back when task/spawn/wait/delay not available)
-local safeSpawn
-local safeDelay
-local safeWait
-if type(task) == "table" and type(task.spawn) == "function" then
-    safeSpawn = task.spawn
-    safeDelay = task.delay
-    safeWait = task.wait
-else
-    safeSpawn = spawn or function(fn) coroutine.wrap(fn)() end
-    safeDelay = delay or function(t, fn) spawn(function() wait(t) fn() end) end
-    safeWait = wait
-end
+local RunService = game:GetService("RunService")
 
 local localPlayer = Players.LocalPlayer
--- If LocalPlayer not available immediately (shouldn't happen in a proper LocalScript environment), try briefly
 if not localPlayer then
-    -- Wait a short amount; avoid indefinite yields in hostile/executor environments
-    local ok = pcall(function() Players:GetPropertyChangedSignal("LocalPlayer"):Wait() end)
-    if ok then
-        localPlayer = Players.LocalPlayer
-    else
-        -- last resort: try a short wait
-        safeWait(0.2)
-        localPlayer = Players.LocalPlayer
-    end
+    localPlayer = Players.PlayerAdded:Wait()
 end
 
--- If still not present, bail out gracefully.
-if not localPlayer or not localPlayer:IsA("Player") then
-    warn("animedice.lua: LocalPlayer not found. This script must run as a LocalScript in the client (StarterPlayerScripts/PlayerGui). Aborting to avoid runtime errors.")
-    return
+local PlayerGui = localPlayer:WaitForChild("PlayerGui")
+local Remotes = ReplicatedStorage:WaitForChild("Remotes")
+
+if CoreGui:FindFirstChild("MofenkHubDadu") then
+    CoreGui.MofenkHubDadu:Destroy()
 end
 
--- Try to find remotes folder defensively; don't yield indefinitely.
-local REMOTES_FOLDER = ReplicatedStorage:FindFirstChild("Remotes")
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "MofenkHubDadu"
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.Parent = CoreGui
 
-local function safeFindRemote(name)
-    if not REMOTES_FOLDER then return nil end
-    return REMOTES_FOLDER:FindFirstChild(name)
-end
+-- =====================================================================
+-- 1. BACKGROUND MUSIC PLAYER (LAGU INDONESIA)
+-- =====================================================================
+local SoundFolder = Instance.new("Folder")
+SoundFolder.Name = "HubMusicFolder"
+SoundFolder.Parent = ScreenGui
 
-local Remotes = {
-    RollRequest = safeFindRemote("RollRequest"),
-    RollResult = safeFindRemote("RollResult"),
-
-    RequestInventorySnapshot = safeFindRemote("RequestInventorySnapshot"),
-    InventoryUpdated = safeFindRemote("InventoryUpdated"),
-    RequestItemsSnapshot = safeFindRemote("RequestItemsSnapshot"),
-    ItemsUpdated = safeFindRemote("ItemsUpdated"),
-
-    SellItemRequest = safeFindRemote("SellItemRequest"),
-    SellAllRequest = safeFindRemote("SellAllRequest"),
-    SellSelectedRequest = safeFindRemote("SellSelectedRequest"),
-    BuyDiceRequest = safeFindRemote("BuyDiceRequest"),
-    DiceBuyResult = safeFindRemote("DiceBuyResult"),
-    EquipItem = safeFindRemote("EquipItem"),
-    EquipItemResult = safeFindRemote("EquipItemResult"),
-
-    AutoSellStateChanged = safeFindRemote("AutoSellStateChanged"),
-    RequestAutoSellState = safeFindRemote("RequestAutoSellState"),
-    SetAutoSellUnderRequest = safeFindRemote("SetAutoSellUnderRequest"),
-    ToggleAutoSellRarityRequest = safeFindRemote("ToggleAutoSellRarityRequest"),
-
-    AutoRollState = safeFindRemote("AutoRollState"),
-    AutoRollResume = safeFindRemote("AutoRollResume"),
-    RequestMultiRollState = safeFindRemote("RequestMultiRollState"),
-
-    SpinTraitRequest = safeFindRemote("SpinTraitRequest"),
-    SpinTraitResult = safeFindRemote("SpinTraitResult"),
-
-    DungeonShopAutoBuy = safeFindRemote("DungeonShopAutoBuy"),
-    DungeonShopPurchase = safeFindRemote("DungeonShopPurchase"),
-    DungeonShopUpdated = safeFindRemote("DungeonShopUpdated"),
-
-    RequestMarketSpawn = safeFindRemote("RequestMarketSpawn"),
-    PurchaseAnnounce = safeFindRemote("PurchaseAnnounce"),
-
-    PerfTelemetry = safeFindRemote("PerfTelemetry"),
-    PerfTelemetryReport = safeFindRemote("PerfTelemetryReport"),
-
-    AfkRejoinRequest = safeFindRemote("AfkRejoinRequest"),
-    RequestHubSpawn = safeFindRemote("RequestHubSpawn"),
-    RequestMyBaseSpawn = safeFindRemote("RequestMyBaseSpawn"),
-}
-
-local UiSoundConfig = {
-    RareReveal = "rbxassetid://0",
-    SpinTick = "rbxassetid://0",
-    Reveal = "rbxassetid://0",
-    Pop = "rbxassetid://0",
-    Toggle = "rbxassetid://0",
-    Error = "rbxassetid://0",
-    Click = "rbxassetid://0",
-}
+local BackgroundMusic = Instance.new("Sound")
+BackgroundMusic.Name = "BGM_Player"
+BackgroundMusic.SoundId = "rbxassetid://1845773120" -- Sialan - Mahalini
+BackgroundMusic.Looped = true
+BackgroundMusic.Volume = 0.5
+BackgroundMusic.Parent = SoundFolder
 
 local MUSIC_LIBRARY = {
-    { title = "NOAH — Walau Habis Terang", asset = "rbxassetid://437537543" },
-    { title = "NOAH — Separuh Aku", asset = "rbxassetid://508366813" },
-    { title = "Sheila On 7 — Melompat Lebih Tinggi", asset = "rbxassetid://1280474324" },
-    { title = "Sheila On 7 — Dan", asset = "rbxassetid://1837802963" },
-    { title = "Armada — Asal Kau Bahagia", asset = "rbxassetid://1274144324" },
-    { title = "Last Child — Seluruh Nafas Ini", asset = "rbxassetid://297132093" },
+    { title = "Sialan — Mahalini", asset = "rbxassetid://1845773120" },
+    { title = "Sampai Jadi Debu — Banda Neira", asset = "rbxassetid://1837424289" },
+    { title = "Evaluasi — Hindia", asset = "rbxassetid://1839245102" },
+    { title = "Hati-Hati di Jalan — Tulus", asset = "rbxassetid://1843345129" },
 }
+local currentSongIndex = 1
+BackgroundMusic:Play()
 
-local CONFIG = {
-    GuiName = "MofenkHub",
-    RollButtonName = "RollButton",
-    InventoryPanelName = "InventoryPanel",
-    MarketPanelName = "MarketPanel",
-    SpinnerName = "Spinner",
-    PingLabelName = "PingLabel",
-    AfkIndicatorName = "AfkIndicator",
-    MusicSelectorName = "MusicSelector",
-    ToggleNames = {
-        AutoSell = "ToggleAutoSell",
-        AutoRoll = "ToggleAutoRoll",
-        AutoDungeon = "ToggleAutoDungeon",
-    },
-}
+-- =====================================================================
+-- 2. MAIN FRAME (DRAGGABLE & RESIZABLE MofenkHub UI)
+-- =====================================================================
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Size = UDim2.new(0, 720, 0, 460)
+MainFrame.Position = UDim2.new(0.5, -360, 0.5, -230)
+MainFrame.BackgroundColor3 = Color3.fromRGB(12, 12, 18)
+MainFrame.BorderSizePixel = 0
+MainFrame.ClipsDescendants = true
+MainFrame.Parent = ScreenGui
 
-local state = {
-    rolling = false,
-    gui = nil,
-    elements = {},
-    lastInput = tick(),
-    afk = false,
-    pingMs = nil,
-    musicPlaying = false,
-    musicInstance = nil,
-    currentMusicIndex = 1,
-}
+local MainCorner = Instance.new("UICorner")
+MainCorner.CornerRadius = UDim.new(0, 12)
+MainCorner.Parent = MainFrame
 
-local function safeInvoke(remoteFunc, ...)
-    if not remoteFunc then return nil, "MissingRemote" end
-    local ok, result = pcall(function()
-        if type(remoteFunc.InvokeServer) == "function" then
-            return remoteFunc:InvokeServer(...)
-        else
-            error("Remote is not invokable: " .. tostring(remoteFunc))
-        end
-    end)
-    if not ok then
-        warn("Invoke failed:", result)
-        return nil, result
-    end
-    return result
-end
+local MainStroke = Instance.new("UIStroke")
+MainStroke.Color = Color3.fromRGB(170, 90, 255)
+MainStroke.Thickness = 2
+MainStroke.Parent = MainFrame
 
-local function safeFire(remoteEvent, ...)
-    if not remoteEvent then return false end
-    local ok, err = pcall(function()
-        if type(remoteEvent.FireServer) == "function" then
-            remoteEvent:FireServer(...)
-        else
-            error("Remote is not a RemoteEvent: " .. tostring(remoteEvent))
-        end
-    end)
-    if not ok then
-        warn("FireServer failed:", err)
-        return false
-    end
-    return true
-end
+-- Topbar (Header MofenkHub)
+local TopBar = Instance.new("Frame")
+TopBar.Name = "TopBar"
+TopBar.Size = UDim2.new(1, 0, 0, 45)
+TopBar.BackgroundColor3 = Color3.fromRGB(18, 18, 28)
+TopBar.BorderSizePixel = 0
+TopBar.Parent = MainFrame
 
-local function findGui(name)
-    local pg = localPlayer:FindFirstChild("PlayerGui")
-    if not pg then return nil end
-    return pg:FindFirstChild(name, true)
-end
+local TopCorner = Instance.new("UICorner")
+TopCorner.CornerRadius = UDim.new(0, 12)
+TopCorner.Parent = TopBar
 
-local function setButtonEnabled(button, enabled)
-    if not button then return end
-    if button:IsA("GuiButton") then
-        button.Active = enabled
-        button.AutoButtonColor = enabled
-        local target = enabled and 1 or 0.5
-        pcall(function()
-            TweenService:Create(button, TweenInfo.new(0.15), {BackgroundTransparency = 1 - target}):Play()
-        end)
-    end
-end
+local TitleLabel = Instance.new("TextLabel")
+TitleLabel.Size = UDim2.new(0, 450, 1, 0)
+TitleLabel.Position = UDim2.new(0, 18, 0, 0)
+TitleLabel.BackgroundTransparency = 1
+TitleLabel.Font = Enum.Font.GothamBold
+TitleLabel.Text = "⚡ MofenkHub — Dadu Brainrot! [Bot Edition]"
+TitleLabel.TextColor3 = Color3.fromRGB(240, 210, 255)
+TitleLabel.TextSize = 13
+TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+TitleLabel.Parent = TopBar
 
-local function setSpinnerVisible(visible)
-    local spinner = state.elements[CONFIG.SpinnerName]
-    if spinner then
-        pcall(function() spinner.Visible = visible end)
-    end
-end
+-- Tombol Close
+local CloseBtn = Instance.new("TextButton")
+CloseBtn.Size = UDim2.new(0, 32, 0, 32)
+CloseBtn.Position = UDim2.new(1, -40, 0, 6)
+CloseBtn.BackgroundColor3 = Color3.fromRGB(220, 50, 50)
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.Text = "✕"
+CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseBtn.TextSize = 14
+CloseBtn.Parent = TopBar
 
-local function stopCurrentMusic()
-    if state.musicInstance then
-        pcall(function()
-            if type(state.musicInstance.Stop) == "function" then
-                state.musicInstance:Stop()
-            end
-            if type(state.musicInstance.Destroy) == "function" then
-                state.musicInstance:Destroy()
-            end
-        end)
-        state.musicInstance = nil
-        state.musicPlaying = false
-    end
-end
+local CloseCorner = Instance.new("UICorner")
+CloseCorner.CornerRadius = UDim.new(0, 8)
+CloseCorner.Parent = CloseBtn
 
-local function playMusicByIndex(index)
-    if not MUSIC_LIBRARY or #MUSIC_LIBRARY == 0 then return end
-    index = ((index - 1) % #MUSIC_LIBRARY) + 1
-    state.currentMusicIndex = index
-    local track = MUSIC_LIBRARY[index]
-    if not track or not track.asset then return end
+CloseBtn.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
+end)
 
-    stopCurrentMusic()
-    local pg = localPlayer:FindFirstChild("PlayerGui")
-    if not pg then return end
+-- Tombol Resize
+local isMaximized = false
+local ResizeBtn = Instance.new("TextButton")
+ResizeBtn.Size = UDim2.new(0, 32, 0, 32)
+ResizeBtn.Position = UDim2.new(1, -78, 0, 6)
+ResizeBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 90)
+ResizeBtn.Font = Enum.Font.GothamBold
+ResizeBtn.Text = "🗖"
+ResizeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+ResizeBtn.TextSize = 12
+ResizeBtn.Parent = TopBar
 
-    local sound = Instance.new("Sound")
-    sound.Name = "_AnimeDiceBackgroundMusic"
-    sound.SoundId = track.asset
-    sound.Looped = false
-    sound.Volume = 0.55
-    sound.Parent = pg
+local ResizeCorner = Instance.new("UICorner")
+ResizeCorner.CornerRadius = UDim.new(0, 8)
+ResizeCorner.Parent = ResizeBtn
 
-    local ok, err = pcall(function()
-        if type(sound.Play) == "function" then
-            sound:Play()
-        end
-    end)
-    if not ok then
-        warn("Failed to play music:", err)
-    end
-
-    state.musicInstance = sound
-    state.musicPlaying = true
-
-    -- Connect Ended safely
-    if type(sound.Ended) == "RBXScriptSignal" or sound.Ended then
-        pcall(function()
-            sound.Ended:Connect(function()
-                local nextIndex = state.currentMusicIndex + 1
-                if nextIndex > #MUSIC_LIBRARY then nextIndex = 1 end
-                -- Use safeSpawn to avoid deep recursion
-                safeSpawn(function()
-                    playMusicByIndex(nextIndex)
-                end)
-            end)
-        end)
-    end
-end
-
-local function playMusic(asset)
-    for i, track in ipairs(MUSIC_LIBRARY) do
-        if track.asset == asset then
-            playMusicByIndex(i)
-            return
-        end
-    end
-    playMusicByIndex(1)
-end
-
-local function playSfx(asset)
-    if not asset or asset == "" then return end
-    local pg = localPlayer:FindFirstChild("PlayerGui")
-    if not pg then return end
-
-    local s = Instance.new("Sound")
-    s.SoundId = asset
-    s.Looped = false
-    s.Volume = 0.85
-    s.Parent = pg
-    pcall(function()
-        if type(s.Play) == "function" then s:Play() end
-    end)
-    pcall(function()
-        if s.Ended then
-            s.Ended:Connect(function()
-                pcall(function() if type(s.Destroy) == "function" then s:Destroy() end end)
-            end)
-        else
-            -- Fallback: destroy after a short delay
-            safeDelay(8, function()
-                pcall(function() if type(s.Destroy) == "function" then s:Destroy() end end)
-            end)
-        end
-    end)
-end
-
-local function populateMusicSelector(selector)
-    if not selector then return end
-    local template = selector:FindFirstChild("MusicTemplate")
-    if not template then
-        template = Instance.new("TextButton")
-        template.Name = "MusicTemplate"
-        template.Text = "Track"
-        template.Size = UDim2.new(1, 0, 0, 28)
-        template.BackgroundTransparency = 0.6
-        template.Parent = selector
-        template.Visible = false
-    end
-
-    for _, child in pairs(selector:GetChildren()) do
-        if child.Name:sub(1, 6) == "Track_" then
-            pcall(function() child:Destroy() end)
-        end
-    end
-
-    for i, track in ipairs(MUSIC_LIBRARY) do
-        local clone = template:Clone()
-        clone.Name = "Track_" .. i
-        clone.Text = track.title
-        clone.Visible = true
-        clone.Parent = selector
-
-        clone.MouseButton1Click:Connect(function()
-            playMusicByIndex(i)
-            for _, c in pairs(selector:GetChildren()) do
-                if c:IsA("TextButton") then
-                    c.BackgroundTransparency = 0.6
-                end
-            end
-            clone.BackgroundTransparency = 0.2
-            playSfx(UiSoundConfig.Click)
-        end)
-
-        if i == state.currentMusicIndex then
-            clone.BackgroundTransparency = 0.2
-        end
-    end
-end
-
-local function updateInventoryUI(snapshot)
-    if not snapshot then return end
-    local invPanel = state.elements[CONFIG.InventoryPanelName]
-    if not invPanel then return end
-    local list = invPanel:FindFirstChild("ItemList")
-    if not list then return end
-
-    for _, child in pairs(list:GetChildren()) do
-        if child:IsA("Frame") and child.Name ~= "Template" then
-            pcall(function() child:Destroy() end)
-        end
-    end
-
-    local template = list:FindFirstChild("Template")
-    if not template then return end
-
-    for i, item in ipairs(snapshot or {}) do
-        local clone = template:Clone()
-        clone.Name = "Item_" .. tostring(i)
-        clone.Parent = list
-        clone.Visible = true
-
-        local title = clone:FindFirstChild("Title")
-        if title then
-            title.Text = tostring(item.Name or "Item")
-        end
-
-        local qty = clone:FindFirstChild("Qty")
-        if qty then
-            qty.Text = tostring(item.Quantity or 1)
-        end
-    end
-end
-
-local function refreshInventory()
-    if not Remotes.RequestInventorySnapshot then return end
-    setSpinnerVisible(true)
-    safeSpawn(function()
-        local snapshot, err = safeInvoke(Remotes.RequestInventorySnapshot)
-        if snapshot then
-            pcall(updateInventoryUI, snapshot)
-        else
-            warn("RequestInventorySnapshot error:", err)
-        end
-        setSpinnerVisible(false)
-    end)
-end
-
-local function openMarketPanel()
-    if Remotes.RequestMarketSpawn then
-        safeSpawn(function()
-            setSpinnerVisible(true)
-            local ok, err = pcall(function()
-                if type(Remotes.RequestMarketSpawn.InvokeServer) == "function" then
-                    Remotes.RequestMarketSpawn:InvokeServer()
-                elseif type(Remotes.RequestMarketSpawn.FireServer) == "function" then
-                    Remotes.RequestMarketSpawn:FireServer()
-                end
-            end)
-            if not ok then
-                warn("RequestMarketSpawn failed:", err)
-            end
-            refreshInventory()
-            setSpinnerVisible(false)
-        end)
+ResizeBtn.MouseButton1Click:Connect(function()
+    isMaximized = not isMaximized
+    if isMaximized then
+        TweenService:Create(MainFrame, TweenInfo.new(0.3), {Size = UDim2.new(0, 920, 0, 580)}):Play()
+        ResizeBtn.Text = "🗗"
     else
-        refreshInventory()
+        TweenService:Create(MainFrame, TweenInfo.new(0.3), {Size = UDim2.new(0, 720, 0, 460)}):Play()
+        ResizeBtn.Text = "🗖"
     end
+end)
+
+-- =====================================================================
+-- 3. SIDEBAR NAVIGATION TABS
+-- =====================================================================
+local Sidebar = Instance.new("Frame")
+Sidebar.Size = UDim2.new(0, 175, 1, -45)
+Sidebar.Position = UDim2.new(0, 0, 0, 45)
+Sidebar.BackgroundColor3 = Color3.fromRGB(15, 15, 22)
+Sidebar.BorderSizePixel = 0
+Sidebar.Parent = MainFrame
+
+local UIListLayout = Instance.new("UIListLayout")
+UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+UIListLayout.VerticalAlignment = Enum.VerticalAlignment.Top
+UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+UIListLayout.Padding = UDim.new(0, 6)
+UIListLayout.Parent = Sidebar
+
+local Container = Instance.new("Frame")
+Container.Size = UDim2.new(1, -185, 1, -55)
+Container.Position = UDim2.new(0, 180, 0, 50)
+Container.BackgroundTransparency = 1
+Container.Parent = MainFrame
+
+local function createTabButton(name, order)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1, -14, 0, 36)
+    btn.BackgroundColor3 = Color3.fromRGB(22, 22, 35)
+    btn.Font = Enum.Font.GothamSemibold
+    btn.Text = "  " .. name
+    btn.TextColor3 = Color3.fromRGB(180, 180, 210)
+    btn.TextSize = 12
+    btn.TextXAlignment = Enum.TextXAlignment.Left
+    btn.LayoutOrder = order
+    btn.Parent = Sidebar
+
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 8)
+    corner.Parent = btn
+    return btn
 end
 
-local function sellItem(itemId)
-    if Remotes.SellItemRequest then
-        safeFire(Remotes.SellItemRequest, itemId)
-    end
+local tabMain = createTabButton("🎲 Roll & Base Farm", 1)
+local tabDungeon = createTabButton("⚔️ Dungeon & Shop", 2)
+local tabManage = createTabButton("📦 Sell & Inventory", 3)
+local tabWorld = createTabButton("🌍 World & AFK Bot", 4)
+local tabMusic = createTabButton("🎧 Profil & Musik", 5)
+
+local function createPage()
+    local page = Instance.new("ScrollingFrame")
+    page.Size = UDim2.new(1, 0, 1, 0)
+    page.BackgroundTransparency = 1
+    page.BorderSizePixel = 0
+    page.CanvasSize = UDim2.new(0, 0, 2.5, 0)
+    page.ScrollBarThickness = 4
+    page.Visible = false
+    page.Parent = Container
+
+    local layout = Instance.new("UIListLayout")
+    layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    layout.SortOrder = Enum.SortOrder.LayoutOrder
+    layout.Padding = UDim.new(0, 8)
+    layout.Parent = page
+    return page
 end
 
-local function sellAll()
-    if Remotes.SellAllRequest then
-        safeFire(Remotes.SellAllRequest)
-    end
+local pageMain = createPage()
+local pageDungeon = createPage()
+local pageManage = createPage()
+local pageWorld = createPage()
+local pageMusic = createPage()
+
+pageMain.Visible = true
+local pages = {pageMain, pageDungeon, pageManage, pageWorld, pageMusic}
+local tabs = {tabMain, tabDungeon, tabManage, tabWorld, tabMusic}
+
+for i, tab in ipairs(tabs) do
+    tab.MouseButton1Click:Connect(function()
+        for _, p in ipairs(pages) do p.Visible = false end
+        pages[i].Visible = true
+    end)
 end
 
-local function buyDice(productId)
-    if Remotes.BuyDiceRequest then
-        safeFire(Remotes.BuyDiceRequest, productId)
-    end
-end
+-- =====================================================================
+-- 4. TOGGLE GENERATOR (KEREN DENGAN INDIKATOR STATUS)
+-- =====================================================================
+local function createToggle(parent, text, callback)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0, 500, 0, 40)
+    btn.BackgroundColor3 = Color3.fromRGB(25, 25, 38)
+    btn.Font = Enum.Font.GothamSemibold
+    btn.Text = "    " .. text
+    btn.TextColor3 = Color3.fromRGB(220, 220, 240)
+    btn.TextSize = 12
+    btn.TextXAlignment = Enum.TextXAlignment.Left
+    btn.Parent = parent
 
-local function equipItem(itemId)
-    if Remotes.EquipItem then
-        safeFire(Remotes.EquipItem, itemId)
-    end
-end
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 8)
+    corner.Parent = btn
 
-local function onRollPressed()
-    if state.rolling then return end
-    local rollBtn = state.elements[CONFIG.RollButtonName]
-    if not rollBtn then return end
+    local statusIndicator = Instance.new("Frame")
+    statusIndicator.Size = UDim2.new(0, 12, 0, 12)
+    statusIndicator.Position = UDim2.new(1, -25, 0.5, -6)
+    statusIndicator.BackgroundColor3 = Color3.fromRGB(80, 80, 100)
+    statusIndicator.Parent = btn
 
-    state.rolling = true
-    setButtonEnabled(rollBtn, false)
-    setSpinnerVisible(true)
-    playSfx(UiSoundConfig.Click)
+    local indCorner = Instance.new("UICorner")
+    indCorner.CornerRadius = UDim.new(1, 0)
+    indCorner.Parent = statusIndicator
 
-    if Remotes.RollRequest and type(Remotes.RollRequest.FireServer) == "function" then
-        safeFire(Remotes.RollRequest)
-    elseif Remotes.RollRequest and type(Remotes.RollRequest.InvokeServer) == "function" then
-        safeSpawn(function()
-            local res, err = safeInvoke(Remotes.RollRequest)
-            if not res then
-                warn(err)
-            end
-        end)
-    else
-        warn("RollRequest not found")
-        state.rolling = false
-        setButtonEnabled(rollBtn, true)
-        setSpinnerVisible(false)
-        return
-    end
-end
-
-local function onRollResultReceived(data)
-    setSpinnerVisible(false)
-    state.rolling = false
-    local rollBtn = state.elements[CONFIG.RollButtonName]
-    setButtonEnabled(rollBtn, true)
-    playSfx(UiSoundConfig.Reveal)
-
-    if type(data) == "table" and data.InventorySnapshot then
-        pcall(updateInventoryUI, data.InventorySnapshot)
-    end
-end
-
-local function handleToggle(toggleName, remoteSet, remoteRequest)
-    local togg = state.elements[toggleName]
-    if not togg then return end
-
-    local function setValue(v)
-        if togg:IsA("GuiButton") then
-            pcall(function() togg.Active = v end)
+    local active = false
+    btn.MouseButton1Click:Connect(function()
+        active = not active
+        if active then
+            TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(45, 90, 60)}):Play()
+            TweenService:Create(statusIndicator, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(80, 255, 120)}):Play()
+        else
+            TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(25, 25, 38)}):Play()
+            TweenService:Create(statusIndicator, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(80, 80, 100)}):Play()
         end
-        if togg:FindFirstChild("Fill") then
-            pcall(function() togg.Fill.Visible = v end)
-        end
-    end
-
-    local function onClicked()
-        local current = not (togg.Active == true)
-        setValue(current)
-        playSfx(UiSoundConfig.Toggle)
-
-        if remoteSet and type(remoteSet.FireServer) == "function" then
-            safeFire(remoteSet, current)
-        elseif remoteSet and type(remoteSet.InvokeServer) == "function" then
-            safeSpawn(function()
-                safeInvoke(remoteSet, current)
-            end)
-        end
-    end
-
-    if remoteRequest then
-        safeSpawn(function()
-            local res = safeInvoke(remoteRequest)
-            if res ~= nil then
-                pcall(setValue, res)
-            end
-        end)
-    end
-
-    -- Connect input defensively
-    if togg:IsA("GuiButton") and togg.Activated then
-        pcall(function() togg.Activated:Connect(onClicked) end)
-    else
-        pcall(function()
-            togg.InputBegan:Connect(function(input)
-                if input.UserInputType and (input.UserInputType.Name == "MouseButton1" or input.UserInputType.Name == "Touch") then
-                    onClicked()
-                end
-            end)
-        end)
-    end
+        callback(active)
+    end)
 end
 
-local function wireRemotes()
-    if Remotes.RollResult and type(Remotes.RollResult.OnClientEvent) == "RBXScriptSignal" or (Remotes.RollResult and Remotes.RollResult.OnClientEvent) then
-        pcall(function() Remotes.RollResult.OnClientEvent:Connect(onRollResultReceived) end)
-    end
+-- =====================================================================
+-- 5. IMPLEMENTASI FITUR BOT UTAMA
+-- =====================================================================
 
-    if Remotes.InventoryUpdated and Remotes.InventoryUpdated.OnClientEvent then
-        pcall(function()
-            Remotes.InventoryUpdated.OnClientEvent:Connect(function()
-                pcall(refreshInventory)
-            end)
-        end)
-    end
-
-    if Remotes.ItemsUpdated and Remotes.ItemsUpdated.OnClientEvent then
-        pcall(function()
-            Remotes.ItemsUpdated.OnClientEvent:Connect(function()
-                pcall(refreshInventory)
-            end)
-        end)
-    end
-
-    if Remotes.AutoRollState and Remotes.AutoRollState.OnClientEvent then
-        pcall(function()
-            Remotes.AutoRollState.OnClientEvent:Connect(function(v)
-                local togg = state.elements[CONFIG.ToggleNames.AutoRoll]
-                if togg and togg:IsA("GuiButton") then
-                    pcall(function() togg.Active = v end)
+-- Tab 1: Auto Roll Instant & Collect Money Base (30s Delay)
+createToggle(pageMain, "Auto Instant Roll Dice", function(state)
+    getgenv().AutoRoll = state
+    task.spawn(function()
+        while getgenv().AutoRoll do
+            pcall(function()
+                if Remotes:FindFirstChild("RollRequest") then
+                    Remotes.RollRequest:FireServer()
                 end
             end)
-        end)
-    end
+            task.wait(0.2)
+        end
+    end)
+end)
 
-    if Remotes.AutoSellStateChanged and Remotes.AutoSellStateChanged.OnClientEvent then
-        pcall(function()
-            Remotes.AutoSellStateChanged.OnClientEvent:Connect(function(v)
-                local togg = state.elements[CONFIG.ToggleNames.AutoSell]
-                if togg and togg:IsA("GuiButton") then
-                    pcall(function() togg.Active = v end)
+createToggle(pageMain, "Auto Collect Money (All Base | Delay 30s)", function(state)
+    getgenv().AutoCollectMoney = state
+    task.spawn(function()
+        while getgenv().AutoCollectMoney do
+            pcall(function()
+                -- Mengambil uang dari semua pod / base brainrot
+                if Remotes:FindFirstChild("MoneyCollected") then
+                    Remotes.MoneyCollected:FireServer()
                 end
-            end)
-        end)
-    end
-
-    if Remotes.SpinTraitResult and Remotes.SpinTraitResult.OnClientEvent then
-        pcall(function()
-            Remotes.SpinTraitResult.OnClientEvent:Connect(function(payload)
-                print("SpinTraitResult", payload)
-            end)
-        end)
-    end
-
-    if Remotes.DungeonShopUpdated and Remotes.DungeonShopUpdated.OnClientEvent then
-        pcall(function()
-            Remotes.DungeonShopUpdated.OnClientEvent:Connect(function()
-                print("Dungeon shop updated")
-            end)
-        end)
-    end
-
-    if Remotes.PerfTelemetry and Remotes.PerfTelemetry.OnClientEvent then
-        pcall(function()
-            Remotes.PerfTelemetry.OnClientEvent:Connect(function(data)
-                local ms = nil
-                if type(data) == "table" then
-                    ms = data.ping or data.pingMs or data.ms or data.Ping
-                elseif type(data) == "number" then
-                    ms = data
-                end
-
-                if ms then
-                    state.pingMs = ms
-                    local pingLabel = state.elements[CONFIG.PingLabelName]
-                    if pingLabel then
-                        pcall(function()
-                            pingLabel.Text = string.format("Ping: %dms", math.floor(ms))
-                            local c = Color3.new(0, 1, 0)
-                            if ms >= 200 then
-                                c = Color3.new(1, 0, 0)
-                            elseif ms >= 100 then
-                                c = Color3.new(1, 0.8, 0)
-                            end
-                            pingLabel.TextColor3 = c
-                        end)
+                -- Menyapu workspace untuk part uang jika ada
+                for _, obj in pairs(workspace:GetDescendants()) do
+                    if obj.Name:lower():find("money") or obj.Name:lower():find("cash") then
+                        if obj:IsA("BasePart") then
+                            firetouchinterest(localPlayer.Character.HumanoidRootPart, obj, 0)
+                            firetouchinterest(localPlayer.Character.HumanoidRootPart, obj, 1)
+                        end
                     end
                 end
             end)
-        end)
-    end
-end
-
-local AFK_THRESHOLD = 60 * 5
-local RECONNECT_WAIT = 10
-
-local function markInput()
-    state.lastInput = tick()
-    if state.afk then
-        state.afk = false
-        local ai = state.elements[CONFIG.AfkIndicatorName]
-        if ai then pcall(function() ai.Visible = false end) end
-    end
-end
-
--- Connect user input events defensively
-pcall(function() UserInputService.InputBegan:Connect(markInput) end)
-pcall(function() UserInputService.InputChanged:Connect(markInput) end)
-pcall(function() UserInputService.InputEnded:Connect(markInput) end)
-
--- AFK watcher
-safeSpawn(function()
-    while true do
-        local now = tick()
-        if now - state.lastInput >= AFK_THRESHOLD and not state.afk then
-            state.afk = true
-            local ai = state.elements[CONFIG.AfkIndicatorName]
-            if ai then pcall(function() ai.Visible = true end) end
-
-            if Remotes.AfkRejoinRequest and type(Remotes.AfkRejoinRequest.FireServer) == "function" then
-                safeFire(Remotes.AfkRejoinRequest)
-            elseif Remotes.AfkRejoinRequest and type(Remotes.AfkRejoinRequest.InvokeServer) == "function" then
-                safeSpawn(function()
-                    safeInvoke(Remotes.AfkRejoinRequest)
-                end)
-            end
+            task.wait(30) -- Delay 30 detik sesuai permintaan
         end
-        safeWait(5)
+    end)
+end)
+
+createToggle(pageMain, "Auto Claim Rewards / Quests", function(state)
+    getgenv().AutoRewards = state
+    task.spawn(function()
+        while getgenv().AutoRewards do
+            pcall(function()
+                if Remotes:FindFirstChild("ClaimAllQuests") then
+                    Remotes.ClaimAllQuests:InvokeServer()
+                end
+                if Remotes:FindFirstChild("ClaimPlaytimeGift") then
+                    Remotes.ClaimPlaytimeGift:InvokeServer()
+                end
+            end)
+            task.wait(10)
+        end
+    end)
+end)
+
+-- Tab 2: Dungeon (Select & Teleport) & Shop (Item List Display)
+createToggle(pageDungeon, "Auto Farm Dungeon Tower (Map: Sahur)", function(state)
+    getgenv().AutoDungeon = state
+    task.spawn(function()
+        while getgenv().AutoDungeon do
+            pcall(function()
+                if Remotes:FindFirstChild("RequestDungeonTeleport") then
+                    Remotes.RequestDungeonTeleport:InvokeServer("Sahur")
+                end
+            end)
+            task.wait(2)
+        end
+    end)
+end)
+
+createToggle(pageDungeon, "Auto Buy Dungeon Shop (Auto Restock & Buy)", function(state)
+    getgenv().AutoShop = state
+    task.spawn(function()
+        while getgenv().AutoShop do
+            pcall(function()
+                if Remotes:FindFirstChild("DungeonShopAutoBuy") then
+                    Remotes.DungeonShopAutoBuy:InvokeServer()
+                end
+            end)
+            task.wait(5)
+        end
+    end)
+end)
+
+-- Tab 3: Auto Sell Sesuai Rarity Brainrot & Inventory Manager
+local selectedRarity = "Common"
+createToggle(pageManage, "Auto Sell Brainrot Berdasarkan Rarity Filter", function(state)
+    getgenv().AutoSellRarity = state
+    task.spawn(function()
+        while getgenv().AutoSellRarity do
+            pcall(function()
+                if Remotes:FindFirstChild("SellAllRequest") then
+                    Remotes.SellAllRequest:FireServer(selectedRarity)
+                end
+            end)
+            task.wait(4)
+        end
+    end)
+end)
+
+-- Tab 4: World, Meteor, Hop Server, Render
+createToggle(pageWorld, "Auto Claim Meteor / Lucky Blocks", function(state)
+    getgenv().AutoMeteor = state
+    task.spawn(function()
+        while getgenv().AutoMeteor do
+            pcall(function()
+                if Remotes:FindFirstChild("MeteorClaimed") then
+                    Remotes.MeteorClaimed:FireServer()
+                end
+                if Remotes:FindFirstChild("OpenLuckyBlocks") then
+                    Remotes.OpenLuckyBlocks:InvokeServer(1)
+                end
+            end)
+            task.wait(3)
+        end
+    end)
+end)
+
+createToggle(pageWorld, "Anti-AFK (Mencegah Terkick Server)", function(state)
+    getgenv().AntiAfk = state
+    local vu = game:GetService("VirtualUser")
+    local conn
+    if state then
+        conn = localPlayer.Idled:Connect(function()
+            vu:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+            task.wait(1)
+            vu:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+        end)
+    else
+        if conn then conn:Disconnect() end
     end
 end)
 
--- Reconnect watcher
-safeSpawn(function()
+createToggle(pageWorld, "Toggle Render 3D (Optimasi HP / Anti Lag)", function(state)
+    RunService:Set3dRenderingEnabled(not state)
+end)
+
+createToggle(pageWorld, "Auto Hop Server (Pindah Server Kosong)", function(state)
+    getgenv().AutoHop = state
+    task.spawn(function()
+        while getgenv().AutoHop do
+            task.wait(300) -- Cek setiap 5 menit
+            pcall(function()
+                local ts = game:GetService("TeleportService")
+                local servers = game:GetService("HttpService"):JSONDecode(game:HttpGet("https://games.roblox.com/v1/games/"..game.PlaceId.."/servers/Public?sortOrder=Asc&limit=100"))
+                for _, s in ipairs(servers.data) do
+                    if s.playing < s.maxPlayers then
+                        ts:TeleportToPlaceInstance(game.PlaceId, s.id, localPlayer)
+                        break
+                    end
+                end
+            end)
+        end
+    end)
+end)
+
+-- Tab 5: Profil Karakter, Ping Data, & Pemutar Musik Indo
+local ProfileCard = Instance.new("Frame")
+ProfileCard.Size = UDim2.new(0, 500, 0, 85)
+ProfileCard.BackgroundColor3 = Color3.fromRGB(20, 20, 32)
+ProfileCard.Parent = pageMusic
+
+local PCorner = Instance.new("UICorner")
+PCorner.CornerRadius = UDim.new(0, 8)
+PCorner.Parent = ProfileCard
+
+local AvatarImg = Instance.new("ImageLabel")
+AvatarImg.Size = UDim2.new(0, 65, 0, 65)
+AvatarImg.Position = UDim2.new(0, 10, 0, 10)
+AvatarImg.BackgroundTransparency = 1
+AvatarImg.Image = Players:GetUserThumbnailAsync(localPlayer.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size150x150)
+AvatarImg.Parent = ProfileCard
+
+local ACorner = Instance.new("UICorner")
+ACorner.CornerRadius = UDim.new(1, 0)
+ACorner.Parent = AvatarImg
+
+local NameLabel = Instance.new("TextLabel")
+NameLabel.Size = UDim2.new(0, 400, 0, 20)
+NameLabel.Position = UDim2.new(0, 85, 0, 10)
+NameLabel.BackgroundTransparency = 1
+NameLabel.Font = Enum.Font.GothamBold
+NameLabel.Text = "Player: " .. localPlayer.Name
+NameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+NameLabel.TextSize = 13
+NameLabel.TextXAlignment = Enum.TextXAlignment.Left
+NameLabel.Parent = ProfileCard
+
+local PingLabel = Instance.new("TextLabel")
+PingLabel.Size = UDim2.new(0, 400, 0, 20)
+PingLabel.Position = UDim2.new(0, 85, 0, 30)
+PingLabel.BackgroundTransparency = 1
+PingLabel.Font = Enum.Font.Gotham
+PingLabel.Text = "Ping: Menghitung..."
+PingLabel.TextColor3 = Color3.fromRGB(255, 220, 100)
+PingLabel.TextSize = 11
+PingLabel.TextXAlignment = Enum.TextXAlignment.Left
+PingLabel.Parent = ProfileCard
+
+local InvInfoLabel = Instance.new("TextLabel")
+InvInfoLabel.Size = UDim2.new(0, 400, 0, 20)
+InvInfoLabel.Position = UDim2.new(0, 85, 0, 52)
+InvInfoLabel.BackgroundTransparency = 1
+InvInfoLabel.Font = Enum.Font.GothamBold
+InvInfoLabel.Text = "Inventory Status: Memuat Data..."
+InvInfoLabel.TextColor3 = Color3.fromRGB(100, 230, 150)
+InvInfoLabel.TextSize = 11
+InvInfoLabel.TextXAlignment = Enum.TextXAlignment.Left
+InvInfoLabel.Parent = ProfileCard
+
+-- Update Ping & Inventory Stats Real-time
+task.spawn(function()
     while true do
-        local chr = localPlayer.Character
-        if not chr or not chr.Parent then
-            safeWait(RECONNECT_WAIT)
-            if not localPlayer.Character or not localPlayer.Character.Parent then
-                if Remotes.RequestHubSpawn then
-                    pcall(function() safeInvoke(Remotes.RequestHubSpawn) end)
+        pcall(function()
+            local stats = game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValue()
+            PingLabel.Text = "Ping Server: " .. math.round(stats) .. " ms | Status: Aman AFK"
+            
+            if Remotes:FindFirstChild("RequestInventorySnapshot") then
+                local snap = Remotes.RequestInventorySnapshot:InvokeServer()
+                if snap then
+                    local count = 0
+                    for _, _ in pairs(snap) do count = count + 1 end
+                    InvInfoLabel.Text = "Total Item Tersedia di Inventory: " .. count .. " / 100 Slot"
                 end
             end
-        end
-        safeWait(2)
+        end)
+        task.wait(3)
     end
 end)
 
-local function cacheGuiElements()
-    local gui = findGui(CONFIG.GuiName)
-    if not gui then
-        warn("GUI not found: " .. tostring(CONFIG.GuiName))
-        return false
-    end
+-- Panel Pemutar Musik Indo
+local MusicPanel = Instance.new("Frame")
+MusicPanel.Size = UDim2.new(0, 500, 0, 120)
+MusicPanel.BackgroundColor3 = Color3.fromRGB(20, 20, 32)
+MusicPanel.Parent = pageMusic
 
-    state.gui = gui
+local MCorner = Instance.new("UICorner")
+MCorner.CornerRadius = UDim.new(0, 8)
+MCorner.Parent = MusicPanel
 
-    local function tryGet(name)
-        local obj = gui:FindFirstChild(name, true)
-        if obj then
-            state.elements[name] = obj
-        end
-        return obj
-    end
+local MusicTitle = Instance.new("TextLabel")
+MusicTitle.Size = UDim2.new(1, -20, 0, 35)
+MusicTitle.Position = UDim2.new(0, 12, 0, 8)
+MusicTitle.BackgroundTransparency = 1
+MusicTitle.Font = Enum.Font.GothamBold
+MusicTitle.Text = "🎵 Musik: " .. MUSIC_LIBRARY[currentSongIndex].title
+MusicTitle.TextColor3 = Color3.fromRGB(255, 210, 100)
+MusicTitle.TextSize = 12
+MusicTitle.TextXAlignment = Enum.TextXAlignment.Left
+MusicTitle.Parent = MusicPanel
 
-    tryGet(CONFIG.RollButtonName)
-    tryGet(CONFIG.InventoryPanelName)
-    tryGet(CONFIG.MarketPanelName)
-    tryGet(CONFIG.SpinnerName)
-    tryGet(CONFIG.PingLabelName)
-    tryGet(CONFIG.AfkIndicatorName)
-    tryGet(CONFIG.MusicSelectorName)
+local function createMusicBtn(text, posX, posY, callback)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0, 154, 0, 35)
+    btn.Position = UDim2.new(0, posX, 0, posY)
+    btn.BackgroundColor3 = Color3.fromRGB(32, 32, 50)
+    btn.Font = Enum.Font.GothamSemibold
+    btn.Text = text
+    btn.TextColor3 = Color3.fromRGB(240, 240, 255)
+    btn.TextSize = 11
+    btn.Parent = MusicPanel
 
-    for _, v in pairs(CONFIG.ToggleNames) do
-        tryGet(v)
-    end
+    local c = Instance.new("UICorner")
+    c.CornerRadius = UDim.new(0, 6)
+    c.Parent = btn
 
-    return true
+    btn.MouseButton1Click:Connect(callback)
 end
 
-local function setupUI()
-    if not cacheGuiElements() then return end
-
-    local rollBtn = state.elements[CONFIG.RollButtonName]
-    if rollBtn and rollBtn:IsA("GuiButton") and rollBtn.Activated then
-        pcall(function() rollBtn.Activated:Connect(onRollPressed) end)
+createMusicBtn("⏯ Play / Pause", 12, 55, function()
+    if BackgroundMusic.IsPlaying then
+        BackgroundMusic:Pause()
+    else
+        BackgroundMusic:Resume()
     end
+end)
 
-    handleToggle(CONFIG.ToggleNames.AutoSell, Remotes.SetAutoSellUnderRequest or Remotes.ToggleAutoSellRarityRequest, Remotes.RequestAutoSellState)
-    handleToggle(CONFIG.ToggleNames.AutoRoll, Remotes.AutoRollState or Remotes.AutoRollResume, Remotes.RequestMultiRollState)
-    handleToggle(CONFIG.ToggleNames.AutoDungeon, Remotes.DungeonShopAutoBuy, nil)
+createMusicBtn("⏭ Next Song", 174, 55, function()
+    currentSongIndex = currentSongIndex + 1
+    if currentSongIndex > #MUSIC_LIBRARY then currentSongIndex = 1 end
+    BackgroundMusic.SoundId = MUSIC_LIBRARY[currentSongIndex].asset
+    BackgroundMusic:Play()
+    MusicTitle.Text = "🎵 Musik: " .. MUSIC_LIBRARY[currentSongIndex].title
+end)
 
-    local marketBtn = state.gui:FindFirstChild("OpenMarketButton", true)
-    if marketBtn and marketBtn:IsA("GuiButton") and marketBtn.Activated then
-        pcall(function() marketBtn.Activated:Connect(openMarketPanel) end)
-    end
+createMusicBtn("⏹ Stop Musik", 336, 55, function()
+    BackgroundMusic:Stop()
+end)
 
-    if state.elements[CONFIG.MusicSelectorName] then
-        pcall(function() populateMusicSelector(state.elements[CONFIG.MusicSelectorName]) end)
-    end
-
-    pcall(refreshInventory)
-    pcall(wireRemotes)
-
-    if #MUSIC_LIBRARY > 0 then
-        safeSpawn(function() playMusicByIndex(1) end)
-    end
-end
-
-local function watchForGui()
-    local pg = localPlayer:FindFirstChild("PlayerGui") or localPlayer:WaitForChild("PlayerGui")
-    if not pg then return end
-    if pg:FindFirstChild(CONFIG.GuiName, true) then
-        pcall(setupUI)
-        return
-    end
-
-    pcall(function()
-        pg.DescendantAdded:Connect(function(desc)
-            if not desc then return end
-            if desc.Name == CONFIG.GuiName or desc.Name == CONFIG.RollButtonName then
-                safeWait(0.05)
-                pcall(setupUI)
+-- =====================================================================
+-- 6. DRAGGABLE SYSTEM (BISA DIGESER DENGAN MUDAH DI HP)
+-- =====================================================================
+local dragging, dragInput, dragStart, startPos
+TopBar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = MainFrame.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
             end
         end)
-    end)
-end
-
-safeSpawn(function()
-    pcall(watchForGui)
+    end
 end)
 
--- End of file
+UserInputService.InputChanged:Connect(function(input)
+    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local delta = input.Position - dragStart
+        MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+
+print("[MofenkHub]: Bot Berhasil Dimuat Sempurna! Akun Bot Anda Aman Ditinggal AFK.")
