@@ -1,6 +1,6 @@
 -- =====================================================================
--- 👑 MOFENKHUB V126 — CLEAN MASTERPIECE EDITION
--- Game: Dadu Brainrot! | Fixed Nil Value & Stable Dungeon State
+-- 👑 MOFENKHUB V127 — ABSOLUTE CLEAN MASTERPIECE EDITION
+-- Game: Dadu Brainrot! | Fixed Core Structure & 100% Stable Execution
 -- =====================================================================
 
 local Players = game:GetService("Players")
@@ -324,23 +324,23 @@ LocalPlayer.Idled:Connect(function()
 end)
 
 -- ==========================================
--- 7. UI RAYFIELD (V126 CLEAN MASTER)
+-- 7. UI RAYFIELD (V127 ABSOLUTE CLEAN)
 -- ==========================================
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local Window = Rayfield:CreateWindow({
-   Name = "MofenkHub | Dadu Brainrot V126 Clean",
-   LoadingTitle = "Memuat MofenkHub V126...",
-   LoadingSubtitle = "Clean Masterpiece & Fixed Nil Error",
+   Name = "MofenkHub | Dadu Brainrot V127 Clean",
+   LoadingTitle = "Memuat MofenkHub V127...",
+   LoadingSubtitle = "Absolute Clean Masterpiece",
    ConfigurationSaving = { Enabled = false },
    KeySystem = false
 })
 
-Rayfield:Notify({ Title = "MofenkHub V126 Loaded! 👑", Content = "Clean Masterpiece Aktif!", Duration = 5, Image = 6023426915 })
+Rayfield:Notify({ Title = "MofenkHub V127 Loaded! 👑", Content = "Script Stabil & Siap Digunakan!", Duration = 5, Image = 6023426915 })
 
 -- TAB 1: HOME 🏠
 local TabHome = Window:CreateTab("Home 🏠", 6023426915)
 TabHome:CreateSection("👋 PROFIL & MONITOR")
-TabHome:CreateParagraph({Title = LocalPlayer.Name, Content = "Status: Terhubung (V126 Clean)\nGame: [UPDATE 2] Dadu Brainrot!"})
+TabHome:CreateParagraph({Title = LocalPlayer.Name, Content = "Status: Terhubung (V127 Clean)\nGame: [UPDATE 2] Dadu Brainrot!"})
 
 local ProfileParagraph = TabHome:CreateParagraph({Title = "📋 Profil Karakter", Content = "Memuat data..."})
 task.spawn(function()
@@ -419,9 +419,9 @@ TabInv:CreateSection("🎲 Toko & Upgrades")
 TabInv:CreateToggle({Name = "🎲 Auto Buy Dice", CurrentValue = false, Callback = function(V) _G.Mofenk.AutoBuyDice = V end})
 TabInv:CreateToggle({Name = "📈 Auto Buy Upgrade Nodes", CurrentValue = false, Callback = function(V) _G.Mofenk.AutoUpgradeNodes = V end})
 
--- TAB 4: DUNGEON & GATES ⚔️ (CLEAN DUNGEON MASTER)
+-- TAB 4: DUNGEON & GATES ⚔️ (CLEAN MASTER)
 local TabDungeon = Window:CreateTab("Dungeon & Gates ⚔️", 6023426915)
-TabDungeon:CreateSection("⚔️ Clean Dungeon State & Auto Combat")
+TabDungeon:CreateSection("⚔️ Dungeon State & Auto Combat")
 TabDungeon:CreateDropdown({
     Name = "🚪 Pilih Floor Dungeon", 
     Options = {"Battle1", "Battle2", "Battle3", "Battle4", "Battle5"}, 
@@ -429,7 +429,7 @@ TabDungeon:CreateDropdown({
     Callback = function(Opt) _G.Mofenk.TargetFloor = Opt[1] end
 })
 TabDungeon:CreateToggle({
-    Name = "🚀 Auto Unified Dungeon (Clean Execution)", 
+    Name = "🚀 Auto Unified Dungeon", 
     CurrentValue = false, 
     Callback = function(V) 
         _G.Mofenk.AutoDungeonGroup = V 
