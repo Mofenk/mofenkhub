@@ -1,6 +1,6 @@
 -- =====================================================================
--- 👑 MOFENKHUB V132 — TOWER FIGHT & UNFROZEN MOVEMENT MASTER
--- Game: Dadu Brainrot! | Fixed Movement Lock & Tower Fight System
+-- 👑 MOFENKHUB V134 — TOWER FIGHT INDEX & DIRECT INTERACTOR FIX
+-- Game: Dadu Brainrot! | Fixed Tower Dropdown & Direct Fight Trigger
 -- =====================================================================
 
 local Players = game:GetService("Players")
@@ -225,23 +225,33 @@ local function ExecuteAccurateSell()
     end)
 end
 
--- Teleport fisik sekali jalan (tidak nge-lock karakter)
-local function OneTimeTowerTeleport(floorName)
+-- Eksekusi Tower Fight dengan konversi nomor index floor (Battle1 -> 1, dst)
+local function ExecuteTowerFightAction(floorStr)
     pcall(function()
-        local char = LocalPlayer.Character
-        if char and char:FindFirstChild("HumanoidRootPart") then
-            for _, obj in ipairs(workspace:GetDescendants()) do
-                if obj:IsA("Model") or obj:IsA("Part") then
-                    local name = string.lower(obj.Name)
-                    if string.find(name, "tower") or string.find(name, "menara") or string.find(name, "battle") or string.find(name, string.lower(floorName)) then
-                        if obj:IsA("Model") and obj.PrimaryPart then
-                            char.HumanoidRootPart.CFrame = obj.PrimaryPart.CFrame + Vector3.new(0, 3, 0)
-                            break
-                        elseif obj:IsA("Part") then
-                            char.HumanoidRootPart.CFrame = obj.CFrame + Vector3.new(0, 3, 0)
-                            break
-                        end
-                    end
+        local floorNum = 1
+        if floorStr == "Battle2" then floorNum = 2
+        elseif floorStr == "Battle3" then floorNum = 3
+        elseif floorStr == "Battle4" then floorNum = 4
+        elseif floorStr == "Battle5" then floorNum = 5 end
+
+        -- Kirim berbagai variasi remote request tower fight & index lantai
+        safeFire("RequestDungeonTeleport", floorStr)
+        safeFire("RequestDungeonTeleport", floorNum)
+        safeFire("JoinDungeon", floorStr)
+        safeFire("JoinDungeon", floorNum)
+        safeFire("StartDungeon", floorStr)
+        safeFire("StartDungeon", floorNum)
+        safeFire("TowerBattleRequest", floorNum)
+        safeFire("StartTowerFight", floorNum)
+        safeFire("SetAutoFightBoss", true)
+        safeFire("BossAttack")
+
+        -- Interaksi proximity prompt / tombol fisik di workspace menara
+        for _, obj in ipairs(workspace:GetDescendants()) do
+            if obj:IsA("ProximityPrompt") then
+                local pName = string.lower(obj.Parent.Name)
+                if string.find(pName, "tower") or string.find(pName, "menara") or string.find(pName, string.lower(floorStr)) then
+                    fireproximityprompt(obj)
                 end
             end
         end
@@ -249,7 +259,50 @@ local function OneTimeTowerTeleport(floorName)
 end
 
 -- ==========================================
--- 4. UTILITIES & UI RAYFIELD (V132)
+-- 4. ADVANCED MAP SCANNER & SPY ENGINE
+-- ==========================================
+local function AdvancedMapScan()
+    print("\n==================================================")
+    print("🔍 [MOFENK SPY SCANNER] Memindai Semua Remote Game...")
+    print("==================================================")
+    if Remotes then
+        for _, r in ipairs(Remotes:GetChildren()) do
+            print("   - " .. r.Name .. " (" .. r.ClassName .. ")")
+        end
+    end
+    print("==================================================\n")
+end
+
+local function dumpData(o, depth)
+    depth = depth or 0
+    if depth > 3 then return "{...}" end
+    if type(o) == 'table' then
+        local s = '{' for k,v in pairs(o) do s = s .. tostring(k) .. '=' .. dumpData(v, depth+1) .. ', ' end return s .. '}'
+    elseif typeof(o) == "Instance" then return "<" .. o.Name .. ">"
+    elseif type(o) == 'string' then return '"' .. o .. '"' else return tostring(o) end
+end
+
+local mt = getrawmetatable(game)
+local oldNamecall = mt.__namecall
+setreadonly(mt, false)
+mt.__namecall = newcclosure(function(self, ...)
+    local method = getnamecallmethod()
+    if _G.Mofenk.SpyEnabled and not checkcaller() and (method == "FireServer" or method == "InvokeServer") then
+        local args = {...}
+        task.spawn(function()
+            pcall(function()
+                local argStr = ""
+                for i, v in ipairs(args) do argStr = argStr .. "Arg["..i.."]: " .. dumpData(v) .. " | " end
+                print("👁️ [MOFENK SPY] " .. self.Name .. " (" .. method .. ") -> " .. argStr)
+            end)
+        end)
+    end
+    return oldNamecall(self, ...)
+end)
+setreadonly(mt, true)
+
+-- ==========================================
+-- 5. UTILITIES & UI RAYFIELD (V134)
 -- ==========================================
 local function CopyServerID()
     pcall(function() if setclipboard then setclipboard(tostring(game.JobId)) end end)
@@ -322,19 +375,19 @@ end)
 -- UI RAYFIELD
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local Window = Rayfield:CreateWindow({
-   Name = "MofenkHub | Dadu Brainrot V132 Tower Fix",
-   LoadingTitle = "Memuat MofenkHub V132...",
-   LoadingSubtitle = "Tower Fight & Unfrozen Movement Master",
+   Name = "MofenkHub | Dadu Brainrot V134 Tower Fix",
+   LoadingTitle = "Memuat MofenkHub V134...",
+   LoadingSubtitle = "Tower Fight Index Resolver",
    ConfigurationSaving = { Enabled = false },
    KeySystem = false
 })
 
-Rayfield:Notify({ Title = "MofenkHub V132 Loaded! 👑", Content = "Tower Fight & Movement Fix Aktif!", Duration = 5, Image = 6023426915 })
+Rayfield:Notify({ Title = "MofenkHub V134 Loaded! 👑", Content = "Tower Fight Index Fix Aktif!", Duration = 5, Image = 6023426915 })
 
 -- TAB 1: HOME 🏠
 local TabHome = Window:CreateTab("Home 🏠", 6023426915)
 TabHome:CreateSection("👋 PROFIL & MONITOR")
-TabHome:CreateParagraph({Title = LocalPlayer.Name, Content = "Status: Terhubung (V132 Tower Fix)\nGame: [UPDATE 2] Dadu Brainrot!"})
+TabHome:CreateParagraph({Title = LocalPlayer.Name, Content = "Status: Terhubung (V134 Tower Fix)\nGame: [UPDATE 2] Dadu Brainrot!"})
 
 local ProfileParagraph = TabHome:CreateParagraph({Title = "📋 Profil Karakter", Content = "Memuat data..."})
 task.spawn(function()
@@ -415,9 +468,9 @@ TabInv:CreateSection("🎲 Toko & Upgrades")
 TabInv:CreateToggle({Name = "🎲 Auto Buy Dice", CurrentValue = false, Callback = function(V) _G.Mofenk.AutoBuyDice = V end})
 TabInv:CreateToggle({Name = "📈 Auto Buy Upgrade Nodes", CurrentValue = false, Callback = function(V) _G.Mofenk.AutoUpgradeNodes = V end})
 
--- TAB 4: TOWER & GATES ⚔️ (TOWER FIGHT MASTER)
+-- TAB 4: TOWER & GATES ⚔️ (TOWER FIGHT INDEX MASTER)
 local TabTower = Window:CreateTab("Tower & Gates ⚔️", 6023426915)
-TabTower:CreateSection("⚔️ Tower Fight & Unfrozen Movement")
+TabTower:CreateSection("⚔️ Tower Fight & Floor Selection")
 TabTower:CreateDropdown({
     Name = "🚪 Pilih Floor Menara (Tower)", 
     Options = {"Battle1", "Battle2", "Battle3", "Battle4", "Battle5"}, 
@@ -425,17 +478,12 @@ TabTower:CreateDropdown({
     Callback = function(Opt) _G.Mofenk.TargetFloor = Opt[1] end
 })
 TabTower:CreateToggle({
-    Name = "🚀 Auto Tower Fight (One-Time Teleport & Auto Attack)", 
+    Name = "🚀 Auto Tower Fight (Index & Direct Trigger)", 
     CurrentValue = false, 
     Callback = function(V) 
         _G.Mofenk.AutoTowerFight = V 
         if V then
-            -- Teleport fisik dipanggil SEKALI SAJA saat dinyalakan agar karakter tidak ke-lock/freeze
-            OneTimeTowerTeleport(_G.Mofenk.TargetFloor)
-            safeFire("RequestDungeonTeleport", _G.Mofenk.TargetFloor)
-            safeFire("JoinDungeon", _G.Mofenk.TargetFloor)
-            safeFire("StartDungeon", _G.Mofenk.TargetFloor)
-            safeFire("SetAutoFightBoss", true)
+            ExecuteTowerFightAction(_G.Mofenk.TargetFloor)
         else
             pcall(function()
                 safeFire("SetAutoFightBoss", false)
@@ -480,7 +528,7 @@ TabDev:CreateSection("📡 CONSOLE NETWORK SPY")
 TabDev:CreateToggle({Name = "Aktifkan Network Spy", CurrentValue = true, Callback = function(V) _G.Mofenk.SpyEnabled = V end})
 
 -- =====================================================================
--- 8. BACKGROUND MASTER ENGINE (STABLE & UNLOCKED)
+-- 8. BACKGROUND MASTER ENGINE
 -- =====================================================================
 local lastCollect, lastSell, lastEquip = os.time(), os.time(), os.time()
 
@@ -542,7 +590,7 @@ task.spawn(function()
                 safeFire("UpgradeNodeRequest") 
             end
             
-            -- Tower Fight Loop (Safe & Unlocked)
+            -- Tower Fight Loop
             if _G.Mofenk.AutoTowerFight then
                 safeFire("SetAutoFightBoss", true)
                 safeFire("BossAttack")
