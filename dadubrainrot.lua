@@ -1,6 +1,6 @@
 -- =====================================================================
--- 👑 MOFENKHUB V111 — FULL MASTERPIECE OMNI-CONNECTED FINAL EDITION
--- Game: Dadu Brainrot! | All Features, Smart Sell, Dungeon & Spy Fully Loaded
+-- 👑 MOFENKHUB V113 — FULL MASTERPIECE UNIFIED DUNGEON & ALL REMOTES
+-- Game: Dadu Brainrot! | Unified Dungeon Group, Multi-Checklist Sell & All Remotes
 -- =====================================================================
 
 local Players = game:GetService("Players")
@@ -34,15 +34,21 @@ _G.Mofenk = {
     AutoUpgradeBrainrot = false, 
     AutoCollectBase = false,
     AutoClaimMeteor = false,
-    -- Smart Sell Config
+    -- Smart Multi-Checklist Sell Config
     AutoSell = false, 
     SellEvery = 3, 
-    SellMode = "By Rarity", -- Pilihan: "By Rarity" atau "Sell All"
-    SelectedRarity = "Common, Uncommon",
-    KeepMutated = false, 
-    -- Dungeon & Gates
-    AutoDungeon = false, 
-    AutoJoinDungeon = false, 
+    SellCommon = false,
+    SellUncommon = false,
+    SellRare = false,
+    SellEpic = false,
+    SellLegendary = false,
+    SellMythical = false,
+    SellDivine = false,
+    SellSecret = false,
+    KeepMutated = false,
+    KeepTraited = false,
+    -- Unified Dungeon & Gateway Group
+    AutoDungeonGroup = false, 
     TargetFloor = "Battle1", 
     AutoDragonGate = false,
     -- Automation Extras
@@ -83,7 +89,7 @@ local function safeFire(remoteName, ...)
 end
 
 -- ==========================================
--- 3. FUNGSI EKSEKUSI UTAMA (TERKONEKSI DENGAN KONSOL)
+-- 3. FUNGSI EKSEKUSI UTAMA (SEMUA REMOTE TERKONEKSI)
 -- ==========================================
 local function TriggerBaseCollection()
     pcall(function()
@@ -116,21 +122,37 @@ end
 
 local function TriggerBrainrotUpgrades()
     pcall(function()
-        for i = 1, 20 do
+        for i = 1, 25 do
             safeFire("UpgradeBrainrotRequest", i)
+            safeFire("UpgradePlacedBrainrot", i)
+            safeFire("MultiRollUpgradeRequest")
         end
     end)
 end
 
-local function ExecuteSmartSell()
+local function ExecuteAccurateSell()
     pcall(function()
-        if _G.Mofenk.SellMode == "Sell All" then
-            safeFire("SellAllRequest", "All")
-            safeFire("SellItemRequest")
-        else
-            safeFire("SellAllRequest", _G.Mofenk.SelectedRarity)
-            safeFire("SetAutoSellUnderRequest", true, _G.Mofenk.KeepMutated)
+        safeFire("RequestInventorySnapshot")
+        safeFire("RequestItemsSnapshot")
+        
+        local raritiesToSell = {}
+        if _G.Mofenk.SellCommon then table.insert(raritiesToSell, "Common") end
+        if _G.Mofenk.SellUncommon then table.insert(raritiesToSell, "Uncommon") end
+        if _G.Mofenk.SellRare then table.insert(raritiesToSell, "Rare") end
+        if _G.Mofenk.SellEpic then table.insert(raritiesToSell, "Epic") end
+        if _G.Mofenk.SellLegendary then table.insert(raritiesToSell, "Legendary") end
+        if _G.Mofenk.SellMythical then table.insert(raritiesToSell, "Mythical") end
+        if _G.Mofenk.SellDivine then table.insert(raritiesToSell, "Divine") end
+        if _G.Mofenk.SellSecret then table.insert(raritiesToSell, "Secret") end
+
+        if #raritiesToSell > 0 then
+            for _, rarity in ipairs(raritiesToSell) do
+                safeFire("SellAllRequest", rarity)
+                safeFire("SellSelectedRequest", rarity)
+                safeFire("SellItemRequest", rarity)
+            end
         end
+        safeFire("SetAutoSellUnderRequest", true, _G.Mofenk.KeepMutated)
     end)
 end
 
@@ -253,23 +275,23 @@ LocalPlayer.Idled:Connect(function()
 end)
 
 -- ==========================================
--- 7. UI RAYFIELD (LENGKAP, RAPI & FULL FITUR)
+-- 7. UI RAYFIELD (TATA LETAK RAPI & UNIFIED DUNGEON)
 -- ==========================================
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local Window = Rayfield:CreateWindow({
-   Name = "MofenkHub | Dadu Brainrot V111 Final Masterpiece",
-   LoadingTitle = "Memuat MofenkHub V111...",
-   LoadingSubtitle = "All Features Fully Connected",
+   Name = "MofenkHub | Dadu Brainrot V113 Unified Masterpiece",
+   LoadingTitle = "Memuat MofenkHub V113...",
+   LoadingSubtitle = "Unified Dungeon Group & All Remotes Synced",
    ConfigurationSaving = { Enabled = false },
    KeySystem = false
 })
 
-Rayfield:Notify({ Title = "MofenkHub V111 Loaded! 👑", Content = "Semua fitur, smart sell & dungeon aktif!", Duration = 5, Image = 6023426915 })
+Rayfield:Notify({ Title = "MofenkHub V113 Loaded! 👑", Content = "Semua fitur & Unified Dungeon aktif!", Duration = 5, Image = 6023426915 })
 
 -- TAB 1: HOME 🏠
 local TabHome = Window:CreateTab("Home 🏠", 6023426915)
 TabHome:CreateSection("👋 PROFIL & MONITOR")
-TabHome:CreateParagraph({Title = LocalPlayer.Name, Content = "Status: Terhubung (V111 Final)\nGame: [UPDATE 2] Dadu Brainrot!"})
+TabHome:CreateParagraph({Title = LocalPlayer.Name, Content = "Status: Terhubung (V113 Unified)\nGame: [UPDATE 2] Dadu Brainrot!"})
 
 local ProfileParagraph = TabHome:CreateParagraph({Title = "📋 Profil Karakter", Content = "Memuat data..."})
 task.spawn(function()
@@ -310,40 +332,39 @@ TabMain:CreateSection("🏡 Base & Brainrot Upgrades")
 TabMain:CreateToggle({Name = "🏡 Auto Collect Base Money", CurrentValue = false, Callback = function(V) _G.Mofenk.AutoCollectBase = V end})
 TabMain:CreateToggle({Name = "⚡ Auto Upgrade Placed Brainrots", CurrentValue = false, Callback = function(V) _G.Mofenk.AutoUpgradeBrainrot = V end})
 
--- TAB 3: INVENTORY & SMART SELL 📦
+-- TAB 3: INVENTORY & MULTI-CHECKLIST SELL 📦
 local TabInv = Window:CreateTab("Inventory 📦", 6023426915)
-TabInv:CreateSection("💲 Smart Auto Sell Management")
+TabInv:CreateSection("💲 Smart Auto Sell (Pilih Rarity Ceklis)")
 TabInv:CreateToggle({Name = "🗑️ Aktifkan Auto Sell", CurrentValue = false, Callback = function(V) _G.Mofenk.AutoSell = V end})
 TabInv:CreateSlider({Name = "⏱️ Sell Every (s)", Range = {1, 30}, Increment = 1, Suffix = "s", CurrentValue = 3, Callback = function(V) _G.Mofenk.SellEvery = V end})
-TabInv:CreateDropdown({
-    Name = "📌 Mode Jual (Sell Mode)",
-    Options = {"By Rarity", "Sell All"},
-    CurrentOption = {"By Rarity"},
-    Callback = function(Opt) _G.Mofenk.SellMode = Opt[1] end
-})
-TabInv:CreateDropdown({
-    Name = "📌 Pilih Rarity (Jika Mode: By Rarity)",
-    Options = {"Common, Uncommon", "Rare, Epic", "Legendary, Mythical", "Divine, Secret", "All Rarities"},
-    CurrentOption = {"Common, Uncommon"},
-    Callback = function(Opt) _G.Mofenk.SelectedRarity = Opt[1] end
-})
+
+TabInv:CreateSection("☑️ Ceklis Rarity yang Ingin Dijual")
+TabInv:CreateToggle({Name = "Jual Common", CurrentValue = false, Callback = function(V) _G.Mofenk.SellCommon = V end})
+TabInv:CreateToggle({Name = "Jual Uncommon", CurrentValue = false, Callback = function(V) _G.Mofenk.SellUncommon = V end})
+TabInv:CreateToggle({Name = "Jual Rare", CurrentValue = false, Callback = function(V) _G.Mofenk.SellRare = V end})
+TabInv:CreateToggle({Name = "Jual Epic", CurrentValue = false, Callback = function(V) _G.Mofenk.SellEpic = V end})
+TabInv:CreateToggle({Name = "Jual Legendary", CurrentValue = false, Callback = function(V) _G.Mofenk.SellLegendary = V end})
+TabInv:CreateToggle({Name = "Jual Mythical", CurrentValue = false, Callback = function(V) _G.Mofenk.SellMythical = V end})
+TabInv:CreateToggle({Name = "Jual Divine", CurrentValue = false, Callback = function(V) _G.Mofenk.SellDivine = V end})
+TabInv:CreateToggle({Name = "Jual Secret", CurrentValue = false, Callback = function(V) _G.Mofenk.SellSecret = V end})
+
+TabInv:CreateSection("🔒 Proteksi Item")
 TabInv:CreateToggle({Name = "🔒 Keep Mutated (Jangan Jual Mutasi)", CurrentValue = false, Callback = function(V) _G.Mofenk.KeepMutated = V end})
 
 TabInv:CreateSection("🎲 Toko & Upgrades")
 TabInv:CreateToggle({Name = "🎲 Auto Buy Dice", CurrentValue = false, Callback = function(V) _G.Mofenk.AutoBuyDice = V end})
 TabInv:CreateToggle({Name = "📈 Auto Buy Upgrade Nodes", CurrentValue = false, Callback = function(V) _G.Mofenk.AutoUpgradeNodes = V end})
 
--- TAB 4: DUNGEON & GATES ⚔️
+-- TAB 4: DUNGEON & GATES ⚔️ (UNIFIED GROUPED UI)
 local TabDungeon = Window:CreateTab("Dungeon & Gates ⚔️", 6023426915)
-TabDungeon:CreateSection("⚔️ Dungeon Automation (Synced)")
+TabDungeon:CreateSection("⚔️ Unified Dungeon & Gateway Control")
 TabDungeon:CreateDropdown({
     Name = "🚪 Pilih Floor Dungeon", 
     Options = {"Battle1", "Battle2", "Battle3", "Battle4", "Battle5"}, 
     CurrentOption = {"Battle1"}, 
     Callback = function(Opt) _G.Mofenk.TargetFloor = Opt[1] end
 })
-TabDungeon:CreateToggle({Name = "🚪 Auto Join Dungeon (Gateway)", CurrentValue = false, Callback = function(V) _G.Mofenk.AutoJoinDungeon = V end})
-TabDungeon:CreateToggle({Name = "⚔️ Auto Dungeon & Boss Fight", CurrentValue = false, Callback = function(V) _G.Mofenk.AutoDungeon = V end})
+TabDungeon:CreateToggle({Name = "🚀 Auto Unified Dungeon (Join + Teleport + Fight All-in-One)", CurrentValue = false, Callback = function(V) _G.Mofenk.AutoDungeonGroup = V end})
 TabDungeon:CreateToggle({Name = "🐉 Auto Dragon Gate", CurrentValue = false, Callback = function(V) _G.Mofenk.AutoDragonGate = V end})
 TabDungeon:CreateButton({Name = "🏠 Return To Base", Callback = function() safeFire("RequestMyBaseSpawn") end})
 
@@ -375,7 +396,7 @@ TabDev:CreateSection("📡 CONSOLE NETWORK SPY")
 TabDev:CreateToggle({Name = "Aktifkan Network Spy", CurrentValue = false, Callback = function(V) _G.Mofenk.SpyEnabled = V end})
 
 -- =====================================================================
--- 8. BACKGROUND MASTER ENGINE (SYNCHRONIZED LOOPS)
+-- 8. BACKGROUND MASTER ENGINE (UNIFIED & SYNCHRONIZED LOOPS)
 -- =====================================================================
 local lastCollect, lastSell, lastEquip = os.time(), os.time(), os.time()
 
@@ -418,9 +439,9 @@ task.spawn(function()
                 lastEquip = os.time()
             end
             
-            -- Smart Auto Sell (Synced)
+            -- Multi-Checklist Smart Auto Sell
             if _G.Mofenk.AutoSell and (os.time() - lastSell >= _G.Mofenk.SellEvery) then
-                ExecuteSmartSell()
+                ExecuteAccurateSell()
                 lastSell = os.time()
             end
             
@@ -428,17 +449,12 @@ task.spawn(function()
             if _G.Mofenk.AutoBuyDice then safeFire("BuyDiceRequest"); safeFire("DiceShopAction", "Buy", 1) end
             if _G.Mofenk.AutoUpgradeNodes then safeFire("BuyAffordableUpgradeNodes"); safeFire("UpgradeNodeRequest") end
             
-            -- Dungeon & Gates (Synced)
-            if _G.Mofenk.AutoJoinDungeon then
+            -- Unified Dungeon Group (All-in-One Teleport, Join & Boss Fight)
+            if _G.Mofenk.AutoDungeonGroup then
                 safeFire("RequestDungeonTeleport", _G.Mofenk.TargetFloor)
                 safeFire("RequestGatewayTeleport", _G.Mofenk.TargetFloor)
-                safeFire("JoinDungeon")
-                safeFire("StartDungeon")
-            end
-
-            if _G.Mofenk.AutoDungeon then
-                safeFire("RequestDungeonTeleport", _G.Mofenk.TargetFloor)
-                safeFire("RequestGatewayTeleport", _G.Mofenk.TargetFloor)
+                safeFire("JoinDungeon", _G.Mofenk.TargetFloor)
+                safeFire("StartDungeon", _G.Mofenk.TargetFloor)
                 safeFire("SetAutoFightBoss", true)
                 safeFire("BossAttack")
                 if workspace.CurrentCamera then
