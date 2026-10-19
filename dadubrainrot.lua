@@ -1,6 +1,6 @@
 -- =====================================================================
--- 👑 MOFENKHUB V145 — DYNAMIC CHECKLIST RARITY AUTO SELL
--- Game: Dadu Brainrot! | Auto Sell Hanya Menyesuaikan Rarity yang Dicentang
+-- 👑 MOFENKHUB V146 — UNIVERSAL AUTO SELL REMOTE FIXER
+-- Game: Dadu Brainrot! | Auto-Detect Sell Remote & Dynamic Checklist
 -- =====================================================================
 
 local Players = game:GetService("Players")
@@ -39,7 +39,7 @@ _G.Mofenk = {
     AutoMultiRollUpgrade = false,
     AutoCollectBase = false,
     AutoClaimMeteor = false,
-    -- Dynamic Checklist Sell Config
+    -- Checklist Sell Config
     AutoSell = false,
     SellEvery = 2,
     SellCommon = false,
@@ -76,17 +76,14 @@ _G.Mofenk = {
     SpyEnabled = true
 }
 
--- PENCARIAN REMOTES AMAN DENGAN DEBUGGER ERROR TRACER
+-- PENCARIAN REMOTES UNIVERSAL (Mendeteksi berbagai variasi nama remote sell di game)
 local Remotes = ReplicatedStorage:WaitForChild("Remotes", 5)
 
-local function getEncryptedRemote(targetName)
+local function getUniversalSellRemote()
     if Remotes then
-        local exact = Remotes:FindFirstChild(targetName)
-        if exact then return exact end
-        
         for _, child in ipairs(Remotes:GetChildren()) do
             local cName = string.lower(child.Name)
-            if string.find(cName, string.lower(targetName)) then
+            if string.find(cName, "sell") or string.find(cName, "item") or string.find(cName, "rarity") then
                 return child
             end
         end
@@ -97,21 +94,22 @@ end
 local function safeFireEncrypted(featureName, targetName, ...)
     local args = {...}
     task.spawn(function()
-        local success, err = pcall(function()
-            local r = getEncryptedRemote(targetName)
+        pcall(function()
+            local r = nil
+            if Remotes then
+                r = Remotes:FindFirstChild(targetName)
+                if not r then
+                    r = getUniversalSellRemote()
+                end
+            end
             if r then
                 if r:IsA("RemoteEvent") then 
                     r:FireServer(unpack(args))
                 elseif r:IsA("RemoteFunction") then 
                     r:InvokeServer(unpack(args)) 
                 end
-            else
-                warn("⚠️ [MOFENK DEBUGGER] Remote '" .. targetName .. "' untuk fitur [" .. featureName .. "] tidak ditemukan!")
             end
         end)
-        if not success then
-            warn("❌ [MOFENK ERROR TRACER] Fitur [" .. featureName .. "] Gagal: " .. tostring(err))
-        end
     end)
 end
 
@@ -205,8 +203,8 @@ local function TriggerUniversalIndexClaims()
     end)
 end
 
--- DYNAMIC CHECKLIST AUTO SELL (Hanya mengeksekusi rarity yang dicentang True)
-local function ExecuteDynamicChecklistSell()
+-- UNIVERSAL CHECKLIST AUTO SELL (Menyesuaikan rarity yang dicentang dengan remote universal)
+local function ExecuteUniversalChecklistSell()
     pcall(function()
         if not _G.Mofenk.AutoSell then return end
 
@@ -234,10 +232,10 @@ local function ExecuteDynamicChecklistSell()
 
         for _, item in ipairs(rarityList) do
             if item.status then
-                -- Hanya tembak remote untuk rarity yang benar-benar dicentang (True)
-                safeFireEncrypted("Dynamic Sell", "SellSelectedRarityRequest", item.name, _G.Mofenk.KeepMutated)
-                safeFireEncrypted("Dynamic Sell", "SellRarityRequest", item.name)
-                safeFireEncrypted("Dynamic Sell", "SetAutoSellUnderRequest", item.name, true)
+                safeFireEncrypted("Universal Sell", "SellSelectedRarityRequest", item.name, _G.Mofenk.KeepMutated)
+                safeFireEncrypted("Universal Sell", "SellRarityRequest", item.name)
+                safeFireEncrypted("Universal Sell", "ToggleAutoSellRarityRequest", item.name, true)
+                safeFireEncrypted("Universal Sell", "SellItemRequest", item.name)
             end
         end
     end)
@@ -364,23 +362,23 @@ LocalPlayer.Idled:Connect(function()
 end)
 
 -- ==========================================
--- 6. UI RAYFIELD (V145 DYNAMIC SELL MASTER)
+-- 6. UI RAYFIELD (V146 UNIVERSAL FIXER)
 -- ==========================================
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local Window = Rayfield:CreateWindow({
-   Name = "MofenkHub | Dadu Brainrot V145 Dynamic Sell Master",
-   LoadingTitle = "Memuat MofenkHub V145...",
-   LoadingSubtitle = "Dynamic Checklist Rarity Auto Sell & Debugger",
+   Name = "MofenkHub | Dadu Brainrot V146 Universal Fixer",
+   LoadingTitle = "Memuat MofenkHub V146...",
+   LoadingSubtitle = "Universal Auto Sell Remote Fixer & Debugger",
    ConfigurationSaving = { Enabled = false },
    KeySystem = false
 })
 
-Rayfield:Notify({ Title = "MofenkHub V145 Loaded! 👑", Content = "Dynamic Checklist Auto Sell Aktif!", Duration = 5, Image = 6023426915 })
+Rayfield:Notify({ Title = "MofenkHub V146 Loaded! 👑", Content = "Universal Auto Sell Fixer Aktif!", Duration = 5, Image = 6023426915 })
 
 -- TAB 1: HOME 🏠
 local TabHome = Window:CreateTab("Home 🏠", 6023426915)
 TabHome:CreateSection("👋 PROFIL & MONITOR")
-TabHome:CreateParagraph({Title = LocalPlayer.Name, Content = "Status: Terhubung (V145 Dynamic Sell)\nGame: [UPDATE 2] Dadu Brainrot!"})
+TabHome:CreateParagraph({Title = LocalPlayer.Name, Content = "Status: Terhubung (V146 Universal Fixer)\nGame: [UPDATE 2] Dadu Brainrot!"})
 
 local ProfileParagraph = TabHome:CreateParagraph({Title = "📋 Profil Karakter", Content = "Memuat data..."})
 task.spawn(function()
@@ -429,10 +427,10 @@ TabUpgrade:CreateToggle({Name = "⚡ Auto Multi-Roll Upgrade", CurrentValue = fa
 TabUpgrade:CreateToggle({Name = "🏡 Auto Collect Base Money", CurrentValue = false, Callback = function(V) _G.Mofenk.AutoCollectBase = V end})
 TabUpgrade:CreateToggle({Name = "🎲 Auto Buy Dice", CurrentValue = false, Callback = function(V) _G.Mofenk.AutoBuyDice = V end})
 
--- TAB 4: INVENTORY & DYNAMIC CHECKLIST SELL 📦
+-- TAB 4: INVENTORY & UNIVERSAL SELL 📦
 local TabInv = Window:CreateTab("Inventory 📦", 6023426915)
-TabInv:CreateSection("💲 Dynamic Checklist Auto Sell By Rarity")
-TabInv:CreateToggle({Name = "🗑️ Aktifkan Auto Sell Sesuai Ceklis", CurrentValue = false, Callback = function(V) _G.Mofenk.AutoSell = V end})
+TabInv:CreateSection("💲 Universal Checklist Auto Sell By Rarity")
+TabInv:CreateToggle({Name = "🗑️ Aktifkan Auto Sell Universal", CurrentValue = false, Callback = function(V) _G.Mofenk.AutoSell = V end})
 TabInv:CreateSlider({Name = "⏱️ Sell Interval (s)", Range = {1, 15}, Increment = 1, Suffix = "s", CurrentValue = 2, Callback = function(V) _G.Mofenk.SellEvery = V end})
 
 TabInv:CreateSection("☑️ Ceklis Rarity (Tier 1)")
@@ -571,9 +569,9 @@ task.spawn(function()
                 lastEquip = os.time()
             end
             
-            -- Dynamic Checklist Auto Sell Loop (Hanya jual yang dicentang)
+            -- Universal Checklist Auto Sell Loop Sambil Roll
             if _G.Mofenk.AutoSell and (os.time() - lastSell >= _G.Mofenk.SellEvery) then
-                ExecuteDynamicChecklistSell()
+                ExecuteUniversalChecklistSell()
                 lastSell = os.time()
             end
             
