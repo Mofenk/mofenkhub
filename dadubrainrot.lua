@@ -1,6 +1,6 @@
 -- =====================================================================
--- 👑 MOFENKHUB V127 — ABSOLUTE CLEAN MASTERPIECE EDITION
--- Game: Dadu Brainrot! | Fixed Core Structure & 100% Stable Execution
+-- 👑 MOFENKHUB V130 — ULTIMATE COMPLETE & INSTANT MASTERPIECE
+-- Game: Dadu Brainrot! | Instant Roll, Best Brainrot Equip & All Features
 -- =====================================================================
 
 local Players = game:GetService("Players")
@@ -24,11 +24,12 @@ end
 -- 2. KONFIGURASI GLOBAL MASTER
 _G.Mofenk = {
     AutoRoll = false, 
+    InstantRoll = false,
     AutoCollectMoney = false, 
     CollectEvery = 1,
     AutoRebirth = false, 
     AutoEquipBest = false, 
-    EquipBestEvery = 15,
+    EquipBestEvery = 10,
     AutoClaimQuests = false, 
     AutoClaimIndex = false,
     AutoUpgradeBrainrot = false, 
@@ -114,8 +115,35 @@ local function safeFireEncrypted(featureName, targetName, ...)
 end
 
 -- ==========================================
--- 3. FUNGSI EKSEKUSI UTAMA
+-- 3. FUNGSI EKSEKUSI UTAMA (LENGKAP & PRESISI)
 -- ==========================================
+local function TriggerRollSystem()
+    pcall(function()
+        if _G.Mofenk.InstantRoll then
+            -- Spam fire remote roll untuk hasil instan tanpa delay animasi
+            for i = 1, 5 do
+                safeFireEncrypted("Instant Roll", "RollRequest")
+                safeFireEncrypted("Instant Roll", "Roll")
+                safeFireEncrypted("Instant Roll", "SpinDice")
+            end
+        elseif _G.Mofenk.AutoRoll then
+            safeFireEncrypted("Auto Roll", "RollRequest")
+            safeFireEncrypted("Auto Roll", "Roll")
+            safeFireEncrypted("Auto Roll", "SpinDice")
+        end
+    end)
+end
+
+local function TriggerEquipBestBrainrot()
+    pcall(function()
+        -- Eksekusi menyeluruh untuk equip best brainrot / squad / team
+        safeFireEncrypted("Auto Equip Best", "EquipBest")
+        safeFireEncrypted("Auto Equip Best", "EquipBestBattleSquadRequest")
+        safeFireEncrypted("Auto Equip Best", "EquipBestBrainrot")
+        safeFireEncrypted("Auto Equip Best", "AutoEquipBestRequest")
+    end)
+end
+
 local function TriggerBaseCollection()
     pcall(function()
         safeFireEncrypted("Auto Collect Base", "MoneyCollected")
@@ -202,6 +230,28 @@ local function ExecuteAccurateSell()
             end
         end
         safeFireEncrypted("Auto Sell", "SetAutoSellUnderRequest", true, _G.Mofenk.KeepMutated)
+    end)
+end
+
+local function ForcePhysicalDungeonTeleport(floorName)
+    pcall(function()
+        local char = LocalPlayer.Character
+        if char and char:FindFirstChild("HumanoidRootPart") then
+            for _, obj in ipairs(workspace:GetDescendants()) do
+                if obj:IsA("Model") or obj:IsA("Part") then
+                    local name = string.lower(obj.Name)
+                    if string.find(name, "dungeon") or string.find(name, "gateway") or string.find(name, string.lower(floorName)) then
+                        if obj:IsA("Model") and obj.PrimaryPart then
+                            char.HumanoidRootPart.CFrame = obj.PrimaryPart.CFrame + Vector3.new(0, 3, 0)
+                            break
+                        elseif obj:IsA("Part") then
+                            char.HumanoidRootPart.CFrame = obj.CFrame + Vector3.new(0, 3, 0)
+                            break
+                        end
+                    end
+                end
+            end
+        end
     end)
 end
 
@@ -324,23 +374,23 @@ LocalPlayer.Idled:Connect(function()
 end)
 
 -- ==========================================
--- 7. UI RAYFIELD (V127 ABSOLUTE CLEAN)
+-- 7. UI RAYFIELD (V130 ULTIMATE COMPLETE)
 -- ==========================================
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local Window = Rayfield:CreateWindow({
-   Name = "MofenkHub | Dadu Brainrot V127 Clean",
-   LoadingTitle = "Memuat MofenkHub V127...",
-   LoadingSubtitle = "Absolute Clean Masterpiece",
+   Name = "MofenkHub | Dadu Brainrot V130 Complete",
+   LoadingTitle = "Memuat MofenkHub V130...",
+   LoadingSubtitle = "Instant Roll & Best Brainrot Equip Master",
    ConfigurationSaving = { Enabled = false },
    KeySystem = false
 })
 
-Rayfield:Notify({ Title = "MofenkHub V127 Loaded! 👑", Content = "Script Stabil & Siap Digunakan!", Duration = 5, Image = 6023426915 })
+Rayfield:Notify({ Title = "MofenkHub V130 Loaded! 👑", Content = "Instant Roll & Equip Best Aktif!", Duration = 5, Image = 6023426915 })
 
 -- TAB 1: HOME 🏠
 local TabHome = Window:CreateTab("Home 🏠", 6023426915)
 TabHome:CreateSection("👋 PROFIL & MONITOR")
-TabHome:CreateParagraph({Title = LocalPlayer.Name, Content = "Status: Terhubung (V127 Clean)\nGame: [UPDATE 2] Dadu Brainrot!"})
+TabHome:CreateParagraph({Title = LocalPlayer.Name, Content = "Status: Terhubung (V130 Complete)\nGame: [UPDATE 2] Dadu Brainrot!"})
 
 local ProfileParagraph = TabHome:CreateParagraph({Title = "📋 Profil Karakter", Content = "Memuat data..."})
 task.spawn(function()
@@ -362,14 +412,16 @@ end)
 
 -- TAB 2: MAIN 🎮
 local TabMain = Window:CreateTab("Main 🎮", 6023426915)
-TabMain:CreateSection("🔄 Farm & Roll Utama")
-TabMain:CreateToggle({Name = "🎲 Auto Roll", CurrentValue = false, Callback = function(V) _G.Mofenk.AutoRoll = V end})
+TabMain:CreateSection("🔄 Farm & Instant Roll Utama")
+TabMain:CreateToggle({Name = "🎲 Auto Roll (Normal)", CurrentValue = false, Callback = function(V) _G.Mofenk.AutoRoll = V end})
+TabMain:CreateToggle({Name = "⚡ INSTANT ROLL (Super Cepat)", CurrentValue = false, Callback = function(V) _G.Mofenk.InstantRoll = V end})
 TabMain:CreateToggle({Name = "🔄 Auto Rebirth", CurrentValue = false, Callback = function(V) _G.Mofenk.AutoRebirth = V end})
 TabMain:CreateToggle({Name = "💰 Auto Collect Money (Global)", CurrentValue = false, Callback = function(V) _G.Mofenk.AutoCollectMoney = V end})
 TabMain:CreateSlider({Name = "⏱️ Collect Every (s)", Range = {1, 10}, Increment = 1, Suffix = "s", CurrentValue = 1, Callback = function(V) _G.Mofenk.CollectEvery = V end})
 
-TabMain:CreateSection("🛡️ Squad & Klaim Otomatis")
-TabMain:CreateToggle({Name = "🛡️ Auto Equip Best Squad", CurrentValue = false, Callback = function(V) _G.Mofenk.AutoEquipBest = V end})
+TabMain:CreateSection("🛡️ Squad & Best Brainrot Equip")
+TabMain:CreateToggle({Name = "🛡️ Auto Equip Best Brainrot Squad", CurrentValue = false, Callback = function(V) _G.Mofenk.AutoEquipBest = V end})
+TabMain:CreateSlider({Name = "⏱️ Equip Best Every (s)", Range = {5, 60}, Increment = 5, Suffix = "s", CurrentValue = 10, Callback = function(V) _G.Mofenk.EquipBestEvery = V end})
 TabMain:CreateToggle({Name = "📜 Auto Claim Quests", CurrentValue = false, Callback = function(V) _G.Mofenk.AutoClaimQuests = V end})
 TabMain:CreateToggle({Name = "📖 Auto Claim Index Rewards (Universal)", CurrentValue = false, Callback = function(V) _G.Mofenk.AutoClaimIndex = V end})
 TabMain:CreateToggle({Name = "🏆 Auto Claim Boss Milestones", CurrentValue = false, Callback = function(V) _G.Mofenk.AutoClaimBossMilestones = V end})
@@ -419,9 +471,9 @@ TabInv:CreateSection("🎲 Toko & Upgrades")
 TabInv:CreateToggle({Name = "🎲 Auto Buy Dice", CurrentValue = false, Callback = function(V) _G.Mofenk.AutoBuyDice = V end})
 TabInv:CreateToggle({Name = "📈 Auto Buy Upgrade Nodes", CurrentValue = false, Callback = function(V) _G.Mofenk.AutoUpgradeNodes = V end})
 
--- TAB 4: DUNGEON & GATES ⚔️ (CLEAN MASTER)
+-- TAB 4: DUNGEON & GATES ⚔️ (COMPLETE MASTER)
 local TabDungeon = Window:CreateTab("Dungeon & Gates ⚔️", 6023426915)
-TabDungeon:CreateSection("⚔️ Dungeon State & Auto Combat")
+TabDungeon:CreateSection("⚔️ Dungeon State & Physical Teleport")
 TabDungeon:CreateDropdown({
     Name = "🚪 Pilih Floor Dungeon", 
     Options = {"Battle1", "Battle2", "Battle3", "Battle4", "Battle5"}, 
@@ -433,7 +485,9 @@ TabDungeon:CreateToggle({
     CurrentValue = false, 
     Callback = function(V) 
         _G.Mofenk.AutoDungeonGroup = V 
-        if not V then
+        if V then
+            ForcePhysicalDungeonTeleport(_G.Mofenk.TargetFloor)
+        else
             pcall(function()
                 safeFireEncrypted("Auto Dungeon Exit", "DungeonShopState", false)
                 safeFireEncrypted("Auto Dungeon Exit", "SetAutoFightBoss", false)
@@ -484,7 +538,7 @@ TabDev:CreateToggle({Name = "Aktifkan Network Spy", CurrentValue = true, Callbac
 local lastCollect, lastSell, lastEquip = os.time(), os.time(), os.time()
 
 task.spawn(function()
-    while task.wait(0.4) do
+    while task.wait(0.2) do
         pcall(function()
             if _G.Mofenk.EnableWalkSpeed then
                 local char = LocalPlayer.Character
@@ -493,8 +547,9 @@ task.spawn(function()
                 end
             end
 
-            -- Main Loops
-            if _G.Mofenk.AutoRoll then safeFireEncrypted("Auto Roll", "RollRequest") end
+            -- Main Loops (Instant Roll & Roll)
+            TriggerRollSystem()
+
             if _G.Mofenk.AutoRebirth then 
                 safeFireEncrypted("Auto Rebirth", "RebirthRequest")
                 safeFireEncrypted("Auto Rebirth", "Rebirth")
@@ -518,10 +573,9 @@ task.spawn(function()
                 lastCollect = os.time()
             end
             
-            -- Equip Best Squad
+            -- Equip Best Squad / Brainrot
             if _G.Mofenk.AutoEquipBest and (os.time() - lastEquip >= _G.Mofenk.EquipBestEvery) then
-                safeFireEncrypted("Auto Equip Best", "EquipBest")
-                safeFireEncrypted("Auto Equip Best", "EquipBestBattleSquadRequest")
+                TriggerEquipBestBrainrot()
                 lastEquip = os.time()
             end
             
@@ -543,10 +597,8 @@ task.spawn(function()
             
             -- Unified Dungeon Group
             if _G.Mofenk.AutoDungeonGroup then
+                ForcePhysicalDungeonTeleport(_G.Mofenk.TargetFloor)
                 safeFireEncrypted("Auto Dungeon", "DungeonShopState", _G.Mofenk.TargetFloor)
-                safeFireEncrypted("Auto Dungeon", "RequestDungeonTeleport", _G.Mofenk.TargetFloor)
-                safeFireEncrypted("Auto Dungeon", "JoinDungeon", _G.Mofenk.TargetFloor)
-                safeFireEncrypted("Auto Dungeon", "StartDungeon", _G.Mofenk.TargetFloor)
                 safeFireEncrypted("Auto Dungeon", "SetAutoFightBoss", true)
                 safeFireEncrypted("Auto Dungeon", "BossAttack")
                 if workspace.CurrentCamera then
