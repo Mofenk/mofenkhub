@@ -1,6 +1,6 @@
 -- =====================================================================
--- 👑 MOFENKHUB V139 — FIXED TOGGLE STATE, COOLDOWN MASTER & CLEAN DEBUGGER
--- Game: Dadu Brainrot! | Stable On/Off Logic, Timed Cooldowns & Full Features
+-- 👑 MOFENKHUB — ULTIMATE MASTERPIECE (100% FULL UNCUT)
+-- Game: Dadu Brainrot! | Seluruh Fitur, Toggle, Upgrade, Sell & Spy Utuh
 -- =====================================================================
 
 local Players = game:GetService("Players")
@@ -39,7 +39,7 @@ _G.Mofenk = {
     AutoMultiRollUpgrade = false,
     AutoCollectBase = false,
     AutoClaimMeteor = false,
-    -- Strict Checklist Sell Config
+    -- Strict Checklist Sell Config (19 Rarities)
     AutoSell = false, 
     SellEvery = 5, 
     SellCommon = false,
@@ -118,7 +118,7 @@ local function safeFireEncrypted(targetName, ...)
 end
 
 -- ==========================================
--- 3. FUNGSI EKSEKUSI UTAMA DENGAN JEDA (COOLDOWN)
+-- 3. FUNGSI EKSEKUSI UTAMA (DENGAN JEDA / COOLDOWN)
 -- ==========================================
 local function TriggerRollSystem()
     pcall(function()
@@ -257,7 +257,7 @@ local function ExecuteSelectDungeonAction(towerName)
 end
 
 -- ==========================================
--- 4. CLEAN SPY & DEBUGGER (DENGAN DEBOUNCE / JEDA)
+-- 4. CLEAN SPY & DEBUGGER
 -- ==========================================
 local lastSpyPrint = 0
 local function AdvancedMapScan()
@@ -287,7 +287,7 @@ setreadonly(mt, false)
 mt.__namecall = newcclosure(function(self, ...)
     local method = getnamecallmethod()
     if _G.Mofenk.SpyEnabled and not checkcaller() and (method == "FireServer" or method == "InvokeServer") then
-        if tick() - lastSpyPrint > 1.5 then -- Jeda 1.5 detik agar konsol tidak spam parah
+        if tick() - lastSpyPrint > 1.5 then
             lastSpyPrint = tick()
             local args = {...}
             task.spawn(function()
@@ -373,23 +373,23 @@ LocalPlayer.Idled:Connect(function()
 end)
 
 -- ==========================================
--- 6. UI RAYFIELD (V139 STABLE MASTER)
+-- 6. UI RAYFIELD (ULTIMATE COMPLETE)
 -- ==========================================
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local Window = Rayfield:CreateWindow({
-   Name = "MofenkHub | Dadu Brainrot V139 Stable Master",
-   LoadingTitle = "Memuat MofenkHub V139...",
-   LoadingSubtitle = "Stable On/Off, Cooldown & Clean Debugger",
+   Name = "MofenkHub | Dadu Brainrot Ultimate Uncut",
+   LoadingTitle = "Memuat MofenkHub Ultimate...",
+   LoadingSubtitle = "100% Full Uncut Features & Stable Master",
    ConfigurationSaving = { Enabled = false },
    KeySystem = false
 })
 
-Rayfield:Notify({ Title = "MofenkHub V139 Loaded! 👑", Content = "Fix Toggle On/Off & Jeda Cooldown Aktif!", Duration = 5, Image = 6023426915 })
+Rayfield:Notify({ Title = "MofenkHub Loaded! 👑", Content = "Semua Fitur Lengkap & Utuh!", Duration = 5, Image = 6023426915 })
 
 -- TAB 1: HOME 🏠
 local TabHome = Window:CreateTab("Home 🏠", 6023426915)
 TabHome:CreateSection("👋 PROFIL & MONITOR")
-TabHome:CreateParagraph({Title = LocalPlayer.Name, Content = "Status: Terhubung (V139 Stable Master)\nGame: [UPDATE 2] Dadu Brainrot!"})
+TabHome:CreateParagraph({Title = LocalPlayer.Name, Content = "Status: Terhubung (Ultimate Uncut)\nGame: [UPDATE 2] Dadu Brainrot!"})
 
 local ProfileParagraph = TabHome:CreateParagraph({Title = "📋 Profil Karakter", Content = "Memuat data..."})
 task.spawn(function()
@@ -535,12 +535,12 @@ TabDev:CreateSection("📡 CONSOLE NETWORK SPY")
 TabDev:CreateToggle({Name = "Aktifkan Network Spy", CurrentValue = true, Callback = function(V) _G.Mofenk.SpyEnabled = V end})
 
 -- =====================================================================
--- 7. BACKGROUND MASTER ENGINE (DENGAN COOLDOWN & STABLE STATE)
+-- 7. BACKGROUND MASTER ENGINE
 -- =====================================================================
 local lastCollect, lastSell, lastEquip = os.time(), os.time(), os.time()
 
 task.spawn(function()
-    while task.wait(0.4) do -- Jeda loop background dinaikkan agar stabil & tidak nge-lag game
+    while task.wait(0.4) do
         pcall(function()
             if _G.Mofenk.EnableWalkSpeed then
                 local char = LocalPlayer.Character
@@ -549,7 +549,6 @@ task.spawn(function()
                 end
             end
 
-            -- Roll Systems
             if _G.Mofenk.AutoRoll or _G.Mofenk.InstantRoll then
                 TriggerRollSystem()
             end
@@ -564,40 +563,33 @@ task.spawn(function()
             if _G.Mofenk.AutoWheelSpin then safeFireEncrypted("WheelSpinRequest") end
             if _G.Mofenk.AutoFuse then safeFireEncrypted("FuseRequest") end
             
-            -- Meteor & Base
             if _G.Mofenk.AutoClaimMeteor then TriggerMeteorClaim() end
             if _G.Mofenk.AutoCollectBase then TriggerBaseCollection() end
 
-            -- Upgrade All Switches (Hanya jalan jika tombolnya di-ON-kan)
             if _G.Mofenk.AutoUpgradeAllNodes or _G.Mofenk.AutoUpgradeAllBrainrots or _G.Mofenk.AutoUpgradeAllGear or _G.Mofenk.AutoMultiRollUpgrade then
                 ExecuteUltimateUpgradeAll()
             end
 
-            -- Global Collect Money
             if _G.Mofenk.AutoCollectMoney and (os.time() - lastCollect >= _G.Mofenk.CollectEvery) then
                 TriggerBaseCollection()
                 lastCollect = os.time()
             end
             
-            -- Equip Best Squad / Brainrot
             if _G.Mofenk.AutoEquipBest and (os.time() - lastEquip >= _G.Mofenk.EquipBestEvery) then
                 TriggerEquipBestBrainrot()
                 lastEquip = os.time()
             end
             
-            -- Strict Checklist Auto Sell
             if _G.Mofenk.AutoSell and (os.time() - lastSell >= _G.Mofenk.SellEvery) then
                 ExecuteStrictChecklistSell()
                 lastSell = os.time()
             end
             
-            -- Buy Dice
             if _G.Mofenk.AutoBuyDice then 
                 safeFireEncrypted("BuyDiceRequest")
                 safeFireEncrypted("DiceShopAction", "Buy", 1) 
             end
             
-            -- Select Dungeon / Tower Loop
             if _G.Mofenk.AutoSelectDungeon then
                 ExecuteSelectDungeonAction(_G.Mofenk.TargetTower)
                 safeFireEncrypted("SetAutoFightBoss", true)
