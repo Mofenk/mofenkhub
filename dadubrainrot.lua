@@ -1,6 +1,6 @@
 -- =====================================================================
--- 👑 MOFENKHUB V113 — FULL MASTERPIECE UNIFIED DUNGEON & ALL REMOTES
--- Game: Dadu Brainrot! | Unified Dungeon Group, Multi-Checklist Sell & All Remotes
+-- 👑 MOFENKHUB V117 — ULTIMATE 19-RARITY CHECKLIST MASTERPIECE EDITION
+-- Game: Dadu Brainrot! | Full 19 Rarities Multi-Checklist Sell & All Features
 -- =====================================================================
 
 local Players = game:GetService("Players")
@@ -21,7 +21,7 @@ for _, v in pairs(uiTarget:GetChildren()) do
     end 
 end
 
--- 2. KONFIGURASI GLOBAL MASTER
+-- 2. KONFIGURASI GLOBAL MASTER & 19 RARITIES
 _G.Mofenk = {
     AutoRoll = false, 
     AutoCollectMoney = false, 
@@ -34,7 +34,7 @@ _G.Mofenk = {
     AutoUpgradeBrainrot = false, 
     AutoCollectBase = false,
     AutoClaimMeteor = false,
-    -- Smart Multi-Checklist Sell Config
+    -- Full 19 Rarities Checklist Sell Config
     AutoSell = false, 
     SellEvery = 3, 
     SellCommon = false,
@@ -43,7 +43,18 @@ _G.Mofenk = {
     SellEpic = false,
     SellLegendary = false,
     SellMythical = false,
+    SellAncient = false,
     SellDivine = false,
+    SellCelestial = false,
+    SellEthereal = false,
+    SellAstral = false,
+    SellCosmic = false,
+    SellTranscendent = false,
+    SellEternal = false,
+    SellPrimordial = false,
+    SellOmniversal = false,
+    SellInfinite = false,
+    SellSupreme = false,
     SellSecret = false,
     KeepMutated = false,
     KeepTraited = false,
@@ -62,7 +73,7 @@ _G.Mofenk = {
     SpyEnabled = false
 }
 
--- PENCARIAN REMOTES AMAN & PRESISI
+-- PENCARIAN REMOTES AMAN & DINAMIS
 local Remotes = ReplicatedStorage:WaitForChild("Remotes", 5)
 
 local function getRemote(name)
@@ -89,7 +100,7 @@ local function safeFire(remoteName, ...)
 end
 
 -- ==========================================
--- 3. FUNGSI EKSEKUSI UTAMA (SEMUA REMOTE TERKONEKSI)
+-- 3. FUNGSI EKSEKUSI UTAMA (19 RARITIES & INDEX)
 -- ==========================================
 local function TriggerBaseCollection()
     pcall(function()
@@ -130,6 +141,15 @@ local function TriggerBrainrotUpgrades()
     end)
 end
 
+local function TriggerIndexClaims()
+    pcall(function()
+        safeFire("RequestIndexRewards")
+        safeFire("ClaimIndexReward")
+        safeFire("ClaimIndexRewardsRequest")
+        safeFire("IndexRewardClaim")
+    end)
+end
+
 local function ExecuteAccurateSell()
     pcall(function()
         safeFire("RequestInventorySnapshot")
@@ -142,7 +162,18 @@ local function ExecuteAccurateSell()
         if _G.Mofenk.SellEpic then table.insert(raritiesToSell, "Epic") end
         if _G.Mofenk.SellLegendary then table.insert(raritiesToSell, "Legendary") end
         if _G.Mofenk.SellMythical then table.insert(raritiesToSell, "Mythical") end
+        if _G.Mofenk.SellAncient then table.insert(raritiesToSell, "Ancient") end
         if _G.Mofenk.SellDivine then table.insert(raritiesToSell, "Divine") end
+        if _G.Mofenk.SellCelestial then table.insert(raritiesToSell, "Celestial") end
+        if _G.Mofenk.SellEthereal then table.insert(raritiesToSell, "Ethereal") end
+        if _G.Mofenk.SellAstral then table.insert(raritiesToSell, "Astral") end
+        if _G.Mofenk.SellCosmic then table.insert(raritiesToSell, "Cosmic") end
+        if _G.Mofenk.SellTranscendent then table.insert(raritiesToSell, "Transcendent") end
+        if _G.Mofenk.SellEternal then table.insert(raritiesToSell, "Eternal") end
+        if _G.Mofenk.SellPrimordial then table.insert(raritiesToSell, "Primordial") end
+        if _G.Mofenk.SellOmniversal then table.insert(raritiesToSell, "Omniversal") end
+        if _G.Mofenk.SellInfinite then table.insert(raritiesToSell, "Infinite") end
+        if _G.Mofenk.SellSupreme then table.insert(raritiesToSell, "Supreme") end
         if _G.Mofenk.SellSecret then table.insert(raritiesToSell, "Secret") end
 
         if #raritiesToSell > 0 then
@@ -150,6 +181,7 @@ local function ExecuteAccurateSell()
                 safeFire("SellAllRequest", rarity)
                 safeFire("SellSelectedRequest", rarity)
                 safeFire("SellItemRequest", rarity)
+                safeFire("SellRequest", {Rarity = rarity})
             end
         end
         safeFire("SetAutoSellUnderRequest", true, _G.Mofenk.KeepMutated)
@@ -275,23 +307,23 @@ LocalPlayer.Idled:Connect(function()
 end)
 
 -- ==========================================
--- 7. UI RAYFIELD (TATA LETAK RAPI & UNIFIED DUNGEON)
+-- 7. UI RAYFIELD (19 RARITIES CHECKLIST GROUPED)
 -- ==========================================
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local Window = Rayfield:CreateWindow({
-   Name = "MofenkHub | Dadu Brainrot V113 Unified Masterpiece",
-   LoadingTitle = "Memuat MofenkHub V113...",
-   LoadingSubtitle = "Unified Dungeon Group & All Remotes Synced",
+   Name = "MofenkHub | Dadu Brainrot V117 Full 19-Rarity",
+   LoadingTitle = "Memuat MofenkHub V117...",
+   LoadingSubtitle = "Full 19 Rarities Checklist & Index Sync",
    ConfigurationSaving = { Enabled = false },
    KeySystem = false
 })
 
-Rayfield:Notify({ Title = "MofenkHub V113 Loaded! 👑", Content = "Semua fitur & Unified Dungeon aktif!", Duration = 5, Image = 6023426915 })
+Rayfield:Notify({ Title = "MofenkHub V117 Loaded! 👑", Content = "19 Rarity Sell & Index Rewards Aktif!", Duration = 5, Image = 6023426915 })
 
 -- TAB 1: HOME 🏠
 local TabHome = Window:CreateTab("Home 🏠", 6023426915)
 TabHome:CreateSection("👋 PROFIL & MONITOR")
-TabHome:CreateParagraph({Title = LocalPlayer.Name, Content = "Status: Terhubung (V113 Unified)\nGame: [UPDATE 2] Dadu Brainrot!"})
+TabHome:CreateParagraph({Title = LocalPlayer.Name, Content = "Status: Terhubung (V117 19-Rarity)\nGame: [UPDATE 2] Dadu Brainrot!"})
 
 local ProfileParagraph = TabHome:CreateParagraph({Title = "📋 Profil Karakter", Content = "Memuat data..."})
 task.spawn(function()
@@ -322,7 +354,7 @@ TabMain:CreateSlider({Name = "⏱️ Collect Every (s)", Range = {1, 10}, Increm
 TabMain:CreateSection("🛡️ Squad & Klaim Otomatis")
 TabMain:CreateToggle({Name = "🛡️ Auto Equip Best Squad", CurrentValue = false, Callback = function(V) _G.Mofenk.AutoEquipBest = V end})
 TabMain:CreateToggle({Name = "📜 Auto Claim Quests", CurrentValue = false, Callback = function(V) _G.Mofenk.AutoClaimQuests = V end})
-TabMain:CreateToggle({Name = "📖 Auto Claim Index Rewards", CurrentValue = false, Callback = function(V) _G.Mofenk.AutoClaimIndex = V end})
+TabMain:CreateToggle({Name = "📖 Auto Claim Index Rewards (Fixed)", CurrentValue = false, Callback = function(V) _G.Mofenk.AutoClaimIndex = V end})
 TabMain:CreateToggle({Name = "🏆 Auto Claim Boss Milestones", CurrentValue = false, Callback = function(V) _G.Mofenk.AutoClaimBossMilestones = V end})
 TabMain:CreateToggle({Name = "☄️ Auto Claim Meteor", CurrentValue = false, Callback = function(V) _G.Mofenk.AutoClaimMeteor = V end})
 TabMain:CreateToggle({Name = "🎡 Auto Spin Wheel", CurrentValue = false, Callback = function(V) _G.Mofenk.AutoWheelSpin = V end})
@@ -332,20 +364,35 @@ TabMain:CreateSection("🏡 Base & Brainrot Upgrades")
 TabMain:CreateToggle({Name = "🏡 Auto Collect Base Money", CurrentValue = false, Callback = function(V) _G.Mofenk.AutoCollectBase = V end})
 TabMain:CreateToggle({Name = "⚡ Auto Upgrade Placed Brainrots", CurrentValue = false, Callback = function(V) _G.Mofenk.AutoUpgradeBrainrot = V end})
 
--- TAB 3: INVENTORY & MULTI-CHECKLIST SELL 📦
+-- TAB 3: INVENTORY & 19-RARITY CHECKLIST SELL 📦
 local TabInv = Window:CreateTab("Inventory 📦", 6023426915)
-TabInv:CreateSection("💲 Smart Auto Sell (Pilih Rarity Ceklis)")
+TabInv:CreateSection("💲 Smart Auto Sell (Full 19 Rarities)")
 TabInv:CreateToggle({Name = "🗑️ Aktifkan Auto Sell", CurrentValue = false, Callback = function(V) _G.Mofenk.AutoSell = V end})
 TabInv:CreateSlider({Name = "⏱️ Sell Every (s)", Range = {1, 30}, Increment = 1, Suffix = "s", CurrentValue = 3, Callback = function(V) _G.Mofenk.SellEvery = V end})
 
-TabInv:CreateSection("☑️ Ceklis Rarity yang Ingin Dijual")
+TabInv:CreateSection("☑️ Ceklis Rarity (Tier 1)")
 TabInv:CreateToggle({Name = "Jual Common", CurrentValue = false, Callback = function(V) _G.Mofenk.SellCommon = V end})
 TabInv:CreateToggle({Name = "Jual Uncommon", CurrentValue = false, Callback = function(V) _G.Mofenk.SellUncommon = V end})
 TabInv:CreateToggle({Name = "Jual Rare", CurrentValue = false, Callback = function(V) _G.Mofenk.SellRare = V end})
 TabInv:CreateToggle({Name = "Jual Epic", CurrentValue = false, Callback = function(V) _G.Mofenk.SellEpic = V end})
 TabInv:CreateToggle({Name = "Jual Legendary", CurrentValue = false, Callback = function(V) _G.Mofenk.SellLegendary = V end})
 TabInv:CreateToggle({Name = "Jual Mythical", CurrentValue = false, Callback = function(V) _G.Mofenk.SellMythical = V end})
+
+TabInv:CreateSection("☑️ Ceklis Rarity (Tier 2)")
+TabInv:CreateToggle({Name = "Jual Ancient", CurrentValue = false, Callback = function(V) _G.Mofenk.SellAncient = V end})
 TabInv:CreateToggle({Name = "Jual Divine", CurrentValue = false, Callback = function(V) _G.Mofenk.SellDivine = V end})
+TabInv:CreateToggle({Name = "Jual Celestial", CurrentValue = false, Callback = function(V) _G.Mofenk.SellCelestial = V end})
+TabInv:CreateToggle({Name = "Jual Ethereal", CurrentValue = false, Callback = function(V) _G.Mofenk.SellEthereal = V end})
+TabInv:CreateToggle({Name = "Jual Astral", CurrentValue = false, Callback = function(V) _G.Mofenk.SellAstral = V end})
+TabInv:CreateToggle({Name = "Jual Cosmic", CurrentValue = false, Callback = function(V) _G.Mofenk.SellCosmic = V end})
+
+TabInv:CreateSection("☑️ Ceklis Rarity (Tier 3 - Godly/Secret)")
+TabInv:CreateToggle({Name = "Jual Transcendent", CurrentValue = false, Callback = function(V) _G.Mofenk.SellTranscendent = V end})
+TabInv:CreateToggle({Name = "Jual Eternal", CurrentValue = false, Callback = function(V) _G.Mofenk.SellEternal = V end})
+TabInv:CreateToggle({Name = "Jual Primordial", CurrentValue = false, Callback = function(V) _G.Mofenk.SellPrimordial = V end})
+TabInv:CreateToggle({Name = "Jual Omniversal", CurrentValue = false, Callback = function(V) _G.Mofenk.SellOmniversal = V end})
+TabInv:CreateToggle({Name = "Jual Infinite", CurrentValue = false, Callback = function(V) _G.Mofenk.SellInfinite = V end})
+TabInv:CreateToggle({Name = "Jual Supreme", CurrentValue = false, Callback = function(V) _G.Mofenk.SellSupreme = V end})
 TabInv:CreateToggle({Name = "Jual Secret", CurrentValue = false, Callback = function(V) _G.Mofenk.SellSecret = V end})
 
 TabInv:CreateSection("🔒 Proteksi Item")
@@ -396,7 +443,7 @@ TabDev:CreateSection("📡 CONSOLE NETWORK SPY")
 TabDev:CreateToggle({Name = "Aktifkan Network Spy", CurrentValue = false, Callback = function(V) _G.Mofenk.SpyEnabled = V end})
 
 -- =====================================================================
--- 8. BACKGROUND MASTER ENGINE (UNIFIED & SYNCHRONIZED LOOPS)
+-- 8. BACKGROUND MASTER ENGINE (SYNCHRONIZED LOOPS)
 -- =====================================================================
 local lastCollect, lastSell, lastEquip = os.time(), os.time(), os.time()
 
@@ -414,7 +461,7 @@ task.spawn(function()
             if _G.Mofenk.AutoRoll then safeFire("RollRequest") end
             if _G.Mofenk.AutoRebirth then safeFire("RebirthRequest"); safeFire("Rebirth") end
             if _G.Mofenk.AutoClaimQuests then safeFire("ClaimAllQuests") end
-            if _G.Mofenk.AutoClaimIndex then safeFire("RequestIndexRewards") end
+            if _G.Mofenk.AutoClaimIndex then TriggerIndexClaims() end
             if _G.Mofenk.AutoClaimBossMilestones then safeFire("ClaimBossMilestones") end
             if _G.Mofenk.AutoWheelSpin then safeFire("WheelSpinRequest") end
             if _G.Mofenk.AutoFuse then safeFire("FuseRequest") end
@@ -439,7 +486,7 @@ task.spawn(function()
                 lastEquip = os.time()
             end
             
-            -- Multi-Checklist Smart Auto Sell
+            -- Full 19-Rarity Checklist Auto Sell
             if _G.Mofenk.AutoSell and (os.time() - lastSell >= _G.Mofenk.SellEvery) then
                 ExecuteAccurateSell()
                 lastSell = os.time()
@@ -449,7 +496,7 @@ task.spawn(function()
             if _G.Mofenk.AutoBuyDice then safeFire("BuyDiceRequest"); safeFire("DiceShopAction", "Buy", 1) end
             if _G.Mofenk.AutoUpgradeNodes then safeFire("BuyAffordableUpgradeNodes"); safeFire("UpgradeNodeRequest") end
             
-            -- Unified Dungeon Group (All-in-One Teleport, Join & Boss Fight)
+            -- Unified Dungeon Group
             if _G.Mofenk.AutoDungeonGroup then
                 safeFire("RequestDungeonTeleport", _G.Mofenk.TargetFloor)
                 safeFire("RequestGatewayTeleport", _G.Mofenk.TargetFloor)
