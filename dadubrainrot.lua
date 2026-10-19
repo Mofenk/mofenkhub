@@ -1,6 +1,6 @@
 -- =====================================================================
--- 👑 MOFENKHUB V141 — ACCURATE RARITY AUTO SELL & DEBUGGER MASTER
--- Game: Dadu Brainrot! | Fixed Auto Sell By Rarity & Enhanced Debugger
+-- 👑 MOFENKHUB V142 — INSTANT EVENT-DRIVEN AUTO SELL MASTER
+-- Game: Dadu Brainrot! | No Timer Loop, Direct Remote Event Trigger
 -- =====================================================================
 
 local Players = game:GetService("Players")
@@ -39,9 +39,7 @@ _G.Mofenk = {
     AutoMultiRollUpgrade = false,
     AutoCollectBase = false,
     AutoClaimMeteor = false,
-    -- Strict Checklist Sell Config (19 Rarities)
-    AutoSell = false, 
-    SellEvery = 4, 
+    -- Checklist Sell Config (Tanpa Timer Loop)
     SellCommon = false,
     SellUncommon = false,
     SellRare = false,
@@ -62,7 +60,6 @@ _G.Mofenk = {
     SellSupreme = false,
     SellSecret = false,
     KeepMutated = false,
-    KeepTraited = false,
     -- Select Dungeon / Tower Group
     AutoSelectDungeon = false, 
     TargetTower = "Sahur Tower", 
@@ -77,7 +74,7 @@ _G.Mofenk = {
     SpyEnabled = true
 }
 
--- PENCARIAN REMOTES AMAN DENGAN DEBUGGER ERROR TRACER
+-- PENCARIAN REMOTES AMAN
 local Remotes = ReplicatedStorage:WaitForChild("Remotes", 5)
 
 local function getEncryptedRemote(targetName)
@@ -98,7 +95,7 @@ end
 local function safeFireEncrypted(featureName, targetName, ...)
     local args = {...}
     task.spawn(function()
-        local success, err = pcall(function()
+        pcall(function()
             local r = getEncryptedRemote(targetName)
             if r then
                 if r:IsA("RemoteEvent") then 
@@ -106,18 +103,13 @@ local function safeFireEncrypted(featureName, targetName, ...)
                 elseif r:IsA("RemoteFunction") then 
                     r:InvokeServer(unpack(args)) 
                 end
-            else
-                warn("⚠️ [MOFENK DEBUGGER] Remote '" .. targetName .. "' untuk fitur [" .. featureName .. "] tidak ditemukan!")
             end
         end)
-        if not success then
-            warn("❌ [MOFENK ERROR TRACER] Fitur [" .. featureName .. "] Gagal: " .. tostring(err))
-        end
     end)
 end
 
 -- ==========================================
--- 3. FUNGSI EKSEKUSI UTAMA (DENGAN COOLDOWN & DEBUG)
+-- 3. FUNGSI EKSEKUSI UTAMA
 -- ==========================================
 local function TriggerRollSystem()
     pcall(function()
@@ -179,17 +171,14 @@ local function ExecuteUltimateUpgradeAll()
             safeFireEncrypted("Upgrade Nodes", "BuyAffordableUpgradeNodes")
             safeFireEncrypted("Upgrade Nodes", "UpgradeNodeRequest", "All")
         end
-
         if _G.Mofenk.AutoUpgradeAllBrainrots then
             safeFireEncrypted("Upgrade Brainrots", "UpgradeAllBrainrotsRequest")
             safeFireEncrypted("Upgrade Brainrots", "MaxUpgradeAllPlaced")
         end
-
         if _G.Mofenk.AutoUpgradeAllGear then
             safeFireEncrypted("Upgrade Gear", "UpgradeAllGearRequest")
             safeFireEncrypted("Upgrade Gear", "MaxUpgradeGear")
         end
-
         if _G.Mofenk.AutoMultiRollUpgrade then
             safeFireEncrypted("MultiRoll", "MultiRollUpgradeRequest")
         end
@@ -209,39 +198,13 @@ local function TriggerUniversalIndexClaims()
     end)
 end
 
--- FIX AUTO SELL BY RARITY (MENGGUNAKAN REMOTE ASLI GAME: SetAutoSellUnderRequest & ToggleAutoSellRarityRequest)
-local function ExecuteAccurateRaritySell()
+-- EKSEKUSI INSTANT EVENT-DRIVEN AUTO SELL BY RARITY (MENGGUNAKAN TOGGLE REMOTE ASLI GAME)
+local function TriggerInstantRaritySell(rarityName, state)
     pcall(function()
-        local rarities = {
-            {name = "Common", val = _G.Mofenk.SellCommon},
-            {name = "Uncommon", val = _G.Mofenk.SellUncommon},
-            {name = "Rare", val = _G.Mofenk.SellRare},
-            {name = "Epic", val = _G.Mofenk.SellEpic},
-            {name = "Legendary", val = _G.Mofenk.SellLegendary},
-            {name = "Mythical", val = _G.Mofenk.SellMythical},
-            {name = "Ancient", val = _G.Mofenk.SellAncient},
-            {name = "Divine", val = _G.Mofenk.SellDivine},
-            {name = "Celestial", val = _G.Mofenk.SellCelestial},
-            {name = "Ethereal", val = _G.Mofenk.SellEthereal},
-            {name = "Astral", val = _G.Mofenk.SellAstral},
-            {name = "Cosmic", val = _G.Mofenk.SellCosmic},
-            {name = "Transcendent", val = _G.Mofenk.SellTranscendent},
-            {name = "Eternal", val = _G.Mofenk.SellEternal},
-            {name = "Primordial", val = _G.Mofenk.SellPrimordial},
-            {name = "Omniversal", val = _G.Mofenk.SellOmniversal},
-            {name = "Infinite", val = _G.Mofenk.SellInfinite},
-            {name = "Supreme", val = _G.Mofenk.SellSupreme},
-            {name = "Secret", val = _G.Mofenk.SellSecret}
-        }
-
-        for _, r in ipairs(rarities) do
-            if r.val then
-                -- Memanggil remote asli game yang terekam di konsol (SetAutoSellUnderRequest & ToggleAutoSellRarityRequest)[span_4](start_span)[span_4](end_span)
-                safeFireEncrypted("Auto Sell Rarity", "SetAutoSellUnderRequest", r.name, true)
-                safeFireEncrypted("Auto Sell Rarity", "ToggleAutoSellRarityRequest", r.name, true)
-                safeFireEncrypted("Auto Sell Rarity", "SetAutoSellUnderRequest", true, _G.Mofenk.KeepMutated)
-            end
-        end
+        -- Menembak remote asli game berdasarkan console log: ToggleAutoSellRarityRequest & SetAutoSellUnderRequest[span_1](start_span)[span_1](end_span)
+        safeFireEncrypted("Toggle Sell Rarity", "ToggleAutoSellRarityRequest", rarityName, state)
+        safeFireEncrypted("Set Sell Under", "SetAutoSellUnderRequest", rarityName, state)
+        safeFireEncrypted("Request Sell State", "RequestAutoSellState", rarityName, state)
     end)
 end
 
@@ -274,15 +237,6 @@ local function AdvancedMapScan()
     print("==================================================\n")
 end
 
-local function dumpData(o, depth)
-    depth = depth or 0
-    if depth > 2 then return "{...}" end
-    if type(o) == 'table' then
-        local s = '{' for k,v in pairs(o) do s = s .. tostring(k) .. '=' .. dumpData(v, depth+1) .. ', ' end return s .. '}'
-    elseif typeof(o) == "Instance" then return "<" .. o.Name .. ">"
-    elseif type(o) == 'string' then return '"' .. o .. '"' else return tostring(o) end
-end
-
 local mt = getrawmetatable(game)
 local oldNamecall = mt.__namecall
 setreadonly(mt, false)
@@ -294,7 +248,7 @@ mt.__namecall = newcclosure(function(self, ...)
             local args = {...}
             task.spawn(function()
                 pcall(function()
-                    print("👁️ [MOFENK DEBUGGER SPY] " .. self.Name .. " (" .. method .. ")")
+                    print("👁️ [DEBUGGER SPY] " .. self.Name .. " (" .. method .. ")")
                 end)
             end)
         end
@@ -375,23 +329,23 @@ LocalPlayer.Idled:Connect(function()
 end)
 
 -- ==========================================
--- 6. UI RAYFIELD (V141 ACCURATE SELL & DEBUGGER)
+-- 6. UI RAYFIELD (V142 INSTANT SELL MASTER)
 -- ==========================================
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local Window = Rayfield:CreateWindow({
-   Name = "MofenkHub | Dadu Brainrot V141 Debugger Master",
-   LoadingTitle = "Memuat MofenkHub V141...",
-   LoadingSubtitle = "Accurate Rarity Sell & Enhanced Debugger",
+   Name = "MofenkHub | Dadu Brainrot V142 Instant Sell Master",
+   LoadingTitle = "Memuat MofenkHub V142...",
+   LoadingSubtitle = "Event-Driven Auto Sell & Debugger",
    ConfigurationSaving = { Enabled = false },
    KeySystem = false
 })
 
-Rayfield:Notify({ Title = "MofenkHub V141 Loaded! 👑", Content = "Auto Sell Rarity & Debugger Aktif!", Duration = 5, Image = 6023426915 })
+Rayfield:Notify({ Title = "MofenkHub V142 Loaded! 👑", Content = "Instant Auto Sell By Rarity Aktif!", Duration = 5, Image = 6023426915 })
 
 -- TAB 1: HOME 🏠
 local TabHome = Window:CreateTab("Home 🏠", 6023426915)
 TabHome:CreateSection("👋 PROFIL & MONITOR")
-TabHome:CreateParagraph({Title = LocalPlayer.Name, Content = "Status: Terhubung (V141 Debugger Master)\nGame: [UPDATE 2] Dadu Brainrot!"})
+TabHome:CreateParagraph({Title = LocalPlayer.Name, Content = "Status: Terhubung (V142 Instant Sell)\nGame: [UPDATE 2] Dadu Brainrot!"})
 
 local ProfileParagraph = TabHome:CreateParagraph({Title = "📋 Profil Karakter", Content = "Memuat data..."})
 task.spawn(function()
@@ -440,39 +394,37 @@ TabUpgrade:CreateToggle({Name = "⚡ Auto Multi-Roll Upgrade", CurrentValue = fa
 TabUpgrade:CreateToggle({Name = "🏡 Auto Collect Base Money", CurrentValue = false, Callback = function(V) _G.Mofenk.AutoCollectBase = V end})
 TabUpgrade:CreateToggle({Name = "🎲 Auto Buy Dice", CurrentValue = false, Callback = function(V) _G.Mofenk.AutoBuyDice = V end})
 
--- TAB 4: INVENTORY & ACCURATE RARITY SELL 📦
+-- TAB 4: INVENTORY & INSTANT EVENT-DRIVEN RARITY SELL 📦 (TANPA TIMER LOOP)
 local TabInv = Window:CreateTab("Inventory 📦", 6023426915)
-TabInv:CreateSection("💲 Accurate Auto Sell By Rarity")
-TabInv:CreateToggle({Name = "🗑️ Aktifkan Auto Sell Rarity", CurrentValue = false, Callback = function(V) _G.Mofenk.AutoSell = V end})
-TabInv:CreateSlider({Name = "⏱️ Sell Every (s)", Range = {1, 30}, Increment = 1, Suffix = "s", CurrentValue = 4, Callback = function(V) _G.Mofenk.SellEvery = V end})
+TabInv:CreateSection("💲 Instant Auto Sell By Rarity (Direct Toggle)")
 
 TabInv:CreateSection("☑️ Ceklis Rarity (Tier 1)")
-TabInv:CreateToggle({Name = "Jual Common", CurrentValue = false, Callback = function(V) _G.Mofenk.SellCommon = V end})
-TabInv:CreateToggle({Name = "Jual Uncommon", CurrentValue = false, Callback = function(V) _G.Mofenk.SellUncommon = V end})
-TabInv:CreateToggle({Name = "Jual Rare", CurrentValue = false, Callback = function(V) _G.Mofenk.SellRare = V end})
-TabInv:CreateToggle({Name = "Jual Epic", CurrentValue = false, Callback = function(V) _G.Mofenk.SellEpic = V end})
-TabInv:CreateToggle({Name = "Jual Legendary", CurrentValue = false, Callback = function(V) _G.Mofenk.SellLegendary = V end})
-TabInv:CreateToggle({Name = "Jual Mythical", CurrentValue = false, Callback = function(V) _G.Mofenk.SellMythical = V end})
+TabInv:CreateToggle({Name = "Jual Common", CurrentValue = false, Callback = function(V) _G.Mofenk.SellCommon = V TriggerInstantRaritySell("Common", V) end})
+TabInv:CreateToggle({Name = "Jual Uncommon", CurrentValue = false, Callback = function(V) _G.Mofenk.SellUncommon = V TriggerInstantRaritySell("Uncommon", V) end})
+TabInv:CreateToggle({Name = "Jual Rare", CurrentValue = false, Callback = function(V) _G.Mofenk.SellRare = V TriggerInstantRaritySell("Rare", V) end})
+TabInv:CreateToggle({Name = "Jual Epic", CurrentValue = false, Callback = function(V) _G.Mofenk.SellEpic = V TriggerInstantRaritySell("Epic", V) end})
+TabInv:CreateToggle({Name = "Jual Legendary", CurrentValue = false, Callback = function(V) _G.Mofenk.SellLegendary = V TriggerInstantRaritySell("Legendary", V) end})
+TabInv:CreateToggle({Name = "Jual Mythical", CurrentValue = false, Callback = function(V) _G.Mofenk.SellMythical = V TriggerInstantRaritySell("Mythical", V) end})
 
 TabInv:CreateSection("☑️ Ceklis Rarity (Tier 2)")
-TabInv:CreateToggle({Name = "Jual Ancient", CurrentValue = false, Callback = function(V) _G.Mofenk.SellAncient = V end})
-TabInv:CreateToggle({Name = "Jual Divine", CurrentValue = false, Callback = function(V) _G.Mofenk.SellDivine = V end})
-TabInv:CreateToggle({Name = "Jual Celestial", CurrentValue = false, Callback = function(V) _G.Mofenk.SellCelestial = V end})
-TabInv:CreateToggle({Name = "Jual Ethereal", CurrentValue = false, Callback = function(V) _G.Mofenk.SellEthereal = V end})
-TabInv:CreateToggle({Name = "Jual Astral", CurrentValue = false, Callback = function(V) _G.Mofenk.SellAstral = V end})
-TabInv:CreateToggle({Name = "Jual Cosmic", CurrentValue = false, Callback = function(V) _G.Mofenk.SellCosmic = V end})
+TabInv:CreateToggle({Name = "Jual Ancient", CurrentValue = false, Callback = function(V) _G.Mofenk.SellAncient = V TriggerInstantRaritySell("Ancient", V) end})
+TabInv:CreateToggle({Name = "Jual Divine", CurrentValue = false, Callback = function(V) _G.Mofenk.SellDivine = V TriggerInstantRaritySell("Divine", V) end})
+TabInv:CreateToggle({Name = "Jual Celestial", CurrentValue = false, Callback = function(V) _G.Mofenk.SellCelestial = V TriggerInstantRaritySell("Celestial", V) end})
+TabInv:CreateToggle({Name = "Jual Ethereal", CurrentValue = false, Callback = function(V) _G.Mofenk.SellEthereal = V TriggerInstantRaritySell("Ethereal", V) end})
+TabInv:CreateToggle({Name = "Jual Astral", CurrentValue = false, Callback = function(V) _G.Mofenk.SellAstral = V TriggerInstantRaritySell("Astral", V) end})
+TabInv:CreateToggle({Name = "Jual Cosmic", CurrentValue = false, Callback = function(V) _G.Mofenk.SellCosmic = V TriggerInstantRaritySell("Cosmic", V) end})
 
 TabInv:CreateSection("☑️ Ceklis Rarity (Tier 3 - Godly/Secret)")
-TabInv:CreateToggle({Name = "Jual Transcendent", CurrentValue = false, Callback = function(V) _G.Mofenk.SellTranscendent = V end})
-TabInv:CreateToggle({Name = "Jual Eternal", CurrentValue = false, Callback = function(V) _G.Mofenk.SellEternal = V end})
-TabInv:CreateToggle({Name = "Jual Primordial", CurrentValue = false, Callback = function(V) _G.Mofenk.SellPrimordial = V end})
-TabInv:CreateToggle({Name = "Jual Omniversal", CurrentValue = false, Callback = function(V) _G.Mofenk.SellOmniversal = V end})
-TabInv:CreateToggle({Name = "Jual Infinite", CurrentValue = false, Callback = function(V) _G.Mofenk.SellInfinite = V end})
-TabInv:CreateToggle({Name = "Jual Supreme", CurrentValue = false, Callback = function(V) _G.Mofenk.SellSupreme = V end})
-TabInv:CreateToggle({Name = "Jual Secret", CurrentValue = false, Callback = function(V) _G.Mofenk.SellSecret = V end})
+TabInv:CreateToggle({Name = "Jual Transcendent", CurrentValue = false, Callback = function(V) _G.Mofenk.SellTranscendent = V TriggerInstantRaritySell("Transcendent", V) end})
+TabInv:CreateToggle({Name = "Jual Eternal", CurrentValue = false, Callback = function(V) _G.Mofenk.SellEternal = V TriggerInstantRaritySell("Eternal", V) end})
+TabInv:CreateToggle({Name = "Jual Primordial", CurrentValue = false, Callback = function(V) _G.Mofenk.SellPrimordial = V TriggerInstantRaritySell("Primordial", V) end})
+TabInv:CreateToggle({Name = "Jual Omniversal", CurrentValue = false, Callback = function(V) _G.Mofenk.SellOmniversal = V TriggerInstantRaritySell("Omniversal", V) end})
+TabInv:CreateToggle({Name = "Jual Infinite", CurrentValue = false, Callback = function(V) _G.Mofenk.SellInfinite = V TriggerInstantRaritySell("Infinite", V) end})
+TabInv:CreateToggle({Name = "Jual Supreme", CurrentValue = false, Callback = function(V) _G.Mofenk.SellSupreme = V TriggerInstantRaritySell("Supreme", V) end})
+TabInv:CreateToggle({Name = "Jual Secret", CurrentValue = false, Callback = function(V) _G.Mofenk.SellSecret = V TriggerInstantRaritySell("Secret", V) end})
 
 TabInv:CreateSection("🔒 Proteksi Item")
-TabInv:CreateToggle({Name = "🔒 Keep Mutated (Jangan Jual Mutasi)", CurrentValue = false, Callback = function(V) _G.Mofenk.KeepMutated = V end})
+TabInv:CreateToggle({Name = "🔒 Keep Mutated (Jangan Jual Mutasi)", CurrentValue = false, Callback = function(V) _G.Mofenk.KeepMutated = V TriggerInstantRaritySell("Mutated", not V) end})
 
 -- TAB 5: SELECT DUNGEON & TOWER ⚔️
 local TabTower = Window:CreateTab("Dungeon & Tower ⚔️", 6023426915)
@@ -539,7 +491,7 @@ TabDev:CreateToggle({Name = "Aktifkan Network Spy", CurrentValue = true, Callbac
 -- =====================================================================
 -- 7. BACKGROUND MASTER ENGINE
 -- =====================================================================
-local lastCollect, lastSell, lastEquip = os.time(), os.time(), os.time()
+local lastCollect, lastEquip = os.time(), os.time()
 
 task.spawn(function()
     while task.wait(0.4) do
@@ -580,12 +532,6 @@ task.spawn(function()
             if _G.Mofenk.AutoEquipBest and (os.time() - lastEquip >= _G.Mofenk.EquipBestEvery) then
                 TriggerEquipBestBrainrot()
                 lastEquip = os.time()
-            end
-            
-            -- Accurate Rarity Auto Sell (Bukan Sell All Sembarangan)
-            if _G.Mofenk.AutoSell and (os.time() - lastSell >= _G.Mofenk.SellEvery) then
-                ExecuteAccurateRaritySell()
-                lastSell = os.time()
             end
             
             if _G.Mofenk.AutoBuyDice then 
