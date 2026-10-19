@@ -1,6 +1,6 @@
 -- =====================================================================
--- 👑 MOFENKHUB V151 — CUSTOM FEATURE EDITION (FULL SCRIPT)
--- Game: Dadu Brainrot! | Cleaned In-Game Features + Fly & Utilities
+-- 👑 MOFENKHUB V154 — AUTO AFK & AUTO EXECUTE EDITION (FULL SCRIPT)
+-- Game: Dadu Brainrot! | Auto AFK + Queue On Teleport + Data Scanner
 -- =====================================================================
 
 local Players = game:GetService("Players")
@@ -23,7 +23,11 @@ end
 
 -- 2. KONFIGURASI GLOBAL MASTER
 _G.Mofenk = {
-    -- Cleaned Farm List
+    -- Auto AFK & Auto Execute
+    AutoAFK = true,
+    AutoExecute = true,
+
+    -- Strict Farm List
     AutoRoll = false,
     AutoCollectMoney = false, CollectEvery = 2,
     AutoEquipBest = false, EquipBestEvery = 15,
@@ -37,7 +41,7 @@ _G.Mofenk = {
     AutoDungeon = false, TargetTower = "Sahur Tower",
     AutoBuyDungeonShop = false,
     
-    -- Filtered Sell
+    -- Filtered Auto Sell Config
     AutoSell = false, SellEvery = 2,
     SellCommon = false, SellUncommon = false, SellRare = false,
     SellEpic = false, SellLegendary = false, SellMythical = false,
@@ -57,7 +61,102 @@ local Remotes = ReplicatedStorage:WaitForChild("Remotes", 5)
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 -- ==========================================
--- 3. DEEP DEBUGGER & REMOTE EXECUTOR
+-- 3. AUTO EXECUTE (QUEUE ON TELEPORT) ENGINE
+-- ==========================================
+local function ApplyQueueOnTeleport()
+    if _G.Mofenk.AutoExecute then
+        local queueFunc = queueonteleport or (syn and syn.queue_on_teleport) or (fluxus and fluxus.queue_on_teleport) or (queue_on_teleport)
+        if queueFunc then
+            pcall(function()
+                queueFunc([[
+                    repeat task.wait(1) until game:IsLoaded()
+                    print("[MofenkHub] Auto Execute Triggered After Teleport!")
+                ]])
+            end)
+        end
+    end
+end
+
+-- ==========================================
+-- 4. IN-GAME DATA SCANNER ENGINE 🔍
+-- ==========================================
+local function ScanGameRemotes()
+    print("\n==========================================")
+    print("🔍 [MOFENKHUB DATA SCANNER] REPLICATEDSTORAGE REMOTES")
+    print("==========================================")
+    local count = 0
+    for _, v in ipairs(ReplicatedStorage:GetDescendants()) do
+        if v:IsA("RemoteEvent") or v:IsA("RemoteFunction") then
+            count = count + 1
+            print(string.format("[%d] %s (%s) -> Path: %s", count, v.Name, v.ClassName, v:GetFullName()))
+        end
+    end
+    print("==========================================\n")
+    Rayfield:Notify({
+        Title = "Remote Scan Selesai! 🔍",
+        Content = "Ditemukan " .. count .. " Remote. Hasil lengkap dicetak ke Console (F9)!",
+        Duration = 5,
+        Image = 4483362458
+    })
+end
+
+local function ScanInventoryData()
+    print("\n==========================================")
+    print("📦 [MOFENKHUB DATA SCANNER] PLAYER INVENTORY & STATS")
+    print("==========================================")
+    if LocalPlayer:FindFirstChild("leaderstats") then
+        print("--- LEADERSTATS ---")
+        for _, stat in ipairs(LocalPlayer.leaderstats:GetChildren()) do
+            print(stat.Name .. ": " .. tostring(stat.Value))
+        end
+    end
+    
+    if LocalPlayer:FindFirstChild("Backpack") then
+        print("--- BACKPACK ITEMS ---")
+        for _, item in ipairs(LocalPlayer.Backpack:GetChildren()) do
+            print("- " .. item.Name .. " (" .. item.ClassName .. ")")
+        end
+    end
+
+    if LocalPlayer.PlayerGui:FindFirstChild("Main") or LocalPlayer.PlayerGui:FindFirstChild("Inventory") then
+        print("--- PLAYERGUI INVENTORY OBJECTS ---")
+        for _, gui in ipairs(LocalPlayer.PlayerGui:GetDescendants()) do
+            if string.find(string.lower(gui.Name), "item") or string.find(string.lower(gui.Name), "brainrot") or string.find(string.lower(gui.Name), "card") then
+                print("- GUI Obj: " .. gui.Name .. " (" .. gui.ClassName .. ") -> Parent: " .. gui.Parent.Name)
+            end
+        end
+    end
+    print("==========================================\n")
+    Rayfield:Notify({
+        Title = "Inventory Scan Selesai! 📦",
+        Content = "Data Stats & Items dicetak ke Console (F9)!",
+        Duration = 5,
+        Image = 4483362458
+    })
+end
+
+local function ScanWorkspacePrompts()
+    print("\n==========================================")
+    print("🏗️ [MOFENKHUB DATA SCANNER] WORKSPACE PROXIMITY PROMPTS")
+    print("==========================================")
+    local count = 0
+    for _, obj in ipairs(workspace:GetDescendants()) do
+        if obj:IsA("ProximityPrompt") then
+            count = count + 1
+            print(string.format("[%d] Prompt Name: %s | Parent: %s | Path: %s", count, obj.Name, obj.Parent.Name, obj:GetFullName()))
+        end
+    end
+    print("==========================================\n")
+    Rayfield:Notify({
+        Title = "Prompt Scan Selesai! 🏗️",
+        Content = "Ditemukan " .. count .. " Interactive Prompt di Workspace (Cek F9)!",
+        Duration = 5,
+        Image = 4483362458
+    })
+end
+
+-- ==========================================
+-- 5. DEEP NETWORK SPY & REMOTE EXECUTOR
 -- ==========================================
 local function DebugLog(feature, details)
     if _G.Mofenk.SpyEnabled then
@@ -67,7 +166,7 @@ local function DebugLog(feature, details)
             Duration = 3,
             Image = 4483362458
         })
-        print("[MofenkHub V151 DEBUG] " .. feature .. " | " .. details)
+        print("[MofenkHub V154 DEBUG] " .. feature .. " | " .. details)
     end
 end
 
@@ -93,7 +192,7 @@ local function safeFireEncrypted(featureName, targetName, ...)
 end
 
 -- ==========================================
--- 4. FUNGSI EKSEKUSI UTAMA (STRICT LIST)
+-- 6. FUNGSI EKSEKUSI UTAMA
 -- ==========================================
 local function TriggerRollSystem()
     pcall(function()
@@ -156,11 +255,39 @@ local function TriggerUniversalIndexClaims()
     end)
 end
 
-local function ExecuteRemoteSell()
+local function ExecuteV154RemoteSell()
     pcall(function()
         if not _G.Mofenk.AutoSell then return end
-        safeFireEncrypted("Auto Sell System", "SellSelectedRequest")
+        
+        local activeRarities = {}
+        local rarityMap = {
+            Common = _G.Mofenk.SellCommon, Uncommon = _G.Mofenk.SellUncommon,
+            Rare = _G.Mofenk.SellRare, Epic = _G.Mofenk.SellEpic,
+            Legendary = _G.Mofenk.SellLegendary, Mythical = _G.Mofenk.SellMythical,
+            Ancient = _G.Mofenk.SellAncient, Divine = _G.Mofenk.SellDivine,
+            Celestial = _G.Mofenk.SellCelestial, Ethereal = _G.Mofenk.SellEthereal,
+            Astral = _G.Mofenk.SellAstral, Cosmic = _G.Mofenk.SellCosmic,
+            Transcendent = _G.Mofenk.SellTranscendent, Eternal = _G.Mofenk.SellEternal,
+            Primordial = _G.Mofenk.SellPrimordial, Omniversal = _G.Mofenk.SellOmniversal,
+            Infinite = _G.Mofenk.SellInfinite, Supreme = _G.Mofenk.SellSupreme,
+            Secret = _G.Mofenk.SellSecret
+        }
+
+        for rName, isEnabled in pairs(rarityMap) do
+            if isEnabled then
+                table.insert(activeRarities, rName)
+                safeFireEncrypted("Sell Filter", "ToggleAutoSellRarityRequest", rName, true)
+                safeFireEncrypted("Sell Filter", "SetAutoSellUnderRequest", rName, true)
+            end
+        end
+
+        if #activeRarities > 0 then
+            safeFireEncrypted("Auto Sell System", "SellSelectedRequest", activeRarities)
+            safeFireEncrypted("Auto Sell System", "SellSelectedRequest", unpack(activeRarities))
+        end
+
         safeFireEncrypted("Auto Sell System", "AutoSellStateChanged", true)
+        safeFireEncrypted("Auto Sell System", "RequestAutoSellState")
     end)
 end
 
@@ -175,7 +302,7 @@ local function ExecuteDungeonActions(towerName)
 end
 
 -- ==========================================
--- 5. UTILITIES, FLY & PROFIL
+-- 7. UTILITIES, FLY & PROFIL
 -- ==========================================
 local function ToggleFlySystem(state)
     local char = LocalPlayer.Character
@@ -210,6 +337,7 @@ end
 
 local function ServerHop()
     pcall(function()
+        ApplyQueueOnTeleport()
         local servers = {}
         local req = HttpService:JSONDecode(game:HttpGet("https://games.roblox.com/v1/games/"..game.PlaceId.."/servers/Public?sortOrder=Asc&limit=100"))
         if req and req.data then
@@ -255,35 +383,52 @@ local function getRealTimeMoney()
     return success and val or "Memuat..."
 end
 
--- Anti-DC & Anti-AFK
+-- Anti-DC Prompt Reconnect
 local PromptOverlay = CoreGui:FindFirstChild("PromptOverlay", true)
 if PromptOverlay then
     PromptOverlay.ChildAdded:Connect(function(child)
         if _G.Mofenk.AutoReconnect and (child.Name == "ErrorPrompt" or child.Name == "DisconnectPrompt") then
+            ApplyQueueOnTeleport()
             task.wait(2)
             pcall(function() TeleportService:Teleport(game.PlaceId, LocalPlayer) end)
         end
     end)
 end
 
+-- Dedicated Anti-AFK Listener
 LocalPlayer.Idled:Connect(function()
-    VirtualUser:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
-    task.wait(1)
-    VirtualUser:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+    if _G.Mofenk.AutoAFK then
+        VirtualUser:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+        task.wait(1)
+        VirtualUser:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+        DebugLog("Anti-AFK", "Prevented Roblox 20-minute idle disconnect!")
+    end
+end)
+
+-- Dedicated Anti-AFK Heartbeat Loop
+task.spawn(function()
+    while task.wait(30) do
+        if _G.Mofenk.AutoAFK then
+            pcall(function()
+                VirtualUser:CaptureController()
+                VirtualUser:ClickButton2(Vector2.new(0,0))
+            end)
+        end
+    end
 end)
 
 -- ==========================================
--- 6. UI RAYFIELD (STRICT FEATURE SETUP)
+-- 8. UI RAYFIELD (V154 MASTER)
 -- ==========================================
 local Window = Rayfield:CreateWindow({
-   Name = "MofenkHub | Dadu Brainrot V151 👑",
-   LoadingTitle = "Memuat MofenkHub V151...",
-   LoadingSubtitle = "Custom Features Only",
+   Name = "MofenkHub | Dadu Brainrot V154 👑",
+   LoadingTitle = "Memuat MofenkHub V154...",
+   LoadingSubtitle = "Auto AFK & Auto Execute Built-In",
    ConfigurationSaving = { Enabled = false },
    KeySystem = false
 })
 
-Rayfield:Notify({ Title = "MofenkHub V151 Ready! 👑", Content = "Daftar Fitur Telah Disesuaikan!", Duration = 5, Image = 6023426915 })
+Rayfield:Notify({ Title = "MofenkHub V154 Ready! 👑", Content = "Fitur Auto AFK & Auto Execute Aktif!", Duration = 5, Image = 6023426915 })
 
 -- TAB 1: HOME 🏠
 local TabHome = Window:CreateTab("Home 🏠", 6023426915)
@@ -433,18 +578,26 @@ end})
 
 -- TAB 6: PLAYER & UTILITIES ⚡
 local TabPlayer = Window:CreateTab("Player & Utilities ⚡", 6023426915)
-TabPlayer:CreateSection("🕊️ Movement & Fly")
+TabPlayer:CreateSection("🤖 Protection & Automation")
+TabPlayer:CreateToggle({Name = "🛡️ Auto AFK (Anti Idle Disconnect)", CurrentValue = true, Callback = function(V) 
+    _G.Mofenk.AutoAFK = V 
+    DebugLog("Auto AFK", "Status: " .. tostring(V))
+end})
+TabPlayer:CreateToggle({Name = "🔁 Auto Execute (Queue On Teleport)", CurrentValue = true, Callback = function(V) 
+    _G.Mofenk.AutoExecute = V 
+    DebugLog("Auto Execute", "Status: " .. tostring(V))
+end})
+TabPlayer:CreateToggle({Name = "🔄 Auto Reconnect (Anti DC)", CurrentValue = true, Callback = function(V) _G.Mofenk.AutoReconnect = V end})
+
+TabPlayer:CreateSection("🕊️ Movement & Speed")
 TabPlayer:CreateToggle({Name = "🕊️ Aktifkan Fly", CurrentValue = false, Callback = function(V) 
     _G.Mofenk.EnableFly = V 
     ToggleFlySystem(V)
     DebugLog("Fly Feature", "Status: " .. tostring(V))
 end})
 TabPlayer:CreateSlider({Name = "🚀 Kecepatan Terbang (Fly Speed)", Range = {20, 200}, Increment = 5, CurrentValue = 50, Callback = function(V) _G.Mofenk.FlySpeed = V end})
-
-TabPlayer:CreateSection("🏃 Speed & Reconnect")
 TabPlayer:CreateToggle({Name = "⚡ Aktifkan Custom WalkSpeed", CurrentValue = false, Callback = function(V) _G.Mofenk.EnableWalkSpeed = V end})
 TabPlayer:CreateSlider({Name = "🏃 Kecepatan Jalan", Range = {16, 200}, Increment = 1, CurrentValue = 16, Callback = function(V) _G.Mofenk.WalkSpeedVal = V end})
-TabPlayer:CreateToggle({Name = "🔄 Auto Reconnect (Anti-DC)", CurrentValue = true, Callback = function(V) _G.Mofenk.AutoReconnect = V end})
 
 TabPlayer:CreateSection("🌐 Server Utilities")
 TabPlayer:CreateButton({Name = "📋 Copy Server JobID", Callback = function() 
@@ -456,23 +609,27 @@ TabPlayer:CreateButton({Name = "🔀 Server Hop", Callback = function()
     ServerHop() 
 end})
 
--- TAB 7: DEV & SPY 🛠️
-local TabDev = Window:CreateTab("Dev & Spy 🛠️", 6023426915)
-TabDev:CreateSection("📡 CONSOLE NETWORK SPY")
+-- TAB 7: DATA SCANNER & DEV 🔍
+local TabDev = Window:CreateTab("Data Scanner & Dev 🔍", 6023426915)
+TabDev:CreateSection("🔍 IN-GAME DATA SCANNER TOOLS")
+TabDev:CreateButton({Name = "📡 Scan Game Remote Events/Functions", Callback = function() ScanGameRemotes() end})
+TabDev:CreateButton({Name = "📦 Scan Inventory & Player Stats", Callback = function() ScanInventoryData() end})
+TabDev:CreateButton({Name = "🏗️ Scan Workspace Interactive Prompts", Callback = function() ScanWorkspacePrompts() end})
+
+TabDev:CreateSection("📡 NETWORK SPY DEBUGGER")
 TabDev:CreateToggle({Name = "Aktifkan Deep Debugger (Notifikasi UI)", CurrentValue = true, Callback = function(V) 
     _G.Mofenk.SpyEnabled = V 
-    if V then Rayfield:Notify({Title = "Spy Debugger Aktif", Content = "Menampilkan semua eksekusi remote di layar.", Duration = 3}) end
+    if V then Rayfield:Notify({Title = "Spy Debugger Aktif", Content = "Menampilkan semua transmisi remote di layar.", Duration = 3}) end
 end})
 
 -- =====================================================================
--- 7. BACKGROUND MASTER ENGINE
+-- 9. BACKGROUND MASTER ENGINE
 -- =====================================================================
 local lastCollect, lastSell, lastEquip = os.time(), os.time(), os.time()
 
 task.spawn(function()
     while task.wait(0.4) do
         pcall(function()
-            -- WalkSpeed Loop
             if _G.Mofenk.EnableWalkSpeed then
                 local char = LocalPlayer.Character
                 if char and char:FindFirstChild("Humanoid") then
@@ -480,7 +637,6 @@ task.spawn(function()
                 end
             end
 
-            -- Cleaned In-Game Features Loop
             if _G.Mofenk.AutoRoll then TriggerRollSystem() end
 
             if _G.Mofenk.AutoRebirth then 
@@ -511,7 +667,7 @@ task.spawn(function()
             end
             
             if _G.Mofenk.AutoSell and (os.time() - lastSell >= _G.Mofenk.SellEvery) then
-                ExecuteRemoteSell()
+                ExecuteV154RemoteSell()
                 lastSell = os.time()
             end
             
