@@ -1,6 +1,6 @@
 -- =====================================================================
--- 👑 MOFENKHUB V91 — ULTIMATE ALL-IN-ONE EDITION (FULL CODE)
--- Game: Dadu Brainrot! | UI Rayfield + Blue/Black + Logo M + Spy & Scanner
+-- 👑 MOFENKHUB V94 — PRECISION MONEY COLLECTOR EDITION
+-- Game: Dadu Brainrot! | Auto Collect Uang & Base Gacor Tanpa Meleset
 -- =====================================================================
 
 local Players = game:GetService("Players")
@@ -19,29 +19,19 @@ for _, v in pairs(uiTarget:GetChildren()) do
     if v.Name == "MofenkHubUltimate" or v.Name == "MofenkSpyTerminal" then v:Destroy() end 
 end
 
--- 2. KONFIGURASI GLOBAL (SELURUH FITUR)
+-- 2. KONFIGURASI GLOBAL
 _G.Mofenk = {
-    -- Main / Farm
-    AutoRoll = false, AutoCollectMoney = false, CollectEvery = 5,
+    AutoRoll = false, AutoCollectMoney = false, CollectEvery = 1,
     AutoRebirth = false, AutoEquipBest = false, EquipBestEvery = 15,
     AutoClaimQuests = false, AutoClaimIndex = false,
-    AutoUpgradeBrainrot = false, MaxLevelBrainrot = 40, KeepCashPercent = 0,
-    
-    -- Inventory / Sell & Filters
+    AutoUpgradeBrainrot = false, MaxLevelBrainrot = 40,
+    AutoCollectBase = false,
     AutoSell = false, SellEvery = 3, SelectedRarity = "Common, Uncommon",
     KeepMutated = false, KeepTraited = false, KeepFinishes = false, KeepVariants = false,
     AutoTraitRoll = false, StopOnTraits = "None",
-    
-    -- Dungeon
     AutoDungeon = false, TargetFloor = "Battle1", AutoBuyDungeonShop = false,
-    
-    -- Player & Movement
     WalkSpeedVal = 16, EnableWalkSpeed = false,
-    
-    -- Upgrades & Misc
     AutoBuyDice = false, AutoUpgradeNodes = false,
-    
-    -- Spy & Scanner
     SpyEnabled = false
 }
 
@@ -60,7 +50,44 @@ local function safeFire(remoteName, ...)
 end
 
 -- ==========================================
--- 3. BACKGROUND CONSOLE SPY ENGINE
+-- 3. FUNGSI PENYEDOT UANG & BASE PRESISI
+-- ==========================================
+local function CollectMoneyAndBase()
+    pcall(function()
+        -- 1. Tembak Remote Event Uang (Mencakup variasi nama remote collect di game)
+        safeFire("MoneyCollected")
+        safeFire("CollectMoney")
+        safeFire("ClaimCash")
+        safeFire("ClaimMoney")
+
+        -- 2. Ambil semua ProximityPrompt atau Part uang/drops di Workspace & Base
+        local char = LocalPlayer.Character
+        if char and char:FindFirstChild("HumanoidRootPart") then
+            local hrp = char.HumanoidRootPart
+            for _, obj in ipairs(workspace:GetDescendants()) do
+                if obj:IsA("ProximityPrompt") then
+                    pcall(function()
+                        if obj.Parent and (obj.Parent.Position - hrp.Position).Magnitude <= 30 then
+                            fireproximityprompt(obj)
+                        end
+                    end)
+                elseif obj:IsA("TouchInterest") and obj.Parent then
+                    pcall(function()
+                        local part = obj.Parent
+                        if part:IsA("BasePart") and (part.Position - hrp.Position).Magnitude <= 20 then
+                            firetouchinterest(hrp, part, 0)
+                            task.wait()
+                            firetouchinterest(hrp, part, 1)
+                        end
+                    end)
+                end
+            end
+        end
+    end)
+end
+
+-- ==========================================
+-- 4. CONSOLE SPY & SCANNER
 -- ==========================================
 local function dumpData(o, depth)
     depth = depth or 0
@@ -81,9 +108,7 @@ mt.__namecall = newcclosure(function(self, ...)
         task.spawn(function()
             pcall(function()
                 local argStr = ""
-                for i, v in ipairs(args) do 
-                    argStr = argStr .. "Arg["..i.."]: " .. dumpData(v) .. " | " 
-                end
+                for i, v in ipairs(args) do argStr = argStr .. "Arg["..i.."]: " .. dumpData(v) .. " | " end
                 if argStr == "" then argStr = "Tidak ada argumen" end
                 print("👁️ [MOFENK SPY] " .. self.Name .. " (" .. method .. ") -> " .. argStr)
             end)
@@ -93,85 +118,59 @@ mt.__namecall = newcclosure(function(self, ...)
 end)
 setreadonly(mt, true)
 
--- ==========================================
--- 4. FULL MAP & BASE SCANNER
--- ==========================================
 local function FullMapScan()
     print("\n==================================================")
-    print("🗺️ [MOFENK MAP SCANNER] Memulai Pemindaian Penuh...")
+    print("🗺️ [MOFENK MAP SCANNER] Memindai Objek...")
     print("==================================================")
-    local scannedCount = 0
     for _, obj in ipairs(workspace:GetDescendants()) do
         if obj:IsA("Model") or obj:IsA("Part") then
-            local nameLower = string.lower(obj.Name)
-            if string.find(nameLower, "base") or string.find(nameLower, "spawn") or string.find(nameLower, "market") or string.find(nameLower, "dungeon") or string.find(nameLower, "shop") or string.find(nameLower, "portal") then
-                scannedCount = scannedCount + 1
-                local pos = "Tidak diketahui"
-                pcall(function()
-                    if obj:IsA("Model") and obj.PrimaryPart then pos = tostring(obj.PrimaryPart.Position)
-                    elseif obj:IsA("Part") then pos = tostring(obj.Position) end
-                end)
-                print("📍 [" .. obj.ClassName .."] " .. obj.FullName .. " | Posisi: " .. pos)
+            local n = string.lower(obj.Name)
+            if string.find(n, "base") or string.find(n, "money") or string.find(n, "cash") or string.find(n, "brainrot") then
+                print("📍 [" .. obj.ClassName .."] " .. obj.FullName)
             end
         end
     end
-    print("==================================================")
-    print("✅ Pemindaian Selesai! Objek ditemukan: " .. scannedCount)
     print("==================================================\n")
 end
 
--- Server Utilities
-local function CopyServerID()
-    pcall(function() if setclipboard then setclipboard(game.JobId) end end)
-end
-
+local function CopyServerID() pcall(function() if setclipboard then setclipboard(game.JobId) end end) end
 local function ServerHop()
     pcall(function()
         local servers = {}
         local req = HttpService:JSONDecode(game:HttpGet("https://games.roblox.com/v1/games/"..game.PlaceId.."/servers/Public?sortOrder=Asc&limit=100"))
         if req and req.data then
             for _, s in ipairs(req.data) do
-                if type(s) == "table" and s.id ~= game.JobId and s.playing < s.maxPlayers then
-                    table.insert(servers, s.id)
-                end
+                if type(s) == "table" and s.id ~= game.JobId and s.playing < s.maxPlayers then table.insert(servers, s.id) end
             end
         end
-        if #servers > 0 then
-            TeleportService:TeleportToPlaceInstance(game.PlaceId, servers[math.random(1, #servers)], LocalPlayer)
-        else
-            TeleportService:Teleport(game.PlaceId, LocalPlayer)
-        end
+        if #servers > 0 then TeleportService:TeleportToPlaceInstance(game.PlaceId, servers[math.random(1, #servers)], LocalPlayer)
+        else TeleportService:Teleport(game.PlaceId, LocalPlayer) end
     end)
 end
 
--- 5. MEMUAT RAYFIELD UI (BLUE / BLACK THEME + LOGO M)
+-- 5. RAYFIELD UI
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local Window = Rayfield:CreateWindow({
-   Name = "MofenkHub | Dadu Brainrot V91 Ultimate",
-   LoadingTitle = "Memuat MofenkHub V91...",
-   LoadingSubtitle = "Full Features + Spy & Scanner",
+   Name = "MofenkHub | Dadu Brainrot V94 Collector Fix",
+   LoadingTitle = "Memuat MofenkHub V94...",
+   LoadingSubtitle = "Auto Collect Money Fixed",
    ConfigurationSaving = { Enabled = false },
    KeySystem = false
 })
 
-Rayfield:Notify({
-    Title = "MofenkHub V91 Loaded! 👑", 
-    Content = "Semua fitur, Spy, & Scanner siap digunakan!", 
-    Duration = 5, 
-    Image = 6023426915 
-})
+Rayfield:Notify({ Title = "MofenkHub V94 Loaded! 👑", Content = "Fix Auto Collect Uang aktif!", Duration = 5, Image = 6023426915 })
 
 -- TAB 1: HOME 🏠
 local TabHome = Window:CreateTab("Home 🏠", 6023426915)
 TabHome:CreateSection("👋 WELCOME BACK")
-TabHome:CreateParagraph({Title = LocalPlayer.Name, Content = "Status: Terhubung ke MofenkHub V91\nGame: [UPDATE 2] Dadu Brainrot!\nMode: Ultimate All-in-One"})
+TabHome:CreateParagraph({Title = LocalPlayer.Name, Content = "Status: Terhubung ke MofenkHub V94\nGame: [UPDATE 2] Dadu Brainrot!\nMode: Collect Uang & Base Gacor"})
 
 -- TAB 2: MAIN 🎮
 local TabMain = Window:CreateTab("Main 🎮", 6023426915)
 TabMain:CreateSection("🔄 Farm & Roll Utama")
 TabMain:CreateToggle({Name = "🎲 Auto Roll", CurrentValue = false, Callback = function(V) _G.Mofenk.AutoRoll = V end})
-TabMain:CreateToggle({Name = "💰 Auto Collect Money", CurrentValue = false, Callback = function(V) _G.Mofenk.AutoCollectMoney = V end})
-TabMain:CreateSlider({Name = "⏱️ Collect Every (s)", Range = {1, 60}, Increment = 1, Suffix = "s", CurrentValue = 5, Callback = function(V) _G.Mofenk.CollectEvery = V end})
+TabMain:CreateToggle({Name = "💰 Auto Collect Money (Fixed)", CurrentValue = false, Callback = function(V) _G.Mofenk.AutoCollectMoney = V end})
+TabMain:CreateSlider({Name = "⏱️ Collect Every (s)", Range = {1, 10}, Increment = 1, Suffix = "s", CurrentValue = 1, Callback = function(V) _G.Mofenk.CollectEvery = V end})
 TabMain:CreateToggle({Name = "🔄 Auto Rebirth", CurrentValue = false, Callback = function(V) _G.Mofenk.AutoRebirth = V end})
 TabMain:CreateToggle({Name = "🛡️ Auto Equip Best", CurrentValue = false, Callback = function(V) _G.Mofenk.AutoEquipBest = V end})
 TabMain:CreateSlider({Name = "⏱️ Equip Best Every (s)", Range = {5, 60}, Increment = 1, Suffix = "s", CurrentValue = 15, Callback = function(V) _G.Mofenk.EquipBestEvery = V end})
@@ -180,10 +179,10 @@ TabMain:CreateSection("🎁 Claims (Quest & Index)")
 TabMain:CreateToggle({Name = "📜 Auto Claim Quests", CurrentValue = false, Callback = function(V) _G.Mofenk.AutoClaimQuests = V end})
 TabMain:CreateToggle({Name = "📖 Auto Claim Index Rewards", CurrentValue = false, Callback = function(V) _G.Mofenk.AutoClaimIndex = V end})
 
-TabMain:CreateSection("🧠 Brainrots & Cash Management")
+TabMain:CreateSection("🧠 Base & Upgrades")
+TabMain:CreateToggle({Name = "🏡 Auto Collect/Interact Base Brainrots", CurrentValue = false, Callback = function(V) _G.Mofenk.AutoCollectBase = V end})
 TabMain:CreateToggle({Name = "⚡ Auto Upgrade Placed Brainrots", CurrentValue = false, Callback = function(V) _G.Mofenk.AutoUpgradeBrainrot = V end})
 TabMain:CreateSlider({Name = "📊 Max Level", Range = {1, 100}, Increment = 1, CurrentValue = 40, Callback = function(V) _G.Mofenk.MaxLevelBrainrot = V end})
-TabMain:CreateSlider({Name = "💵 Keep Cash (%)", Range = {0, 100}, Increment = 1, Suffix = "%", CurrentValue = 0, Callback = function(V) _G.Mofenk.KeepCashPercent = V end})
 
 -- TAB 3: INVENTORY 📦
 local TabInv = Window:CreateTab("Inventory 📦", 6023426915)
@@ -241,26 +240,11 @@ TabPlayer:CreateToggle({Name = "📈 Auto Buy Upgrade Nodes", CurrentValue = fal
 
 -- TAB 6: DEVELOPER, SPY & SCANNER 🛠️
 local TabDev = Window:CreateTab("Dev & Spy 🛠️", 6023426915)
-TabDev:CreateSection("🗺️ FULL MAP & BASE SCANNER")
-TabDev:CreateButton({
-   Name = "🔍 Jalankan Full Map & Base Scan",
-   Callback = function()
-       FullMapScan()
-       Rayfield:Notify({Title = "Scanner Selesai", Content = "Cek Konsol Delta untuk hasil pemindaian!", Duration = 5})
-   end,
-})
-
-TabDev:CreateSection("📡 CONSOLE NETWORK SPY")
-TabDev:CreateToggle({
-   Name = "Aktifkan Spy ke Konsol Delta",
-   CurrentValue = false,
-   Callback = function(Value)
-       _G.Mofenk.SpyEnabled = Value
-       Rayfield:Notify({Title = "Spy Status", Content = Value and "Aktif! Cek Konsol Delta." or "Dimatikan.", Duration = 3})
-   end,
-})
-
-TabDev:CreateSection("🎵 PEMUTAR MUSIK")
+TabDev:CreateSection("🗺️ SCANNER")
+TabDev:CreateButton({Name = "🔍 Scan Objek Map", Callback = function() FullMapScan() end})
+TabDev:CreateSection("📡 SPY")
+TabDev:CreateToggle({Name = "Aktifkan Spy", CurrentValue = false, Callback = function(V) _G.Mofenk.SpyEnabled = V end})
+TabDev:CreateSection("🎵 MUSIK")
 local Music = Instance.new("Sound", CoreGui)
 Music.SoundId = "rbxassetid://9048375035"
 Music.Volume = 0.8 
@@ -269,14 +253,13 @@ TabDev:CreateButton({Name = "▶️ Putar Musik", Callback = function() Music:Pl
 TabDev:CreateButton({Name = "⏹️ Hentikan Musik", Callback = function() Music:Stop() end})
 
 -- =====================================================================
--- 6. BACKGROUND ENGINE (FARMING, MOVE SPEED & SPY LOGIC)
+-- 6. BACKGROUND ENGINE
 -- =====================================================================
 local lastCollect, lastSell, lastEquip = os.time(), os.time(), os.time()
 
 task.spawn(function()
     while task.wait(0.5) do
         pcall(function()
-            -- Custom WalkSpeed Enforcer
             if _G.Mofenk.EnableWalkSpeed then
                 local char = LocalPlayer.Character
                 if char and char:FindFirstChild("Humanoid") then
@@ -284,15 +267,15 @@ task.spawn(function()
                 end
             end
 
-            -- Main / Farm
             if _G.Mofenk.AutoRoll then safeFire("RollRequest") end
             if _G.Mofenk.AutoRebirth then safeFire("RebirthRequest") end
             if _G.Mofenk.AutoClaimQuests then safeFire("ClaimAllQuests") end
             if _G.Mofenk.AutoClaimIndex then safeFire("RequestIndexRewards") end
             if _G.Mofenk.AutoUpgradeBrainrot then safeFire("UpgradeBrainrotRequest", 1) end
             
+            -- Auto Collect Uang & Base dipercepat & di-fix
             if _G.Mofenk.AutoCollectMoney and (os.time() - lastCollect >= _G.Mofenk.CollectEvery) then
-                safeFire("MoneyCollected")
+                CollectMoneyAndBase()
                 lastCollect = os.time()
             end
             
@@ -302,14 +285,13 @@ task.spawn(function()
                 lastEquip = os.time()
             end
             
-            -- Inventory / Sell & Traits
             if _G.Mofenk.AutoSell and (os.time() - lastSell >= _G.Mofenk.SellEvery) then
                 safeFire("SellAllRequest", _G.Mofenk.SelectedRarity)
+                safeFire("SetAutoSellUnderRequest", true, _G.Mofenk.KeepMutated)
                 lastSell = os.time()
             end
             if _G.Mofenk.AutoTraitRoll then safeFire("SpinTraitRequest") end
             
-            -- Dungeon
             if _G.Mofenk.AutoDungeon then
                 safeFire("RequestDungeonTeleport", _G.Mofenk.TargetFloor)
                 safeFire("SetAutoFightBoss", true)
@@ -318,7 +300,6 @@ task.spawn(function()
                 end
             end
             
-            -- Player / Upgrades
             if _G.Mofenk.AutoBuyDice then safeFire("DiceShopAction", "Buy", 1) end
         end)
     end
