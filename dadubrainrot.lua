@@ -1,6 +1,6 @@
 -- =====================================================================
--- 👑 MOFENKHUB V156 — UUID AUTO SELL & DATA SCANNER MASTER
--- Game: Dadu Brainrot! | Fixed "Couldn't Sell That Item" Issue
+-- 👑 MOFENKHUB V157 — GEMBOK/LOCK FILTER & DATA SCANNER MASTER
+-- Game: Dadu Brainrot! | Lock & Equip Protection Auto Sell
 -- =====================================================================
 
 local Players = game:GetService("Players")
@@ -166,7 +166,7 @@ local function DebugLog(feature, details)
             Duration = 3,
             Image = 4483362458
         })
-        print("[MofenkHub V156 DEBUG] " .. feature .. " | " .. details)
+        print("[MofenkHub V157 DEBUG] " .. feature .. " | " .. details)
     end
 end
 
@@ -255,8 +255,8 @@ local function TriggerUniversalIndexClaims()
     end)
 end
 
--- V156 HYBRID AUTO SELL ENGINE (PERBAIKAN TOTAL INVENTORY SELL)
-local function ExecuteV156RemoteSell()
+-- V157 GEMBOK & EQUIP PROTECTION AUTO SELL ENGINE
+local function ExecuteV157RemoteSell()
     pcall(function()
         if not _G.Mofenk.AutoSell then return end
 
@@ -273,7 +273,7 @@ local function ExecuteV156RemoteSell()
             Secret = _G.Mofenk.SellSecret
         }
 
-        -- 1. Sync Native Server Settings (Sangat Ampuh Saat Rolling)
+        -- 1. Sync Native Server Settings
         safeFireEncrypted("Auto Sell System", "AutoSellStateChanged", true)
         for rName, isEnabled in pairs(rarityMap) do
             if isEnabled then
@@ -282,44 +282,57 @@ local function ExecuteV156RemoteSell()
             end
         end
 
-        -- 2. Scan PlayerGui & Extract ID Unik untuk Menjual Item yang Sudah Ada di Inventory
+        -- 2. Scan PlayerGui & Lewati Item Yang Di-Gembok atau Di-Equip
         local playerGui = LocalPlayer:FindFirstChild("PlayerGui")
         if playerGui then
             for _, guiObj in ipairs(playerGui:GetDescendants()) do
                 if guiObj:IsA("Frame") or guiObj:IsA("ImageButton") or guiObj:IsA("TextButton") then
                     local nameLower = string.lower(guiObj.Name)
-                    
-                    -- Cek apakah objek UI cocok dengan Rarity yang dicentang
-                    for rName, isEnabled in pairs(rarityMap) do
-                        if isEnabled and (string.find(nameLower, string.lower(rName)) or string.find(string.lower(guiObj:GetAttribute("Rarity") or ""), string.lower(rName))) then
-                            
-                            -- Ekstraksi UUID/ID Unik dari Attribute UI
-                            local itemUUID = guiObj:GetAttribute("UUID") or guiObj:GetAttribute("ID") or guiObj:GetAttribute("ItemId") or guiObj:GetAttribute("Key")
-                            
-                            if itemUUID then
-                                safeFireEncrypted("Auto Sell UUID", "SellItemRequest", itemUUID)
-                            else
-                                -- Fallback 1: Jika ID ada di dalam Value child
-                                local idVal = guiObj:FindFirstChild("UUID") or guiObj:FindFirstChild("ID") or guiObj:FindFirstChild("ItemId")
-                                if idVal and idVal:IsA("ValueBase") then
-                                    safeFireEncrypted("Auto Sell Value", "SellItemRequest", idVal.Value)
+
+                    -- Cek atribut Gembok / Fav / Lock
+                    local isLocked = guiObj:GetAttribute("Locked") or guiObj:GetAttribute("Favorited") or guiObj:GetAttribute("IsLocked") or guiObj:GetAttribute("Fav")
+                    local isEquipped = guiObj:GetAttribute("Equipped") or guiObj:GetAttribute("IsEquipped")
+
+                    -- Cek child UI visual jika attribute kosong
+                    if isLocked == nil then
+                        local lockObj = guiObj:FindFirstChild("Lock", true) or guiObj:FindFirstChild("Fav", true) or guiObj:FindFirstChild("Favorite", true) or guiObj:FindFirstChild("Gembok", true)
+                        if lockObj and lockObj:IsA("GuiObject") and lockObj.Visible then
+                            isLocked = true
+                        end
+                    end
+
+                    if isEquipped == nil then
+                        local eqObj = guiObj:FindFirstChild("Equipped", true) or guiObj:FindFirstChild("Equip", true)
+                        if eqObj and eqObj:IsA("GuiObject") and eqObj.Visible then
+                            isEquipped = true
+                        end
+                    end
+
+                    -- HANYA EKSEKUSI JIKA TIDAK DI-GEMBOK DAN TIDAK DI-EQUIP
+                    if not isLocked and not isEquipped then
+                        for rName, isEnabled in pairs(rarityMap) do
+                            if isEnabled and (string.find(nameLower, string.lower(rName)) or string.find(string.lower(guiObj:GetAttribute("Rarity") or ""), string.lower(rName))) then
+                                
+                                local itemUUID = guiObj:GetAttribute("UUID") or guiObj:GetAttribute("ID") or guiObj:GetAttribute("ItemId") or guiObj:GetAttribute("Key")
+                                
+                                if itemUUID then
+                                    safeFireEncrypted("Auto Sell UUID", "SellItemRequest", itemUUID)
                                 else
-                                    -- Fallback 2: Trigger Klik UI Tombol Sell Asli Game
-                                    for _, conn in pairs(getconnections(guiObj.MouseButton1Click) or {}) do
-                                        conn:Fire()
+                                    local idVal = guiObj:FindFirstChild("UUID") or guiObj:FindFirstChild("ID") or guiObj:FindFirstChild("ItemId")
+                                    if idVal and idVal:IsA("ValueBase") then
+                                        safeFireEncrypted("Auto Sell Value", "SellItemRequest", idVal.Value)
+                                    else
+                                        -- Trigger Tombol Jual jika ada
+                                        local sellBtn = guiObj:FindFirstChild("Sell", true) or guiObj
+                                        if sellBtn and (sellBtn:IsA("TextButton") or sellBtn:IsA("ImageButton")) then
+                                            for _, conn in pairs(getconnections(sellBtn.MouseButton1Click) or {}) do
+                                                conn:Fire()
+                                            end
+                                        end
                                     end
                                 end
                             end
                         end
-                    end
-                end
-            end
-            
-            -- Trigger Tombol Global "Sell Selected" / "Sell All Filtered" di UI Game jika ada
-            for _, btn in ipairs(playerGui:GetDescendants()) do
-                if (btn:IsA("TextButton") or btn:IsA("ImageButton")) and string.find(string.lower(btn.Name), "sell") then
-                    for _, conn in pairs(getconnections(btn.MouseButton1Click) or {}) do
-                        conn:Fire()
                     end
                 end
             end
@@ -454,17 +467,17 @@ task.spawn(function()
 end)
 
 -- ==========================================
--- 8. UI RAYFIELD (V156 MASTER)
+-- 8. UI RAYFIELD (V157 MASTER)
 -- ==========================================
 local Window = Rayfield:CreateWindow({
-   Name = "MofenkHub | Dadu Brainrot V156 👑",
-   LoadingTitle = "Memuat MofenkHub V156...",
-   LoadingSubtitle = "UUID Auto Sell Engine Fixed",
+   Name = "MofenkHub | Dadu Brainrot V157 👑",
+   LoadingTitle = "Memuat MofenkHub V157...",
+   LoadingSubtitle = "Lock & Equip Protection Auto Sell",
    ConfigurationSaving = { Enabled = false },
    KeySystem = false
 })
 
-Rayfield:Notify({ Title = "MofenkHub V156 Ready! 👑", Content = "Auto Sell UUID Extractor Fix Berhasil!", Duration = 5, Image = 6023426915 })
+Rayfield:Notify({ Title = "MofenkHub V157 Ready! 👑", Content = "Filter Gembok & Equip Protection Aktif!", Duration = 5, Image = 6023426915 })
 
 -- TAB 1: HOME 🏠
 local TabHome = Window:CreateTab("Home 🏠", 6023426915)
@@ -537,7 +550,7 @@ end})
 
 -- TAB 4: INVENTORY & SELL 📦
 local TabInv = Window:CreateTab("Inventory & Sell 📦", 6023426915)
-TabInv:CreateSection("💲 Auto Sell (UUID Fixed V156)")
+TabInv:CreateSection("💲 Auto Sell (Gembok Protection V157)")
 TabInv:CreateToggle({Name = "🗑️ Auto Sell", CurrentValue = false, Callback = function(V) 
     _G.Mofenk.AutoSell = V 
     safeFireEncrypted("Sell Master Switch", "AutoSellStateChanged", V)
@@ -704,7 +717,7 @@ task.spawn(function()
             end
             
             if _G.Mofenk.AutoSell and (os.time() - lastSell >= _G.Mofenk.SellEvery) then
-                ExecuteV156RemoteSell()
+                ExecuteV157RemoteSell()
                 lastSell = os.time()
             end
             
