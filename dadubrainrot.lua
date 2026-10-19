@@ -1,6 +1,6 @@
 -- =====================================================================
--- 👑 MOFENKHUB V154 — AUTO AFK & AUTO EXECUTE EDITION (FULL SCRIPT)
--- Game: Dadu Brainrot! | Auto AFK + Queue On Teleport + Data Scanner
+-- 👑 MOFENKHUB V155 — NATIVE REMOTE AUTO SELL & FULL SUITE
+-- Game: Dadu Brainrot! | Fixed Based On Console Data Scan
 -- =====================================================================
 
 local Players = game:GetService("Players")
@@ -166,7 +166,7 @@ local function DebugLog(feature, details)
             Duration = 3,
             Image = 4483362458
         })
-        print("[MofenkHub V154 DEBUG] " .. feature .. " | " .. details)
+        print("[MofenkHub V155 DEBUG] " .. feature .. " | " .. details)
     end
 end
 
@@ -192,7 +192,7 @@ local function safeFireEncrypted(featureName, targetName, ...)
 end
 
 -- ==========================================
--- 6. FUNGSI EKSEKUSI UTAMA
+-- 6. FUNGSI EKSEKUSI UTAMA (AUTO SELL V155 FIXED)
 -- ==========================================
 local function TriggerRollSystem()
     pcall(function()
@@ -255,11 +255,15 @@ local function TriggerUniversalIndexClaims()
     end)
 end
 
-local function ExecuteV154RemoteSell()
+-- V155 FIXED AUTO SELL ENGINE
+local function ExecuteV155RemoteSell()
     pcall(function()
         if not _G.Mofenk.AutoSell then return end
         
-        local activeRarities = {}
+        -- 1. Paksa Aktifkan AutoSell State di Server Game
+        safeFireEncrypted("Auto Sell System", "AutoSellStateChanged", true)
+        safeFireEncrypted("Auto Sell System", "RequestAutoSellState")
+
         local rarityMap = {
             Common = _G.Mofenk.SellCommon, Uncommon = _G.Mofenk.SellUncommon,
             Rare = _G.Mofenk.SellRare, Epic = _G.Mofenk.SellEpic,
@@ -273,21 +277,29 @@ local function ExecuteV154RemoteSell()
             Secret = _G.Mofenk.SellSecret
         }
 
+        -- 2. Sinkronkan Setelan AutoSell Bawaan Game
         for rName, isEnabled in pairs(rarityMap) do
             if isEnabled then
-                table.insert(activeRarities, rName)
                 safeFireEncrypted("Sell Filter", "ToggleAutoSellRarityRequest", rName, true)
                 safeFireEncrypted("Sell Filter", "SetAutoSellUnderRequest", rName, true)
             end
         end
 
-        if #activeRarities > 0 then
-            safeFireEncrypted("Auto Sell System", "SellSelectedRequest", activeRarities)
-            safeFireEncrypted("Auto Sell System", "SellSelectedRequest", unpack(activeRarities))
+        -- 3. Direct Item Scan & Sell (Dijual langsung dari UI Player)
+        local playerGui = LocalPlayer:FindFirstChild("PlayerGui")
+        if playerGui then
+            for _, guiObj in ipairs(playerGui:GetDescendants()) do
+                if guiObj:IsA("Frame") or guiObj:IsA("ImageLabel") or guiObj:IsA("ImageButton") then
+                    local nameLower = string.lower(guiObj.Name)
+                    for rName, isEnabled in pairs(rarityMap) do
+                        if isEnabled and string.find(nameLower, string.lower(rName)) then
+                            safeFireEncrypted("Auto Sell Direct", "SellItemRequest", guiObj)
+                            safeFireEncrypted("Auto Sell Direct", "SellItemRequest", guiObj.Name)
+                        end
+                    end
+                end
+            end
         end
-
-        safeFireEncrypted("Auto Sell System", "AutoSellStateChanged", true)
-        safeFireEncrypted("Auto Sell System", "RequestAutoSellState")
     end)
 end
 
@@ -418,17 +430,17 @@ task.spawn(function()
 end)
 
 -- ==========================================
--- 8. UI RAYFIELD (V154 MASTER)
+-- 8. UI RAYFIELD (V155 MASTER)
 -- ==========================================
 local Window = Rayfield:CreateWindow({
-   Name = "MofenkHub | Dadu Brainrot V154 👑",
-   LoadingTitle = "Memuat MofenkHub V154...",
-   LoadingSubtitle = "Auto AFK & Auto Execute Built-In",
+   Name = "MofenkHub | Dadu Brainrot V155 👑",
+   LoadingTitle = "Memuat MofenkHub V155...",
+   LoadingSubtitle = "Native Remote Sell Fixed Engine",
    ConfigurationSaving = { Enabled = false },
    KeySystem = false
 })
 
-Rayfield:Notify({ Title = "MofenkHub V154 Ready! 👑", Content = "Fitur Auto AFK & Auto Execute Aktif!", Duration = 5, Image = 6023426915 })
+Rayfield:Notify({ Title = "MofenkHub V155 Ready! 👑", Content = "Auto Sell Native Server Fix Berhasil!", Duration = 5, Image = 6023426915 })
 
 -- TAB 1: HOME 🏠
 local TabHome = Window:CreateTab("Home 🏠", 6023426915)
@@ -501,9 +513,10 @@ end})
 
 -- TAB 4: INVENTORY & SELL 📦
 local TabInv = Window:CreateTab("Inventory & Sell 📦", 6023426915)
-TabInv:CreateSection("💲 Auto Sell (Filtered Remote)")
+TabInv:CreateSection("💲 Auto Sell (Native Remote V155)")
 TabInv:CreateToggle({Name = "🗑️ Auto Sell", CurrentValue = false, Callback = function(V) 
     _G.Mofenk.AutoSell = V 
+    safeFireEncrypted("Sell Master Switch", "AutoSellStateChanged", V)
     DebugLog("Auto Sell", "Status: " .. tostring(V)) 
 end})
 TabInv:CreateSlider({Name = "⏱️ Sell Interval (s)", Range = {1, 15}, Increment = 1, Suffix = "s", CurrentValue = 2, Callback = function(V) _G.Mofenk.SellEvery = V end})
@@ -667,7 +680,7 @@ task.spawn(function()
             end
             
             if _G.Mofenk.AutoSell and (os.time() - lastSell >= _G.Mofenk.SellEvery) then
-                ExecuteV154RemoteSell()
+                ExecuteV155RemoteSell()
                 lastSell = os.time()
             end
             
