@@ -1,6 +1,6 @@
 -- =====================================================================
--- 👑 MOFENKHUB V143 — FIXED AUTO SELL LOOP & ULTIMATE DEBUGGER
--- Game: Dadu Brainrot! | Presisi Auto Sell Sesuai Ceklis Sambil Roll
+-- 👑 MOFENKHUB V145 — DYNAMIC CHECKLIST RARITY AUTO SELL
+-- Game: Dadu Brainrot! | Auto Sell Hanya Menyesuaikan Rarity yang Dicentang
 -- =====================================================================
 
 local Players = game:GetService("Players")
@@ -39,9 +39,9 @@ _G.Mofenk = {
     AutoMultiRollUpgrade = false,
     AutoCollectBase = false,
     AutoClaimMeteor = false,
-    -- Checklist Sell Config (Dengan Timer Loop Pintar & Aman)
+    -- Dynamic Checklist Sell Config
     AutoSell = false,
-    SellEvery = 3,
+    SellEvery = 2,
     SellCommon = false,
     SellUncommon = false,
     SellRare = false,
@@ -205,39 +205,39 @@ local function TriggerUniversalIndexClaims()
     end)
 end
 
--- SISTEM AUTO SELL SELEKTIF BERDASARKAN CEKLIS RARITY SAAT ROLL
-local function ExecuteSmartRaritySell()
+-- DYNAMIC CHECKLIST AUTO SELL (Hanya mengeksekusi rarity yang dicentang True)
+local function ExecuteDynamicChecklistSell()
     pcall(function()
         if not _G.Mofenk.AutoSell then return end
-        
-        local rarities = {
-            {name = "Common", val = _G.Mofenk.SellCommon},
-            {name = "Uncommon", val = _G.Mofenk.SellUncommon},
-            {name = "Rare", val = _G.Mofenk.SellRare},
-            {name = "Epic", val = _G.Mofenk.SellEpic},
-            {name = "Legendary", val = _G.Mofenk.SellLegendary},
-            {name = "Mythical", val = _G.Mofenk.SellMythical},
-            {name = "Ancient", val = _G.Mofenk.SellAncient},
-            {name = "Divine", val = _G.Mofenk.SellDivine},
-            {name = "Celestial", val = _G.Mofenk.SellCelestial},
-            {name = "Ethereal", val = _G.Mofenk.SellEthereal},
-            {name = "Astral", val = _G.Mofenk.SellAstral},
-            {name = "Cosmic", val = _G.Mofenk.SellCosmic},
-            {name = "Transcendent", val = _G.Mofenk.SellTranscendent},
-            {name = "Eternal", val = _G.Mofenk.SellEternal},
-            {name = "Primordial", val = _G.Mofenk.SellPrimordial},
-            {name = "Omniversal", val = _G.Mofenk.SellOmniversal},
-            {name = "Infinite", val = _G.Mofenk.SellInfinite},
-            {name = "Supreme", val = _G.Mofenk.SellSupreme},
-            {name = "Secret", val = _G.Mofenk.SellSecret}
+
+        local rarityList = {
+            {name = "Common", status = _G.Mofenk.SellCommon},
+            {name = "Uncommon", status = _G.Mofenk.SellUncommon},
+            {name = "Rare", status = _G.Mofenk.SellRare},
+            {name = "Epic", status = _G.Mofenk.SellEpic},
+            {name = "Legendary", status = _G.Mofenk.SellLegendary},
+            {name = "Mythical", status = _G.Mofenk.SellMythical},
+            {name = "Ancient", status = _G.Mofenk.SellAncient},
+            {name = "Divine", status = _G.Mofenk.SellDivine},
+            {name = "Celestial", status = _G.Mofenk.SellCelestial},
+            {name = "Ethereal", status = _G.Mofenk.SellEthereal},
+            {name = "Astral", status = _G.Mofenk.SellAstral},
+            {name = "Cosmic", status = _G.Mofenk.SellCosmic},
+            {name = "Transcendent", status = _G.Mofenk.SellTranscendent},
+            {name = "Eternal", status = _G.Mofenk.SellEternal},
+            {name = "Primordial", status = _G.Mofenk.SellPrimordial},
+            {name = "Omniversal", status = _G.Mofenk.SellOmniversal},
+            {name = "Infinite", status = _G.Mofenk.SellInfinite},
+            {name = "Supreme", status = _G.Mofenk.SellSupreme},
+            {name = "Secret", status = _G.Mofenk.SellSecret}
         }
 
-        for _, r in ipairs(rarities) do
-            if r.val then
-                -- Menembak remote game dengan variasi parameter sell rarity agar langsung terjual otomatis di background
-                safeFireEncrypted("Smart Sell", "SellSelectedRequest", r.name)
-                safeFireEncrypted("Smart Sell", "SellRarityRequest", r.name)
-                safeFireEncrypted("Smart Sell", "ToggleAutoSellRarityRequest", r.name, true)
+        for _, item in ipairs(rarityList) do
+            if item.status then
+                -- Hanya tembak remote untuk rarity yang benar-benar dicentang (True)
+                safeFireEncrypted("Dynamic Sell", "SellSelectedRarityRequest", item.name, _G.Mofenk.KeepMutated)
+                safeFireEncrypted("Dynamic Sell", "SellRarityRequest", item.name)
+                safeFireEncrypted("Dynamic Sell", "SetAutoSellUnderRequest", item.name, true)
             end
         end
     end)
@@ -364,23 +364,23 @@ LocalPlayer.Idled:Connect(function()
 end)
 
 -- ==========================================
--- 6. UI RAYFIELD (V143 SMART SELL MASTER)
+-- 6. UI RAYFIELD (V145 DYNAMIC SELL MASTER)
 -- ==========================================
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local Window = Rayfield:CreateWindow({
-   Name = "MofenkHub | Dadu Brainrot V143 Smart Sell Master",
-   LoadingTitle = "Memuat MofenkHub V143...",
-   LoadingSubtitle = "Smart Inventory Sweeper & Full Debugger",
+   Name = "MofenkHub | Dadu Brainrot V145 Dynamic Sell Master",
+   LoadingTitle = "Memuat MofenkHub V145...",
+   LoadingSubtitle = "Dynamic Checklist Rarity Auto Sell & Debugger",
    ConfigurationSaving = { Enabled = false },
    KeySystem = false
 })
 
-Rayfield:Notify({ Title = "MofenkHub V143 Loaded! 👑", Content = "Smart Rarity Auto Sell Aktif!", Duration = 5, Image = 6023426915 })
+Rayfield:Notify({ Title = "MofenkHub V145 Loaded! 👑", Content = "Dynamic Checklist Auto Sell Aktif!", Duration = 5, Image = 6023426915 })
 
 -- TAB 1: HOME 🏠
 local TabHome = Window:CreateTab("Home 🏠", 6023426915)
 TabHome:CreateSection("👋 PROFIL & MONITOR")
-TabHome:CreateParagraph({Title = LocalPlayer.Name, Content = "Status: Terhubung (V143 Smart Sell)\nGame: [UPDATE 2] Dadu Brainrot!"})
+TabHome:CreateParagraph({Title = LocalPlayer.Name, Content = "Status: Terhubung (V145 Dynamic Sell)\nGame: [UPDATE 2] Dadu Brainrot!"})
 
 local ProfileParagraph = TabHome:CreateParagraph({Title = "📋 Profil Karakter", Content = "Memuat data..."})
 task.spawn(function()
@@ -429,11 +429,11 @@ TabUpgrade:CreateToggle({Name = "⚡ Auto Multi-Roll Upgrade", CurrentValue = fa
 TabUpgrade:CreateToggle({Name = "🏡 Auto Collect Base Money", CurrentValue = false, Callback = function(V) _G.Mofenk.AutoCollectBase = V end})
 TabUpgrade:CreateToggle({Name = "🎲 Auto Buy Dice", CurrentValue = false, Callback = function(V) _G.Mofenk.AutoBuyDice = V end})
 
--- TAB 4: INVENTORY & SMART RARITY SELL 📦
+-- TAB 4: INVENTORY & DYNAMIC CHECKLIST SELL 📦
 local TabInv = Window:CreateTab("Inventory 📦", 6023426915)
-TabInv:CreateSection("💲 Smart Auto Sell By Rarity (Sambil Roll)")
-TabInv:CreateToggle({Name = "🗑️ Aktifkan Smart Auto Sell", CurrentValue = false, Callback = function(V) _G.Mofenk.AutoSell = V end})
-TabInv:CreateSlider({Name = "⏱️ Sell Interval (s)", Range = {1, 15}, Increment = 1, Suffix = "s", CurrentValue = 3, Callback = function(V) _G.Mofenk.SellEvery = V end})
+TabInv:CreateSection("💲 Dynamic Checklist Auto Sell By Rarity")
+TabInv:CreateToggle({Name = "🗑️ Aktifkan Auto Sell Sesuai Ceklis", CurrentValue = false, Callback = function(V) _G.Mofenk.AutoSell = V end})
+TabInv:CreateSlider({Name = "⏱️ Sell Interval (s)", Range = {1, 15}, Increment = 1, Suffix = "s", CurrentValue = 2, Callback = function(V) _G.Mofenk.SellEvery = V end})
 
 TabInv:CreateSection("☑️ Ceklis Rarity (Tier 1)")
 TabInv:CreateToggle({Name = "Jual Common", CurrentValue = false, Callback = function(V) _G.Mofenk.SellCommon = V end})
@@ -571,9 +571,9 @@ task.spawn(function()
                 lastEquip = os.time()
             end
             
-            -- Smart Rarity Auto Sell Loop Sambil Roll
+            -- Dynamic Checklist Auto Sell Loop (Hanya jual yang dicentang)
             if _G.Mofenk.AutoSell and (os.time() - lastSell >= _G.Mofenk.SellEvery) then
-                ExecuteSmartRaritySell()
+                ExecuteDynamicChecklistSell()
                 lastSell = os.time()
             end
             
