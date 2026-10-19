@@ -1,0 +1,72 @@
+-- ==========================================================
+-- 👁️ MOFENK EYE: NETWORK ANALYZER V1 (DISCORD EDITION)
+-- Pembuat: Mofenk | Ringan, Cepat, & Anti-Crash
+-- ==========================================================
+
+local CoreGui = game:GetService("CoreGui")
+local RS = game:GetService("ReplicatedStorage")
+pcall(function() CoreGui:FindFirstChild("MofenkEye"):Destroy() end)
+
+-- [ FUNGSI PENDEK PEMBUAT UI ]
+local function Make(cls, props)
+    local obj = Instance.new(cls)
+    for k, v in pairs(props) do obj[k] = v end
+    return obj
+end
+
+-- [ MEMBANGUN UI TERMINAL ]
+local Gui = Make("ScreenGui", {Name = "MofenkEye", Parent = CoreGui})
+local Main = Make("Frame", {Parent = Gui, Size = UDim2.new(0, 420, 0, 280), Position = UDim2.new(1, -440, 1, -300), BackgroundColor3 = Color3.fromRGB(15, 15, 20), BorderSizePixel = 2, BorderColor3 = Color3.fromRGB(255, 80, 120), Active = true, Draggable = true})
+Make("TextLabel", {Parent = Main, Size = UDim2.new(1, 0, 0, 25), BackgroundColor3 = Color3.fromRGB(255, 80, 120), Text = " 👁️ MOFENK EYE - NETWORK SPY", TextColor3 = Color3.fromRGB(255, 255, 255), Font = Enum.Font.GothamBold, TextSize = 12, TextXAlignment = Enum.TextXAlignment.Left})
+
+local Search = Make("TextBox", {Parent = Main, Size = UDim2.new(1, -170, 0, 25), Position = UDim2.new(0, 5, 0, 30), BackgroundColor3 = Color3.fromRGB(25, 25, 30), TextColor3 = Color3.fromRGB(255, 255, 255), PlaceholderText = " 🔍 Cari remote/argumen...", Font = Enum.Font.Code, TextSize = 12, TextXAlignment = Enum.TextXAlignment.Left})
+local BtnCopy = Make("TextButton", {Parent = Main, Size = UDim2.new(0, 75, 0, 25), Position = UDim2.new(1, -160, 0, 30), BackgroundColor3 = Color3.fromRGB(50, 150, 80), Text = "COPY ALL", TextColor3 = Color3.fromRGB(255, 255, 255), Font = Enum.Font.GothamBold, TextSize = 10})
+local BtnClear = Make("TextButton", {Parent = Main, Size = UDim2.new(0, 75, 0, 25), Position = UDim2.new(1, -80, 0, 30), BackgroundColor3 = Color3.fromRGB(200, 50, 50), Text = "CLEAR", TextColor3 = Color3.fromRGB(255, 255, 255), Font = Enum.Font.GothamBold, TextSize = 10})
+
+local Scroll = Make("ScrollingFrame", {Parent = Main, Size = UDim2.new(1, -10, 1, -65), Position = UDim2.new(0, 5, 0, 60), BackgroundTransparency = 1, ScrollBarThickness = 3})
+local Layout = Make("UIListLayout", {Parent = Scroll, Padding = UDim.new(0, 3)})
+
+-- [ LOGIKA SPY & COPY ]
+local LogHistory = {}
+local function formatData(o, d)
+    d = d or 0
+    if d > 2 then return "{...}" end
+    if type(o) == 'table' then
+        local s = '{' for k,v in pairs(o) do s = s .. tostring(k) .. '=' .. formatData(v, d+1) .. ', ' end return s .. '}'
+    elseif typeof(o) == "Instance" then return "<" .. o.Name .. ">"
+    elseif type(o) == 'string' then return '"' .. o .. '"' else return tostring(o) end
+end
+
+local function AddLog(name, method, args)
+    local argStr = ""
+    for i, v in ipairs(args) do argStr = argStr .. "Arg["..i.."]: " .. formatData(v) .. " | " end
+    if argStr == "" then argStr = "Tidak ada argumen" end
+
+    local fullStr = "[" .. os.date("%X") .. "] " .. name .. " \n   -> " .. argStr
+    table.insert(LogHistory, fullStr)
+    
+    local isGold = string.match(string.lower(name), "money") or string.match(string.lower(name), "roll")
+    
+    local Lbl = Make("TextLabel", {Parent = Scroll, Size = UDim2.new(1, 0, 0, 0), BackgroundTransparency = 1, TextColor3 = isGold and Color3.fromRGB(255, 215, 0) or Color3.fromRGB(200, 255, 200), Text = fullStr, Font = Enum.Font.Code, TextSize = 11, TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextXAlignment.Top, TextWrapped = true, AutomaticSize = Enum.AutomaticSize.Y})
+    
+    local q = string.lower(Search.Text)
+    if q ~= "" and not string.find(string.lower(fullStr), q) then Lbl.Visible = false end
+    task.wait(0.05); Scroll.CanvasSize = UDim2.new(0, 0, 0, Layout.AbsoluteContentSize.Y + 5); Scroll.CanvasPosition = Vector2.new(0, 9999)
+end
+
+BtnCopy.MouseButton1Click:Connect(function() pcall(function() setclipboard(table.concat(LogHistory, "\n\n")); BtnCopy.Text = "COPIED!"; task.wait(1); BtnCopy.Text = "COPY ALL" end) end)
+BtnClear.MouseButton1Click:Connect(function() LogHistory = {}; for _,v in pairs(Scroll:GetChildren()) do if v:IsA("TextLabel") then v:Destroy() end end end)
+Search:GetPropertyChangedSignal("Text"):Connect(function() local q = string.lower(Search.Text) for _,v in pairs(Scroll:GetChildren()) do if v:IsA("TextLabel") then v.Visible = (q == "" or string.find(string.lower(v.Text), q)) end end end)
+
+-- [ HOOKING INTI ]
+local mt = getrawmetatable(game)
+local oldNamecall = mt.__namecall
+setreadonly(mt, false)
+mt.__namecall = newcclosure(function(self, ...)
+    local m = getnamecallmethod()
+    if not checkcaller() and (m == "FireServer" or m == "InvokeServer") then
+        task.spawn(AddLog, self.Name, m, {...})
+    end
+    return oldNamecall(self, ...)
+end)
+setreadonly(mt, true)
