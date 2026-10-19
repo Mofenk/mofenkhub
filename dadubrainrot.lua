@@ -1,6 +1,6 @@
 -- =====================================================================
--- 👑 MOFENKHUB V124 — FINAL ENCRYPTED CORE BYPASS EDITION
--- Game: Dadu Brainrot! | Universal Scrambler & Encrypted Remote Resolver
+-- 👑 MOFENKHUB V125 — FINAL DUNGEON STATE & COMBAT MASTERPIECE
+-- Game: Dadu Brainrot! | Integrated DungeonShopState & Automated Combat
 -- =====================================================================
 
 local Players = game:GetService("Players")
@@ -15,6 +15,7 @@ local LocalPlayer = Players.LocalPlayer
 local uiTarget
 pcall(function() uiTarget = CoreGui end)
 if not uiTarget then uiTarget = LocalPlayer:WaitForChild("PlayerGui") end
+end)
 for _, v in pairs(uiTarget:GetChildren()) do 
     if v.Name == "MofenkHubUltimate" or v.Name == "MofenkSpyTerminal" or v.Name == "Rayfield" then 
         pcall(function() v:Destroy() end) 
@@ -73,16 +74,14 @@ _G.Mofenk = {
     SpyEnabled = true
 }
 
--- PENCARIAN REMOTES DENGAN ENCRYPTED RESOLVER
+-- PENCARIAN REMOTES AMAN DENGAN DUNGEON STATE RESOLVER
 local Remotes = ReplicatedStorage:WaitForChild("Remotes", 5)
 
 local function getEncryptedRemote(targetName)
     if Remotes then
-        -- 1. Cek langsung jika namanya cocok
         local exact = Remotes:FindFirstChild(targetName)
         if exact then return exact end
         
-        -- 2. Cek jika mengandung keyword mirip
         for _, child in ipairs(Remotes:GetChildren()) do
             local cName = string.lower(child.Name)
             if string.find(cName, string.lower(targetName)) then
@@ -90,10 +89,8 @@ local function getEncryptedRemote(targetName)
             end
         end
         
-        -- 3. Jika di-encrypt total oleh game, ambil remote berdasarkan urutan/tipe di dalam Remotes folder
         for _, child in ipairs(Remotes:GetChildren()) do
             if (child:IsA("RemoteEvent") or child:IsA("RemoteFunction")) and #child.Name > 20 then
-                -- Anggap string panjang di atas 20 karakter adalah remote terenkripsi game
                 return child
             end
         end
@@ -328,23 +325,23 @@ LocalPlayer.Idled:Connect(function()
 end)
 
 -- ==========================================
--- 7. UI RAYFIELD (V124 ENCRYPTED RESOLVER)
+-- 7. UI RAYFIELD (V125 DUNGEON STATE MASTER)
 -- ==========================================
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local Window = Rayfield:CreateWindow({
-   Name = "MofenkHub | Dadu Brainrot V124 Encrypted Core",
-   LoadingTitle = "Memuat MofenkHub V124...",
-   LoadingSubtitle = "Universal Scrambler & Encrypted Bypass",
+   Name = "MofenkHub | Dadu Brainrot V125 Master",
+   LoadingTitle = "Memuat MofenkHub V125...",
+   LoadingSubtitle = "Dungeon State & Combat Masterpiece",
    ConfigurationSaving = { Enabled = false },
    KeySystem = false
 })
 
-Rayfield:Notify({ Title = "MofenkHub V124 Loaded! 👑", Content = "Encrypted Core Resolver Aktif!", Duration = 5, Image = 6023426915 })
+Rayfield:Notify({ Title = "MofenkHub V125 Loaded! 👑", Content = "Dungeon State Master Aktif!", Duration = 5, Image = 6023426915 })
 
 -- TAB 1: HOME 🏠
 local TabHome = Window:CreateTab("Home 🏠", 6023426915)
 TabHome:CreateSection("👋 PROFIL & MONITOR")
-TabHome:CreateParagraph({Title = LocalPlayer.Name, Content = "Status: Terhubung (V124 Core Resolver)\nGame: [UPDATE 2] Dadu Brainrot!"})
+TabHome:CreateParagraph({Title = LocalPlayer.Name, Content = "Status: Terhubung (V125 Master)\nGame: [UPDATE 2] Dadu Brainrot!"})
 
 local ProfileParagraph = TabHome:CreateParagraph({Title = "📋 Profil Karakter", Content = "Memuat data..."})
 task.spawn(function()
@@ -423,9 +420,9 @@ TabInv:CreateSection("🎲 Toko & Upgrades")
 TabInv:CreateToggle({Name = "🎲 Auto Buy Dice", CurrentValue = false, Callback = function(V) _G.Mofenk.AutoBuyDice = V end})
 TabInv:CreateToggle({Name = "📈 Auto Buy Upgrade Nodes", CurrentValue = false, Callback = function(V) _G.Mofenk.AutoUpgradeNodes = V end})
 
--- TAB 4: DUNGEON & GATES ⚔️ (UNIVERSAL ENCRYPTED SOLVER)
+-- TAB 4: DUNGEON & GATES ⚔️ (INTEGRATED DUNGEON STATE)
 local TabDungeon = Window:CreateTab("Dungeon & Gates ⚔️", 6023426915)
-TabDungeon:CreateSection("⚔️ Encrypted Dungeon Solver & Auto Exit")
+TabDungeon:CreateSection("⚔️ Dungeon State & Auto Combat")
 TabDungeon:CreateDropdown({
     Name = "🚪 Pilih Floor Dungeon", 
     Options = {"Battle1", "Battle2", "Battle3", "Battle4", "Battle5"}, 
@@ -433,12 +430,13 @@ TabDungeon:CreateDropdown({
     Callback = function(Opt) _G.Mofenk.TargetFloor = Opt[1] end
 })
 TabDungeon:CreateToggle({
-    Name = "🚀 Auto Unified Dungeon (Bypass Encrypted Remotes)", 
+    Name = "🚀 Auto Unified Dungeon (DungeonShopState Integration)", 
     CurrentValue = false, 
     Callback = function(V) 
         _G.Mofenk.AutoDungeonGroup = V 
         if not V then
             pcall(function()
+                safeFireEncrypted("Auto Dungeon Exit", "DungeonShopState", false)
                 safeFireEncrypted("Auto Dungeon Exit", "SetAutoFightBoss", false)
                 safeFireEncrypted("Auto Dungeon Exit", "LeaveDungeon")
                 safeFireEncrypted("Auto Dungeon Exit", "RequestMyBaseSpawn")
@@ -448,6 +446,7 @@ TabDungeon:CreateToggle({
 })
 TabDungeon:CreateToggle({Name = "🐉 Auto Dragon Gate", CurrentValue = false, Callback = function(V) _G.Mofenk.AutoDragonGate = V end})
 TabDungeon:CreateButton({Name = "🏠 Return To Base (Keluar Manual)", Callback = function() 
+    safeFireEncrypted("Return To Base", "DungeonShopState", false)
     safeFireEncrypted("Return To Base", "SetAutoFightBoss", false)
     safeFireEncrypted("Return To Base", "LeaveDungeon")
     safeFireEncrypted("Return To Base", "RequestMyBaseSpawn") 
@@ -543,12 +542,10 @@ task.spawn(function()
                 safeFireEncrypted("Auto Upgrade Nodes", "UpgradeNodeRequest") 
             end
             
-            -- Unified Dungeon Group dengan Resolver Enkripsi Total
+            -- Unified Dungeon Group dengan DungeonShopState Integration
             if _G.Mofenk.AutoDungeonGroup then
+                safeFireEncrypted("Auto Dungeon", "DungeonShopState", _G.Mofenk.TargetFloor)
                 safeFireEncrypted("Auto Dungeon", "RequestDungeonTeleport", _G.Mofenk.TargetFloor)
-                task.wait(0.2)
-                safeFireEncrypted("Auto Dungeon", "RequestGatewayTeleport", _G.Mofenk.TargetFloor)
-                task.wait(0.2)
                 safeFireEncrypted("Auto Dungeon", "JoinDungeon", _G.Mofenk.TargetFloor)
                 safeFireEncrypted("Auto Dungeon", "StartDungeon", _G.Mofenk.TargetFloor)
                 safeFireEncrypted("Auto Dungeon", "SetAutoFightBoss", true)
