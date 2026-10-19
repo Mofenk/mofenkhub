@@ -1,6 +1,6 @@
 -- =====================================================================
--- 👑 MOFENKHUB V155 — NATIVE REMOTE AUTO SELL & FULL SUITE
--- Game: Dadu Brainrot! | Fixed Based On Console Data Scan
+-- 👑 MOFENKHUB V156 — UUID AUTO SELL & DATA SCANNER MASTER
+-- Game: Dadu Brainrot! | Fixed "Couldn't Sell That Item" Issue
 -- =====================================================================
 
 local Players = game:GetService("Players")
@@ -61,7 +61,7 @@ local Remotes = ReplicatedStorage:WaitForChild("Remotes", 5)
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 -- ==========================================
--- 3. AUTO EXECUTE (QUEUE ON TELEPORT) ENGINE
+-- 3. AUTO EXECUTE (QUEUE ON TELEPORT)
 -- ==========================================
 local function ApplyQueueOnTeleport()
     if _G.Mofenk.AutoExecute then
@@ -118,10 +118,10 @@ local function ScanInventoryData()
         end
     end
 
-    if LocalPlayer.PlayerGui:FindFirstChild("Main") or LocalPlayer.PlayerGui:FindFirstChild("Inventory") then
+    if LocalPlayer.PlayerGui:FindFirstChild("Main") or LocalPlayer.PlayerGui:FindFirstChild("Inventory") or LocalPlayer.PlayerGui:FindFirstChild("Backpack") then
         print("--- PLAYERGUI INVENTORY OBJECTS ---")
         for _, gui in ipairs(LocalPlayer.PlayerGui:GetDescendants()) do
-            if string.find(string.lower(gui.Name), "item") or string.find(string.lower(gui.Name), "brainrot") or string.find(string.lower(gui.Name), "card") then
+            if string.find(string.lower(gui.Name), "item") or string.find(string.lower(gui.Name), "brainrot") or string.find(string.lower(gui.Name), "unit") then
                 print("- GUI Obj: " .. gui.Name .. " (" .. gui.ClassName .. ") -> Parent: " .. gui.Parent.Name)
             end
         end
@@ -166,7 +166,7 @@ local function DebugLog(feature, details)
             Duration = 3,
             Image = 4483362458
         })
-        print("[MofenkHub V155 DEBUG] " .. feature .. " | " .. details)
+        print("[MofenkHub V156 DEBUG] " .. feature .. " | " .. details)
     end
 end
 
@@ -192,7 +192,7 @@ local function safeFireEncrypted(featureName, targetName, ...)
 end
 
 -- ==========================================
--- 6. FUNGSI EKSEKUSI UTAMA (AUTO SELL V155 FIXED)
+-- 6. FUNGSI EKSEKUSI UTAMA
 -- ==========================================
 local function TriggerRollSystem()
     pcall(function()
@@ -255,14 +255,10 @@ local function TriggerUniversalIndexClaims()
     end)
 end
 
--- V155 FIXED AUTO SELL ENGINE
-local function ExecuteV155RemoteSell()
+-- V156 HYBRID AUTO SELL ENGINE (PERBAIKAN TOTAL INVENTORY SELL)
+local function ExecuteV156RemoteSell()
     pcall(function()
         if not _G.Mofenk.AutoSell then return end
-        
-        -- 1. Paksa Aktifkan AutoSell State di Server Game
-        safeFireEncrypted("Auto Sell System", "AutoSellStateChanged", true)
-        safeFireEncrypted("Auto Sell System", "RequestAutoSellState")
 
         local rarityMap = {
             Common = _G.Mofenk.SellCommon, Uncommon = _G.Mofenk.SellUncommon,
@@ -277,7 +273,8 @@ local function ExecuteV155RemoteSell()
             Secret = _G.Mofenk.SellSecret
         }
 
-        -- 2. Sinkronkan Setelan AutoSell Bawaan Game
+        -- 1. Sync Native Server Settings (Sangat Ampuh Saat Rolling)
+        safeFireEncrypted("Auto Sell System", "AutoSellStateChanged", true)
         for rName, isEnabled in pairs(rarityMap) do
             if isEnabled then
                 safeFireEncrypted("Sell Filter", "ToggleAutoSellRarityRequest", rName, true)
@@ -285,17 +282,44 @@ local function ExecuteV155RemoteSell()
             end
         end
 
-        -- 3. Direct Item Scan & Sell (Dijual langsung dari UI Player)
+        -- 2. Scan PlayerGui & Extract ID Unik untuk Menjual Item yang Sudah Ada di Inventory
         local playerGui = LocalPlayer:FindFirstChild("PlayerGui")
         if playerGui then
             for _, guiObj in ipairs(playerGui:GetDescendants()) do
-                if guiObj:IsA("Frame") or guiObj:IsA("ImageLabel") or guiObj:IsA("ImageButton") then
+                if guiObj:IsA("Frame") or guiObj:IsA("ImageButton") or guiObj:IsA("TextButton") then
                     local nameLower = string.lower(guiObj.Name)
+                    
+                    -- Cek apakah objek UI cocok dengan Rarity yang dicentang
                     for rName, isEnabled in pairs(rarityMap) do
-                        if isEnabled and string.find(nameLower, string.lower(rName)) then
-                            safeFireEncrypted("Auto Sell Direct", "SellItemRequest", guiObj)
-                            safeFireEncrypted("Auto Sell Direct", "SellItemRequest", guiObj.Name)
+                        if isEnabled and (string.find(nameLower, string.lower(rName)) or string.find(string.lower(guiObj:GetAttribute("Rarity") or ""), string.lower(rName))) then
+                            
+                            -- Ekstraksi UUID/ID Unik dari Attribute UI
+                            local itemUUID = guiObj:GetAttribute("UUID") or guiObj:GetAttribute("ID") or guiObj:GetAttribute("ItemId") or guiObj:GetAttribute("Key")
+                            
+                            if itemUUID then
+                                safeFireEncrypted("Auto Sell UUID", "SellItemRequest", itemUUID)
+                            else
+                                -- Fallback 1: Jika ID ada di dalam Value child
+                                local idVal = guiObj:FindFirstChild("UUID") or guiObj:FindFirstChild("ID") or guiObj:FindFirstChild("ItemId")
+                                if idVal and idVal:IsA("ValueBase") then
+                                    safeFireEncrypted("Auto Sell Value", "SellItemRequest", idVal.Value)
+                                else
+                                    -- Fallback 2: Trigger Klik UI Tombol Sell Asli Game
+                                    for _, conn in pairs(getconnections(guiObj.MouseButton1Click) or {}) do
+                                        conn:Fire()
+                                    end
+                                end
+                            end
                         end
+                    end
+                end
+            end
+            
+            -- Trigger Tombol Global "Sell Selected" / "Sell All Filtered" di UI Game jika ada
+            for _, btn in ipairs(playerGui:GetDescendants()) do
+                if (btn:IsA("TextButton") or btn:IsA("ImageButton")) and string.find(string.lower(btn.Name), "sell") then
+                    for _, conn in pairs(getconnections(btn.MouseButton1Click) or {}) do
+                        conn:Fire()
                     end
                 end
             end
@@ -430,17 +454,17 @@ task.spawn(function()
 end)
 
 -- ==========================================
--- 8. UI RAYFIELD (V155 MASTER)
+-- 8. UI RAYFIELD (V156 MASTER)
 -- ==========================================
 local Window = Rayfield:CreateWindow({
-   Name = "MofenkHub | Dadu Brainrot V155 👑",
-   LoadingTitle = "Memuat MofenkHub V155...",
-   LoadingSubtitle = "Native Remote Sell Fixed Engine",
+   Name = "MofenkHub | Dadu Brainrot V156 👑",
+   LoadingTitle = "Memuat MofenkHub V156...",
+   LoadingSubtitle = "UUID Auto Sell Engine Fixed",
    ConfigurationSaving = { Enabled = false },
    KeySystem = false
 })
 
-Rayfield:Notify({ Title = "MofenkHub V155 Ready! 👑", Content = "Auto Sell Native Server Fix Berhasil!", Duration = 5, Image = 6023426915 })
+Rayfield:Notify({ Title = "MofenkHub V156 Ready! 👑", Content = "Auto Sell UUID Extractor Fix Berhasil!", Duration = 5, Image = 6023426915 })
 
 -- TAB 1: HOME 🏠
 local TabHome = Window:CreateTab("Home 🏠", 6023426915)
@@ -513,7 +537,7 @@ end})
 
 -- TAB 4: INVENTORY & SELL 📦
 local TabInv = Window:CreateTab("Inventory & Sell 📦", 6023426915)
-TabInv:CreateSection("💲 Auto Sell (Native Remote V155)")
+TabInv:CreateSection("💲 Auto Sell (UUID Fixed V156)")
 TabInv:CreateToggle({Name = "🗑️ Auto Sell", CurrentValue = false, Callback = function(V) 
     _G.Mofenk.AutoSell = V 
     safeFireEncrypted("Sell Master Switch", "AutoSellStateChanged", V)
@@ -636,7 +660,7 @@ TabDev:CreateToggle({Name = "Aktifkan Deep Debugger (Notifikasi UI)", CurrentVal
 end})
 
 -- =====================================================================
--- 9. BACKGROUND MASTER ENGINE
+-- 8. BACKGROUND MASTER ENGINE
 -- =====================================================================
 local lastCollect, lastSell, lastEquip = os.time(), os.time(), os.time()
 
@@ -680,7 +704,7 @@ task.spawn(function()
             end
             
             if _G.Mofenk.AutoSell and (os.time() - lastSell >= _G.Mofenk.SellEvery) then
-                ExecuteV155RemoteSell()
+                ExecuteV156RemoteSell()
                 lastSell = os.time()
             end
             
