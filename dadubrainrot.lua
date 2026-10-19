@@ -1,6 +1,6 @@
 -- =====================================================================
--- 👑 MOFENKHUB V94 — PRECISION MONEY COLLECTOR EDITION
--- Game: Dadu Brainrot! | Auto Collect Uang & Base Gacor Tanpa Meleset
+-- 👑 MOFENKHUB V96 — ULTIMATE AFK & AUTO RECONNECT EDITION
+-- Game: Dadu Brainrot! | Anti-DC, Auto Reconnect, & Full Features
 -- =====================================================================
 
 local Players = game:GetService("Players")
@@ -8,6 +8,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local CoreGui = game:GetService("CoreGui")
 local TeleportService = game:GetService("TeleportService")
 local HttpService = game:GetService("HttpService")
+local GuiService = game:GetService("GuiService")
 local VirtualUser = game:GetService("VirtualUser")
 local LocalPlayer = Players.LocalPlayer
 
@@ -19,7 +20,7 @@ for _, v in pairs(uiTarget:GetChildren()) do
     if v.Name == "MofenkHubUltimate" or v.Name == "MofenkSpyTerminal" then v:Destroy() end 
 end
 
--- 2. KONFIGURASI GLOBAL
+-- 2. KONFIGURASI GLOBAL (DENGAN AFK & AUTO RECONNECT)
 _G.Mofenk = {
     AutoRoll = false, AutoCollectMoney = false, CollectEvery = 1,
     AutoRebirth = false, AutoEquipBest = false, EquipBestEvery = 15,
@@ -32,6 +33,7 @@ _G.Mofenk = {
     AutoDungeon = false, TargetFloor = "Battle1", AutoBuyDungeonShop = false,
     WalkSpeedVal = 16, EnableWalkSpeed = false,
     AutoBuyDice = false, AutoUpgradeNodes = false,
+    AutoReconnect = true, -- Fitur Auto Reconnect Aktif Default
     SpyEnabled = false
 }
 
@@ -50,17 +52,43 @@ local function safeFire(remoteName, ...)
 end
 
 -- ==========================================
--- 3. FUNGSI PENYEDOT UANG & BASE PRESISI
+-- 3. SISTEM AUTO RECONNECT & ANTI-AFK
+-- ==========================================
+-- Deteksi Prompt Error / Disconnect dari Roblox
+local CoreGui = game:GetService("CoreGui")
+local PromptOverlay = CoreGui:FindFirstChild("PromptOverlay", true)
+
+if PromptOverlay then
+    PromptOverlay.ChildAdded:Connect(function(child)
+        if _G.Mofenk.AutoReconnect and (child.Name == "ErrorPrompt" or child.Name == "DisconnectPrompt") then
+            print("🔄 [MOFENK RECONNECT] Terdeteksi DC! Mencoba menyambung ulang ke server...")
+            task.wait(2)
+            pcall(function()
+                TeleportService:Teleport(game.PlaceId, LocalPlayer)
+            end)
+        end
+    end)
+end
+
+-- Fallback Teleport Handler jika koneksi terputus total
+local vu = game:GetService("VirtualUser")
+LocalPlayer.Idled:Connect(function()
+    vu:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+    task.wait(1)
+    vu:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+    print("🛡️ [MOFENK ANTI-AFK] Sinyal anti-kick dikirim!")
+end)
+
+-- ==========================================
+-- 4. FUNGSI PENYEDOT UANG & BASE
 -- ==========================================
 local function CollectMoneyAndBase()
     pcall(function()
-        -- 1. Tembak Remote Event Uang (Mencakup variasi nama remote collect di game)
         safeFire("MoneyCollected")
         safeFire("CollectMoney")
         safeFire("ClaimCash")
         safeFire("ClaimMoney")
 
-        -- 2. Ambil semua ProximityPrompt atau Part uang/drops di Workspace & Base
         local char = LocalPlayer.Character
         if char and char:FindFirstChild("HumanoidRootPart") then
             local hrp = char.HumanoidRootPart
@@ -71,15 +99,6 @@ local function CollectMoneyAndBase()
                             fireproximityprompt(obj)
                         end
                     end)
-                elseif obj:IsA("TouchInterest") and obj.Parent then
-                    pcall(function()
-                        local part = obj.Parent
-                        if part:IsA("BasePart") and (part.Position - hrp.Position).Magnitude <= 20 then
-                            firetouchinterest(hrp, part, 0)
-                            task.wait()
-                            firetouchinterest(hrp, part, 1)
-                        end
-                    end)
                 end
             end
         end
@@ -87,7 +106,7 @@ local function CollectMoneyAndBase()
 end
 
 -- ==========================================
--- 4. CONSOLE SPY & SCANNER
+-- 5. CONSOLE SPY & UTILITIES
 -- ==========================================
 local function dumpData(o, depth)
     depth = depth or 0
@@ -118,21 +137,6 @@ mt.__namecall = newcclosure(function(self, ...)
 end)
 setreadonly(mt, true)
 
-local function FullMapScan()
-    print("\n==================================================")
-    print("🗺️ [MOFENK MAP SCANNER] Memindai Objek...")
-    print("==================================================")
-    for _, obj in ipairs(workspace:GetDescendants()) do
-        if obj:IsA("Model") or obj:IsA("Part") then
-            local n = string.lower(obj.Name)
-            if string.find(n, "base") or string.find(n, "money") or string.find(n, "cash") or string.find(n, "brainrot") then
-                print("📍 [" .. obj.ClassName .."] " .. obj.FullName)
-            end
-        end
-    end
-    print("==================================================\n")
-end
-
 local function CopyServerID() pcall(function() if setclipboard then setclipboard(game.JobId) end end) end
 local function ServerHop()
     pcall(function()
@@ -148,41 +152,38 @@ local function ServerHop()
     end)
 end
 
--- 5. RAYFIELD UI
+-- 6. RAYFIELD UI
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local Window = Rayfield:CreateWindow({
-   Name = "MofenkHub | Dadu Brainrot V94 Collector Fix",
-   LoadingTitle = "Memuat MofenkHub V94...",
-   LoadingSubtitle = "Auto Collect Money Fixed",
+   Name = "MofenkHub | Dadu Brainrot V96 AFK & Reconnect",
+   LoadingTitle = "Memuat MofenkHub V96...",
+   LoadingSubtitle = "Anti-AFK & Auto Reconnect Ready",
    ConfigurationSaving = { Enabled = false },
    KeySystem = false
 })
 
-Rayfield:Notify({ Title = "MofenkHub V94 Loaded! 👑", Content = "Fix Auto Collect Uang aktif!", Duration = 5, Image = 6023426915 })
+Rayfield:Notify({ Title = "MofenkHub V96 Loaded! 👑", Content = "Anti-AFK & Auto Reconnect aktif otomatis!", Duration = 5, Image = 6023426915 })
 
 -- TAB 1: HOME 🏠
 local TabHome = Window:CreateTab("Home 🏠", 6023426915)
 TabHome:CreateSection("👋 WELCOME BACK")
-TabHome:CreateParagraph({Title = LocalPlayer.Name, Content = "Status: Terhubung ke MofenkHub V94\nGame: [UPDATE 2] Dadu Brainrot!\nMode: Collect Uang & Base Gacor"})
+TabHome:CreateParagraph({Title = LocalPlayer.Name, Content = "Status: Terhubung ke MofenkHub V96\nGame: [UPDATE 2] Dadu Brainrot!\nMode: AFK & Auto Reconnect Gacor"})
 
 -- TAB 2: MAIN 🎮
 local TabMain = Window:CreateTab("Main 🎮", 6023426915)
 TabMain:CreateSection("🔄 Farm & Roll Utama")
 TabMain:CreateToggle({Name = "🎲 Auto Roll", CurrentValue = false, Callback = function(V) _G.Mofenk.AutoRoll = V end})
-TabMain:CreateToggle({Name = "💰 Auto Collect Money (Fixed)", CurrentValue = false, Callback = function(V) _G.Mofenk.AutoCollectMoney = V end})
+TabMain:CreateToggle({Name = "💰 Auto Collect Money", CurrentValue = false, Callback = function(V) _G.Mofenk.AutoCollectMoney = V end})
 TabMain:CreateSlider({Name = "⏱️ Collect Every (s)", Range = {1, 10}, Increment = 1, Suffix = "s", CurrentValue = 1, Callback = function(V) _G.Mofenk.CollectEvery = V end})
 TabMain:CreateToggle({Name = "🔄 Auto Rebirth", CurrentValue = false, Callback = function(V) _G.Mofenk.AutoRebirth = V end})
 TabMain:CreateToggle({Name = "🛡️ Auto Equip Best", CurrentValue = false, Callback = function(V) _G.Mofenk.AutoEquipBest = V end})
 TabMain:CreateSlider({Name = "⏱️ Equip Best Every (s)", Range = {5, 60}, Increment = 1, Suffix = "s", CurrentValue = 15, Callback = function(V) _G.Mofenk.EquipBestEvery = V end})
 
-TabMain:CreateSection("🎁 Claims (Quest & Index)")
+TabMain:CreateSection("🎁 Claims & Base")
 TabMain:CreateToggle({Name = "📜 Auto Claim Quests", CurrentValue = false, Callback = function(V) _G.Mofenk.AutoClaimQuests = V end})
 TabMain:CreateToggle({Name = "📖 Auto Claim Index Rewards", CurrentValue = false, Callback = function(V) _G.Mofenk.AutoClaimIndex = V end})
-
-TabMain:CreateSection("🧠 Base & Upgrades")
-TabMain:CreateToggle({Name = "🏡 Auto Collect/Interact Base Brainrots", CurrentValue = false, Callback = function(V) _G.Mofenk.AutoCollectBase = V end})
+TabMain:CreateToggle({Name = "🏡 Auto Collect Base Brainrots", CurrentValue = false, Callback = function(V) _G.Mofenk.AutoCollectBase = V end})
 TabMain:CreateToggle({Name = "⚡ Auto Upgrade Placed Brainrots", CurrentValue = false, Callback = function(V) _G.Mofenk.AutoUpgradeBrainrot = V end})
-TabMain:CreateSlider({Name = "📊 Max Level", Range = {1, 100}, Increment = 1, CurrentValue = 40, Callback = function(V) _G.Mofenk.MaxLevelBrainrot = V end})
 
 -- TAB 3: INVENTORY 📦
 local TabInv = Window:CreateTab("Inventory 📦", 6023426915)
@@ -191,7 +192,7 @@ TabInv:CreateToggle({Name = "🗑️ Auto Sell", CurrentValue = false, Callback 
 TabInv:CreateSlider({Name = "⏱️ Sell Every (s)", Range = {1, 30}, Increment = 1, Suffix = "s", CurrentValue = 3, Callback = function(V) _G.Mofenk.SellEvery = V end})
 TabInv:CreateDropdown({
     Name = "📌 Sell Rarities",
-    Options = {"Common, Uncommon", "Rare, Epic", "Legendary, Mythical", "All Rarities"},
+    Options = {"Common, Uncommon", "Rare, Epic", "Legendary, Mythical", "Divine, Secret", "All Rarities"},
     CurrentOption = {"Common, Uncommon"},
     Callback = function(Opt) _G.Mofenk.SelectedRarity = Opt[1] end
 })
@@ -199,16 +200,6 @@ TabInv:CreateToggle({Name = "🔒 Keep Mutated", CurrentValue = false, Callback 
 TabInv:CreateToggle({Name = "🔒 Keep Traited", CurrentValue = false, Callback = function(V) _G.Mofenk.KeepTraited = V end})
 TabInv:CreateToggle({Name = "🔒 Keep Finishes", CurrentValue = false, Callback = function(V) _G.Mofenk.KeepFinishes = V end})
 TabInv:CreateToggle({Name = "🔒 Keep Variants", CurrentValue = false, Callback = function(V) _G.Mofenk.KeepVariants = V end})
-
-TabInv:CreateSection("🧬 Trait Roll")
-TabInv:CreateToggle({Name = "✨ Auto Roll Traits", CurrentValue = false, Callback = function(V) _G.Mofenk.AutoTraitRoll = V end})
-TabInv:CreateDropdown({
-    Name = "🛑 Stop On Traits",
-    Options = {"None", "Godly", "Secret", "Celestial", "Divine"},
-    CurrentOption = {"None"},
-    Callback = function(Opt) _G.Mofenk.StopOnTraits = Opt[1] end
-})
-TabInv:CreateButton({Name = "🔄 Refresh Brainrots", Callback = function() safeFire("RequestInventorySnapshot") end})
 
 -- TAB 4: DUNGEON ⚔️
 local TabDungeon = Window:CreateTab("Dungeon ⚔️", 6023426915)
@@ -221,39 +212,31 @@ TabDungeon:CreateDropdown({
 })
 TabDungeon:CreateToggle({Name = "⚔️ Auto Dungeon & Boss Fight", CurrentValue = false, Callback = function(V) _G.Mofenk.AutoDungeon = V end})
 TabDungeon:CreateButton({Name = "🏠 Return To Base", Callback = function() safeFire("RequestMyBaseSpawn") end})
-TabDungeon:CreateSection("🛒 Dungeon Shop")
-TabDungeon:CreateToggle({Name = "🛍️ Auto Buy Dungeon Shop Items", CurrentValue = false, Callback = function(V) _G.Mofenk.AutoBuyDungeonShop = V end})
 
--- TAB 5: PLAYER ⚡
-local TabPlayer = Window:CreateTab("Player ⚡", 6023426915)
-TabPlayer:CreateSection("🏃 Kecepatan Karakter (WalkSpeed)")
+-- TAB 5: PLAYER & AFK SETTINGS ⚡
+local TabPlayer = Window:CreateTab("Player & AFK ⚡", 6023426915)
+TabPlayer:CreateSection("🛡️ AFK & Reconnect Protection")
+TabPlayer:CreateToggle({
+    Name = "🔄 Auto Reconnect (Anti-DC Server)", 
+    CurrentValue = true, 
+    Callback = function(V) 
+        _G.Mofenk.AutoReconnect = V 
+    end
+})
+TabPlayer:CreateSection("🏃 WalkSpeed")
 TabPlayer:CreateToggle({Name = "⚡ Aktifkan Custom WalkSpeed", CurrentValue = false, Callback = function(V) _G.Mofenk.EnableWalkSpeed = V end})
 TabPlayer:CreateSlider({Name = "🏃 Kecepatan Jalan", Range = {16, 200}, Increment = 1, CurrentValue = 16, Callback = function(V) _G.Mofenk.WalkSpeedVal = V end})
-
 TabPlayer:CreateSection("🌐 Server Utilities")
 TabPlayer:CreateButton({Name = "📋 Copy Server JobID", Callback = function() CopyServerID(); Rayfield:Notify({Title = "Berhasil", Content = "JobID disalin!", Duration = 3}) end})
 TabPlayer:CreateButton({Name = "🔀 Server Hop", Callback = function() ServerHop() end})
 
-TabPlayer:CreateSection("⚡ Upgrades & Dice")
-TabPlayer:CreateToggle({Name = "🎲 Auto Buy Dice", CurrentValue = false, Callback = function(V) _G.Mofenk.AutoBuyDice = V end})
-TabPlayer:CreateToggle({Name = "📈 Auto Buy Upgrade Nodes", CurrentValue = false, Callback = function(V) _G.Mofenk.AutoUpgradeNodes = V end})
-
--- TAB 6: DEVELOPER, SPY & SCANNER 🛠️
+-- TAB 6: DEV & SPY 🛠️
 local TabDev = Window:CreateTab("Dev & Spy 🛠️", 6023426915)
-TabDev:CreateSection("🗺️ SCANNER")
-TabDev:CreateButton({Name = "🔍 Scan Objek Map", Callback = function() FullMapScan() end})
-TabDev:CreateSection("📡 SPY")
+TabDev:CreateSection("📡 CONSOLE SPY")
 TabDev:CreateToggle({Name = "Aktifkan Spy", CurrentValue = false, Callback = function(V) _G.Mofenk.SpyEnabled = V end})
-TabDev:CreateSection("🎵 MUSIK")
-local Music = Instance.new("Sound", CoreGui)
-Music.SoundId = "rbxassetid://9048375035"
-Music.Volume = 0.8 
-Music.Looped = true
-TabDev:CreateButton({Name = "▶️ Putar Musik", Callback = function() Music:Play() end})
-TabDev:CreateButton({Name = "⏹️ Hentikan Musik", Callback = function() Music:Stop() end})
 
 -- =====================================================================
--- 6. BACKGROUND ENGINE
+-- 7. BACKGROUND ENGINE
 -- =====================================================================
 local lastCollect, lastSell, lastEquip = os.time(), os.time(), os.time()
 
@@ -273,7 +256,6 @@ task.spawn(function()
             if _G.Mofenk.AutoClaimIndex then safeFire("RequestIndexRewards") end
             if _G.Mofenk.AutoUpgradeBrainrot then safeFire("UpgradeBrainrotRequest", 1) end
             
-            -- Auto Collect Uang & Base dipercepat & di-fix
             if _G.Mofenk.AutoCollectMoney and (os.time() - lastCollect >= _G.Mofenk.CollectEvery) then
                 CollectMoneyAndBase()
                 lastCollect = os.time()
@@ -287,7 +269,6 @@ task.spawn(function()
             
             if _G.Mofenk.AutoSell and (os.time() - lastSell >= _G.Mofenk.SellEvery) then
                 safeFire("SellAllRequest", _G.Mofenk.SelectedRarity)
-                safeFire("SetAutoSellUnderRequest", true, _G.Mofenk.KeepMutated)
                 lastSell = os.time()
             end
             if _G.Mofenk.AutoTraitRoll then safeFire("SpinTraitRequest") end
@@ -299,17 +280,6 @@ task.spawn(function()
                     VirtualUser:ClickButton1(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
                 end
             end
-            
-            if _G.Mofenk.AutoBuyDice then safeFire("DiceShopAction", "Buy", 1) end
         end)
     end
-end)
-
--- Anti AFK
-pcall(function()
-    LocalPlayer.Idled:Connect(function()
-        VirtualUser:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
-        task.wait(1)
-        VirtualUser:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
-    end)
 end)
