@@ -1,6 +1,6 @@
 -- =====================================================================
--- 👑 MOFENKHUB V134 — TOWER FIGHT INDEX & DIRECT INTERACTOR FIX
--- Game: Dadu Brainrot! | Fixed Tower Dropdown & Direct Fight Trigger
+-- 👑 MOFENKHUB V135 — ULTIMATE SELECT DUNGEON & TOWER MASTER
+-- Game: Dadu Brainrot! | Full Select Dungeon UI, Spy & All Features
 -- =====================================================================
 
 local Players = game:GetService("Players")
@@ -59,9 +59,9 @@ _G.Mofenk = {
     SellSecret = false,
     KeepMutated = false,
     KeepTraited = false,
-    -- Tower & Battle Group
-    AutoTowerFight = false, 
-    TargetFloor = "Battle1", 
+    -- Select Dungeon / Tower Group
+    AutoSelectDungeon = false, 
+    TargetTower = "Sahur Tower", 
     AutoDragonGate = false,
     -- Automation Extras
     AutoFuse = false,
@@ -109,7 +109,7 @@ local function safeFire(targetName, ...)
 end
 
 -- ==========================================
--- 3. FUNGSI EKSEKUSI UTAMA
+-- 3. FUNGSI EKSEKUSI UTAMA (LENGKAP)
 -- ==========================================
 local function TriggerRollSystem()
     pcall(function()
@@ -225,33 +225,29 @@ local function ExecuteAccurateSell()
     end)
 end
 
--- Eksekusi Tower Fight dengan konversi nomor index floor (Battle1 -> 1, dst)
-local function ExecuteTowerFightAction(floorStr)
+-- Eksekusi Select Dungeon / Tower Play Otomatis
+local function ExecuteSelectDungeonAction(towerName)
     pcall(function()
-        local floorNum = 1
-        if floorStr == "Battle2" then floorNum = 2
-        elseif floorStr == "Battle3" then floorNum = 3
-        elseif floorStr == "Battle4" then floorNum = 4
-        elseif floorStr == "Battle5" then floorNum = 5 end
-
-        -- Kirim berbagai variasi remote request tower fight & index lantai
-        safeFire("RequestDungeonTeleport", floorStr)
-        safeFire("RequestDungeonTeleport", floorNum)
-        safeFire("JoinDungeon", floorStr)
-        safeFire("JoinDungeon", floorNum)
-        safeFire("StartDungeon", floorStr)
-        safeFire("StartDungeon", floorNum)
-        safeFire("TowerBattleRequest", floorNum)
-        safeFire("StartTowerFight", floorNum)
+        -- Kirim berbagai variasi remote untuk memicu tombol Play / Select Dungeon sesuai game
+        safeFire("DungeonShopState", towerName)
+        safeFire("SelectDungeon", towerName)
+        safeFire("RequestDungeonTeleport", towerName)
+        safeFire("JoinDungeon", towerName)
+        safeFire("StartDungeon", towerName)
+        safeFire("PlayTowerRequest", towerName)
         safeFire("SetAutoFightBoss", true)
         safeFire("BossAttack")
 
-        -- Interaksi proximity prompt / tombol fisik di workspace menara
-        for _, obj in ipairs(workspace:GetDescendants()) do
-            if obj:IsA("ProximityPrompt") then
-                local pName = string.lower(obj.Parent.Name)
-                if string.find(pName, "tower") or string.find(pName, "menara") or string.find(pName, string.lower(floorStr)) then
-                    fireproximityprompt(obj)
+        -- Auto klik tombol Play hijau di GUI jika UI Select Dungeon sedang terbuka
+        for _, gui in ipairs(LocalPlayer.PlayerGui:GetDescendants()) do
+            if gui:IsA("TextButton" ) or gui:IsA("ImageButton") then
+                local bName = string.lower(gui.Name)
+                local bText = gui:IsA("TextButton") and string.lower(gui.Text) or ""
+                if bName == "play" or bText == "play" or string.find(bName, "dungeon") then
+                    -- Simulasi klik tombol play
+                    for _, conn in pairs(getconnections(gui.MouseButton1Click) or {}) do
+                        conn:Fire()
+                    end
                 end
             end
         end
@@ -302,7 +298,7 @@ end)
 setreadonly(mt, true)
 
 -- ==========================================
--- 5. UTILITIES & UI RAYFIELD (V134)
+-- 5. UTILITIES & UI RAYFIELD (V135 COMPLETE)
 -- ==========================================
 local function CopyServerID()
     pcall(function() if setclipboard then setclipboard(tostring(game.JobId)) end end)
@@ -328,7 +324,7 @@ local function ServerHop()
 end
 
 local function GetCharacterProfileInfo()
-    local info = "Akun: " .. LocalPlayer.Name .. " (ID: " .. tostring(LocalPlayer.UserId) .. ")\n"
+    local info = "Akun: " .. LocalPlayer.Name + " (ID: " .. tostring(LocalPlayer.UserId) .. ")\n"
     pcall(function()
         if LocalPlayer:FindFirstChild("leaderstats") then
             info = info + "--- Stats ---\n"
@@ -375,19 +371,19 @@ end)
 -- UI RAYFIELD
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local Window = Rayfield:CreateWindow({
-   Name = "MofenkHub | Dadu Brainrot V134 Tower Fix",
-   LoadingTitle = "Memuat MofenkHub V134...",
-   LoadingSubtitle = "Tower Fight Index Resolver",
+   Name = "MofenkHub | Dadu Brainrot V135 Ultimate Complete",
+   LoadingTitle = "Memuat MofenkHub V135...",
+   LoadingSubtitle = "Select Dungeon & Full Spy Restored",
    ConfigurationSaving = { Enabled = false },
    KeySystem = false
 })
 
-Rayfield:Notify({ Title = "MofenkHub V134 Loaded! 👑", Content = "Tower Fight Index Fix Aktif!", Duration = 5, Image = 6023426915 })
+Rayfield:Notify({ Title = "MofenkHub V135 Loaded! 👑", Content = "Select Dungeon & Full Fitur Aktif!", Duration = 5, Image = 6023426915 })
 
 -- TAB 1: HOME 🏠
 local TabHome = Window:CreateTab("Home 🏠", 6023426915)
 TabHome:CreateSection("👋 PROFIL & MONITOR")
-TabHome:CreateParagraph({Title = LocalPlayer.Name, Content = "Status: Terhubung (V134 Tower Fix)\nGame: [UPDATE 2] Dadu Brainrot!"})
+TabHome:CreateParagraph({Title = LocalPlayer.Name, Content = "Status: Terhubung (V135 Ultimate)\nGame: [UPDATE 2] Dadu Brainrot!"})
 
 local ProfileParagraph = TabHome:CreateParagraph({Title = "📋 Profil Karakter", Content = "Memuat data..."})
 task.spawn(function()
@@ -468,22 +464,22 @@ TabInv:CreateSection("🎲 Toko & Upgrades")
 TabInv:CreateToggle({Name = "🎲 Auto Buy Dice", CurrentValue = false, Callback = function(V) _G.Mofenk.AutoBuyDice = V end})
 TabInv:CreateToggle({Name = "📈 Auto Buy Upgrade Nodes", CurrentValue = false, Callback = function(V) _G.Mofenk.AutoUpgradeNodes = V end})
 
--- TAB 4: TOWER & GATES ⚔️ (TOWER FIGHT INDEX MASTER)
-local TabTower = Window:CreateTab("Tower & Gates ⚔️", 6023426915)
-TabTower:CreateSection("⚔️ Tower Fight & Floor Selection")
+-- TAB 4: SELECT DUNGEON & TOWER ⚔️ (NEW ACCURATE SELECT DUNGEON)
+local TabTower = Window:CreateTab("Dungeon & Tower ⚔️", 6023426915)
+TabTower:CreateSection("⚔️ Select Dungeon & Auto Play")
 TabTower:CreateDropdown({
-    Name = "🚪 Pilih Floor Menara (Tower)", 
-    Options = {"Battle1", "Battle2", "Battle3", "Battle4", "Battle5"}, 
-    CurrentOption = {"Battle1"}, 
-    Callback = function(Opt) _G.Mofenk.TargetFloor = Opt[1] end
+    Name = "🚪 Pilih Tower / Dungeon", 
+    Options = {"Sahur Tower", "Orcala Tower", "Bombardiro Tower", "Spiderini Tower", "Larila Tower"}, 
+    CurrentOption = {"Sahur Tower"}, 
+    Callback = function(Opt) _G.Mofenk.TargetTower = Opt[1] end
 })
 TabTower:CreateToggle({
-    Name = "🚀 Auto Tower Fight (Index & Direct Trigger)", 
+    Name = "🚀 Auto Select Dungeon & Play", 
     CurrentValue = false, 
     Callback = function(V) 
-        _G.Mofenk.AutoTowerFight = V 
+        _G.Mofenk.AutoSelectDungeon = V 
         if V then
-            ExecuteTowerFightAction(_G.Mofenk.TargetFloor)
+            ExecuteSelectDungeonAction(_G.Mofenk.TargetTower)
         else
             pcall(function()
                 safeFire("SetAutoFightBoss", false)
@@ -517,7 +513,7 @@ TabPlayer:CreateButton({Name = "🔀 Server Hop (Pindah Server)", Callback = fun
     ServerHop() 
 end})
 
--- TAB 6: DEV & SPY 🛠️
+-- TAB 6: DEV & SPY 🛠️ (RESTORED)
 local TabDev = Window:CreateTab("Dev & Spy 🛠️", 6023426915)
 TabDev:CreateSection("🗺️ ADVANCED MAP & REMOTE SCANNER")
 TabDev:CreateButton({Name = "🔍 Jalankan Advanced Scanner", Callback = function() 
@@ -590,8 +586,9 @@ task.spawn(function()
                 safeFire("UpgradeNodeRequest") 
             end
             
-            -- Tower Fight Loop
-            if _G.Mofenk.AutoTowerFight then
+            -- Select Dungeon / Tower Loop
+            if _G.Mofenk.AutoSelectDungeon then
+                ExecuteSelectDungeonAction(_G.Mofenk.TargetTower)
                 safeFire("SetAutoFightBoss", true)
                 safeFire("BossAttack")
             end
