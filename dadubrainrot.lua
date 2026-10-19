@@ -1,6 +1,6 @@
 -- =====================================================================
--- 👑 MOFENKHUB V121 — ULTIMATE SMART DUNGEON & EXIT COMBAT CONTROL
--- Game: Dadu Brainrot! | Precise Dungeon Sequence & Auto Exit Combat
+-- 👑 MOFENKHUB V122 — FULL DEBUG & ERROR CONSOLE INSPECTOR EDITION
+-- Game: Dadu Brainrot! | Smart Error Logging & Feature Inspector
 -- =====================================================================
 
 local Players = game:GetService("Players")
@@ -58,7 +58,7 @@ _G.Mofenk = {
     SellSecret = false,
     KeepMutated = false,
     KeepTraited = false,
-    -- Unified Dungeon & Gateway Group (Smart Exit Included)
+    -- Unified Dungeon & Gateway Group
     AutoDungeonGroup = false, 
     TargetFloor = "Battle1", 
     AutoDragonGate = false,
@@ -70,10 +70,10 @@ _G.Mofenk = {
     AutoBuyDice = false, 
     AutoUpgradeNodes = false,
     AutoReconnect = true,
-    SpyEnabled = false
+    SpyEnabled = true -- Default aktif untuk menangkap error
 }
 
--- PENCARIAN REMOTES AMAN & DINAMIS
+-- PENCARIAN REMOTES AMAN DENGAN DEBUGGER ERROR
 local Remotes = ReplicatedStorage:WaitForChild("Remotes", 5)
 
 local function getRemote(name)
@@ -83,45 +83,58 @@ local function getRemote(name)
     return nil
 end
 
-local function safeFire(remoteName, ...)
+local function safeFireDebug(featureName, remoteName, ...)
     local args = {...}
     task.spawn(function()
-        pcall(function()
+        local success, err = pcall(function()
             local r = getRemote(remoteName)
-            if r then
-                if r:IsA("RemoteEvent") then 
-                    r:FireServer(unpack(args))
-                elseif r:IsA("RemoteFunction") then 
-                    r:InvokeServer(unpack(args)) 
-                end
+            if not r then
+                error("Remote '" .. remoteName .. "' TIDAK DITEMUKAN di ReplicatedStorage.Remotes!")
+            end
+            if r:IsA("RemoteEvent") then 
+                r:FireServer(unpack(args))
+            elseif r:IsA("RemoteFunction") then 
+                r:InvokeServer(unpack(args)) 
+            else
+                error("Objek '" .. remoteName .. "' bukan RemoteEvent atau RemoteFunction!")
             end
         end)
+        
+        if not success and _G.Mofenk.SpyEnabled then
+            warn("❌ [MOFENK ERROR DEBUG] Fitur [" .. featureName .. "] Gagal pada Remote '" .. tostring(remoteName) .. "'!")
+            warn("   -> Alasan Error: " .. tostring(err))
+        end
     end)
 end
 
 -- ==========================================
--- 3. FUNGSI EKSEKUSI UTAMA
+-- 3. FUNGSI EKSEKUSI UTAMA DENGAN DEBUG LOG
 -- ==========================================
 local function TriggerBaseCollection()
     pcall(function()
-        safeFire("MoneyCollected")
-        safeFire("CollectMoney")
-        safeFire("ClaimCash")
+        safeFireDebug("Auto Collect Base", "MoneyCollected")
+        safeFireDebug("Auto Collect Base", "CollectMoney")
+        safeFireDebug("Auto Collect Base", "ClaimCash")
+        local foundPrompt = false
         for _, obj in ipairs(workspace:GetDescendants()) do
             if obj:IsA("ProximityPrompt") then
                 local pName = string.lower(obj.Parent.Name)
                 if string.find(pName, "base") or string.find(pName, "cash") or string.find(pName, "money") or string.find(pName, "collect") then
                     fireproximityprompt(obj)
+                    foundPrompt = true
                 end
             end
+        end
+        if not foundPrompt and _G.Mofenk.AutoCollectBase then
+            -- Tidak perlu warning berlebih untuk prompt fisik jika tidak ada di dekat player
         end
     end)
 end
 
 local function TriggerMeteorClaim()
     pcall(function()
-        safeFire("MeteorClaimed")
-        safeFire("ClaimMeteor")
+        safeFireDebug("Auto Claim Meteor", "MeteorClaimed")
+        safeFireDebug("Auto Claim Meteor", "ClaimMeteor")
         for _, obj in ipairs(workspace:GetDescendants()) do
             local name = string.lower(obj.Name)
             if string.find(name, "meteor") and obj:IsA("ProximityPrompt") then
@@ -134,21 +147,21 @@ end
 local function TriggerBrainrotUpgrades()
     pcall(function()
         for i = 1, 25 do
-            safeFire("UpgradeBrainrotRequest", i)
-            safeFire("UpgradePlacedBrainrot", i)
-            safeFire("MultiRollUpgradeRequest")
+            safeFireDebug("Auto Upgrade Brainrot", "UpgradeBrainrotRequest", i)
+            safeFireDebug("Auto Upgrade Brainrot", "UpgradePlacedBrainrot", i)
+            safeFireDebug("Auto Upgrade Brainrot", "MultiRollUpgradeRequest")
         end
     end)
 end
 
 local function TriggerUniversalIndexClaims()
     pcall(function()
-        safeFire("RequestIndexRewards")
+        safeFireDebug("Auto Claim Index", "RequestIndexRewards")
         local prefixes = {"Finish_", "Tier_", "Index_", "Reward_"}
         local types = {"Galactic", "Prismatic", "Aurora", "Cosmic", "Divine", "Secret", "Legendary", "Mythical"}
         for _, p in ipairs(prefixes) do
             for _, t in ipairs(types) do
-                safeFire("ClaimIndexReward", p .. t)
+                safeFireDebug("Auto Claim Index", "ClaimIndexReward", p .. t)
             end
         end
     end)
@@ -156,6 +169,9 @@ end
 
 local function ExecuteAccurateSell()
     pcall(function()
+        safeFireDebug("Auto Sell", "RequestInventorySnapshot")
+        safeFireDebug("Auto Sell", "RequestItemsSnapshot")
+        
         local raritiesToSell = {}
         if _G.Mofenk.SellCommon then table.insert(raritiesToSell, "Common") end
         if _G.Mofenk.SellUncommon then table.insert(raritiesToSell, "Uncommon") end
@@ -179,12 +195,12 @@ local function ExecuteAccurateSell()
 
         if #raritiesToSell > 0 then
             for _, rarity in ipairs(raritiesToSell) do
-                safeFire("SellAllRequest", rarity)
-                safeFire("SellSelectedRequest", rarity)
-                safeFire("SellItemRequest", rarity)
+                safeFireDebug("Auto Sell", "SellAllRequest", rarity)
+                safeFireDebug("Auto Sell", "SellSelectedRequest", rarity)
+                safeFireDebug("Auto Sell", "SellItemRequest", rarity)
             end
         end
-        safeFire("SetAutoSellUnderRequest", true, _G.Mofenk.KeepMutated)
+        safeFireDebug("Auto Sell", "SetAutoSellUnderRequest", true, _G.Mofenk.KeepMutated)
     end)
 end
 
@@ -223,7 +239,7 @@ mt.__namecall = newcclosure(function(self, ...)
             pcall(function()
                 local argStr = ""
                 for i, v in ipairs(args) do argStr = argStr .. "Arg["..i.."]: " .. dumpData(v) .. " | " end
-                print("👁️ [MOFENK SPY] " .. self.Name + " (" .. method .. ") -> " .. argStr)
+                print("👁️ [MOFENK SPY] " .. self.Name .. " (" .. method .. ") -> " .. argStr)
             end)
         end)
     end
@@ -307,23 +323,23 @@ LocalPlayer.Idled:Connect(function()
 end)
 
 -- ==========================================
--- 7. UI RAYFIELD (V121 SMART DUNGEON & EXIT)
+-- 7. UI RAYFIELD (V122 DEBUG & ERROR INSPECTOR)
 -- ==========================================
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local Window = Rayfield:CreateWindow({
-   Name = "MofenkHub | Dadu Brainrot V121 Smart Dungeon",
-   LoadingTitle = "Memuat MofenkHub V121...",
-   LoadingSubtitle = "Smart Dungeon Fight & Auto Exit Combat",
+   Name = "MofenkHub | Dadu Brainrot V122 Debug Inspector",
+   LoadingTitle = "Memuat MofenkHub V122...",
+   LoadingSubtitle = "Error Console Inspector & Debug Synced",
    ConfigurationSaving = { Enabled = false },
    KeySystem = false
 })
 
-Rayfield:Notify({ Title = "MofenkHub V121 Loaded! 👑", Content = "Smart Dungeon & Exit Combat Aktif!", Duration = 5, Image = 6023426915 })
+Rayfield:Notify({ Title = "MofenkHub V122 Loaded! 👑", Content = "Error Debugger Console Aktif!", Duration = 5, Image = 6023426915 })
 
 -- TAB 1: HOME 🏠
 local TabHome = Window:CreateTab("Home 🏠", 6023426915)
 TabHome:CreateSection("👋 PROFIL & MONITOR")
-TabHome:CreateParagraph({Title = LocalPlayer.Name, Content = "Status: Terhubung (V121 Smart Dungeon)\nGame: [UPDATE 2] Dadu Brainrot!"})
+TabHome:CreateParagraph({Title = LocalPlayer.Name, Content = "Status: Terhubung (V122 Debugger)\nGame: [UPDATE 2] Dadu Brainrot!"})
 
 local ProfileParagraph = TabHome:CreateParagraph({Title = "📋 Profil Karakter", Content = "Memuat data..."})
 task.spawn(function()
@@ -402,7 +418,7 @@ TabInv:CreateSection("🎲 Toko & Upgrades")
 TabInv:CreateToggle({Name = "🎲 Auto Buy Dice", CurrentValue = false, Callback = function(V) _G.Mofenk.AutoBuyDice = V end})
 TabInv:CreateToggle({Name = "📈 Auto Buy Upgrade Nodes", CurrentValue = false, Callback = function(V) _G.Mofenk.AutoUpgradeNodes = V end})
 
--- TAB 4: DUNGEON & GATES ⚔️ (SMART DUNGEON & AUTO EXIT)
+-- TAB 4: DUNGEON & GATES ⚔️ (DEBUGGED DUNGEON & EXIT)
 local TabDungeon = Window:CreateTab("Dungeon & Gates ⚔️", 6023426915)
 TabDungeon:CreateSection("⚔️ Smart Dungeon & Auto Exit Combat")
 TabDungeon:CreateDropdown({
@@ -416,21 +432,20 @@ TabDungeon:CreateToggle({
     CurrentValue = false, 
     Callback = function(V) 
         _G.Mofenk.AutoDungeonGroup = V 
-        -- Jika dimatikan, otomatis keluar pertempuran / kembali ke base
         if not V then
             pcall(function()
-                safeFire("SetAutoFightBoss", false)
-                safeFire("LeaveDungeon")
-                safeFire("RequestMyBaseSpawn")
+                safeFireDebug("Auto Dungeon Exit", "SetAutoFightBoss", false)
+                safeFireDebug("Auto Dungeon Exit", "LeaveDungeon")
+                safeFireDebug("Auto Dungeon Exit", "RequestMyBaseSpawn")
             end)
         end
     end
 })
 TabDungeon:CreateToggle({Name = "🐉 Auto Dragon Gate", CurrentValue = false, Callback = function(V) _G.Mofenk.AutoDragonGate = V end})
 TabDungeon:CreateButton({Name = "🏠 Return To Base (Keluar Manual)", Callback = function() 
-    safeFire("SetAutoFightBoss", false)
-    safeFire("LeaveDungeon")
-    safeFire("RequestMyBaseSpawn") 
+    safeFireDebug("Return To Base", "SetAutoFightBoss", false)
+    safeFireDebug("Return To Base", "LeaveDungeon")
+    safeFireDebug("Return To Base", "RequestMyBaseSpawn") 
 end})
 
 -- TAB 5: PLAYER & SERVER ⚡
@@ -458,7 +473,7 @@ TabDev:CreateButton({Name = "🔍 Jalankan Advanced Scanner", Callback = functio
     Rayfield:Notify({Title = "Scanner Aktif", Content = "Cek konsol untuk melihat detail remote.", Duration = 3})
 end})
 TabDev:CreateSection("📡 CONSOLE NETWORK SPY")
-TabDev:CreateToggle({Name = "Aktifkan Network Spy", CurrentValue = false, Callback = function(V) _G.Mofenk.SpyEnabled = V end})
+TabDev:CreateToggle({Name = "Aktifkan Network Spy", CurrentValue = true, Callback = function(V) _G.Mofenk.SpyEnabled = V end})
 
 -- =====================================================================
 -- 8. BACKGROUND MASTER ENGINE (SYNCHRONIZED LOOPS)
@@ -475,14 +490,17 @@ task.spawn(function()
                 end
             end
 
-            -- Main Loops
-            if _G.Mofenk.AutoRoll then safeFire("RollRequest") end
-            if _G.Mofenk.AutoRebirth then safeFire("RebirthRequest"); safeFire("Rebirth") end
-            if _G.Mofenk.AutoClaimQuests then safeFire("ClaimAllQuests") end
+            -- Main Loops dengan Debugger Error
+            if _G.Mofenk.AutoRoll then safeFireDebug("Auto Roll", "RollRequest") end
+            if _G.Mofenk.AutoRebirth then 
+                safeFireDebug("Auto Rebirth", "RebirthRequest")
+                safeFireDebug("Auto Rebirth", "Rebirth")
+            end
+            if _G.Mofenk.AutoClaimQuests then safeFireDebug("Auto Claim Quests", "ClaimAllQuests") end
             if _G.Mofenk.AutoClaimIndex then TriggerUniversalIndexClaims() end
-            if _G.Mofenk.AutoClaimBossMilestones then safeFire("ClaimBossMilestones") end
-            if _G.Mofenk.AutoWheelSpin then safeFire("WheelSpinRequest") end
-            if _G.Mofenk.AutoFuse then safeFire("FuseRequest") end
+            if _G.Mofenk.AutoClaimBossMilestones then safeFireDebug("Auto Claim Boss Milestones", "ClaimBossMilestones") end
+            if _G.Mofenk.AutoWheelSpin then safeFireDebug("Auto Spin Wheel", "WheelSpinRequest") end
+            if _G.Mofenk.AutoFuse then safeFireDebug("Auto Fuse", "FuseRequest") end
             
             -- Meteor, Base & Upgrades
             if _G.Mofenk.AutoClaimMeteor then TriggerMeteorClaim() end
@@ -491,16 +509,16 @@ task.spawn(function()
 
             -- Global Collect Money
             if _G.Mofenk.AutoCollectMoney and (os.time() - lastCollect >= _G.Mofenk.CollectEvery) then
-                safeFire("MoneyCollected")
-                safeFire("CollectMoney")
-                safeFire("ClaimCash")
+                safeFireDebug("Auto Collect Money", "MoneyCollected")
+                safeFireDebug("Auto Collect Money", "CollectMoney")
+                safeFireDebug("Auto Collect Money", "ClaimCash")
                 lastCollect = os.time()
             end
             
             -- Equip Best Squad
             if _G.Mofenk.AutoEquipBest and (os.time() - lastEquip >= _G.Mofenk.EquipBestEvery) then
-                safeFire("EquipBest")
-                safeFire("EquipBestBattleSquadRequest")
+                safeFireDebug("Auto Equip Best", "EquipBest")
+                safeFireDebug("Auto Equip Best", "EquipBestBattleSquadRequest")
                 lastEquip = os.time()
             end
             
@@ -511,27 +529,33 @@ task.spawn(function()
             end
             
             -- Shop & Nodes
-            if _G.Mofenk.AutoBuyDice then safeFire("BuyDiceRequest"); safeFire("DiceShopAction", "Buy", 1) end
-            if _G.Mofenk.AutoUpgradeNodes then safeFire("BuyAffordableUpgradeNodes"); safeFire("UpgradeNodeRequest") end
+            if _G.Mofenk.AutoBuyDice then 
+                safeFireDebug("Auto Buy Dice", "BuyDiceRequest")
+                safeFireDebug("Auto Buy Dice", "DiceShopAction", "Buy", 1) 
+            end
+            if _G.Mofenk.AutoUpgradeNodes then 
+                safeFireDebug("Auto Upgrade Nodes", "BuyAffordableUpgradeNodes")
+                safeFireDebug("Auto Upgrade Nodes", "UpgradeNodeRequest") 
+            end
             
-            -- Smart Dungeon Group & Fight Sequence
+            -- Unified Dungeon Group & Debugged Sequence
             if _G.Mofenk.AutoDungeonGroup then
-                safeFire("RequestDungeonTeleport", _G.Mofenk.TargetFloor)
+                safeFireDebug("Auto Dungeon", "RequestDungeonTeleport", _G.Mofenk.TargetFloor)
                 task.wait(0.2)
-                safeFire("RequestGatewayTeleport", _G.Mofenk.TargetFloor)
+                safeFireDebug("Auto Dungeon", "RequestGatewayTeleport", _G.Mofenk.TargetFloor)
                 task.wait(0.2)
-                safeFire("JoinDungeon", _G.Mofenk.TargetFloor)
-                safeFire("StartDungeon", _G.Mofenk.TargetFloor)
-                safeFire("SetAutoFightBoss", true)
-                safeFire("BossAttack")
+                safeFireDebug("Auto Dungeon", "JoinDungeon", _G.Mofenk.TargetFloor)
+                safeFireDebug("Auto Dungeon", "StartDungeon", _G.Mofenk.TargetFloor)
+                safeFireDebug("Auto Dungeon", "SetAutoFightBoss", true)
+                safeFireDebug("Auto Dungeon", "BossAttack")
                 if workspace.CurrentCamera then
                     VirtualUser:ClickButton1(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
                 end
             end
 
             if _G.Mofenk.AutoDragonGate then
-                safeFire("DragonGateAction")
-                safeFire("DragonGateJoin")
+                safeFireDebug("Auto Dragon Gate", "DragonGateAction")
+                safeFireDebug("Auto Dragon Gate", "DragonGateJoin")
             end
         end)
     end
