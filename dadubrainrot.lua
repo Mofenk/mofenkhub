@@ -1,6 +1,6 @@
 -- =====================================================================
--- 👑 MOFENKHUB V125 — FINAL DUNGEON STATE & COMBAT MASTERPIECE
--- Game: Dadu Brainrot! | Integrated DungeonShopState & Automated Combat
+-- 👑 MOFENKHUB V126 — CLEAN MASTERPIECE EDITION
+-- Game: Dadu Brainrot! | Fixed Nil Value & Stable Dungeon State
 -- =====================================================================
 
 local Players = game:GetService("Players")
@@ -11,11 +11,10 @@ local HttpService = game:GetService("HttpService")
 local VirtualUser = game:GetService("VirtualUser")
 local LocalPlayer = Players.LocalPlayer
 
--- 1. PEMBERSIHAN UI LAMA
+-- 1. PEMBERSIHAN UI LAMA SECARA AMAN
 local uiTarget
 pcall(function() uiTarget = CoreGui end)
 if not uiTarget then uiTarget = LocalPlayer:WaitForChild("PlayerGui") end
-end)
 for _, v in pairs(uiTarget:GetChildren()) do 
     if v.Name == "MofenkHubUltimate" or v.Name == "MofenkSpyTerminal" or v.Name == "Rayfield" then 
         pcall(function() v:Destroy() end) 
@@ -74,7 +73,7 @@ _G.Mofenk = {
     SpyEnabled = true
 }
 
--- PENCARIAN REMOTES AMAN DENGAN DUNGEON STATE RESOLVER
+-- PENCARIAN REMOTES AMAN DENGAN ENCRYPTED RESOLVER
 local Remotes = ReplicatedStorage:WaitForChild("Remotes", 5)
 
 local function getEncryptedRemote(targetName)
@@ -325,23 +324,23 @@ LocalPlayer.Idled:Connect(function()
 end)
 
 -- ==========================================
--- 7. UI RAYFIELD (V125 DUNGEON STATE MASTER)
+-- 7. UI RAYFIELD (V126 CLEAN MASTER)
 -- ==========================================
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local Window = Rayfield:CreateWindow({
-   Name = "MofenkHub | Dadu Brainrot V125 Master",
-   LoadingTitle = "Memuat MofenkHub V125...",
-   LoadingSubtitle = "Dungeon State & Combat Masterpiece",
+   Name = "MofenkHub | Dadu Brainrot V126 Clean",
+   LoadingTitle = "Memuat MofenkHub V126...",
+   LoadingSubtitle = "Clean Masterpiece & Fixed Nil Error",
    ConfigurationSaving = { Enabled = false },
    KeySystem = false
 })
 
-Rayfield:Notify({ Title = "MofenkHub V125 Loaded! 👑", Content = "Dungeon State Master Aktif!", Duration = 5, Image = 6023426915 })
+Rayfield:Notify({ Title = "MofenkHub V126 Loaded! 👑", Content = "Clean Masterpiece Aktif!", Duration = 5, Image = 6023426915 })
 
 -- TAB 1: HOME 🏠
 local TabHome = Window:CreateTab("Home 🏠", 6023426915)
 TabHome:CreateSection("👋 PROFIL & MONITOR")
-TabHome:CreateParagraph({Title = LocalPlayer.Name, Content = "Status: Terhubung (V125 Master)\nGame: [UPDATE 2] Dadu Brainrot!"})
+TabHome:CreateParagraph({Title = LocalPlayer.Name, Content = "Status: Terhubung (V126 Clean)\nGame: [UPDATE 2] Dadu Brainrot!"})
 
 local ProfileParagraph = TabHome:CreateParagraph({Title = "📋 Profil Karakter", Content = "Memuat data..."})
 task.spawn(function()
@@ -420,9 +419,9 @@ TabInv:CreateSection("🎲 Toko & Upgrades")
 TabInv:CreateToggle({Name = "🎲 Auto Buy Dice", CurrentValue = false, Callback = function(V) _G.Mofenk.AutoBuyDice = V end})
 TabInv:CreateToggle({Name = "📈 Auto Buy Upgrade Nodes", CurrentValue = false, Callback = function(V) _G.Mofenk.AutoUpgradeNodes = V end})
 
--- TAB 4: DUNGEON & GATES ⚔️ (INTEGRATED DUNGEON STATE)
+-- TAB 4: DUNGEON & GATES ⚔️ (CLEAN DUNGEON MASTER)
 local TabDungeon = Window:CreateTab("Dungeon & Gates ⚔️", 6023426915)
-TabDungeon:CreateSection("⚔️ Dungeon State & Auto Combat")
+TabDungeon:CreateSection("⚔️ Clean Dungeon State & Auto Combat")
 TabDungeon:CreateDropdown({
     Name = "🚪 Pilih Floor Dungeon", 
     Options = {"Battle1", "Battle2", "Battle3", "Battle4", "Battle5"}, 
@@ -430,7 +429,7 @@ TabDungeon:CreateDropdown({
     Callback = function(Opt) _G.Mofenk.TargetFloor = Opt[1] end
 })
 TabDungeon:CreateToggle({
-    Name = "🚀 Auto Unified Dungeon (DungeonShopState Integration)", 
+    Name = "🚀 Auto Unified Dungeon (Clean Execution)", 
     CurrentValue = false, 
     Callback = function(V) 
         _G.Mofenk.AutoDungeonGroup = V 
@@ -542,7 +541,7 @@ task.spawn(function()
                 safeFireEncrypted("Auto Upgrade Nodes", "UpgradeNodeRequest") 
             end
             
-            -- Unified Dungeon Group dengan DungeonShopState Integration
+            -- Unified Dungeon Group
             if _G.Mofenk.AutoDungeonGroup then
                 safeFireEncrypted("Auto Dungeon", "DungeonShopState", _G.Mofenk.TargetFloor)
                 safeFireEncrypted("Auto Dungeon", "RequestDungeonTeleport", _G.Mofenk.TargetFloor)
