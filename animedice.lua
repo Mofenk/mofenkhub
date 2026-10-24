@@ -1,53 +1,69 @@
 -- =====================================================================
--- 👑 MOFENKHUB V10.0 — ANIME DICE PERFECT ENGINE (SERVER MIRRORED)
--- Game: Anime Dice | Real Inventory ID Selling, DataController & Smart Auto-Farm
+-- 👑 MOFENKHUB V13.0 — PURE COMPLETE MIRROR ENGINE (100% GITHUB LOGIC)
+-- Game: Anime Dice | Complete Math Simulations, Tower Engine, Fuse & UI
 -- Compatible: Delta, Delta Lite, UgPhone, vsphone, Hydrogen, Codex
 -- =====================================================================
 
-local Players = game:GetService("Players")
+local Players           = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local CoreGui = game:GetService("CoreGui")
-local TeleportService = game:GetService("TeleportService")
-local HttpService = game:GetService("HttpService")
-local VirtualUser = game:GetService("VirtualUser")
-local RunService = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
-local TweenService = game:GetService("TweenService")
-local Stats = game:GetService("Stats")
-local LocalPlayer = Players.LocalPlayer
+local CoreGui           = game:GetService("CoreGui")
+local TeleportService   = game:GetService("TeleportService")
+local HttpService      = game:GetService("HttpService")
+local VirtualUser      = game:GetService("VirtualUser")
+local RunService        = game:GetService("RunService")
+local UserInputService  = game:GetService("UserInputService")
+local TweenService      = game:GetService("TweenService")
+local Stats             = game:GetService("Stats")
+local LocalPlayer       = Players.LocalPlayer
 
--- 1. PEMBERSIHAN UI SISA RUN SEBELUMNYA
+-- 1. PEMBERSIHAN SISA UI RUN SEBELUMNYA
 local parentGui = pcall(function() return CoreGui end) and CoreGui or LocalPlayer:WaitForChild("PlayerGui")
 for _, v in pairs(parentGui:GetChildren()) do 
-    if v.Name == "MofenkUltraHubV10" or v.Name == "MofenkToggleGui" or v.Name == "MofenkNotifyGui" then 
+    if v.Name == "MofenkUltraHubV13" or v.Name == "MofenkToggleGui" or v.Name == "MofenkNotifyGui" then 
         pcall(function() v:Destroy() end) 
     end 
 end
 
--- 2. KONFIGURASI GLOBAL MASTER
+-- 2. KONFIGURASI GLOBAL MASTER (100% DARI FILE GITHUB)
 _G.Mofenk = {
-    AutoAFK = true,
-    AutoExecute = true,
-    AutoReconnect = true,
-    
-    SpyEnabled = true,
-    ClickInspectEnabled = false,
-    SpyConsoleLog = true,
-    SmartNotifications = true,
-    SelectedRemoteForDebug = "SellInventory",
-    CustomPayloadInput = "{}",
+    AutoAFK = true, AutoReconnect = true, SmartNotifications = true,
+    SpyEnabled = true, ClickInspectEnabled = false, SpyConsoleLog = true,
+    SelectedRemoteForDebug = "SellInventory", CustomPayloadInput = "{}",
     
     -- Feature Toggles
-    AutoRoll = false,
-    AutoSellInventory = false,
-    AutoCollectBalance = false,
-    AutoEquipBest = false,
-    AutoRebirth = false,
-    AutoBuyDice = false,
-    AutoBuyUpgrade = false,
-    
-    KeepRarityFloor = 3, -- 1=Common, 2=Uncommon, 3=Rare (Jual di bawah Rare)
-    EnableFly = false, FlySpeed = 50
+    AutoRoll     = true,
+    AutoSpins    = true,
+    AutoCollect  = true,
+    SmartPlace   = true,
+    AutoLevel    = true,
+    LevelShare   = 0.3,
+    LevelPayback = 10,
+    SaveMinutes  = 15,
+    AutoGrade    = true,
+    GradeMin     = 3,
+    AutoTrait    = true,
+    TraitMin     = 1.5,
+    AutoBoost    = true,
+    AutoFusion   = false,
+    FuseShare    = 0.35,
+    FuseSeconds  = 30,
+    AutoTower    = true,
+    TowerName    = "Auto (best)",
+    TowerBoosts  = true,
+    AutoDice     = true,
+    AutoUpgrade  = true,
+    AutoRebirth  = true,
+    RebirthMult  = 1,
+    AutoSell     = true,
+    SellRarity   = 3,
+    KeepBest     = 20,
+    KeepLuckX    = 10,
+    AutoCodes    = true,
+    AutoClaim    = true,
+    AutoQuests   = true,
+    AutoPasses   = true,
+    AutoStats    = true,
+    StatPick     = "Money"
 }
 
 -- 3. THEME ACCENT COLOR SYSTEM
@@ -85,7 +101,6 @@ local NotifyLayout = Instance.new("UIListLayout")
 NotifyLayout.Parent = NotifyContainer
 NotifyLayout.SortOrder = Enum.SortOrder.LayoutOrder
 NotifyLayout.Padding = UDim.new(0, 8)
-NotifyLayout.VerticalAlignment = Enum.VerticalAlignment.Top
 
 local function MofenkNotify(title, message, nType, duration)
     if not _G.Mofenk.SmartNotifications then return end
@@ -107,17 +122,11 @@ local function MofenkNotify(title, message, nType, duration)
     CardStroke.Transparency = 1
     CardStroke.Parent = Card
     
-    if nType == "success" then
-        CardStroke.Color = Color3.fromRGB(0, 230, 118)
-    elseif nType == "error" then
-        CardStroke.Color = Color3.fromRGB(255, 60, 60)
-    elseif nType == "warn" or nType == "inspect" then
-        CardStroke.Color = Color3.fromRGB(255, 193, 7)
-    elseif nType == "spy" then
-        CardStroke.Color = Color3.fromRGB(170, 0, 255)
-    else
-        CardStroke.Color = CurrentTheme
-    end
+    if nType == "success" then CardStroke.Color = Color3.fromRGB(0, 230, 118)
+    elseif nType == "error" then CardStroke.Color = Color3.fromRGB(255, 60, 60)
+    elseif nType == "warn" or nType == "inspect" then CardStroke.Color = Color3.fromRGB(255, 193, 7)
+    elseif nType == "spy" then CardStroke.Color = Color3.fromRGB(170, 0, 255)
+    else CardStroke.Color = CurrentTheme end
     
     local TitleLbl = Instance.new("TextLabel")
     TitleLbl.Parent = Card
@@ -127,7 +136,6 @@ local function MofenkNotify(title, message, nType, duration)
     TitleLbl.TextColor3 = Color3.fromRGB(255, 255, 255)
     TitleLbl.TextSize = 11
     TitleLbl.Font = Enum.Font.GothamBold
-    TitleLbl.TextXAlignment = Enum.TextXAlignment.Left
     TitleLbl.BackgroundTransparency = 1
     TitleLbl.TextTransparency = 1
     
@@ -139,7 +147,6 @@ local function MofenkNotify(title, message, nType, duration)
     MsgLbl.TextColor3 = Color3.fromRGB(200, 200, 215)
     MsgLbl.TextSize = 10
     MsgLbl.Font = Enum.Font.GothamMedium
-    MsgLbl.TextXAlignment = Enum.TextXAlignment.Left
     MsgLbl.TextWrapped = true
     MsgLbl.BackgroundTransparency = 1
     MsgLbl.TextTransparency = 1
@@ -161,25 +168,456 @@ local function MofenkNotify(title, message, nType, duration)
     end)
 end
 
--- 5. AKSED DATA MODULE INTERNAL GAME (DATA CONTROLLER)
-local Framework = ReplicatedStorage:WaitForChild("Framework", 10)
-local DataController, UnitConfig
-pcall(function()
-    DataController = require(Framework.Features.Data.DataController)
-    UnitConfig = require(Framework.Features.Inventory.Kinds.Unit.UnitConfig)
-end)
+-- 5. LOAD MODUL FRAMEWORK & NETWORK ASLI GAME
+local Framework = ReplicatedStorage:WaitForChild("Framework", 15)
+local Network   = ReplicatedStorage:WaitForChild("Network", 15)
 
-local function GetGameData()
-    return DataController and DataController.___X or nil
+local function svc(path)
+    local node = Network
+    for part in string.gmatch(path, "[^%.]+") do
+        node = node and node:FindFirstChild(part)
+    end
+    return node
 end
 
--- RARITY SORT ORDER MAP
-local RARITY_MAP = {
-    Common = 1, Uncommon = 2, Rare = 3, Epic = 4, Legendary = 5,
-    Mythical = 6, Divine = 7, Exotic = 8, Celestial = 9, Heavenly = 10
+local R = {
+    RollDice        = svc("RollService.RF.RollDice"),
+    SetAutoRoll     = svc("RollService.RE.SetAutoRoll"),
+    EquipBest       = svc("PlotService.RE.EquipBest"),
+    CollectBalance  = svc("PlotService.RE.CollectBalance"),
+    LevelUpSlot     = svc("PlotService.RE.LevelUpSlot"),
+    BuyDice         = svc("DiceShopService.RE.BuyDice"),
+    EquipDice       = svc("DiceShopService.RE.EquipDice"),
+    Rebirth         = svc("RebirthService.RE.Rebirth"),
+    BuyUpgrade      = svc("RE.BuyUpgrade"),
+    SellInventory   = svc("SellService.RF.SellInventory"),
+    UpdateAutoSell  = svc("SellService.RE.UpdateAutoSell"),
+    RedeemCode      = svc("CodesService.RE.RedeemCode") or svc("MonetizationService.RE.RedeemCode"),
+    QuestClaim      = svc("QuestService.RE.Claim"),
+    QuestBuy        = svc("QuestService.RE.Buy"),
+    AddStat         = svc("RebirthService.RE.AddStat"),
+    UnequipUnit     = svc("UnitService.RF.Unequip"),
+    ClaimOffline    = svc("OfflineEarningsService.RE.Claim"),
+    ClaimDaily      = svc("DailyRewardService.RE.Claim"),
+    ClaimGroup      = svc("GroupRewardService.RE.Claim"),
+    GradeRoll       = svc("GradeService.RE.Roll"),
+    GradeProtect    = svc("GradeService.RE.SetGradeProtected"),
+    TraitRoll       = svc("TraitService.RE.Roll"),
+    TraitProtect    = svc("TraitService.RE.SetTraitProtected"),
+    BoostUse        = svc("BoostService.RE.Use"),
+    PlayTower       = svc("Towers.RF.PlayTower"),
+    CompleteFloor   = svc("Towers.RF.CompleteTowerFloor"),
+    CancelTower     = svc("Towers.RF.CancelTower"),
+    BestTowerTeam   = svc("Towers.RE.EquipBestTowerTeam"),
+    InteractSlot    = svc("PlotService.RE.InteractSlot"),
+    UseSpin         = svc("SpinService.RE.Use"),
+    EquipUnit       = svc("UnitService.RF.Equip"),
+    Fuse            = svc("FusingService.RE.Fuse"),
+    FuseResult      = svc("FusingService.RE.Result")
 }
 
--- 6. REAL-TIME LOGGING ENGINE 📝
+local DataController = require(Framework.Features.Data.DataController)
+local Dice           = require(Framework.Features.Rolling.Dice)
+local Rebirths       = require(Framework.Features.Rebirth.Rebirths)
+local PlotConfig     = require(Framework.Features.Plot.PlotConfig)
+local MonetConfig    = require(Framework.Features.Monetization.MonetizationConfig)
+local UpgradeConfig  = require(Framework.Features.Upgrades.Upgrades)
+local UpgradeTree
+pcall(function() UpgradeTree = require(Framework.Features.Upgrades.TreeStructure) end)
+local UnitConfig     = require(Framework.Features.Inventory.Kinds.Unit.UnitConfig)
+local Grades         = require(Framework.Features.Grades.Grades)
+local Traits         = require(Framework.Features.Traits.Traits)
+local TowersConfig   = require(Framework.Features.Towers.Towers)
+local BuffController = require(Framework.Features.Buffs.BuffController)
+local FusingUtil     = require(Framework.Features.Fusing.FusingUtil)
+local FusingConfig   = require(Framework.Features.Fusing.FusingConfig)
+
+local UnitUtil
+for _, m in ipairs(Framework:GetDescendants()) do
+    if m.Name == "UnitUtil" and m:IsA("ModuleScript") then
+        pcall(function() UnitUtil = require(m) end)
+        break
+    end
+end
+local BoostConfig
+pcall(function() BoostConfig = require(Framework.Features.Inventory.Kinds.Boost.BoostConfig) end)
+local BOOSTS = (BoostConfig and (BoostConfig.entries or BoostConfig)) or {}
+
+local CODES, QuestConfig, RebirthStats, UnitCtl
+pcall(function() CODES = require(Framework.Features.Codes.CodesConfig) end)
+CODES = CODES or MonetConfig.Codes or {}
+pcall(function() QuestConfig = require(Framework.Features.Quests.QuestConfig) end)
+pcall(function() RebirthStats = require(Framework.Features.Rebirth.RebirthStatsConfig) end)
+pcall(function() UnitCtl = require(Framework.Features.Inventory.Kinds.Unit.UnitController) end)
+
+local RARITY_SORT = {}
+do
+    local ok, Rar = pcall(require, Framework.Other.Rarities)
+    if ok and Rar and Rar.Refs then
+        for _, ref in pairs(Rar.Refs) do
+            local info = select(2, pcall(Rar.Get, ref))
+            if type(info) == "table" and info.sortOrder then RARITY_SORT[ref] = info.sortOrder end
+        end
+    end
+end
+
+local function data() return DataController.___X end
+
+local STATE = {
+    incomePerSec = 0, rolled = 0, collected = 0, diceBought = 0, rebirths = 0,
+    leveled = 0, upgradesBought = 0, sold = 0, soldValue = 0, gradeRolls = 0,
+    traitRolls = 0, boostsUsed = 0, towerRuns = 0, towerFloors = 0, towerBest = 0,
+    towerFloor = 0, towerDrops = 0, fused = 0, fuseLast = "-", fuseBestChance = 0,
+    towerPick = "-", towerPredict = 0, towerRate = 0, codesDone = 0, claims = 0,
+    questsClaimed = 0, passesBought = 0, statsAdded = 0, phase = "idle", note = "-"
+}
+
+-- 6. MATEMATIKA UTAMA & KALKULASI INCOME (FROM GITHUB)
+local function curIncome(u)
+    local e = u and UnitConfig.entries[u.name]
+    if not e then return 0 end
+    return tonumber(select(2, pcall(e.income, u.attributes or {}))) or 0
+end
+
+local function baseIncome(u)
+    local e = u and UnitConfig.entries[u.name]
+    if not e then return 0 end
+    local a = u.attributes or {}
+    return tonumber(select(2, pcall(e.income, { mutation = a.mutation, grade = a.grade, trait = a.trait, level = 1 }))) or 0
+end
+
+-- DICE MODEL
+local DICE = {}
+do
+    local ok, all = pcall(Dice.GetAll)
+    if ok and type(all) == "table" then
+        for key, def in pairs(all) do
+            DICE[#DICE + 1] = { key = key, luck = tonumber(def.luck) or 0, price = tonumber(def.price) }
+        end
+        table.sort(DICE, function(a, b) return a.luck < b.luck end)
+    end
+end
+
+local function ownedLuck()
+    local d = data()
+    local best, name = 0, "-"
+    if d and d.OwnedDice then
+        for _, die in ipairs(DICE) do
+            if d.OwnedDice[die.key] and die.luck > best then best, name = die.luck, die.key end
+        end
+    end
+    return best, name
+end
+
+local function rollLuck()
+    local d = data()
+    local buffLuck = tonumber(select(2, pcall(BuffController.GetBuff, "Luck"))) or 1
+    local dieLuck = 1
+    if d then
+        for _, die in ipairs(DICE) do if die.key == d.Dice then dieLuck = die.luck end end
+    end
+    return buffLuck * dieLuck
+end
+
+local function bestAffordableDice(reserve)
+    local d = data()
+    if not d or not d.Money then return nil end
+    local pick = nil
+    local spendable = d.Money - (reserve or 0)
+    for _, die in ipairs(DICE) do
+        if die.price and not d.OwnedDice[die.key] and spendable >= die.price then
+            if not pick or die.luck > pick.luck then pick = die end
+        end
+    end
+    return pick
+end
+
+-- UPGRADE MODEL
+local ROMAN = { I=1, V=5, X=10 }
+local function romanToInt(s)
+    local total, prev = 0, 0
+    for i = #s, 1, -1 do
+        local v = ROMAN[s:sub(i, i)] or 0
+        if v < prev then total = total - v else total = total + v end
+        prev = v
+    end
+    return total
+end
+
+local UPGRADE_LINES = {}
+do
+    for name, def in pairs(UpgradeConfig) do
+        local cat, roman = name:match("^(.-)%s+([IVX]+)$")
+        if cat and roman and def.price then
+            UPGRADE_LINES[cat] = UPGRADE_LINES[cat] or {}
+            local storage = 0
+            if def.buffs and def.buffs["Unit Storage"] then
+                storage = tonumber(def.buffs["Unit Storage"].amount) or 0
+            end
+            table.insert(UPGRADE_LINES[cat], {
+                name = name, tier = romanToInt(roman),
+                price = tonumber(def.price) or math.huge, storage = storage,
+            })
+        end
+    end
+    for _, list in pairs(UPGRADE_LINES) do table.sort(list, function(a, b) return a.tier < b.tier end) end
+end
+
+local function nextTier(cat)
+    local d = data()
+    if not d or not d.Upgrades then return nil end
+    local owned = d.Upgrades
+    for _, up in ipairs(UPGRADE_LINES[cat] or {}) do
+        if not owned[up.name] then
+            local parent = UpgradeTree and select(2, pcall(UpgradeTree.GetParent, up.name))
+            if type(parent) == "string" and parent ~= "Start" and not owned[parent] then return nil end
+            return up
+        end
+    end
+    return nil
+end
+
+local UPGRADE_CATS = { "Money", "Luck", "Fortune", "Roll Speed", "Unit Storage", "Sell" }
+local TOWER_CATS   = { "Damage", "Health" }
+
+local function bestUpgrade(reserve)
+    local d = data()
+    if not d or not d.Money then return nil end
+    local pick = nil
+    local spendable = d.Money - (reserve or 0)
+    local cats = UPGRADE_CATS
+    if _G.Mofenk.AutoTower then
+        cats = {}
+        for _, c in ipairs(UPGRADE_CATS) do cats[#cats + 1] = c end
+        for _, c in ipairs(TOWER_CATS) do cats[#cats + 1] = c end
+    end
+    for _, cat in ipairs(cats) do
+        local up = nextTier(cat)
+        if up and spendable >= up.price then
+            if not pick or up.price < pick.price then pick = up end
+        end
+    end
+    return pick
+end
+
+local function invCap()
+    local buff = tonumber(select(2, pcall(BuffController.GetBuff, "Unit Storage")))
+    if buff and buff > 0 then return buff end
+    local cap = 100
+    local d = data()
+    if d and d.Upgrades then
+        for _, up in ipairs(UPGRADE_LINES["Unit Storage"] or {}) do
+            if d.Upgrades[up.name] then cap = cap + up.storage end
+        end
+    end
+    return cap
+end
+
+local function unlockedSlots()
+    local d = data()
+    if not d or not d.Rebirth then return 4 end
+    local rb = d.Rebirth
+    local maxS = 15
+    pcall(function() maxS = PlotConfig.GetMaxSlots(rb) or 15 end)
+    local n = 0
+    for i = 1, maxS do
+        local req = 0
+        pcall(function() req = PlotConfig.GetSlotRebirthRequirement(i) or 0 end)
+        if req <= rb then n = n + 1 end
+    end
+    return n
+end
+
+local function nextRebirthCost()
+    local d = data()
+    if not d or not d.Rebirth then return nil end
+    local info
+    pcall(function() info = Rebirths.Get(d.Rebirth + 1) end)
+    if not info then pcall(function() info = Rebirths.GetNext(d.Rebirth) end) end
+    return info and tonumber(info.cost), info and tonumber(info.moneyMultiplier)
+end
+
+-- PROTEKSI UNIT
+local function goodGrade(g)
+    local def = g and Grades[g]
+    return def and (tonumber(def.incomeMultiplier) or 0) >= _G.Mofenk.GradeMin
+end
+
+local function goodTrait(t)
+    local def = t and Traits[t]
+    return def and (tonumber(def.incomeMultiplier) or 0) >= _G.Mofenk.TraitMin
+end
+
+local function heldUnit()
+    if not (UnitCtl and UnitCtl.EquippedUnit) then return nil end
+    local ok, id = pcall(UnitCtl.EquippedUnit)
+    return ok and id or nil
+end
+
+local function isProtected(id, u)
+    local a = u.attributes or {}
+    if a.locked then return true end
+    local e = UnitConfig.entries[u.name]
+    if not e or e.limited then return true end
+    if goodGrade(a.grade) or goodTrait(a.trait) then return true end
+    return id == heldUnit()
+end
+
+local unitOwner, unitSince = nil, 0
+local function claimUnits(who)
+    if unitOwner and unitOwner ~= who and os.clock() - unitSince < 20 then return false end
+    unitOwner, unitSince = who, os.clock()
+    return true
+end
+local function releaseUnits(who) if unitOwner == who then unitOwner = nil end end
+
+-- 7. SIMULASI TOWER ENGINE UTUH (KALKULASI DROPS & FLOORS)
+local TOWER_WAIT = { initial = 0.76, transition = 0.38, hit = 0.62, done = 0.24, fall = 0.32 }
+local DROP_WEIGHT = { Luck = 1, ["Money Multiplier"] = 0.5, ["Damage Multiplier"] = 0.15 }
+
+local function dropValue(name)
+    if name == "Gems" then return 40 end
+    if name == "Trait Reroll" then return 25 end
+    local def = BOOSTS[name]
+    if type(def) ~= "table" or type(def.buffs) ~= "table" then return 0 end
+    local v = 0
+    for buff, b in pairs(def.buffs) do
+        local w = DROP_WEIGHT[buff] or 0
+        v = v + w * math.max(0, (tonumber(b.amount) or 1) - 1) * (tonumber(def.duration) or 0)
+    end
+    return v
+end
+
+local function towerTeam()
+    local d = data()
+    if not d or not d.TowerTeam then return {} end
+    local dmgMul = tonumber(select(2, pcall(BuffController.GetBuff, "Damage Multiplier"))) or 1
+    local hpMul = tonumber(select(2, pcall(BuffController.GetBuff, "Health Multiplier"))) or 1
+    local team = {}
+    for i = 1, 4 do
+        local id = d.TowerTeam[i]
+        local u = id and d.Inventory[id]
+        local e = u and UnitConfig.entries[u.name]
+        if e then
+            local a = u.attributes or {}
+            team[#team + 1] = {
+                dmg = (tonumber(select(2, pcall(e.damage, a))) or 0) * dmgMul,
+                hp = (tonumber(select(2, pcall(e.health, a))) or 0) * hpMul,
+            }
+        end
+    end
+    return team
+end
+
+local function simulateTower(tw, team)
+    if #team == 0 then return 0, 0, 0 end
+    local members = {}
+    for i, m in ipairs(team) do members[i] = { dmg = m.dmg, hp = m.hp } end
+    local cap = tw.maxFloors or 300
+    local floor, cur, secs, value = 1, 1, 0, 0
+    while floor <= cap do
+        local enemy = tonumber(select(2, pcall(tw.enemyHealth, floor))) or math.huge
+        local hit = tonumber(select(2, pcall(tw.enemyDamage, floor))) or math.huge
+        secs = secs + (floor == 1 and TOWER_WAIT.initial or TOWER_WAIT.transition)
+        local cleared = false
+        for _ = 1, 2000 do
+            local m = members[cur]
+            if not m then break end
+            enemy = enemy - m.dmg
+            secs = secs + TOWER_WAIT.hit
+            if enemy <= 0 then cleared = true; break end
+            m.hp = m.hp - hit
+            secs = secs + TOWER_WAIT.hit
+            if m.hp <= 0 then
+                cur = cur + 1
+                secs = secs + TOWER_WAIT.fall + TOWER_WAIT.transition
+            end
+        end
+        if not cleared then break end
+        secs = secs + TOWER_WAIT.done
+        for _, tier in ipairs(tw.drops or {}) do
+            if (tier.minFloor or 1) <= floor then
+                for _, en in ipairs(tier.entries or {}) do
+                    value = value + (tonumber(en.chance) or 0) / 100 * (tonumber(en.amount) or 1) * dropValue(en.name)
+                end
+            end
+        end
+        floor = floor + 1
+    end
+    return floor - 1, secs, value
+end
+
+local function pickTower()
+    local all = select(2, pcall(TowersConfig.GetAll))
+    if _G.Mofenk.TowerName ~= "Auto (best)" and type(all) == "table" and all[_G.Mofenk.TowerName] then
+        return _G.Mofenk.TowerName
+    end
+    local team = towerTeam()
+    local best, bestRate, bestFloors = nil, -1, 0
+    if type(all) == "table" then
+        for name, tw in pairs(all) do
+            local floors, secs, value = simulateTower(tw, team)
+            local rate = secs > 0 and value / (secs + 4) or 0
+            if floors > 0 and rate > bestRate then best, bestRate, bestFloors = name, rate, floors end
+        end
+    end
+    STATE.towerPick = best or "Dragon Tower"
+    STATE.towerPredict = bestFloors
+    STATE.towerRate = bestRate
+    return STATE.towerPick
+end
+
+-- 8. EKSEKUSI AUTO SELL LENGKAP (UUID + KEEP LUCK FILTER)
+local function performFullAutoSell(force)
+    if not R.SellInventory or not claimUnits("sell") then return end
+    local d = data()
+    if not d or not d.Inventory then releaseUnits("sell"); return end
+    
+    local cap = invCap()
+    local placed = {}
+    if d.Slots then for _, slot in pairs(d.Slots) do if slot.unitId then placed[slot.unitId] = true end end end
+    if d.TowerTeam then for _, id in pairs(d.TowerTeam) do placed[id] = true end end
+    
+    local luckLine = _G.Mofenk.KeepLuckX > 0 and rollLuck() * _G.Mofenk.KeepLuckX or nil
+    local units, owned = {}, 0
+    
+    for id, u in pairs(d.Inventory) do
+        local e = UnitConfig.entries[u.name]
+        if e then owned = owned + 1 end
+        local chance = e and not e.limited and tonumber(select(2, pcall(e.chance, { mutation = u.attributes and u.attributes.mutation })))
+        local lucky = luckLine and (chance or math.huge) >= luckLine
+        if e and not placed[id] and not isProtected(id, u) and not lucky then
+            units[#units + 1] = {
+                id = id, inc = baseIncome(u), order = RARITY_SORT[e.rarity] or 0,
+                mutated = u.attributes and u.attributes.mutation ~= nil,
+            }
+        end
+    end
+    table.sort(units, function(a, b) return a.inc < b.inc end)
+    local pressured = force or owned >= cap - 3
+    local sellable = math.max(0, #units - _G.Mofenk.KeepBestSpares)
+    local list = {}
+    
+    for i, unit in ipairs(units) do
+        local belowFloor = not unit.mutated and unit.order > 0 and unit.order < _G.Mofenk.SellRarity and i <= sellable
+        local surplus = pressured and i <= sellable
+        if belowFloor or surplus then
+            list[#list + 1] = unit.id
+            if #list >= 300 then break end
+        end
+    end
+    
+    if #list == 0 then releaseUnits("sell"); return end
+    local ok, value, sold = pcall(function() return R.SellInventory:InvokeServer(list) end)
+    releaseUnits("sell")
+    if ok then
+        STATE.sold = STATE.sold + (tonumber(sold) or #list)
+        STATE.soldValue = STATE.soldValue + (tonumber(value) or 0)
+        MofenkNotify("AUTO SELL OK", string.format("Terjual %d Unit | Nilai: %s", tonumber(sold) or #list, tostring(value or 0)), "success", 3)
+    end
+end
+
+-- 9. SERIALIZER & LOGGING ENGINE
 local LogScroll = nil
 local function MofenkLog(msg, logType)
     local timestamp = os.date("%H:%M:%S")
@@ -191,31 +629,19 @@ local function MofenkLog(msg, logType)
         LogItem.Parent = LogScroll
         LogItem.Size = UDim2.new(1, -10, 0, 18)
         LogItem.Text = formattedMsg
-        
-        if logType == "error" then
-            LogItem.TextColor3 = Color3.fromRGB(255, 90, 90)
-        elseif logType == "success" then
-            LogItem.TextColor3 = Color3.fromRGB(100, 255, 150)
-        elseif logType == "inspect" then
-            LogItem.TextColor3 = Color3.fromRGB(255, 215, 0)
-        elseif logType == "send" then
-            LogItem.TextColor3 = Color3.fromRGB(120, 200, 255)
-        elseif logType == "return" then
-            LogItem.TextColor3 = Color3.fromRGB(220, 150, 255)
-        else
-            LogItem.TextColor3 = Color3.fromRGB(200, 210, 225)
-        end
-        
+        if logType == "error" then LogItem.TextColor3 = Color3.fromRGB(255, 90, 90)
+        elseif logType == "success" then LogItem.TextColor3 = Color3.fromRGB(100, 255, 150)
+        elseif logType == "inspect" then LogItem.TextColor3 = Color3.fromRGB(255, 215, 0)
+        elseif logType == "send" then LogItem.TextColor3 = Color3.fromRGB(120, 200, 255)
+        else LogItem.TextColor3 = Color3.fromRGB(200, 210, 225) end
         LogItem.TextSize = 11
         LogItem.Font = Enum.Font.Code
-        LogItem.TextXAlignment = Enum.TextXAlignment.Left
         LogItem.BackgroundTransparency = 1
-        
         LogScroll.CanvasPosition = Vector2.new(0, 99999)
     end
 end
 
--- 7. REAL-TIME NETWORK SPY HOOK (__NAMECALL)
+-- 10. REAL-TIME NETWORK SPY HOOK (__NAMECALL)
 local rawNamecall = getrawmetatable and getrawmetatable(game) and getrawmetatable(game).__namecall
 if hookmetatable and rawNamecall then
     local oldNamecall
@@ -225,7 +651,12 @@ if hookmetatable and rawNamecall then
 
         if _G.Mofenk.SpyEnabled and (method == "FireServer" or method == "InvokeServer") then
             task.spawn(function()
-                local argStr = #args > 0 and tostring(args[1]) or "None"
+                local parsedArgs = {}
+                for i, arg in ipairs(args) do
+                    table.insert(parsedArgs, type(arg) == "table" and DumpTable(arg) or tostring(arg))
+                end
+                local argStr = #parsedArgs > 0 and table.concat(parsedArgs, ", ") or "None"
+                
                 if _G.Mofenk.SpyConsoleLog then
                     MofenkLog(string.format("📡 [SPY] %s | %s(%s)", self.Name, method, argStr), "send")
                 end
@@ -236,57 +667,31 @@ if hookmetatable and rawNamecall then
     end))
 end
 
--- 8. EKSSEKUSI AUTO SELL PERBAIKAN AKURAT (MENGIRIM ARRAY ID ITEM REAL)
-local function PerformSmartAutoSell()
-    local gData = GetGameData()
-    local Network = ReplicatedStorage:FindFirstChild("Network")
-    local SellRF = Network and Network:FindFirstChild("SellService") and Network.SellService:FindFirstChild("RF") and Network.SellService.RF:FindFirstChild("SellInventory")
-    
-    if not gData or not gData.Inventory or not SellRF then
-        MofenkLog("❌ Data Inventory atau Remote SellInventory Tidak Ditemukan!", "error")
-        return
-    end
-
-    -- Kumpulkan ID unit yang terpasang di plot slot agar tidak ikut terjual
-    local placedUnitIDs = {}
-    if gData.Slots then
-        for _, slot in pairs(gData.Slots) do
-            if slot.unitId then placedUnitIDs[slot.unitId] = true end
-        end
-    end
-
-    local itemsToSell = {}
-    for unitID, unitData in pairs(gData.Inventory) do
-        local entry = UnitConfig and UnitConfig.entries and UnitConfig.entries[unitData.name]
-        if entry and not placedUnitIDs[unitID] then
-            local rarityRank = RARITY_MAP[entry.rarity] or 1
-            local isLocked = unitData.attributes and unitData.attributes.locked
-            
-            -- Jual jika kelangkaannya di bawah batas konfig & tidak dikunci
-            if rarityRank < _G.Mofenk.KeepRarityFloor and not isLocked and not entry.limited then
-                table.insert(itemsToSell, unitID)
+-- 11. CLICK-TO-INSPECT USER INPUT LISTENER
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if not _G.Mofenk.ClickInspectEnabled then return end
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        local pos = input.Position
+        local guiObjects = LocalPlayer.PlayerGui:GetGuiObjectsAtPosition(pos.X, pos.Y)
+        
+        if #guiObjects > 0 then
+            for i, obj in ipairs(guiObjects) do
+                if not obj:IsDescendantOf(parentGui:FindFirstChild("MofenkUltraHubV13")) and not obj:IsDescendantOf(NotifyGui) then
+                    local textVal = (obj:IsA("TextLabel") or obj:IsA("TextButton") or obj:IsA("TextBox")) and obj.Text or ""
+                    local info = string.format("UI: %s [%s]\nPath: %s", obj.Name, obj.ClassName, textVal ~= "" and ("Text: " .. textVal) or obj.Name)
+                    
+                    MofenkLog("🔍 [CLICK INSPECT] " .. info, "inspect")
+                    MofenkNotify("🔍 CLICK INSPECTED", string.format("%s (%s)\n%s", obj.Name, obj.ClassName, textVal), "inspect", 3)
+                    break
+                end
             end
         end
     end
+end)
 
-    if #itemsToSell > 0 then
-        local success, value, totalSold = pcall(function()
-            return SellRF:InvokeServer(itemsToSell)
-        end)
-        if success then
-            MofenkLog(string.format("✅ [AUTO SELL SUCCESS] Berhasil Menjual %d Item! Nilai: %s", tonumber(totalSold) or #itemsToSell, tostring(value or "OK")), "success")
-            MofenkNotify("AUTO SELL SUCCESS", string.format("Terjual: %d Unit Item!", tonumber(totalSold) or #itemsToSell), "success", 3)
-        else
-            MofenkLog("❌ [AUTO SELL FAILED] Server Menolak Panggilan!", "error")
-        end
-    else
-        MofenkLog("ℹ️ Tidak ada unit sampah yang memenuhi kriteria penjualan.", "inspect")
-    end
-end
-
--- 9. MAIN UI BUILDER (DRAGGABLE + RESIZABLE)
+-- 12. MAIN UI BUILDER (DRAGGABLE + RESIZABLE)
 local MainGui = Instance.new("ScreenGui")
-MainGui.Name = "MofenkUltraHubV10"
+MainGui.Name = "MofenkUltraHubV13"
 MainGui.Parent = parentGui
 MainGui.ResetOnSpawn = false
 
@@ -296,7 +701,6 @@ MainFrame.Parent = MainGui
 MainFrame.Size = UDim2.new(0, 620, 0, 420)
 MainFrame.Position = UDim2.new(0.5, -310, 0.5, -210)
 MainFrame.BackgroundColor3 = Color3.fromRGB(14, 14, 18)
-MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
 MainFrame.Draggable = true
 MainFrame.ClipsDescendants = true
@@ -317,17 +721,12 @@ TopBar.Name = "TopBar"
 TopBar.Parent = MainFrame
 TopBar.Size = UDim2.new(1, 0, 0, 44)
 TopBar.BackgroundColor3 = Color3.fromRGB(20, 20, 26)
-TopBar.BorderSizePixel = 0
-
-local TopCorner = Instance.new("UICorner")
-TopCorner.CornerRadius = UDim.new(0, 10)
-TopCorner.Parent = TopBar
 
 local TitleLabel = Instance.new("TextLabel")
 TitleLabel.Parent = TopBar
 TitleLabel.Position = UDim2.new(0, 14, 0, 0)
-TitleLabel.Size = UDim2.new(0, 240, 1, 0)
-TitleLabel.Text = "MOFENKHUB V10.0 — PERFECT ENGINE"
+TitleLabel.Size = UDim2.new(0, 260, 1, 0)
+TitleLabel.Text = "MOFENKHUB V13.0 — MIRROR ENGINE"
 TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 TitleLabel.TextSize = 12
 TitleLabel.Font = Enum.Font.GothamBold
@@ -335,7 +734,7 @@ TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
 
 local StatsLabel = Instance.new("TextLabel")
 StatsLabel.Parent = TopBar
-StatsLabel.Position = UDim2.new(0, 260, 0, 0)
+StatsLabel.Position = UDim2.new(0, 280, 0, 0)
 StatsLabel.Size = UDim2.new(0, 200, 1, 0)
 StatsLabel.Text = "FPS: -- | Ping: -- ms"
 StatsLabel.TextColor3 = Color3.fromRGB(160, 170, 200)
@@ -358,21 +757,15 @@ MinCorner.Parent = MinimizeBtn
 
 MinimizeBtn.MouseButton1Click:Connect(function() MainFrame.Visible = false end)
 
--- Sidebar Container
+-- Sidebar
 local Sidebar = Instance.new("Frame")
 Sidebar.Parent = MainFrame
 Sidebar.Position = UDim2.new(0, 8, 0, 52)
 Sidebar.Size = UDim2.new(0, 145, 1, -60)
 Sidebar.BackgroundColor3 = Color3.fromRGB(20, 20, 26)
-Sidebar.BorderSizePixel = 0
-
-local SideCorner = Instance.new("UICorner")
-SideCorner.CornerRadius = UDim.new(0, 8)
-SideCorner.Parent = Sidebar
 
 local SideLayout = Instance.new("UIListLayout")
 SideLayout.Parent = Sidebar
-SideLayout.SortOrder = Enum.SortOrder.LayoutOrder
 SideLayout.Padding = UDim.new(0, 4)
 
 -- Content Area
@@ -381,11 +774,6 @@ ContentArea.Parent = MainFrame
 ContentArea.Position = UDim2.new(0, 159, 0, 52)
 ContentArea.Size = UDim2.new(1, -167, 1, -60)
 ContentArea.BackgroundColor3 = Color3.fromRGB(20, 20, 26)
-ContentArea.BorderSizePixel = 0
-
-local ContentCorner = Instance.new("UICorner")
-ContentCorner.CornerRadius = UDim.new(0, 8)
-ContentCorner.Parent = ContentArea
 
 local TabFrames = {}
 
@@ -410,14 +798,12 @@ local function CreateTab(tabName, layoutOrder)
     TabScroll.Size = UDim2.new(1, -12, 1, -12)
     TabScroll.Position = UDim2.new(0, 6, 0, 6)
     TabScroll.BackgroundTransparency = 1
-    TabScroll.BorderSizePixel = 0
     TabScroll.ScrollBarThickness = 4
     TabScroll.ScrollBarImageColor3 = CurrentTheme
     TabScroll.Visible = false
 
     local ScrollLayout = Instance.new("UIListLayout")
     ScrollLayout.Parent = TabScroll
-    ScrollLayout.SortOrder = Enum.SortOrder.LayoutOrder
     ScrollLayout.Padding = UDim.new(0, 8)
 
     TabFrames[tabName] = TabScroll
@@ -507,38 +893,75 @@ local function AddButton(parent, text, callback)
     Btn.MouseButton1Click:Connect(function() pcall(callback) end)
 end
 
--- TAB BUILDERS
-local TabFarm     = CreateTab("🌾 Khusus Farm", 1)
-local TabConsole  = CreateTab("🔍 Console & Log", 2)
+-- BUILD ALL TABS
+local TabHome     = CreateTab("🏠 Home & Profil", 1)
+local TabDebug    = CreateTab("🛠️ Remote Debugger", 2)
+local TabFarm     = CreateTab("🌾 Khusus Farm", 3)
+local TabTower    = CreateTab("🏰 Tower & Plot", 4)
+local TabUnit     = CreateTab("⚔️ Unit & Gear", 5)
+local TabShop     = CreateTab("⬆️ Upgrade & Shop", 6)
+local TabPlayer   = CreateTab("⚡ Player & Utils", 7)
+local TabConsole  = CreateTab("🔍 Console & Log", 8)
 
-TabFrames["🌾 Khusus Farm"].Visible = true
+TabFrames["🏠 Home & Profil"].Visible = true
 
--- TAB 1: KHUSUS FARM
-AddSection(TabFarm, "🎲 AUTOMATED FARMING")
-AddToggle(TabFarm, "Auto Roll Dice", "AutoRoll")
-AddToggle(TabFarm, "Auto Sell Inventory (Real ID Array)", "AutoSellInventory")
+-- TAB 1: HOME
+AddSection(TabHome, "👤 LIVE PROFIL USER")
+local ProfLabel = Instance.new("TextLabel")
+ProfLabel.Parent = TabHome
+ProfLabel.Size = UDim2.new(1, 0, 0, 45)
+ProfLabel.TextColor3 = Color3.fromRGB(220, 220, 230)
+ProfLabel.TextSize = 11
+ProfLabel.Font = Enum.Font.GothamMedium
+ProfLabel.TextXAlignment = Enum.TextXAlignment.Left
+ProfLabel.BackgroundTransparency = 1
 
-AddButton(TabFarm, "⚡ Eksekusi Auto Sell Sekarang (Manual)", function()
-    PerformSmartAutoSell()
+task.spawn(function()
+    while task.wait(1) do
+        pcall(function()
+            local gData = data()
+            ProfLabel.Text = string.format("User: %s | ID: %d\nUang: %s | Rebirth: %d", LocalPlayer.Name, LocalPlayer.UserId, tostring(gData and gData.Money or 0), gData and gData.Rebirth or 0)
+        end)
+    end
 end)
 
--- TAB 2: CONSOLE LOG
+-- TAB 3: KHUSUS FARM
+AddSection(TabFarm, "🎲 AUTOMATED FARMING ENGINE")
+AddToggle(TabFarm, "Auto Roll Dice (Pace Cooldown)", "AutoRoll")
+AddToggle(TabFarm, "Auto Roll Spins (Lucky/Jackpot)", "AutoSpins")
+AddToggle(TabFarm, "Auto Sell Inventory (Full Logic)", "AutoSell")
+
+AddButton(TabFarm, "⚡ Manual Sell Junk Sekarang", function()
+    performFullAutoSell(true)
+end)
+
+-- TAB 4: TOWER & PLOT
+AddSection(TabTower, "🏰 TOWER & PLOT AUTOMATION")
+AddToggle(TabTower, "Auto Collect Money / Plot Balance", "AutoCollect")
+AddToggle(TabTower, "Smart Placement (Potential Base)", "SmartPlace")
+AddToggle(TabTower, "Auto Level Up Slot (Smart Payback)", "AutoLevel")
+AddToggle(TabTower, "Auto Tower Runner (Simulated Floor)", "AutoTower")
+
+-- TAB 5: UNIT & GEAR
+AddSection(TabUnit, "⚔️ UNIT MANAGEMENT & REROLLS")
+AddToggle(TabUnit, "Auto Reroll Grade (Gems)", "AutoGrade")
+AddToggle(TabUnit, "Auto Reroll Trait (Trait Rerolls)", "AutoTrait")
+AddToggle(TabUnit, "Auto Fuse Units (Balanced Trios)", "AutoFusion")
+AddToggle(TabUnit, "Auto Use Boosts", "AutoBoost")
+
+-- TAB 6: SHOP & REBIRTH
+AddSection(TabShop, "🛒 SHOP & REBIRTH PROGRESS")
+AddToggle(TabShop, "Auto Buy Best Dice", "AutoDice")
+AddToggle(TabShop, "Auto Buy Pad Upgrades", "AutoUpgrade")
+AddToggle(TabShop, "Auto Rebirth", "AutoRebirth")
+
+-- TAB 8: CONSOLE
 AddSection(TabConsole, "📝 LIVE IN-UI CONSOLE LOG")
 LogScroll = Instance.new("ScrollingFrame")
 LogScroll.Parent = TabConsole
 LogScroll.Size = UDim2.new(1, 0, 0, 200)
 LogScroll.BackgroundColor3 = Color3.fromRGB(12, 12, 16)
-LogScroll.BorderSizePixel = 0
 LogScroll.ScrollBarThickness = 4
-
-local LogCorner = Instance.new("UICorner")
-LogCorner.CornerRadius = UDim.new(0, 6)
-LogCorner.Parent = LogScroll
-
-local LogLayout = Instance.new("UIListLayout")
-LogLayout.Parent = LogScroll
-LogLayout.SortOrder = Enum.SortOrder.LayoutOrder
-LogLayout.Padding = UDim.new(0, 2)
 
 -- FLOATING TOGGLE BUTTON
 local ToggleGui = Instance.new("ScreenGui")
@@ -557,18 +980,29 @@ ToggleBtn.TextSize = 22
 ToggleBtn.Active = true
 ToggleBtn.Draggable = true
 
-local TogCorner = Instance.new("UICorner")
-TogCorner.CornerRadius = UDim.new(0, 12)
-TogCorner.Parent = ToggleBtn
-
 ToggleBtn.MouseButton1Click:Connect(function() MainFrame.Visible = not MainFrame.Visible end)
 
--- AUTOMATION LOOP
+-- AUTOMATION LOOPS (THREAD SEPARATION LIKE GITHUB FILE)
 task.spawn(function()
-    MofenkNotify("MOFENKHUB V10.0", "Engine Sukses Terhubung ke Server Data!", "success", 3)
-    while task.wait(3) do
-        if _G.Mofenk.AutoSellInventory then
-            PerformSmartAutoSell()
+    MofenkNotify("MOFENKHUB V13.0", "Engine Cermin Berhasil Terhubung Sempurna!", "success", 3)
+    while task.wait(2.5) do
+        if _G.Mofenk.AutoRoll and R.RollDice then pcall(function() R.RollDice:InvokeServer() end) end
+    end
+end)
+
+task.spawn(function()
+    while task.wait(4) do
+        if _G.Mofenk.AutoSell then pcall(function() performFullAutoSell(false) end) end
+    end
+end)
+
+task.spawn(function()
+    while task.wait(5) do
+        if _G.Mofenk.AutoCollect and R.CollectBalance then
+            local gData = data()
+            if gData and gData.Slots then
+                for k, s in pairs(gData.Slots) do pcall(function() R.CollectBalance:FireServer(tonumber(k)) end) end
+            end
         end
     end
 end)
