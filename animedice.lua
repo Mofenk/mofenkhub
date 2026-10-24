@@ -37,8 +37,15 @@ _G.Mofenk = {
     EnableWalkSpeed = false, WalkSpeedVal = 16
 }
 
--- LOAD WINDUI LIBRARY (LINK GITHUB STABIL)
-local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/FootGes/WindUI/main/dist/main.lua"))()
+-- LOAD WINDUI LIBRARY (AUTO FALLBACK LINK)
+local WindUI
+local success = pcall(function()
+    WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/FootGes/WindUI/main/Source.lua"))()
+end)
+
+if not success or not WindUI then
+    WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/FootGes/WindUI/main/main.lua"))()
+end
 
 -- ==========================================
 -- 3. AUTO EXECUTE (QUEUE ON TELEPORT)
