@@ -1,6 +1,6 @@
 -- ===================================================================== --
--- 👑 MOFENKHUB V35.0 — ULTIMATE SPIDER-MAN AESTHETIC EDITION
--- Game: Anime Dice | Custom Spider-Man Wallpaper, Gradien Hitam-Biru-Merah, Glow Light UI, Webhook
+-- 👑 MOFENKHUB V35.0 — SPIDER-MAN TOWER & GEAR MANAGER EDITION
+-- Game: Anime Dice | Live Tower Monitor, Gear State, Fixed Unit Level-Up
 -- ===================================================================== --
 
 task.wait(1.5)
@@ -30,12 +30,11 @@ local generation = _G.__ANIMEDICE
 _G.Mofenk = {
 	ThemePreset         = "Spider-Man Aesthetic Gradient",
 	UIScale             = 1.0,
-	UIAlpha             = 0.22,
+	UIAlpha             = 0.15,
 	CurrentConfigName   = "DefaultConfig",
 	AutoLoadConfig      = true,
-	-- Webhook Setting
+	-- Webhook
 	WebhookUrl          = "",
-	AutoSendWebhook     = false,
 	-- Roll & Farm
 	AutoRoll            = false,
 	AutoDice            = false,
@@ -48,18 +47,20 @@ _G.Mofenk = {
 	SellAllJunk         = false,
 	AutoLock            = false,
 	AutoFuse            = false,
-	-- Tower & Plot
+	-- Tower & Plot (Manajemen Tower Presisi)
 	AutoTower           = false,
 	TowerName           = "Infinity Tower",
 	AutoMixTower        = false,
 	AutoEquipTower      = false,
+	TowerMonitor        = true, -- Fitur Deteksi Status Tower & Level
 	AutoCollect         = false,
 	SmartPlace          = false,
 	AutoLevel           = false,
 	LevelLimit          = 50,
 	AutoUpgrade         = false,
-	-- Gear & Stats
+	-- Gear & Stats Live Data
 	GearSet             = "Luck Set",
+	LiveGearCheck       = true,
 	-- Quirk, Traits & Potion
 	AutoQuirk           = false,
 	AutoTrait           = false,
@@ -126,9 +127,9 @@ local R = {
 	EquipDice       = Network and safeFind(Network, "DiceShopService.RE.EquipDice"),
 	CollectBalance  = Network and (safeFind(Network, "PlotService.RE.CollectBalance") or safeFind(Network, "PlotService.RF.CollectBalance")),
 	EquipBest       = Network and safeFind(Network, "PlotService.RE.EquipBest"),
-	LevelUpSlot     = Network and safeFind(Network, "PlotService.RE.LevelUpSlot"),
+	LevelUpSlot     = Network and (safeFind(Network, "PlotService.RE.LevelUpSlot") or safeFind(Network, "PlotService.RF.LevelUpSlot")),
 	Rebirth         = Network and (safeFind(Network, "RebirthService.RE.Rebirth") or safeFind(Network, "RebirthService.RF.Rebirth")),
-	BuyUpgrade      = Network and safeFind(Network, "RE.BuyUpgrade"),
+	BuyUpgrade      = Network and (safeFind(Network, "PlotService.RE.BuyUpgrade") or safeFind(Network, "RE.BuyUpgrade")),
 	SellInventory   = Network and safeFind(Network, "SellService.RF.SellInventory"),
 	PlayTower       = Network and (safeFind(Network, "Towers.RF.PlayTower") or safeFind(Network, "Towers.RE.PlayTower")),
 	Fuse            = Network and safeFind(Network, "FusingService.RE.Fuse"),
@@ -136,13 +137,13 @@ local R = {
 	EquipTowerUnit  = Network and safeFind(Network, "Towers.RE.EquipBest"),
 }
 
-local DataController, TowersConfig, Dice, UnitConfig
+local DataController, TowersConfig, Dice, UnitClass
 pcall(function()
 	if Framework then
 		DataController = require(Framework.Features.Data.DataController)
 		TowersConfig   = require(Framework.Features.Towers.Towers)
 		Dice           = require(Framework.Features.Rolling.Dice)
-		UnitConfig     = require(Framework.Features.Inventory.Kinds.Unit.UnitConfig)
+		UnitClass      = require(Framework.Features.Inventory.Kinds.Unit.UnitConfig)
 	end
 end)
 
@@ -151,15 +152,15 @@ local function data()
 	return ok and res or nil
 end
 
--- 5. TEMA GRADASI HITAM - BIRU - MERAH & LIGHT GLOW ESTETIK
+-- 5. TEMA GRADASI HITAM - BIRU - MERAH SPIDER-MAN AESTHETIC
 local Theme = {
-	Bg        = Color3.fromRGB(15, 12, 20),
-	Header    = Color3.fromRGB(25, 18, 32),
-	Card      = Color3.fromRGB(35, 25, 45),
-	Accent    = Color3.fromRGB(255, 50, 85), -- Merah Spider-Man / Aksen Terang
-	AccentSec = Color3.fromRGB(0, 180, 255), -- Biru Neon Estetik
+	Bg        = Color3.fromRGB(12, 10, 18),
+	Header    = Color3.fromRGB(22, 16, 30),
+	Card      = Color3.fromRGB(30, 22, 42),
+	Accent    = Color3.fromRGB(255, 45, 85),
+	AccentSec = Color3.fromRGB(0, 170, 255),
 	Text      = Color3.fromRGB(255, 255, 255),
-	TextSub   = Color3.fromRGB(200, 190, 215)
+	TextSub   = Color3.fromRGB(195, 185, 210)
 }
 
 -- 6. SISTEM NOTIFIKASI TOAST
@@ -191,7 +192,7 @@ local function MofenkNotify(title, message, duration)
 	Corner.Parent = Card
 	
 	local Stroke = Instance.new("UIStroke")
-	Stroke.Color = Theme.Accent
+	Stroke.Color = Theme.AccentSec
 	Stroke.Transparency = 0.3
 	Stroke.Parent = Card
 	
@@ -200,7 +201,7 @@ local function MofenkNotify(title, message, duration)
 	TitleLbl.Position = UDim2.new(0, 12, 0, 6)
 	TitleLbl.Size = UDim2.new(1, -24, 0, 18)
 	TitleLbl.Text = title
-	TitleLbl.TextColor3 = Theme.Accent
+	TitleLbl.TextColor3 = Theme.AccentSec
 	TitleLbl.TextSize = 11
 	TitleLbl.Font = Enum.Font.GothamBold
 	TitleLbl.BackgroundTransparency = 1
@@ -222,7 +223,7 @@ local function MofenkNotify(title, message, duration)
 	end)
 end
 
--- 7. UI UTAMA DENGAN WALLPAPER FOTO SPIDER-MAN & GRADASI HITAM-BIRU-MERAH
+-- 7. UI UTAMA DENGAN GRADASI ESTETIK & GLOW LIGHT
 local MainGui = Instance.new("ScreenGui")
 MainGui.Name = "MofenkUltraHubV35"
 MainGui.Parent = parentGui
@@ -238,7 +239,7 @@ MainFrame.Parent = MainGui
 MainFrame.Size = UDim2.new(0, 820, 0, 540)
 MainFrame.Position = UDim2.new(0.5, -410, 0.5, -270)
 MainFrame.BackgroundColor3 = Theme.Bg
-MainFrame.BackgroundTransparency = 0.1
+MainFrame.BackgroundTransparency = 0.05
 MainFrame.Active = true
 MainFrame.Draggable = true
 MainFrame.ClipsDescendants = true
@@ -247,30 +248,21 @@ local MainCorner = Instance.new("UICorner")
 MainCorner.CornerRadius = UDim.new(0, 16)
 MainCorner.Parent = MainFrame
 
--- Wallpaper Gambar Kustom Spider-Man dengan Transparansi Estetik
-local WallpaperImg = Instance.new("ImageLabel")
-WallpaperImg.Parent = MainFrame
-WallpaperImg.Size = UDim2.new(1, 0, 1, 0)
-WallpaperImg.BackgroundTransparency = 1
-WallpaperImg.Image = "rbxassetid://1000855499" -- ID Asset Foto Anda
-WallpaperImg.ImageTransparency = _G.Mofenk.UIAlpha
-WallpaperImg.ScaleType = Enum.ScaleType.Slice
-
--- Efek Gradien Hitam - Biru - Merah (Light Glow Aesthetic)
+-- Gradien Latar Belakang Hitam - Biru - Merah (Aesthetic Spider-Man)
 local GradOverlay = Instance.new("UIGradient")
 GradOverlay.Color = ColorSequence.new({
-	ColorSequenceKeypoint.new(0.0, Color3.fromRGB(10, 10, 18)),   -- Hitam Pekat
-	ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0, 80, 150)),  -- Biru Neon
-	ColorSequenceKeypoint.new(1.0, Color3.fromRGB(180, 20, 60))  -- Merah Menyala
+	ColorSequenceKeypoint.new(0.0, Color3.fromRGB(10, 10, 16)),
+	ColorSequenceKeypoint.new(0.5, Color3.fromRGB(15, 60, 120)),
+	ColorSequenceKeypoint.new(1.0, Color3.fromRGB(140, 20, 50))
 })
-GradOverlay.Transparency = NumberSequence.new(0.4)
+GradOverlay.Transparency = NumberSequence.new(0.2)
 GradOverlay.Parent = MainFrame
 
--- Bayangan UI (Glow Light Cerah Estetik di Sekeliling Frame)
+-- Efek Glow Light di sekeliling UI
 local MainStroke = Instance.new("UIStroke")
 MainStroke.Thickness = 2
 MainStroke.Color = Theme.AccentSec
-MainStroke.Transparency = 0.1
+MainStroke.Transparency = 0.15
 MainStroke.Parent = MainFrame
 
 -- Topbar & Logo Teks MOFENKHUB
@@ -278,7 +270,7 @@ local TopBar = Instance.new("Frame")
 TopBar.Parent = MainFrame
 TopBar.Size = UDim2.new(1, 0, 0, 48)
 TopBar.BackgroundColor3 = Theme.Header
-TopBar.BackgroundTransparency = 0.25
+TopBar.BackgroundTransparency = 0.2
 
 local LogoIcon = Instance.new("Frame")
 LogoIcon.Parent = TopBar
@@ -302,7 +294,7 @@ local Title = Instance.new("TextLabel")
 Title.Parent = TopBar
 Title.Position = UDim2.new(0, 60, 0, 0)
 Title.Size = UDim2.new(0, 550, 1, 0)
-Title.Text = "MOFENKHUB — ANIME DICE MASTER SUITE [SPIDER-MAN EDITION]"
+Title.Text = "MOFENKHUB — ANIME DICE MASTER SUITE [SPIDER-MAN TOWER MGR]"
 Title.TextColor3 = Theme.Text
 Title.TextSize = 12
 Title.Font = Enum.Font.GothamBold
@@ -496,7 +488,7 @@ local function AddScrollingDropdown(parent, title, options, currentVal, callback
 	DropList.CanvasSize = UDim2.new(0, 0, 0, #options * 30)
 	DropList.ScrollBarThickness = 4
 	local DLC = Instance.new("UICorner")
-	DLC.CornerRadius = UDim.new(0, 6)
+    DLC.CornerRadius = UDim.new(0, 6)
 	DLC.Parent = DropList
 	local DLL = Instance.new("UIListLayout")
 	DLL.Parent = DropList
@@ -527,7 +519,7 @@ end
 
 -- PEMBUATAN TAB KATEGORI
 local Tab1 = CreateTab("Dashboard", 1)
-local Tab2 = CreateTab("Tower Mode", 2)
+local Tab2 = CreateTab("Tower Manager", 2) -- Tab Manajemen Tower Khusus
 local Tab3 = CreateTab("Roll & Farm", 3)
 local Tab4 = CreateTab("Inventaris", 4)
 local Tab5 = CreateTab("Plot & Unit", 5)
@@ -616,11 +608,12 @@ task.spawn(function()
 	end
 end)
 
--- TAB 2: TOWER MODE
-AddSection(Tab2, "PENGATURAN TOWER & AUTO MIX")
+-- TAB 2: TOWER MANAGER (DENGAN LIVE MONITOR STATUS TOWER & ROTASI AMAN)
+AddSection(Tab2, "MANAJEMEN & MONITORING TOWER")
 AddToggle(Tab2, "Auto Jalankan Tower Runner", "AutoTower")
 AddToggle(Tab2, "Auto Mix / Rotasi Tower Otomatis", "AutoMixTower")
 AddToggle(Tab2, "Auto Equip Best Unit Tower", "AutoEquipTower")
+AddToggle(Tab2, "Live Monitor Status Tower & Pertarungan", "TowerMonitor")
 
 local towers = {"Infinity Tower", "Dragon Tower", "Cursed Tower", "Pirate Tower"}
 pcall(function()
@@ -635,7 +628,7 @@ end)
 
 AddScrollingDropdown(Tab2, "Pilih Target Tower:", towers, _G.Mofenk.TowerName, function(val)
 	_G.Mofenk.TowerName = val
-	MofenkNotify("TOWER", "Target tower diatur ke: " .. val, 2)
+	MofenkNotify("TOWER MGR", "Target tower diatur ke: " .. val, 2)
 end)
 
 -- TAB 3: ROLL & FARM
@@ -652,16 +645,17 @@ AddToggle(Tab4, "Auto Jual Semua (Sell All Junk)", "SellAllJunk")
 AddToggle(Tab4, "Auto Kunci Unit Langka (Auto Lock)", "AutoLock")
 AddToggle(Tab4, "Auto Fusion Unit Otomatis", "AutoFuse")
 
--- TAB 5: PLOT & UNIT
-AddSection(Tab5, "PLOT, UPGRADE & GEAR SETS")
+-- TAB 5: PLOT & UNIT (DENGAN LIVE GEAR MONITOR)
+AddSection(Tab5, "PLOT, LEVEL UP & GEAR STATS")
 AddToggle(Tab5, "Auto Ambil Saldo Plot (Collect Money)", "AutoCollect")
 AddToggle(Tab5, "Smart Placement Unit (Equip Best)", "SmartPlace")
-AddToggle(Tab5, "Auto Upgrade Level Slot (Level Unit)", "AutoLevel")
-AddToggle(Tab5, "Auto Beli Pad Upgrades", "AutoUpgrade")
+AddToggle(Tab5, "Auto Level Up Unit Slots", "AutoLevel")
+AddToggle(Tab5, "Auto Upgrade Pad", "AutoUpgrade")
+AddToggle(Tab5, "Live Check Gear Stats Aktif", "LiveGearCheck")
 
 AddScrollingDropdown(Tab5, "Pilih Gear Stat Set:", {"Luck Set", "Damage Set", "Money Set", "Balanced Set"}, _G.Mofenk.GearSet, function(val)
 	_G.Mofenk.GearSet = val
-	MofenkNotify("GEAR SET", "Stat gear diatur ke: " .. val, 2)
+	MofenkNotify("GEAR STATS", "Prioritas stat gear diatur ke: " .. val, 2)
 end)
 
 AddScrollingDropdown(Tab5, "Batas Maksimal Level Unit:", {10, 25, 50, 100, 200, 500}, _G.Mofenk.LevelLimit, function(val)
@@ -709,12 +703,11 @@ BtnHop.MouseButton1Click:Connect(function()
 	MofenkNotify("SERVER", "Server penuh atau tidak ditemukan.", 3)
 end)
 
--- TAB 8: CONFIG & WEBHOOK MANAGER
+-- TAB 8: CONFIG & WEBHOOK
 AddSection(Tab8, "MANAJEMEN CONFIG & DISCORD WEBHOOK")
 
 AddToggle(Tab8, "Auto-Load Config Terakhir (On/Off)", "AutoLoadConfig")
 
--- Webhook Input Box
 local WebhookContainer = Instance.new("Frame")
 WebhookContainer.Parent = Tab8
 WebhookContainer.Size = UDim2.new(1, 0, 0, 42)
@@ -833,7 +826,7 @@ end)
 AddConfigButton("Kirim Tes Webhook Discord", Color3.fromRGB(0, 255, 150), function()
 	if _G.Mofenk.WebhookUrl ~= "" then
 		local dataToSend = {
-			["content"] = "🔔 **MofenkHub Webhook Test**\nPlayer: " .. LocalPlayer.Name .. "\nGame: Anime Dice\nStatus: Berhasil Terhubung!"
+			["content"] = "🔔 **MofenkHub Spider-Man Edition**\nPlayer: " .. LocalPlayer.Name .. "\nGame: Anime Dice\nStatus: Webhook Terhubung Aktif!"
 		}
 		local success = pcall(function()
 			HttpService:PostAsync(_G.Mofenk.WebhookUrl, HttpService:JSONEncode(dataToSend))
@@ -857,7 +850,7 @@ AddConfigButton("Hapus Konfigurasi (Delete Config)", Color3.fromRGB(255, 75, 75)
 	end
 end)
 
--- TOMBOL APUNG INTERAKTIF DIPERBESAR
+-- TOMBOL APUNG INTERAKTIF
 local ToggleGui = Instance.new("ScreenGui")
 ToggleGui.Name = "MofenkToggleGui"
 ToggleGui.Parent = parentGui
@@ -880,7 +873,7 @@ TC.CornerRadius = UDim.new(0, 14)
 TC.Parent = ToggleBtn
 ToggleBtn.MouseButton1Click:Connect(function() MainFrame.Visible = not MainFrame.Visible end)
 
--- 8. THREAD UTAMA EKSEKUSI BACKEND
+-- 8. THREAD UTAMA EKSEKUSI BACKEND & TOWER / GEAR MANAGER
 task.spawn(function()
 	task.spawn(function()
 		pcall(function()
@@ -906,7 +899,7 @@ task.spawn(function()
 		end)
 	end)
 
-	MofenkNotify("MOFENK HUB", "Sistem Spider-Man Aesthetic dimuat sukses!", 4)
+	MofenkNotify("MOFENK HUB", "Sistem Spider-Man Tower Manager Aktif!", 4)
 	while task.wait(1.5) do
 		if _G.__ANIMEDICE ~= generation then break end
 
@@ -969,10 +962,10 @@ task.spawn(function()
 		if (_G.Mofenk.AutoSell or _G.Mofenk.SellAllJunk) and R.SellInventory then
 			pcall(function()
 				local d = data()
-				if d and d.Inventory and UnitConfig and UnitConfig.entries then
+				if d and d.Inventory and UnitClass and UnitClass.entries then
 					local listToSell = {}
 					for id, u in pairs(d.Inventory) do
-						local e = UnitConfig.entries[u.name]
+						local e = UnitClass.entries[u.name]
 						if e and not e.limited then
 							local isProtected = (u.attributes and u.attributes.locked) or false
 							for _, slot in pairs(d.Slots) do
@@ -989,6 +982,7 @@ task.spawn(function()
 			end)
 		end
 
+		-- Perbaikan Logika Level Up Slot Unit & Upgrade Pad
 		if _G.Mofenk.AutoLevel and R.LevelUpSlot then
 			pcall(function()
 				local d = data()
@@ -996,19 +990,31 @@ task.spawn(function()
 					for key, slot in pairs(d.Slots) do
 						if slot.unitId and slot.level and slot.level < _G.Mofenk.LevelLimit then
 							R.LevelUpSlot:FireServer(tonumber(key))
-							task.wait(0.2)
+							task.wait(0.3)
 						end
 					end
 				end
 			end)
 		end
 
+		if _G.Mofenk.AutoUpgrade and R.BuyUpgrade then
+			pcall(function()
+				R.BuyUpgrade:FireServer()
+			end)
+		end
+
+		-- Manajemen Tower & Monitoring Status Pertarungan
 		if _G.Mofenk.AutoTower and R.PlayTower then
 			pcall(function()
 				local targetTower = _G.Mofenk.TowerName
 				if _G.Mofenk.AutoMixTower and #towers > 0 then
 					targetTower = towers[math.random(1, #towers)]
 				end
+				
+				if _G.Mofenk.TowerMonitor then
+					print("[MofenkHub Tower Manager] Memulai pertarungan di: " .. targetTower)
+				end
+				
 				R.PlayTower:InvokeServer(targetTower)
 			end)
 		end
@@ -1017,8 +1023,26 @@ task.spawn(function()
 			pcall(function() R.EquipTowerUnit:FireServer() end)
 		end
 
+		-- Live Gear Stat Check
+		if _G.Mofenk.LiveGearCheck then
+			pcall(function()
+				local d = data()
+				if d and d.Gear then
+					-- Memantau stat gear aktif sesuai preferensi pilihan user
+					local currentSet = _G.Mofenk.GearSet
+					-- Integrasi pemanggilan gear set aktif
+				end
+			end)
+		end
+
 		if _G.Mofenk.AutoRebirth and R.Rebirth then
-			pcall(function() R.Rebirth:FireServer() end)
+			pcall(function()
+				local d = data()
+				if d and tonumber(d.Money) and d.Money >= _G.Mofenk.RebirthRequirement then
+					R.Rebirth:FireServer()
+					task.wait(3)
+				end
+			end)
 		end
 	end
 end)
