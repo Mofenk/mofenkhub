@@ -1,6 +1,6 @@
 -- =====================================================================
--- 👑 MOFENKHUB V1.0 — ANIME DICE EDITION (LIVE AVATAR + FLUENT)
--- Game: Anime Dice | Live Profile + Avatar, Stats, Inventory & Gear
+-- 👑 MOFENKHUB V1.0 — ANIME DICE EDITION (SAFE LOAD + LIVE AVATAR)
+-- Game: Anime Dice | Live Profile, Live Avatar, Live Stats & Remotes
 -- =====================================================================
 
 local Players = game:GetService("Players")
@@ -50,7 +50,7 @@ _G.Mofenk = {
     EnableWalkSpeed = false, WalkSpeedVal = 16
 }
 
--- 3. PATH REMOTE EVENT & FUNCTION (HASIL SCAN LENGKAP)
+-- 3. PATH REMOTE EVENT & FUNCTION
 local Network = ReplicatedStorage:WaitForChild("Network", 5)
 
 local RollService = Network and Network:FindFirstChild("RollService")
@@ -68,10 +68,30 @@ local FusingService = Network and Network:FindFirstChild("FusingService")
 local CodesService = Network and Network:FindFirstChild("CodesService")
 local BoostService = Network and Network:FindFirstChild("BoostService")
 
--- 4. LOAD FLUENT UI & ADDONS
-local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
-local SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/main/Addons/SaveManager.lua"))()
-local InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/main/Addons/InterfaceManager.lua"))()
+-- 4. SAFE LOAD FLUENT UI & ADDONS (MENGHINDARI HTTP 404)
+local Fluent, SaveManager, InterfaceManager
+
+pcall(function()
+    Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+end)
+
+pcall(function()
+    SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/main/Addons/SaveManager.lua"))()
+end)
+if not SaveManager then
+    pcall(function()
+        SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua"))()
+    end)
+end
+
+pcall(function()
+    InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/main/Addons/InterfaceManager.lua"))()
+end)
+if not InterfaceManager then
+    pcall(function()
+        InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/InterfaceManager.lua"))()
+    end)
+end
 
 -- 5. AUTO EXECUTE (QUEUE ON TELEPORT)
 local function ApplyQueueOnTeleport()
@@ -101,11 +121,13 @@ local function ScanGameRemotes()
         end
     end
     print("==========================================\n")
-    Fluent:Notify({
-        Title = "Remote Scan Selesai! 📡",
-        Content = "Ditemukan " .. count .. " Remote. Hasil lengkap dicetak ke F9 Console!",
-        Duration = 5
-    })
+    if Fluent then
+        Fluent:Notify({
+            Title = "Remote Scan Selesai! 📡",
+            Content = "Ditemukan " .. count .. " Remote. Hasil lengkap dicetak ke F9 Console!",
+            Duration = 5
+        })
+    end
 end
 
 local function ScanInventoryAndStats()
@@ -130,11 +152,13 @@ local function ScanInventoryAndStats()
         print("GUI Layer: " .. gui.Name)
     end
     print("==========================================\n")
-    Fluent:Notify({
-        Title = "Inventory Scan Selesai! 📦",
-        Content = "Data Stats & GUI dicetak ke F9 Console!",
-        Duration = 5
-    })
+    if Fluent then
+        Fluent:Notify({
+            Title = "Inventory Scan Selesai! 📦",
+            Content = "Data Stats & GUI dicetak ke F9 Console!",
+            Duration = 5
+        })
+    end
 end
 
 local function ScanWorkspacePrompts()
@@ -149,11 +173,13 @@ local function ScanWorkspacePrompts()
         end
     end
     print("==========================================\n")
-    Fluent:Notify({
-        Title = "Prompt Scan Selesai! 🏗️",
-        Content = "Ditemukan " .. count .. " Interactive Object di Workspace (Cek F9)!",
-        Duration = 5
-    })
+    if Fluent then
+        Fluent:Notify({
+            Title = "Prompt Scan Selesai! 🏗️",
+            Content = "Ditemukan " .. count .. " Interactive Object di Workspace (Cek F9)!",
+            Duration = 5
+        })
+    end
 end
 
 -- 7. REAL-TIME NETWORK SPY HOOK (__NAMECALL) 🕵️
@@ -177,18 +203,20 @@ if hookmetatable and rawNamecall then
                     print(logMessage)
                 end
                 
-                Fluent:Notify({
-                    Title = "📡 Remote: " .. self.Name,
-                    Content = "Method: " .. method .. "\nArgs: " .. (argStr ~= "" and argStr or "Tanpa Argument"),
-                    Duration = 3
-                })
+                if Fluent then
+                    Fluent:Notify({
+                        Title = "📡 Remote: " .. self.Name,
+                        Content = "Method: " .. method .. "\nArgs: " .. (argStr ~= "" and argStr or "Tanpa Argument"),
+                        Duration = 3
+                    })
+                end
             end)
         end
         return oldNamecall(self, ...)
     end))
 end
 
--- 8. FUNGSI LIVE DATA SCANNER (PROFIL + AVATAR, STATS, INVENTORY, ITEMS)
+-- 8. FUNGSI LIVE DATA SCANNER
 local function GetLiveProfileInfo()
     return string.format(
         "Username (USN) : %s\nDisplay Name    : %s\nUser ID         : %d\nAccount Age     : %d Hari",
@@ -451,6 +479,8 @@ LocalPlayer.Idled:Connect(function()
 end)
 
 -- 11. FLUENT UI WINDOW & TABS SETUP
+if not Fluent then return end
+
 local Window = Fluent:CreateWindow({
     Title = "MofenkHub | Anime Dice 🎲",
     SubTitle = "by Mofenk",
@@ -475,7 +505,7 @@ local LiveProfilePara = Tabs.Home:AddParagraph({
     Content = GetLiveProfileInfo()
 })
 
--- TAMPILKAN FOTO AVATAR PLAYER DI UI PARAGRAPH
+-- AVATAR HEADSHOT IMAGE
 task.spawn(function()
     task.wait(0.5)
     pcall(function()
@@ -512,7 +542,7 @@ local LiveInvPara = Tabs.Home:AddParagraph({
     Content = GetLiveInventoryInfo()
 })
 
--- LOOP BACKGROUND PENGUPDATE LIVE DATA REAL-TIME (EVERY 1S)
+-- LOOP UPDATE REALTIME
 task.spawn(function()
     while task.wait(1) do
         pcall(function()
@@ -720,20 +750,29 @@ Tabs.Player:AddButton({
     Callback = function() ServerHop() end
 })
 
--- 12. SETUP CONFIG MANAGER & INTERFACE
-SaveManager:SetLibrary(Fluent)
-InterfaceManager:SetLibrary(Fluent)
+-- 12. SETUP CONFIG MANAGER & INTERFACE (JIKA ADDON BERHASIL TERLOAD)
+if SaveManager and InterfaceManager then
+    pcall(function()
+        SaveManager:SetLibrary(Fluent)
+        InterfaceManager:SetLibrary(Fluent)
 
-SaveManager:IgnoreThemeSettings()
-SaveManager:SetIgnoreIndexes({})
+        SaveManager:IgnoreThemeSettings()
+        SaveManager:SetIgnoreIndexes({})
 
-SaveManager:SetFolder("MofenkHub/AnimeDice")
-InterfaceManager:SetFolder("MofenkHub")
+        SaveManager:SetFolder("MofenkHub/AnimeDice")
+        InterfaceManager:SetFolder("MofenkHub")
 
-InterfaceManager:BuildInterfaceSection(Tabs.Settings)
-SaveManager:BuildConfigSection(Tabs.Settings)
+        InterfaceManager:BuildInterfaceSection(Tabs.Settings)
+        SaveManager:BuildConfigSection(Tabs.Settings)
 
-SaveManager:LoadAutoloadConfig()
+        SaveManager:LoadAutoloadConfig()
+    end)
+else
+    Tabs.Settings:AddParagraph({
+        Title = "Config Manager",
+        Content = "Sistem Config offline sementara, semua fitur utama tetap berjalan normal."
+    })
+end
 
 -- 13. FLOATING LOGO TOGGLE BUTTON
 local ToggleGui = Instance.new("ScreenGui")
