@@ -1,6 +1,6 @@
 -- =====================================================================
--- 👑 MOFENKHUB V4.0 — ULTRA DIAGNOSTIC & RESIZABLE EDITION
--- Game: Anime Dice | Full Sell Remotes, Diagnostics, Resizable & Draggable UI
+-- 👑 MOFENKHUB V5.0 — DEEP DATA INSPECTOR & REAL-TIME EVENT TRACKER
+-- Game: Anime Dice | Deep Table Unpacker, Server Return Inspector & Live Event Monitor
 -- Compatible: Delta, Delta Lite, UgPhone, vsphone, Hydrogen, Codex
 -- =====================================================================
 
@@ -18,7 +18,7 @@ local LocalPlayer = Players.LocalPlayer
 -- 1. PEMBERSIHAN UI LAMA
 local parentGui = pcall(function() return CoreGui end) and CoreGui or LocalPlayer:WaitForChild("PlayerGui")
 for _, v in pairs(parentGui:GetChildren()) do 
-    if v.Name == "MofenkUltraHubV4" or v.Name == "MofenkToggleGui" then 
+    if v.Name == "MofenkUltraHubV5" or v.Name == "MofenkToggleGui" then 
         pcall(function() v:Destroy() end) 
     end 
 end
@@ -31,6 +31,8 @@ _G.Mofenk = {
     
     SpyEnabled = true,
     SpyConsoleLog = true,
+    DeepInspect = true,
+    TrackStatChanges = true,
     
     -- Feature Toggles
     AutoRoll = false,
@@ -69,13 +71,39 @@ local ThemeStrokes = {}
 local function UpdateThemeColor(newColor)
     CurrentTheme = newColor
     for _, stroke in ipairs(ThemeStrokes) do
-        if stroke and stroke.Parent then
-            stroke.Color = newColor
-        end
+        if stroke and stroke.Parent then stroke.Color = newColor end
     end
 end
 
--- 4. PATH REMOTE EVENT & FUNCTION (HASIL SCAN CONS0LE F9)
+-- 4. DEEP TABLE UNPACKER & SERIALIZER 🔍
+local function DumpTable(tbl, maxDepth, currentDepth)
+    currentDepth = currentDepth or 1
+    maxDepth = maxDepth or 3
+    if type(tbl) ~= "table" then return tostring(tbl) end
+    if currentDepth > maxDepth then return "{...}" end
+
+    local str = "{"
+    local first = true
+    for k, v in pairs(tbl) do
+        if not first then str = str .. ", " end
+        first = false
+        local keyStr = tostring(k)
+        local valStr
+        if type(v) == "table" then
+            valStr = DumpTable(v, maxDepth, currentDepth + 1)
+        elseif type(v) == "string" then
+            valStr = '"' .. v .. '"'
+        elseif typeof(v) == "Instance" then
+            valStr = string.format("<Instance: %s>", v.Name)
+        else
+            valStr = tostring(v)
+        end
+        str = str .. keyStr .. " = " .. valStr
+    end
+    return str .. "}"
+end
+
+-- 5. PATH REMOTE EVENT & FUNCTION
 local Network = ReplicatedStorage:WaitForChild("Network", 5)
 
 local RollService = Network and Network:FindFirstChild("RollService")
@@ -93,7 +121,7 @@ local FusingService = Network and Network:FindFirstChild("FusingService")
 local CodesService = Network and Network:FindFirstChild("CodesService")
 local BoostService = Network and Network:FindFirstChild("BoostService")
 
--- 5. REAL-TIME LOGGING ENGINE 📝
+-- 6. REAL-TIME LOGGING ENGINE 📝
 local LogScroll = nil
 local function MofenkLog(msg, logType)
     local timestamp = os.date("%H:%M:%S")
@@ -110,10 +138,14 @@ local function MofenkLog(msg, logType)
             LogItem.TextColor3 = Color3.fromRGB(255, 90, 90)
         elseif logType == "success" then
             LogItem.TextColor3 = Color3.fromRGB(100, 255, 150)
-        elseif logType == "warn" then
-            LogItem.TextColor3 = Color3.fromRGB(255, 200, 80)
+        elseif logType == "send" then
+            LogItem.TextColor3 = Color3.fromRGB(120, 200, 255)
+        elseif logType == "return" then
+            LogItem.TextColor3 = Color3.fromRGB(255, 215, 0)
+        elseif logType == "stat" then
+            LogItem.TextColor3 = Color3.fromRGB(220, 130, 255)
         else
-            LogItem.TextColor3 = Color3.fromRGB(180, 220, 255)
+            LogItem.TextColor3 = Color3.fromRGB(200, 210, 225)
         end
         
         LogItem.TextSize = 11
@@ -125,18 +157,97 @@ local function MofenkLog(msg, logType)
     end
 end
 
--- 6. PURE CUSTOM RAYFIELD UI BUILDER (DRAGGABLE + RESIZABLE)
+-- 7. DEEP NETWORK SPY HOOK (__NAMECALL)
+local rawNamecall = getrawmetatable and getrawmetatable(game) and getrawmetatable(game).__namecall
+if hookmetatable and rawNamecall then
+    local oldNamecall
+    oldNamecall = hookmetatable(game, "__namecall", newcclosure(function(self, ...)
+        local method = getnamecallmethod()
+        local args = {...}
+
+        if _G.Mofenk.SpyEnabled and (method == "FireServer" or method == "InvokeServer") then
+            task.spawn(function()
+                local parsedArgs = {}
+                for i, arg in ipairs(args) do
+                    if type(arg) == "table" then
+                        table.insert(parsedArgs, string.format("[%d]: %s", i, DumpTable(arg)))
+                    elseif typeof(arg) == "Instance" then
+                        table.insert(parsedArgs, string.format("[%d]: %s (%s)", i, arg:GetFullName(), arg.ClassName))
+                    else
+                        table.insert(parsedArgs, string.format("[%d]: %s (%s)", i, tostring(arg), type(arg)))
+                    end
+                end
+                local argStr = #parsedArgs > 0 and table.concat(parsedArgs, " | ") or "Tanpa Arg"
+                MofenkLog(string.format("📡 [SEND] %s | %s | %s", self.Name, method, argStr), "send")
+            end)
+
+            if method == "InvokeServer" then
+                local results = {oldNamecall(self, ...)}
+                task.spawn(function()
+                    local parsedRes = {}
+                    for i, res in ipairs(results) do
+                        if type(res) == "table" then
+                            table.insert(parsedRes, string.format("[%d]: %s", i, DumpTable(res)))
+                        else
+                            table.insert(parsedRes, string.format("[%d]: %s", i, tostring(res)))
+                        end
+                    end
+                    local resStr = #parsedRes > 0 and table.concat(parsedRes, " | ") or "Nil"
+                    MofenkLog(string.format("📥 [SERVER RETURN] %s -> %s", self.Name, resStr), "return")
+                end)
+                return unpack(results)
+            end
+        end
+        return oldNamecall(self, ...)
+    end))
+end
+
+-- 8. REAL-TIME STAT & BACKPACK EVENT LISTENER
+task.spawn(function()
+    task.wait(2)
+    -- Leaderstats Monitor
+    local leaderstats = LocalPlayer:WaitForChild("leaderstats", 5)
+    if leaderstats then
+        for _, stat in ipairs(leaderstats:GetChildren()) do
+            local lastVal = stat.Value
+            stat.Changed:Connect(function(newVal)
+                if _G.Mofenk.TrackStatChanges then
+                    local diff = type(newVal) == "number" and type(lastVal) == "number" and (newVal - lastVal) or nil
+                    local diffStr = diff and string.format(" (%s%d)", diff >= 0 and "+" or "", diff) or ""
+                    MofenkLog(string.format("📈 [STAT BERUBAH] %s: %s%s", stat.Name, tostring(newVal), diffStr), "stat")
+                    lastVal = newVal
+                end
+            end)
+        end
+    end
+
+    -- Backpack Item Monitor
+    local backpack = LocalPlayer:WaitForChild("Backpack", 5)
+    if backpack then
+        backpack.ChildAdded:Connect(function(child)
+            if _G.Mofenk.TrackStatChanges then
+                MofenkLog(string.format("📦 [ITEM DITAMBAH] + %s (%s)", child.Name, child.ClassName), "stat")
+            end
+        end)
+        backpack.ChildRemoved:Connect(function(child)
+            if _G.Mofenk.TrackStatChanges then
+                MofenkLog(string.format("🗑️ [ITEM TERHAPUS/DIJUAL] - %s", child.Name), "stat")
+            end
+        end)
+    end
+end)
+
+-- 9. PURE CUSTOM RAYFIELD UI BUILDER (DRAGGABLE + RESIZABLE)
 local MainGui = Instance.new("ScreenGui")
-MainGui.Name = "MofenkUltraHubV4"
+MainGui.Name = "MofenkUltraHubV5"
 MainGui.Parent = parentGui
 MainGui.ResetOnSpawn = false
 
--- Container Utama Frame
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
 MainFrame.Parent = MainGui
-MainFrame.Size = UDim2.new(0, 580, 0, 380)
-MainFrame.Position = UDim2.new(0.5, -290, 0.5, -190)
+MainFrame.Size = UDim2.new(0, 590, 0, 390)
+MainFrame.Position = UDim2.new(0.5, -295, 0.5, -195)
 MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 19)
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
@@ -153,7 +264,7 @@ MainStroke.Color = CurrentTheme
 MainStroke.Parent = MainFrame
 table.insert(ThemeStrokes, MainStroke)
 
--- Top Header Bar
+-- Header Top Bar
 local TopBar = Instance.new("Frame")
 TopBar.Name = "TopBar"
 TopBar.Parent = MainFrame
@@ -169,13 +280,12 @@ local TitleLabel = Instance.new("TextLabel")
 TitleLabel.Parent = TopBar
 TitleLabel.Position = UDim2.new(0, 14, 0, 0)
 TitleLabel.Size = UDim2.new(0, 180, 1, 0)
-TitleLabel.Text = "MOFENKHUB V4.0"
+TitleLabel.Text = "MOFENKHUB V5.0"
 TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 TitleLabel.TextSize = 14
 TitleLabel.Font = Enum.Font.GothamBold
 TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
 
--- FPS & Ping Monitor
 local StatsLabel = Instance.new("TextLabel")
 StatsLabel.Parent = TopBar
 StatsLabel.Position = UDim2.new(0, 180, 0, 0)
@@ -186,7 +296,6 @@ StatsLabel.TextSize = 11
 StatsLabel.Font = Enum.Font.GothamMedium
 StatsLabel.TextXAlignment = Enum.TextXAlignment.Left
 
--- Minimize Button
 local MinimizeBtn = Instance.new("TextButton")
 MinimizeBtn.Parent = TopBar
 MinimizeBtn.Position = UDim2.new(1, -38, 0, 7)
@@ -201,11 +310,9 @@ local MinCorner = Instance.new("UICorner")
 MinCorner.CornerRadius = UDim.new(0, 6)
 MinCorner.Parent = MinimizeBtn
 
-MinimizeBtn.MouseButton1Click:Connect(function()
-    MainFrame.Visible = false
-end)
+MinimizeBtn.MouseButton1Click:Connect(function() MainFrame.Visible = false end)
 
--- RESIZE HANDLE (TOMBOL RESIZE POJOK KANAN BAWAH)
+-- RESIZE HANDLE
 local ResizeBtn = Instance.new("TextButton")
 ResizeBtn.Name = "ResizeHandle"
 ResizeBtn.Parent = MainFrame
@@ -277,7 +384,6 @@ local ContentCorner = Instance.new("UICorner")
 ContentCorner.CornerRadius = UDim.new(0, 8)
 ContentCorner.Parent = ContentArea
 
--- TAB CREATION LOGIC
 local TabFrames = {}
 
 local function CreateTab(tabName, layoutOrder)
@@ -314,9 +420,7 @@ local function CreateTab(tabName, layoutOrder)
     TabFrames[tabName] = TabScroll
 
     TabBtn.MouseButton1Click:Connect(function()
-        for name, frame in pairs(TabFrames) do
-            frame.Visible = (name == tabName)
-        end
+        for name, frame in pairs(TabFrames) do frame.Visible = (name == tabName) end
         for _, btn in ipairs(Sidebar:GetChildren()) do
             if btn:IsA("TextButton") then
                 btn.TextColor3 = Color3.fromRGB(170, 170, 190)
@@ -330,7 +434,6 @@ local function CreateTab(tabName, layoutOrder)
     return TabScroll
 end
 
--- HELPER UI COMPONENT BUILDERS
 local function AddSection(parent, titleText)
     local SecLabel = Instance.new("TextLabel")
     SecLabel.Parent = parent
@@ -398,9 +501,7 @@ local function AddButton(parent, text, callback)
     Corner.CornerRadius = UDim.new(0, 6)
     Corner.Parent = Btn
 
-    Btn.MouseButton1Click:Connect(function()
-        pcall(callback)
-    end)
+    Btn.MouseButton1Click:Connect(function() pcall(callback) end)
 end
 
 -- TAB BUILDERS
@@ -496,23 +597,21 @@ task.spawn(function()
     end
 end)
 
--- TAB 2: KHUSUS FARM (DENGAN ALL SELL REMOTES INTEGRATED)
+-- TAB 2: KHUSUS FARM
 AddSection(TabFarm, "🎲 AUTOMATED FARMING")
 AddToggle(TabFarm, "Auto Roll Dice", "AutoRoll")
 AddToggle(TabFarm, "Smart Rebirth (3s Cooldown)", "AutoRebirth")
 
-AddSection(TabFarm, "💰 SELL REMOTES DIAGNOSTIC & AUTOMATION")
+AddSection(TabFarm, "💰 SELL REMOTES & DIAGNOSTICS")
 AddToggle(TabFarm, "Auto Sell Inventory (SellInventory)", "AutoSellInventory")
 AddToggle(TabFarm, "Auto Sell Equipped (SellEquipped)", "AutoSellEquipped")
 AddToggle(TabFarm, "Game AutoSell Switcher (SetAutoSell)", "EnableGameAutoSell", function(state)
     if SellService then
         if SellService:FindFirstChild("RE") and SellService.RE:FindFirstChild("SetAutoSell") then
             pcall(function() SellService.RE.SetAutoSell:FireServer(state) end)
-            MofenkLog("SetAutoSell Fired: " .. tostring(state), "info")
         end
         if SellService:FindFirstChild("RE") and SellService.RE:FindFirstChild("UpdateAutoSell") then
             pcall(function() SellService.RE.UpdateAutoSell:FireServer(state) end)
-            MofenkLog("UpdateAutoSell Fired: " .. tostring(state), "info")
         end
     end
 end)
@@ -520,18 +619,9 @@ end)
 AddButton(TabFarm, "Tes Manual Sell Inventory Sekarang", function()
     if SellService and SellService:FindFirstChild("RF") and SellService.RF:FindFirstChild("SellInventory") then
         local res = SellService.RF.SellInventory:InvokeServer()
-        MofenkLog("[MANUAL TEST] SellInventory Res: " .. tostring(res), "success")
+        MofenkLog("[MANUAL TEST] SellInventory Res: " .. DumpTable(res), "return")
     else
         MofenkLog("[MANUAL TEST] SellInventory RF Tidak Ditemukan!", "error")
-    end
-end)
-
-AddButton(TabFarm, "Tes Manual Sell Equipped Sekarang", function()
-    if SellService and SellService:FindFirstChild("RF") and SellService.RF:FindFirstChild("SellEquipped") then
-        local res = SellService.RF.SellEquipped:InvokeServer()
-        MofenkLog("[MANUAL TEST] SellEquipped Res: " .. tostring(res), "success")
-    else
-        MofenkLog("[MANUAL TEST] SellEquipped RF Tidak Ditemukan!", "error")
     end
 end)
 
@@ -650,8 +740,9 @@ LogLayout.SortOrder = Enum.SortOrder.LayoutOrder
 LogLayout.Padding = UDim.new(0, 2)
 
 AddToggle(TabConsole, "Real-Time Remote Spy Log", "SpyConsoleLog")
+AddToggle(TabConsole, "Track Stat & Item Changes", "TrackStatChanges")
 
--- 7. FLOATING LOGO TOGGLE BUTTON
+-- FLOATING LOGO TOGGLE BUTTON
 local ToggleGui = Instance.new("ScreenGui")
 ToggleGui.Name = "MofenkToggleGui"
 ToggleGui.Parent = parentGui
@@ -678,11 +769,9 @@ TogStroke.Color = CurrentTheme
 TogStroke.Parent = ToggleBtn
 table.insert(ThemeStrokes, TogStroke)
 
-ToggleBtn.MouseButton1Click:Connect(function()
-    MainFrame.Visible = not MainFrame.Visible
-end)
+ToggleBtn.MouseButton1Click:Connect(function() MainFrame.Visible = not MainFrame.Visible end)
 
--- 8. FPS & PING STATS ENGINE
+-- FPS & PING STATS ENGINE
 local frameCount = 0
 local lastTime = tick()
 local currentFPS = 60
@@ -706,7 +795,7 @@ task.spawn(function()
     end
 end)
 
--- 9. ANTI-AFK ENGINE
+-- ANTI-AFK ENGINE
 LocalPlayer.Idled:Connect(function()
     if _G.Mofenk.AutoAFK then
         VirtualUser:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
@@ -715,66 +804,38 @@ LocalPlayer.Idled:Connect(function()
     end
 end)
 
--- 10. DIAGNOSTIC MAIN AUTOMATION ENGINE
+-- DIAGNOSTIC MAIN AUTOMATION LOOP
 task.spawn(function()
-    MofenkLog("MofenkHub V4.0 Berhasil Dijalankan!", "success")
+    MofenkLog("MofenkHub V5.0 Deep Inspector Running!", "success")
     while task.wait(0.5) do
-        -- AUTO SELL INVENTORY (WITH DIAGNOSTIC LOG)
         if _G.Mofenk.AutoSellInventory then
             if SellService and SellService:FindFirstChild("RF") and SellService.RF:FindFirstChild("SellInventory") then
-                local success, result = pcall(function()
-                    return SellService.RF.SellInventory:InvokeServer()
+                pcall(function()
+                    local res = SellService.RF.SellInventory:InvokeServer()
+                    MofenkLog("[AUTO SELL INVENTORY] Return: " .. DumpTable(res), "return")
                 end)
-                if success then
-                    MofenkLog("[AUTO SELL INVENTORY] Result: " .. tostring(result), "success")
-                else
-                    MofenkLog("[AUTO SELL INVENTORY] Error: " .. tostring(result), "error")
-                end
-            else
-                MofenkLog("SellService.RF.SellInventory tidak terdeteksi!", "error")
             end
         end
 
-        -- AUTO SELL EQUIPPED (WITH DIAGNOSTIC LOG)
         if _G.Mofenk.AutoSellEquipped then
             if SellService and SellService:FindFirstChild("RF") and SellService.RF:FindFirstChild("SellEquipped") then
-                local success, result = pcall(function()
-                    return SellService.RF.SellEquipped:InvokeServer()
+                pcall(function()
+                    local res = SellService.RF.SellEquipped:InvokeServer()
+                    MofenkLog("[AUTO SELL EQUIPPED] Return: " .. DumpTable(res), "return")
                 end)
-                if success then
-                    MofenkLog("[AUTO SELL EQUIPPED] Result: " .. tostring(result), "success")
-                else
-                    MofenkLog("[AUTO SELL EQUIPPED] Error: " .. tostring(result), "error")
-                end
-            else
-                MofenkLog("SellService.RF.SellEquipped tidak terdeteksi!", "error")
             end
         end
 
-        -- AUTO ROLL
         if _G.Mofenk.AutoRoll and RollService then
             pcall(function()
                 if RollService:FindFirstChild("RF") and RollService.RF:FindFirstChild("RollDice") then
                     RollService.RF.RollDice:InvokeServer()
-                elseif RollService:FindFirstChild("RE") and RollService.RE:FindFirstChild("SetAutoRoll") then
-                    RollService.RE.SetAutoRoll:FireServer(true)
                 end
             end)
         end
 
-        -- AUTO COLLECT BALANCE
         if _G.Mofenk.AutoCollectBalance and PlotService and PlotService:FindFirstChild("RE") and PlotService.RE:FindFirstChild("CollectBalance") then
             pcall(function() PlotService.RE.CollectBalance:FireServer() end)
-        end
-
-        -- AUTO LEVEL UP SLOT
-        if _G.Mofenk.AutoLevelUpSlot and PlotService and PlotService:FindFirstChild("RE") and PlotService.RE:FindFirstChild("LevelUpSlot") then
-            pcall(function() PlotService.RE.LevelUpSlot:FireServer() end)
-        end
-
-        -- AUTO EQUIP BEST
-        if _G.Mofenk.AutoEquipBest and PlotService and PlotService:FindFirstChild("RE") and PlotService.RE:FindFirstChild("EquipBest") then
-            pcall(function() PlotService.RE.EquipBest:FireServer() end)
         end
     end
 end)
