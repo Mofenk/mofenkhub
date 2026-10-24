@@ -1,6 +1,6 @@
 -- ===================================================================== --
 -- 👑 MOFENKHUB V35.0 — ULTIMATE PROFESSIONAL CONFIG EDITION
--- Game: Anime Dice | Enhanced Profile Pro, FPS/Ping, Fixed Buy/Sell/Lock
+-- Game: Anime Dice | Fully Synchronized Engine, Level Limit, Potion/Boosts
 -- ===================================================================== --
 
 task.wait(1.5)
@@ -28,17 +28,17 @@ _G.__ANIMEDICE = (_G.__ANIMEDICE or 0) + 1
 local generation = _G.__ANIMEDICE
 
 _G.Mofenk = {
-	-- Tampilan & Tema
+	-- Tampilan & Skala UI
 	ThemePreset     = "Spectrum Dark",
-	-- Roll & Farm (Auto Spin Dihapus demi keamanan akun)
+	UIScale         = 1.0,
+	-- Farm & Roll
 	AutoRoll        = false,
 	AutoDice        = false,
-	-- Jual, Lock & Inventaris (Diperbaiki & Diperbanyak)
+	AutoEquipDice   = false,
+	-- Jual & Inventaris
 	AutoSell        = false,
-	SellRarity      = 3,        -- 3 = Rare Floor
 	SellAllJunk     = false,
 	AutoLock        = false,
-	LockRarity      = 5,        -- Legendary ke atas dikunci otomatis
 	AutoFuse        = false,
 	-- Tower & Plot
 	AutoTower       = false,
@@ -46,11 +46,12 @@ _G.Mofenk = {
 	AutoCollect     = false,
 	SmartPlace      = false,
 	AutoLevel       = false,
+	LevelLimit      = 50,       -- Batas maksimal level unit yang diinginkan
 	-- Upgrade & Rebirth
 	AutoUpgrade     = false,
 	AutoRebirth     = false,
 	RebirthMult     = 1,
-	-- Quirk, Traits & Boost
+	-- Quirk, Traits, Grade & Potion
 	AutoQuirk       = false,
 	AutoTrait       = false,
 	AutoGrade       = false,
@@ -88,7 +89,7 @@ end
 
 LoadConfig()
 
--- 4. MAPPING REMOTE GAME & INSPECTOR DEBUGGER
+-- 4. MAPPING REMOTE GAME & MODUL ASLI FILE
 local Framework, Network
 pcall(function() Framework = ReplicatedStorage:WaitForChild("Framework", 15) end)
 pcall(function() Network = ReplicatedStorage:WaitForChild("Network", 15) end)
@@ -107,21 +108,24 @@ local R = {
 	BuyDice         = Network and (safeFind(Network, "DiceShopService.RE.BuyDice") or safeFind(Network, "DiceShopService.RF.BuyDice")),
 	EquipDice       = Network and safeFind(Network, "DiceShopService.RE.EquipDice"),
 	CollectBalance  = Network and (safeFind(Network, "PlotService.RE.CollectBalance") or safeFind(Network, "PlotService.RF.CollectBalance")),
+	EquipBest       = Network and safeFind(Network, "PlotService.RE.EquipBest"),
 	LevelUpSlot     = Network and safeFind(Network, "PlotService.RE.LevelUpSlot"),
 	Rebirth         = Network and safeFind(Network, "RebirthService.RE.Rebirth"),
 	BuyUpgrade      = Network and safeFind(Network, "RE.BuyUpgrade"),
 	SellInventory   = Network and safeFind(Network, "SellService.RF.SellInventory"),
 	PlayTower       = Network and (safeFind(Network, "Towers.RF.PlayTower") or safeFind(Network, "Towers.RE.PlayTower")),
 	Fuse            = Network and safeFind(Network, "FusingService.RE.Fuse"),
+	BoostUse        = Network and safeFind(Network, "BoostService.RE.Use"),
 }
 
-local DataController, TowersConfig, Dice, UnitConfig
+local DataController, TowersConfig, Dice, UnitConfig, BoostConfig
 pcall(function()
 	if Framework then
 		DataController = require(Framework.Features.Data.DataController)
 		TowersConfig   = require(Framework.Features.Towers.Towers)
 		Dice           = require(Framework.Features.Rolling.Dice)
 		UnitConfig     = require(Framework.Features.Inventory.Kinds.Unit.UnitConfig)
+		BoostConfig    = require(Framework.Features.Inventory.Kinds.Boost.BoostConfig)
 	end
 end)
 
@@ -222,11 +226,15 @@ local function MofenkNotify(title, message, duration)
 	end)
 end
 
--- 7. UI UTAMA (MODULAR PANEL DENGAN LOGO GRAFIS VEKTOR DIPERBESAR)
+-- 7. UI UTAMA (MODULAR PANEL DENGAN SKALA UI & LOGO VEKTOR)
 local MainGui = Instance.new("ScreenGui")
 MainGui.Name = "MofenkUltraHubV35"
 MainGui.Parent = parentGui
 MainGui.ResetOnSpawn = false
+
+local UIRescale = Instance.new("UIScale")
+UIRescale.Scale = _G.Mofenk.UIScale
+UIRescale.Parent = MainGui
 
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
@@ -253,7 +261,6 @@ TopBar.Parent = MainFrame
 TopBar.Size = UDim2.new(1, 0, 0, 48)
 TopBar.BackgroundColor3 = Theme.Header
 
--- Logo Grafis Vektor Diperbesar
 local LogoIcon = Instance.new("Frame")
 LogoIcon.Parent = TopBar
 LogoIcon.Position = UDim2.new(0, 12, 0.5, -16)
@@ -318,6 +325,7 @@ local function CreateTab(name, order)
 	local Btn = Instance.new("TextButton")
 	Btn.Parent = Sidebar
 	Btn.Size = UDim2.new(1, -4, 0, 32)
+	Btn.Text = "   " + name
 	Btn.Text = "   " .. name
 	Btn.TextColor3 = Theme.TextSub
 	Btn.TextSize = 10
@@ -417,7 +425,7 @@ local function AddToggle(parent, text, flag)
 	end)
 end
 
--- TAB PEMBUATAN
+-- TAB PEMBUATAN DENGAN JUDUL TEKS DI BAGIAN ATAS
 local Tab1 = CreateTab("Dashboard & Profil", 1)
 local Tab2 = CreateTab("Roll & Automasi", 2)
 local Tab3 = CreateTab("Inventaris & Jual", 3)
@@ -429,8 +437,8 @@ local Tab8 = CreateTab("Konfigurasi & Tema", 8)
 
 TabFrames["Dashboard & Profil"].Visible = true
 
--- TAB 1: DASHBOARD & PROFIL (DENGAN SPECTRUM FPS & JARINGAN DI BAWAH PROFIL)
-AddSection(Tab1, "PROFIL PENGGUNA & Kinerja LIVE")
+-- TAB 1: DASHBOARD & PROFIL
+AddSection(Tab1, "PROFIL PENGGUNA & KINERJA LIVE")
 
 local ProfileWrapper = Instance.new("Frame")
 ProfileWrapper.Parent = Tab1
@@ -461,7 +469,6 @@ ProfileCard.Font = Enum.Font.GothamMedium
 ProfileCard.TextXAlignment = Enum.TextXAlignment.Left
 ProfileCard.TextYAlignment = Enum.TextYAlignment.Top
 
--- Panel Spectrum FPS & Jaringan Pro Proportional Design di bawah profil
 local StatsProBar = Instance.new("Frame")
 StatsProBar.Parent = ProfileWrapper
 StatsProBar.Position = UDim2.new(0, 12, 0, 88)
@@ -514,60 +521,63 @@ end)
 -- TAB 2: ROLL & AUTOMASI
 AddSection(Tab2, "PENGATURAN ROLL & DADU")
 AddToggle(Tab2, "Auto Roll Dadu (Cooldown Game Presisi)", "AutoRoll")
-AddToggle(Tab2, "Auto Beli Dadu Terbaik (Buy Dice Pro)", "AutoDice")
+AddToggle(Tab2, "Auto Beli Dadu Terbaik (Auto Buy Dice)", "AutoDice")
+AddToggle(Tab2, "Auto Equip Dadu Terbaik (Auto Equip Best Dice)", "AutoEquipDice")
 
--- TAB 3: INVENTARIS & JUAL (DIPERBAIKI SECARA MENYELURUH SESUAI FILE ASLI)
-AddSection(Tab3, "MANAJEMEN INVENTARIS & JUAL (AUTO SELL ALL)")
-AddToggle(Tab3, "Auto Jual Unit/Item Sampah (Batas Rarity)", "AutoSell")
-AddToggle(Tab3, "Auto Jual Semua Item Sampah (Sell All Junk)", "SellAllJunk")
-AddToggle(Tab3, "Auto Kunci Unit Langka (Auto Lock Rarity)", "AutoLock")
-AddToggle(Tab3, "Auto Fusion Unit Otomatis", "AutoFuse")
+-- TAB 3: INVENTARIS & JUAL
+AddSection(Tab3, "MANAJEMEN INVENTARIS & PENJUALAN")
+AddToggle(Tab3, "Auto Jual Unit/Item Sampah", "AutoSell")
+AddToggle(Tab3, "Auto Jual Semua Item (Sell All Junk)", "SellAllJunk")
+AddToggle(Tab3, "Auto Kunci Unit (Auto Lock)", "AutoLock")
+AddToggle(Tab3, "Auto Fusion Unit (Brainrot/Trio)", "AutoFuse")
 
-local SellConfigContainer = Instance.new("Frame")
-SellConfigContainer.Parent = Tab3
-SellConfigContainer.Size = UDim2.new(1, 0, 0, 36)
-SellConfigContainer.BackgroundColor3 = Theme.Card
-local SCC = Instance.new("UICorner")
-SCC.CornerRadius = UDim.new(0, 6)
-SCC.Parent = SellConfigContainer
-
-local SellLbl = Instance.new("TextLabel")
-SellLbl.Parent = SellConfigContainer
-SellLbl.Position = UDim2.new(0, 12, 0, 0)
-SellLbl.Size = UDim2.new(0.5, 0, 1, 0)
-SellLbl.Text = "Batas Jual (Rarity Floor):"
-SellLbl.TextColor3 = Theme.Text
-SellLbl.TextSize = 10
-SellLbl.Font = Enum.Font.GothamMedium
-SellLbl.TextXAlignment = Enum.TextXAlignment.Left
-SellLbl.BackgroundTransparency = 1
-
-local SellBtn = Instance.new("TextButton")
-SellBtn.Parent = SellConfigContainer
-SellBtn.Position = UDim2.new(0.5, 0, 0.15, 0)
-SellBtn.Size = UDim2.new(0.48, 0, 0.7, 0)
-local rarityNames = {"Common", "Uncommon", "Rare", "Epic", "Legendary", "Mythical"}
-SellBtn.Text = rarityNames[_G.Mofenk.SellRarity] or "Rare"
-SellBtn.TextColor3 = Theme.Accent
-SellBtn.TextSize = 10
-SellBtn.Font = Enum.Font.GothamBold
-SellBtn.BackgroundColor3 = Theme.Header
-local SBC = Instance.new("UICorner")
-SBC.CornerRadius = UDim.new(0, 4)
-SBC.Parent = SellBtn
-
-SellBtn.MouseButton1Click:Connect(function()
-	_G.Mofenk.SellRarity = (_G.Mofenk.SellRarity % #rarityNames) + 1
-	SellBtn.Text = rarityNames[_G.Mofenk.SellRarity]
-	MofenkNotify("INVENTARIS", "Batas jual rarity diatur ke: " .. SellBtn.Text, 2)
-end)
-
--- TAB 4: TOWER & PLOT
-AddSection(Tab4, "PENGATURAN TOWER & PLOT")
+-- TAB 4: TOWER & PLOT (DENGAN BATAS LEVEL UNIT)
+AddSection(Tab4, "PENGATURAN TOWER, PLOT & LEVEL UNIT")
 AddToggle(Tab4, "Auto Jalankan Tower Runner", "AutoTower")
 AddToggle(Tab4, "Auto Ambil Saldo Plot (Collect Money)", "AutoCollect")
 AddToggle(Tab4, "Smart Placement Unit (Equip Best)", "SmartPlace")
 AddToggle(Tab4, "Auto Upgrade Level Slot (Level Unit)", "AutoLevel")
+
+local LevelLimitContainer = Instance.new("Frame")
+LevelLimitContainer.Parent = Tab4
+LevelLimitContainer.Size = UDim2.new(1, 0, 0, 36)
+LevelLimitContainer.BackgroundColor3 = Theme.Card
+local LLC = Instance.new("UICorner")
+LLC.CornerRadius = UDim.new(0, 6)
+LLC.Parent = LevelLimitContainer
+
+local LevelLimitLbl = Instance.new("TextLabel")
+LevelLimitLbl.Parent = LevelLimitContainer
+LevelLimitLbl.Position = UDim2.new(0, 12, 0, 0)
+LevelLimitLbl.Size = UDim2.new(0.6, 0, 1, 0)
+LevelLimitLbl.Text = "Batas Level Maksimal Unit:"
+LevelLimitLbl.TextColor3 = Theme.Text
+LevelLimitLbl.TextSize = 10
+LevelLimitLbl.Font = Enum.Font.GothamMedium
+LevelLimitLbl.TextXAlignment = Enum.TextXAlignment.Left
+LevelLimitLbl.BackgroundTransparency = 1
+
+local LevelLimitBtn = Instance.new("TextButton")
+LevelLimitBtn.Parent = LevelLimitContainer
+LevelLimitBtn.Position = UDim2.new(0.6, 0, 0.15, 0)
+LevelLimitBtn.Size = UDim2.new(0.38, 0, 0.7, 0)
+local levelSteps = {10, 25, 50, 100, 200, 500}
+local lIdx = 3
+LevelLimitBtn.Text = "Level " .. tostring(_G.Mofenk.LevelLimit)
+LevelLimitBtn.TextColor3 = Theme.Accent
+LevelLimitBtn.TextSize = 10
+LevelLimitBtn.Font = Enum.Font.GothamBold
+LevelLimitBtn.BackgroundColor3 = Theme.Header
+local LLBC = Instance.new("UICorner")
+LLBC.CornerRadius = UDim.new(0, 4)
+LLBC.Parent = LevelLimitBtn
+
+LevelLimitBtn.MouseButton1Click:Connect(function()
+	lIdx = (lIdx % #levelSteps) + 1
+	_G.Mofenk.LevelLimit = levelSteps[lIdx]
+	LevelLimitBtn.Text = "Level " .. tostring(_G.Mofenk.LevelLimit)
+	MofenkNotify("LEVEL UNIT", "Batas maksimal level diatur ke: " .. _G.Mofenk.LevelLimit, 2)
+end)
 
 local TowerContainer = Instance.new("Frame")
 TowerContainer.Parent = Tab4
@@ -621,16 +631,16 @@ TowerBtn.MouseButton1Click:Connect(function()
 end)
 
 -- TAB 5: UPGRADE & REBIRTH
-AddSection(Tab5, "UPGRADE & REBIRTH OTOMATIS")
+AddSection(Tab5, "UPGRADE PAD & REBIRTH OTOMATIS")
 AddToggle(Tab5, "Auto Beli Pad Upgrades", "AutoUpgrade")
 AddToggle(Tab5, "Auto Rebirth Otomatis", "AutoRebirth")
 
--- TAB 6: QUIRK & BOOSTS
-AddSection(Tab6, "QUIRK, TRAIT & POTION")
+-- TAB 6: QUIRK & POTION (DENGAN DATA POTION / BOOSTS LENGKAP)
+AddSection(Tab6, "QUIRK, TRAIT & POTION MANAGEMENT")
 AddToggle(Tab6, "Auto Roll Quirk", "AutoQuirk")
 AddToggle(Tab6, "Auto Roll Trait", "AutoTrait")
 AddToggle(Tab6, "Auto Roll Grade", "AutoGrade")
-AddToggle(Tab6, "Auto Potion & Boosts", "AutoPotion")
+AddToggle(Tab6, "Auto Gunakan Potion & Boosts (Auto Potion)", "AutoPotion")
 
 -- TAB 7: SERVER, HOP & SPY INSPECTOR (DEBUGGER)
 AddSection(Tab7, "SERVER HOP & SPY INSPECTOR")
@@ -684,8 +694,8 @@ BtnSpy.MouseButton1Click:Connect(function()
 	MofenkNotify("DEBUGGER", string.format("Inspeksi selesai. Ditemukan %d Remote valid di path Network.", count), 4)
 end)
 
--- TAB 8: KONFIGURASI & TEMA
-AddSection(Tab8, "PENGATURAN TEMA & KONFIGURASI")
+-- TAB 8: KONFIGURASI, TEMA & SKALA UI
+AddSection(Tab8, "PENGATURAN TEMA, SKALA & KONFIGURASI")
 
 local ThemeContainer = Instance.new("Frame")
 ThemeContainer.Parent = Tab8
@@ -728,6 +738,49 @@ ThemeBtn.MouseButton1Click:Connect(function()
 	MofenkNotify("TEMA", "Tema diubah. Eksekusi ulang skrip untuk memperbarui warna latar.", 3)
 end)
 
+-- Kontrol Skala UI (Perbesar / Perkecil)
+local ScaleContainer = Instance.new("Frame")
+ScaleContainer.Parent = Tab8
+ScaleContainer.Size = UDim2.new(1, 0, 0, 36)
+ScaleContainer.BackgroundColor3 = Theme.Card
+local ScC = Instance.new("UICorner")
+ScC.CornerRadius = UDim.new(0, 6)
+ScC.Parent = ScaleContainer
+
+local ScaleLbl = Instance.new("TextLabel")
+ScaleLbl.Parent = ScaleContainer
+ScaleLbl.Position = UDim2.new(0, 12, 0, 0)
+ScaleLbl.Size = UDim2.new(0.5, 0, 1, 0)
+ScaleLbl.Text = "Skala Ukuran UI:"
+ScaleLbl.TextColor3 = Theme.Text
+ScaleLbl.TextSize = 10
+ScaleLbl.Font = Enum.Font.GothamMedium
+ScaleLbl.TextXAlignment = Enum.TextXAlignment.Left
+ScaleLbl.BackgroundTransparency = 1
+
+local ScaleBtn = Instance.new("TextButton")
+ScaleBtn.Parent = ScaleContainer
+ScaleBtn.Position = UDim2.new(0.5, 0, 0.15, 0)
+ScaleBtn.Size = UDim2.new(0.48, 0, 0.7, 0)
+local scales = {0.8, 0.9, 1.0, 1.1, 1.2}
+local sIdx = 3
+ScaleBtn.Text = math.floor(_G.Mofenk.UIScale * 100) .. "%"
+ScaleBtn.TextColor3 = Theme.Accent
+ScaleBtn.TextSize = 10
+ScaleBtn.Font = Enum.Font.GothamBold
+ScaleBtn.BackgroundColor3 = Theme.Header
+local ScBC = Instance.new("UICorner")
+ScBC.CornerRadius = UDim.new(0, 4)
+ScBC.Parent = ScaleBtn
+
+ScaleBtn.MouseButton1Click:Connect(function()
+	sIdx = (sIdx % #scales) + 1
+	_G.Mofenk.UIScale = scales[sIdx]
+	UIRescale.Scale = _G.Mofenk.UIScale
+	ScaleBtn.Text = math.floor(_G.Mofenk.UIScale * 100) .. "%"
+	MofenkNotify("UI SCALE", "Skala ukuran UI diubah ke " .. ScaleBtn.Text, 2)
+end)
+
 local BtnSave = Instance.new("TextButton")
 BtnSave.Parent = Tab8
 BtnSave.Size = UDim2.new(1, 0, 0, 36)
@@ -760,6 +813,8 @@ LB.CornerRadius = UDim.new(0, 6)
 LB.Parent = BtnLoad
 BtnLoad.MouseButton1Click:Connect(function()
 	if LoadConfig() then
+		UIRescale.Scale = _G.Mofenk.UIScale
+		ScaleBtn.Text = math.floor(_G.Mofenk.UIScale * 100) .. "%"
 		MofenkNotify("CONFIG", "Konfigurasi berhasil dimuat!", 3)
 	else
 		MofenkNotify("CONFIG", "File konfigurasi tidak ditemukan.", 3)
@@ -788,51 +843,57 @@ TC.CornerRadius = UDim.new(0, 10)
 TC.Parent = ToggleBtn
 ToggleBtn.MouseButton1Click:Connect(function() MainFrame.Visible = not MainFrame.Visible end)
 
--- 8. THREAD UTAMA EKSEKUSI BACKEND GAME (SINKRONISASI FILE ASLI: BUY DICE, COLLECT, SELL ALL, AUTO LOCK)
+-- 8. THREAD UTAMA EKSEKUSI BACKEND GAME (SINKRONISASI MODUL ASLI FILE)
 task.spawn(function()
 	MofenkNotify("MOFENK HUB", "Sistem dimuat profesional. Seluruh fitur default dalam keadaan MATI.", 4)
 	while task.wait(1.5) do
 		if _G.__ANIMEDICE ~= generation then break end
 
-		-- 1. Auto Roll Dadu (Cooldown Game Presisi)
+		-- 1. Auto Roll Dadu (Cooldown Presisi)
 		if _G.Mofenk.AutoRoll and R.RollDice then
 			pcall(function() R.RollDice:InvokeServer() end)
 		end
 
-		-- 2. Auto Beli Dadu Terbaik (Sesuai Logika Modul Asli File)
-		if _G.Mofenk.AutoDice and R.BuyDice and Dice then
+		-- 2. Auto Buy Dice & Auto Equip Best Dice (Sesuai Logika Modul Asli File)
+		if (_G.Mofenk.AutoDice or _G.Mofenk.AutoEquipDice) and Dice then
 			pcall(function()
 				local d = data()
 				local allDice = Dice.GetAll()
 				if d and allDice then
-					local bestKey, bestPrice, bestLuck = nil, 0, 0
-					for key, def in pairs(allDice) do
-						local price = tonumber(def.price) or 0
-						local luck = tonumber(def.luck) or 0
-						if price > 0 and not d.OwnedDice[key] and d.Money >= price and luck > bestLuck then
-							bestKey, bestPrice, bestLuck = key, price, luck
+					-- Auto Buy Dice Terbaik
+					if _G.Mofenk.AutoDice and R.BuyDice then
+						local bestKey, bestPrice, bestLuck = nil, 0, 0
+						for key, def in pairs(allDice) do
+							local price = tonumber(def.price) or 0
+							local luck = tonumber(def.luck) or 0
+							if price > 0 and not d.OwnedDice[key] and d.Money >= price and luck > bestLuck then
+								bestKey, bestPrice, bestLuck = key, price, luck
+							end
+						end
+						if bestKey then
+							R.BuyDice:FireServer(bestKey)
+							task.wait(0.3)
 						end
 					end
-					if bestKey then
-						R.BuyDice:FireServer(bestKey)
-						task.wait(0.3)
-					end
-					-- Equip dice terbaik yang dimiliki
-					local ownedBestKey, maxLuck = "-", 0
-					for key, def in pairs(allDice) do
-						if d.OwnedDice[key] and (tonumber(def.luck) or 0) > maxLuck then
-							maxLuck = tonumber(def.luck) or 0
-							ownedBestKey = key
+
+					-- Auto Equip Best Dice
+					if _G.Mofenk.AutoEquipDice and R.EquipDice then
+						local ownedBestKey, maxLuck = "-", 0
+						for key, def in pairs(allDice) do
+							if d.OwnedDice[key] and (tonumber(def.luck) or 0) > maxLuck then
+								maxLuck = tonumber(def.luck) or 0
+								ownedBestKey = key
+							end
 						end
-					end
-					if ownedBestKey ~= "-" and d.Dice ~= ownedBestKey and R.EquipDice then
-						R.EquipDice:FireServer(ownedBestKey)
+						if ownedBestKey ~= "-" and d.Dice ~= ownedBestKey then
+							R.EquipDice:FireServer(ownedBestKey)
+						end
 					end
 				end
 			end)
 		end
 
-		-- 3. Auto Collect & Plot (Collect Balance + Equip Best / Smart Place)
+		-- 3. Auto Collect Saldo Plot (Collect Money + Smart Place / Equip Best)
 		if _G.Mofenk.AutoCollect and R.CollectBalance then
 			pcall(function()
 				local d = data()
@@ -841,14 +902,13 @@ task.spawn(function()
 						R.CollectBalance:FireServer(tonumber(key))
 					end
 				end
-				local EquipBestRemote = safeFind(Network, "PlotService.RE.EquipBest")
-				if EquipBestRemote then
-					EquipBestRemote:FireServer()
+				if R.EquipBest then
+					R.EquipBest:FireServer()
 				end
 			end)
 		end
 
-		-- 4. Auto Sell / Sell All Junk (Berdasarkan Daftar ID Inventaris Sesuai File Asli)
+		-- 4. Auto Jual Inventaris (Auto Sell & Sell All Junk)
 		if (_G.Mofenk.AutoSell or _G.Mofenk.SellAllJunk) and R.SellInventory then
 			pcall(function()
 				local d = data()
@@ -874,26 +934,42 @@ task.spawn(function()
 			end)
 		end
 
-		-- 5. Auto Lock Unit Langka (Auto Lock)
-		if _G.Mofenk.AutoLock then
+		-- 5. Auto Level Unit (Dengan Batas Maksimal Level / Level Limit)
+		if _G.Mofenk.AutoLevel and R.LevelUpSlot then
 			pcall(function()
 				local d = data()
-				if d and d.Inventory then
-					for id, u in pairs(d.Inventory) do
-						if not u.attributes or not u.attributes.locked then
-							-- Logika penguncian unit aman berdasarkan rarity
+				if d and d.Slots then
+					for key, slot in pairs(d.Slots) do
+						if slot.unitId and slot.level and slot.level < _G.Mofenk.LevelLimit then
+							R.LevelUpSlot:FireServer(tonumber(key))
+							task.wait(0.2)
 						end
 					end
 				end
 			end)
 		end
 
-		-- 6. Auto Tower Runner
+		-- 6. Auto Potion & Boosts (Menggunakan Potion/Boosts dari Inventory)
+		if _G.Mofenk.AutoPotion and R.BoostUse then
+			pcall(function()
+				local d = data()
+				if d and d.Inventory and BoostConfig then
+					for key, item in pairs(d.Inventory) do
+						if BOOSTS and BOOSTS[key] and (tonumber(item.amount) or 0) > 0 then
+							R.BoostUse:FireServer(key)
+							task.wait(0.3)
+						end
+					end
+				end
+			end)
+		end
+
+		-- 7. Auto Tower Runner
 		if _G.Mofenk.AutoTower and R.PlayTower then
 			pcall(function() R.PlayTower:InvokeServer(_G.Mofenk.TowerName) end)
 		end
 
-		-- 7. Auto Rebirth
+		-- 8. Auto Rebirth
 		if _G.Mofenk.AutoRebirth and R.Rebirth then
 			pcall(function() R.Rebirth:FireServer() end)
 		end
