@@ -1,6 +1,6 @@
 -- =====================================================================
--- 👑 MOFENKHUB V1.0 — ANIME DICE EDITION (SAFE LOAD + LIVE AVATAR)
--- Game: Anime Dice | Live Profile, Live Avatar, Live Stats & Remotes
+-- 👑 MOFENKHUB V1.0 — ANIME DICE EDITION (SAFE HTTP 404 FIX)
+-- Game: Anime Dice | Safe Addon Loader, Live Avatar & Full Auto
 -- =====================================================================
 
 local Players = game:GetService("Players")
@@ -68,30 +68,29 @@ local FusingService = Network and Network:FindFirstChild("FusingService")
 local CodesService = Network and Network:FindFirstChild("CodesService")
 local BoostService = Network and Network:FindFirstChild("BoostService")
 
--- 4. SAFE LOAD FLUENT UI & ADDONS (MENGHINDARI HTTP 404)
-local Fluent, SaveManager, InterfaceManager
-
-pcall(function()
-    Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
-end)
-
-pcall(function()
-    SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/main/Addons/SaveManager.lua"))()
-end)
-if not SaveManager then
-    pcall(function()
-        SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua"))()
+-- 4. SYSTEM SAFE LOAD (ANTI HTTP 404 ERROR)
+local function SafeLoad(url)
+    local success, content = pcall(function()
+        return game:HttpGet(url, true)
     end)
+    if success and type(content) == "string" and not content:find("404") and #content > 50 then
+        local func, err = loadstring(content)
+        if func then
+            local execSuccess, module = pcall(func)
+            if execSuccess then return module end
+        end
+    end
+    return nil
 end
 
-pcall(function()
-    InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/main/Addons/InterfaceManager.lua"))()
-end)
-if not InterfaceManager then
-    pcall(function()
-        InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/InterfaceManager.lua"))()
-    end)
-end
+local Fluent = SafeLoad("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua") 
+    or SafeLoad("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/main.lua")
+
+local SaveManager = SafeLoad("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua") 
+    or SafeLoad("https://raw.githubusercontent.com/dawid-scripts/Fluent/main/Addons/SaveManager.lua")
+
+local InterfaceManager = SafeLoad("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/InterfaceManager.lua") 
+    or SafeLoad("https://raw.githubusercontent.com/dawid-scripts/Fluent/main/Addons/InterfaceManager.lua")
 
 -- 5. AUTO EXECUTE (QUEUE ON TELEPORT)
 local function ApplyQueueOnTeleport()
@@ -750,7 +749,7 @@ Tabs.Player:AddButton({
     Callback = function() ServerHop() end
 })
 
--- 12. SETUP CONFIG MANAGER & INTERFACE (JIKA ADDON BERHASIL TERLOAD)
+-- 12. SETUP CONFIG MANAGER & INTERFACE (JIKA ADDON TERSEDIA)
 if SaveManager and InterfaceManager then
     pcall(function()
         SaveManager:SetLibrary(Fluent)
@@ -769,8 +768,8 @@ if SaveManager and InterfaceManager then
     end)
 else
     Tabs.Settings:AddParagraph({
-        Title = "Config Manager",
-        Content = "Sistem Config offline sementara, semua fitur utama tetap berjalan normal."
+        Title = "Config Manager Status",
+        Content = "Sistem Config offline (Aman). Semua fungsi bot utama tetap berjalan normal."
     })
 end
 
