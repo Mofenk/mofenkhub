@@ -1,6 +1,6 @@
 -- =====================================================================
--- 👑 MOFENKHUB V1.0 — ANIME DICE EDITION (FLUENT UI FRAMEWORK)
--- Game: Anime Dice | Fluent UI, Deep Network Spy & Data Scanner Setup
+-- 👑 MOFENKHUB V1.0 — ANIME DICE EDITION (LIVE AVATAR + FLUENT)
+-- Game: Anime Dice | Live Profile + Avatar, Stats, Inventory & Gear
 -- =====================================================================
 
 local Players = game:GetService("Players")
@@ -11,10 +11,10 @@ local HttpService = game:GetService("HttpService")
 local VirtualUser = game:GetService("VirtualUser")
 local LocalPlayer = Players.LocalPlayer
 
--- 1. PEMBERSIHAN UI LAMA
+-- 1. PEMBERSIHAN UI & TOGGLE LAMA
 local uiTarget = pcall(function() return CoreGui end) and CoreGui or LocalPlayer:WaitForChild("PlayerGui")
 for _, v in pairs(uiTarget:GetChildren()) do 
-    if v.Name == "MofenkHubAnimeDice" or v.Name == "Fluent" or v.Name == "WindUI" or v.Name == "Rayfield" then 
+    if v.Name == "MofenkHubAnimeDice" or v.Name == "Fluent" or v.Name == "MofenkToggleGui" or v.Name == "WindUI" or v.Name == "Rayfield" then 
         pcall(function() v:Destroy() end) 
     end 
 end
@@ -28,19 +28,52 @@ _G.Mofenk = {
     SpyEnabled = true,
     SpyConsoleLog = true,
     
+    -- Feature Toggles
     AutoRoll = false,
+    AutoSellInventory = false,
+    AutoClaimQuests = false,
+    AutoClaimRewards = false,
+    AutoCollectBalance = false,
+    AutoLevelUpSlot = false,
+    AutoInteractSlot = false,
     AutoEquipBest = false,
     AutoRebirth = false,
-    AutoSell = false,
+    AutoEquipUnit = false,
+    AutoEquipGear = false,
+    AutoFuse = false,
+    AutoUseBoosts = false,
+    AutoBuyDice = false,
+    AutoBuyUpgrade = false,
+    CodeToRedeem = "",
     
     EnableFly = false, FlySpeed = 50,
     EnableWalkSpeed = false, WalkSpeedVal = 16
 }
 
--- 3. LOAD FLUENT UI LIBRARY (LINK RILIS RESMI STABIL)
-local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+-- 3. PATH REMOTE EVENT & FUNCTION (HASIL SCAN LENGKAP)
+local Network = ReplicatedStorage:WaitForChild("Network", 5)
 
--- 4. AUTO EXECUTE (QUEUE ON TELEPORT)
+local RollService = Network and Network:FindFirstChild("RollService")
+local SellService = Network and Network:FindFirstChild("SellService")
+local QuestService = Network and Network:FindFirstChild("QuestService")
+local DailyRewardService = Network and Network:FindFirstChild("DailyRewardService")
+local OfflineEarningsService = Network and Network:FindFirstChild("OfflineEarningsService")
+local GroupRewardService = Network and Network:FindFirstChild("GroupRewardService")
+local PlotService = Network and Network:FindFirstChild("PlotService")
+local DiceShopService = Network and Network:FindFirstChild("DiceShopService")
+local RebirthService = Network and Network:FindFirstChild("RebirthService")
+local UnitService = Network and Network:FindFirstChild("UnitService")
+local GearService = Network and Network:FindFirstChild("GearService")
+local FusingService = Network and Network:FindFirstChild("FusingService")
+local CodesService = Network and Network:FindFirstChild("CodesService")
+local BoostService = Network and Network:FindFirstChild("BoostService")
+
+-- 4. LOAD FLUENT UI & ADDONS
+local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+local SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/main/Addons/SaveManager.lua"))()
+local InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/main/Addons/InterfaceManager.lua"))()
+
+-- 5. AUTO EXECUTE (QUEUE ON TELEPORT)
 local function ApplyQueueOnTeleport()
     if _G.Mofenk.AutoExecute then
         local queueFunc = queueonteleport or (syn and syn.queue_on_teleport) or (fluxus and fluxus.queue_on_teleport) or (queue_on_teleport)
@@ -55,7 +88,7 @@ local function ApplyQueueOnTeleport()
     end
 end
 
--- 5. DATA SCANNER ENGINE 🔍
+-- 6. DATA SCANNER ENGINE 🔍
 local function ScanGameRemotes()
     print("\n==========================================")
     print("📡 [ANIME DICE SCANNER] REPLICATEDSTORAGE & GAME REMOTES")
@@ -123,7 +156,7 @@ local function ScanWorkspacePrompts()
     })
 end
 
--- 6. REAL-TIME NETWORK SPY HOOK (__NAMECALL) 🕵️
+-- 7. REAL-TIME NETWORK SPY HOOK (__NAMECALL) 🕵️
 local rawNamecall = getrawmetatable and getrawmetatable(game) and getrawmetatable(game).__namecall
 if hookmetatable and rawNamecall then
     local oldNamecall
@@ -155,7 +188,196 @@ if hookmetatable and rawNamecall then
     end))
 end
 
--- 7. UTILITIES & PLAYER CONTROL
+-- 8. FUNGSI LIVE DATA SCANNER (PROFIL + AVATAR, STATS, INVENTORY, ITEMS)
+local function GetLiveProfileInfo()
+    return string.format(
+        "Username (USN) : %s\nDisplay Name    : %s\nUser ID         : %d\nAccount Age     : %d Hari",
+        LocalPlayer.Name,
+        LocalPlayer.DisplayName,
+        LocalPlayer.UserId,
+        LocalPlayer.AccountAge or 0
+    )
+end
+
+local function GetLiveStatsInfo()
+    local info = ""
+    if LocalPlayer:FindFirstChild("leaderstats") then
+        for _, stat in ipairs(LocalPlayer.leaderstats:GetChildren()) do
+            info = info .. string.format("• %s: %s\n", stat.Name, tostring(stat.Value))
+        end
+    else
+        info = "Memuat Leaderstats..."
+    end
+    return info ~= "" and info or "Tidak ada data leaderstats."
+end
+
+local function GetLiveInventoryInfo()
+    local text = "--- ITEM BACKPACK ---\n"
+    local backpack = LocalPlayer:FindFirstChild("Backpack")
+    if backpack then
+        local children = backpack:GetChildren()
+        if #children > 0 then
+            for i, v in ipairs(children) do
+                text = text .. string.format("[%d] %s (%s)\n", i, v.Name, v.ClassName)
+            end
+        else
+            text = text .. "Backpack Kosong.\n"
+        end
+    end
+
+    text = text .. "\n--- ITEM / TOOL EQUIPPED ---\n"
+    local char = LocalPlayer.Character
+    if char then
+        local found = false
+        for _, obj in ipairs(char:GetChildren()) do
+            if obj:IsA("Tool") or obj:IsA("Model") and string.find(string.lower(obj.Name), "dice") then
+                text = text .. "• " .. obj.Name .. " (" .. obj.ClassName .. ")\n"
+                found = true
+            end
+        end
+        if not found then text = text .. "Tidak Ada Item Di-Equip.\n" end
+    end
+
+    return text
+end
+
+-- 9. FUNGSI EKSEKUSI GAME AUTOMATION
+local function TriggerAutoRoll()
+    pcall(function()
+        if RollService then
+            if RollService:FindFirstChild("RF") and RollService.RF:FindFirstChild("RollDice") then
+                RollService.RF.RollDice:InvokeServer()
+            elseif RollService:FindFirstChild("RE") and RollService.RE:FindFirstChild("SetAutoRoll") then
+                RollService.RE.SetAutoRoll:FireServer(true)
+            end
+        end
+    end)
+end
+
+local function TriggerAutoSell()
+    pcall(function()
+        if SellService and SellService:FindFirstChild("RF") and SellService.RF:FindFirstChild("SellInventory") then
+            SellService.RF.SellInventory:InvokeServer()
+        end
+    end)
+end
+
+local function TriggerCollectBalance()
+    pcall(function()
+        if PlotService and PlotService:FindFirstChild("RE") and PlotService.RE:FindFirstChild("CollectBalance") then
+            PlotService.RE.CollectBalance:FireServer()
+        end
+    end)
+end
+
+local function TriggerLevelUpSlot()
+    pcall(function()
+        if PlotService and PlotService:FindFirstChild("RE") and PlotService.RE:FindFirstChild("LevelUpSlot") then
+            PlotService.RE.LevelUpSlot:FireServer()
+        end
+    end)
+end
+
+local function TriggerInteractSlot()
+    pcall(function()
+        if PlotService and PlotService:FindFirstChild("RE") and PlotService.RE:FindFirstChild("InteractSlot") then
+            PlotService.RE.InteractSlot:FireServer()
+        end
+    end)
+end
+
+local function TriggerEquipBest()
+    pcall(function()
+        if PlotService and PlotService:FindFirstChild("RE") and PlotService.RE:FindFirstChild("EquipBest") then
+            PlotService.RE.EquipBest:FireServer()
+        end
+    end)
+end
+
+local function TriggerRebirth()
+    pcall(function()
+        if RebirthService and RebirthService:FindFirstChild("RE") and RebirthService.RE:FindFirstChild("Rebirth") then
+            RebirthService.RE.Rebirth:FireServer()
+        end
+    end)
+end
+
+local function TriggerEquipUnit()
+    pcall(function()
+        if UnitService and UnitService:FindFirstChild("RF") and UnitService.RF:FindFirstChild("Equip") then
+            UnitService.RF.Equip:InvokeServer()
+        end
+    end)
+end
+
+local function TriggerEquipGear()
+    pcall(function()
+        if GearService and GearService:FindFirstChild("RE") and GearService.RE:FindFirstChild("Equip") then
+            GearService.RE.Equip:FireServer()
+        end
+    end)
+end
+
+local function TriggerFuse()
+    pcall(function()
+        if FusingService and FusingService:FindFirstChild("RE") and FusingService.RE:FindFirstChild("Fuse") then
+            FusingService.RE.Fuse:FireServer()
+        end
+    end)
+end
+
+local function TriggerUseBoosts()
+    pcall(function()
+        if BoostService and BoostService:FindFirstChild("RE") and BoostService.RE:FindFirstChild("Use") then
+            BoostService.RE.Use:FireServer()
+        end
+    end)
+end
+
+local function TriggerRedeemCode(codeStr)
+    pcall(function()
+        if CodesService and CodesService:FindFirstChild("RE") and CodesService.RE:FindFirstChild("RedeemCode") then
+            CodesService.RE.RedeemCode:FireServer(codeStr)
+        end
+    end)
+end
+
+local function TriggerBuyDice()
+    pcall(function()
+        if DiceShopService and DiceShopService:FindFirstChild("RE") and DiceShopService.RE:FindFirstChild("BuyDice") then
+            DiceShopService.RE.BuyDice:FireServer()
+        end
+    end)
+end
+
+local function TriggerBuyUpgrade()
+    pcall(function()
+        if Network and Network:FindFirstChild("RE") and Network.RE:FindFirstChild("BuyUpgrade") then
+            Network.RE.BuyUpgrade:FireServer()
+        end
+    end)
+end
+
+local function TriggerAutoClaims()
+    pcall(function()
+        if _G.Mofenk.AutoClaimQuests and QuestService and QuestService:FindFirstChild("RE") and QuestService.RE:FindFirstChild("Claim") then
+            QuestService.RE.Claim:FireServer()
+        end
+        if _G.Mofenk.AutoClaimRewards then
+            if DailyRewardService and DailyRewardService:FindFirstChild("RE") and DailyRewardService.RE:FindFirstChild("Claim") then
+                DailyRewardService.RE.Claim:FireServer()
+            end
+            if OfflineEarningsService and OfflineEarningsService:FindFirstChild("RE") and OfflineEarningsService.RE:FindFirstChild("Claim") then
+                OfflineEarningsService.RE.Claim:FireServer()
+            end
+            if GroupRewardService and GroupRewardService:FindFirstChild("RE") and GroupRewardService.RE:FindFirstChild("Claim") then
+                GroupRewardService.RE.Claim:FireServer()
+            end
+        end
+    end)
+end
+
+-- 10. UTILITIES & PLAYER CONTROL
 local function ToggleFlySystem(state)
     local char = LocalPlayer.Character
     if not char or not char:FindFirstChild("HumanoidRootPart") then return end
@@ -228,7 +450,7 @@ LocalPlayer.Idled:Connect(function()
     end
 end)
 
--- 8. FLUENT UI WINDOW & TABS SETUP
+-- 11. FLUENT UI WINDOW & TABS SETUP
 local Window = Fluent:CreateWindow({
     Title = "MofenkHub | Anime Dice 🎲",
     SubTitle = "by Mofenk",
@@ -238,17 +460,68 @@ local Window = Fluent:CreateWindow({
 })
 
 local Tabs = {
-    Home = Window:AddTab({ Title = "Home", Icon = "home" }),
+    Home = Window:AddTab({ Title = "Home & Live Data", Icon = "home" }),
     Spy = Window:AddTab({ Title = "Spy & Scanner", Icon = "search" }),
     Main = Window:AddTab({ Title = "Main & Farm", Icon = "gamepad-2" }),
-    Player = Window:AddTab({ Title = "Player & Utilities", Icon = "user" })
+    Units = Window:AddTab({ Title = "Units & Gear", Icon = "sparkles" }),
+    Player = Window:AddTab({ Title = "Player & Utilities", Icon = "user" }),
+    Settings = Window:AddTab({ Title = "Settings & Config", Icon = "settings" })
 }
 
--- TAB 1: HOME
-Tabs.Home:AddParagraph({
-    Title = "Akun & Monitor",
-    Content = "Player: " .. LocalPlayer.Name .. "\nGame: Anime Dice\nStatus: Online & Scanning"
+-- TAB 1: HOME & LIVE DATA MONITOR
+Tabs.Home:AddSection("👤 LIVE PROFIL USER")
+local LiveProfilePara = Tabs.Home:AddParagraph({
+    Title = "Data Profil Player",
+    Content = GetLiveProfileInfo()
 })
+
+-- TAMPILKAN FOTO AVATAR PLAYER DI UI PARAGRAPH
+task.spawn(function()
+    task.wait(0.5)
+    pcall(function()
+        if LiveProfilePara and LiveProfilePara.Frame then
+            local avatarImg = Instance.new("ImageLabel")
+            avatarImg.Name = "UserAvatarImage"
+            avatarImg.Parent = LiveProfilePara.Frame
+            avatarImg.Size = UDim2.new(0, 52, 0, 52)
+            avatarImg.Position = UDim2.new(1, -62, 0, 8)
+            avatarImg.BackgroundTransparency = 1
+            avatarImg.Image = "rbxthumb://type=AvatarHeadShot&id=" .. LocalPlayer.UserId .. "&w=150&h=150"
+            
+            local corner = Instance.new("UICorner")
+            corner.CornerRadius = UDim.new(1, 0)
+            corner.Parent = avatarImg
+            
+            local stroke = Instance.new("UIStroke")
+            stroke.Color = Color3.fromRGB(0, 170, 255)
+            stroke.Thickness = 2
+            stroke.Parent = avatarImg
+        end
+    end)
+end)
+
+Tabs.Home:AddSection("📊 LIVE PLAYER STATS & CURRENCY")
+local LiveStatsPara = Tabs.Home:AddParagraph({
+    Title = "Stats & Leaderstats",
+    Content = GetLiveStatsInfo()
+})
+
+Tabs.Home:AddSection("📦 LIVE INVENTORY & ITEM MONITOR")
+local LiveInvPara = Tabs.Home:AddParagraph({
+    Title = "Inventory & Equipped Items",
+    Content = GetLiveInventoryInfo()
+})
+
+-- LOOP BACKGROUND PENGUPDATE LIVE DATA REAL-TIME (EVERY 1S)
+task.spawn(function()
+    while task.wait(1) do
+        pcall(function()
+            LiveProfilePara:SetDesc(GetLiveProfileInfo())
+            LiveStatsPara:SetDesc(GetLiveStatsInfo())
+            LiveInvPara:SetDesc(GetLiveInventoryInfo())
+        end)
+    end
+end)
 
 -- TAB 2: SPY & SCANNER
 Tabs.Spy:AddSection("Real-Time Network Spy")
@@ -277,32 +550,115 @@ Tabs.Spy:AddButton({
     Callback = function() ScanWorkspacePrompts() end
 })
 
--- TAB 3: MAIN & FARM (FITUR KOSONG)
-Tabs.Main:AddSection("Roll Automation")
+-- TAB 3: MAIN & FARM
+Tabs.Main:AddSection("Roll & Rebirth")
 Tabs.Main:AddToggle("AutoRollToggle", {
-    Title = "Auto Roll (Butuh Remote)",
+    Title = "Auto Roll Dice",
     Default = false,
     Callback = function(V) _G.Mofenk.AutoRoll = V end
 })
-
-Tabs.Main:AddSection("Inventory Automation")
-Tabs.Main:AddToggle("AutoEquipToggle", {
-    Title = "Auto Equip Best (Butuh Remote)",
-    Default = false,
-    Callback = function(V) _G.Mofenk.AutoEquipBest = V end
-})
 Tabs.Main:AddToggle("AutoRebirthToggle", {
-    Title = "Auto Rebirth (Butuh Remote)",
+    Title = "Auto Rebirth",
     Default = false,
     Callback = function(V) _G.Mofenk.AutoRebirth = V end
 })
-Tabs.Main:AddToggle("AutoSellToggle", {
-    Title = "Auto Sell (Butuh Remote)",
+
+Tabs.Main:AddSection("Plot & Upgrades")
+Tabs.Main:AddToggle("AutoCollectBalanceToggle", {
+    Title = "Auto Collect Plot Balance",
     Default = false,
-    Callback = function(V) _G.Mofenk.AutoSell = V end
+    Callback = function(V) _G.Mofenk.AutoCollectBalance = V end
+})
+Tabs.Main:AddToggle("AutoLevelUpSlotToggle", {
+    Title = "Auto Level Up Plot Slot",
+    Default = false,
+    Callback = function(V) _G.Mofenk.AutoLevelUpSlot = V end
+})
+Tabs.Main:AddToggle("AutoInteractSlotToggle", {
+    Title = "Auto Interact Plot Slot",
+    Default = false,
+    Callback = function(V) _G.Mofenk.AutoInteractSlot = V end
+})
+Tabs.Main:AddToggle("AutoEquipBestToggle", {
+    Title = "Auto Equip Best Plot Units",
+    Default = false,
+    Callback = function(V) _G.Mofenk.AutoEquipBest = V end
 })
 
--- TAB 4: PLAYER & UTILITIES
+Tabs.Main:AddSection("Upgrades & Shop")
+Tabs.Main:AddToggle("AutoBuyDiceToggle", {
+    Title = "Auto Buy Dice",
+    Default = false,
+    Callback = function(V) _G.Mofenk.AutoBuyDice = V end
+})
+Tabs.Main:AddToggle("AutoBuyUpgradeToggle", {
+    Title = "Auto Buy Upgrades",
+    Default = false,
+    Callback = function(V) _G.Mofenk.AutoBuyUpgrade = V end
+})
+
+Tabs.Main:AddSection("Inventory & Sell")
+Tabs.Main:AddToggle("AutoSellToggle", {
+    Title = "Auto Sell Inventory",
+    Default = false,
+    Callback = function(V) _G.Mofenk.AutoSellInventory = V end
+})
+
+Tabs.Main:AddSection("Quests & Claim Rewards")
+Tabs.Main:AddToggle("AutoClaimQuestsToggle", {
+    Title = "Auto Claim Quests",
+    Default = false,
+    Callback = function(V) _G.Mofenk.AutoClaimQuests = V end
+})
+Tabs.Main:AddToggle("AutoClaimRewardsToggle", {
+    Title = "Auto Claim Rewards (Daily, Group, Offline)",
+    Default = false,
+    Callback = function(V) _G.Mofenk.AutoClaimRewards = V end
+})
+
+-- TAB 4: UNITS & GEAR
+Tabs.Units:AddSection("Unit & Gear Management")
+Tabs.Units:AddToggle("AutoEquipUnitToggle", {
+    Title = "Auto Equip Unit",
+    Default = false,
+    Callback = function(V) _G.Mofenk.AutoEquipUnit = V end
+})
+Tabs.Units:AddToggle("AutoEquipGearToggle", {
+    Title = "Auto Equip Gear",
+    Default = false,
+    Callback = function(V) _G.Mofenk.AutoEquipGear = V end
+})
+Tabs.Units:AddToggle("AutoFuseToggle", {
+    Title = "Auto Fuse Units",
+    Default = false,
+    Callback = function(V) _G.Mofenk.AutoFuse = V end
+})
+
+Tabs.Units:AddSection("Boosts & Codes")
+Tabs.Units:AddToggle("AutoUseBoostsToggle", {
+    Title = "Auto Use Active Boosts",
+    Default = false,
+    Callback = function(V) _G.Mofenk.AutoUseBoosts = V end
+})
+Tabs.Units:AddInput("CodeInput", {
+    Title = "Kode Promo / Redeem Code",
+    Default = "",
+    Placeholder = "Masukkan kode di sini...",
+    Numeric = false,
+    Finished = false,
+    Callback = function(Text) _G.Mofenk.CodeToRedeem = Text end
+})
+Tabs.Units:AddButton({
+    Title = "Redeem Code Sekarang",
+    Callback = function()
+        if _G.Mofenk.CodeToRedeem ~= "" then
+            TriggerRedeemCode(_G.Mofenk.CodeToRedeem)
+            Fluent:Notify({ Title = "Redeem Sent! 🎁", Content = "Mencoba redeem kode: " .. _G.Mofenk.CodeToRedeem, Duration = 3 })
+        end
+    end
+})
+
+-- TAB 5: PLAYER & UTILITIES
 Tabs.Player:AddSection("Protection & Automation")
 Tabs.Player:AddToggle("AutoAFKToggle", {
     Title = "Auto AFK (Anti Idle Disconnect)",
@@ -364,7 +720,51 @@ Tabs.Player:AddButton({
     Callback = function() ServerHop() end
 })
 
--- 9. BACKGROUND MAIN LOOP ENGINE
+-- 12. SETUP CONFIG MANAGER & INTERFACE
+SaveManager:SetLibrary(Fluent)
+InterfaceManager:SetLibrary(Fluent)
+
+SaveManager:IgnoreThemeSettings()
+SaveManager:SetIgnoreIndexes({})
+
+SaveManager:SetFolder("MofenkHub/AnimeDice")
+InterfaceManager:SetFolder("MofenkHub")
+
+InterfaceManager:BuildInterfaceSection(Tabs.Settings)
+SaveManager:BuildConfigSection(Tabs.Settings)
+
+SaveManager:LoadAutoloadConfig()
+
+-- 13. FLOATING LOGO TOGGLE BUTTON
+local ToggleGui = Instance.new("ScreenGui")
+local ToggleBtn = Instance.new("TextButton")
+local UICorner = Instance.new("UICorner")
+
+ToggleGui.Name = "MofenkToggleGui"
+ToggleGui.Parent = pcall(function() return CoreGui end) and CoreGui or LocalPlayer:WaitForChild("PlayerGui")
+ToggleGui.ResetOnSpawn = false
+
+ToggleBtn.Name = "MofenkToggleBtn"
+ToggleBtn.Parent = ToggleGui
+ToggleBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+ToggleBtn.Position = UDim2.new(0.02, 0, 0.4, 0)
+ToggleBtn.Size = UDim2.new(0, 48, 0, 48)
+ToggleBtn.Text = "🎲"
+ToggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+ToggleBtn.TextSize = 22
+ToggleBtn.Active = true
+ToggleBtn.Draggable = true
+
+UICorner.CornerRadius = UDim.new(0, 12)
+UICorner.Parent = ToggleBtn
+
+ToggleBtn.MouseButton1Click:Connect(function()
+    if Window then
+        Window:Minimize()
+    end
+end)
+
+-- 14. BACKGROUND MAIN LOOP ENGINE
 task.spawn(function()
     while task.wait(0.2) do
         pcall(function()
@@ -375,17 +775,20 @@ task.spawn(function()
                 end
             end
 
-            if _G.Mofenk.AutoRoll then
-                -- Isi fungsi FireServer Auto Roll di sini nanti
-            end
-            
-            if _G.Mofenk.AutoEquipBest then
-                -- Isi fungsi FireServer Equip Best di sini nanti
-            end
-            
-            if _G.Mofenk.AutoRebirth then
-                -- Isi fungsi FireServer Rebirth di sini nanti
-            end
+            if _G.Mofenk.AutoRoll then TriggerAutoRoll() end
+            if _G.Mofenk.AutoRebirth then TriggerRebirth() end
+            if _G.Mofenk.AutoCollectBalance then TriggerCollectBalance() end
+            if _G.Mofenk.AutoLevelUpSlot then TriggerLevelUpSlot() end
+            if _G.Mofenk.AutoInteractSlot then TriggerInteractSlot() end
+            if _G.Mofenk.AutoEquipBest then TriggerEquipBest() end
+            if _G.Mofenk.AutoEquipUnit then TriggerEquipUnit() end
+            if _G.Mofenk.AutoEquipGear then TriggerEquipGear() end
+            if _G.Mofenk.AutoFuse then TriggerFuse() end
+            if _G.Mofenk.AutoUseBoosts then TriggerUseBoosts() end
+            if _G.Mofenk.AutoBuyDice then TriggerBuyDice() end
+            if _G.Mofenk.AutoBuyUpgrade then TriggerBuyUpgrade() end
+            if _G.Mofenk.AutoSellInventory then TriggerAutoSell() end
+            if _G.Mofenk.AutoClaimQuests or _G.Mofenk.AutoClaimRewards then TriggerAutoClaims() end
         end)
     end
 end)
