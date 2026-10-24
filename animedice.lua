@@ -21,28 +21,24 @@ end
 
 -- 2. KONFIGURASI GLOBAL MASTER
 _G.Mofenk = {
-    -- Utility & System
     AutoAFK = true,
     AutoExecute = true,
     AutoReconnect = true,
     
-    -- Network Spy & Debugger
     SpyEnabled = true,
     SpyConsoleLog = true,
     
-    -- Feature Placeholders (Diisi setelah Remote ketemu)
     AutoRoll = false,
     AutoEquipBest = false,
     AutoRebirth = false,
     AutoSell = false,
     
-    -- Player Movement
     EnableFly = false, FlySpeed = 50,
     EnableWalkSpeed = false, WalkSpeedVal = 16
 }
 
--- LOAD WINDUI LIBRARY
-local WindUI = loadstring(game:HttpGet("https://tree-hub.vercel.app/api/UI/WindUI"))()
+-- LOAD WINDUI LIBRARY (LINK GITHUB STABIL)
+local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/FootGes/WindUI/main/dist/main.lua"))()
 
 -- ==========================================
 -- 3. AUTO EXECUTE (QUEUE ON TELEPORT)
