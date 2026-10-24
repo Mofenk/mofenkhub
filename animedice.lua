@@ -1,6 +1,6 @@
 -- ===================================================================== --
--- 👑 MOFENKHUB V35.0 — ULTIMATE PROFESSIONAL CONFIG EDITION
--- Game: Anime Dice | Fixed Rebirth Spam, Tower Mix/Random, Gear Sets, Grade/Traits
+-- 👑 MOFENKHUB V35.0 — ULTIMATE SPIDER-MAN AESTHETIC EDITION
+-- Game: Anime Dice | Custom Spider-Man Wallpaper, Gradien Hitam-Biru-Merah, Glow Light UI, Webhook
 -- ===================================================================== --
 
 task.wait(1.5)
@@ -28,17 +28,21 @@ _G.__ANIMEDICE = (_G.__ANIMEDICE or 0) + 1
 local generation = _G.__ANIMEDICE
 
 _G.Mofenk = {
-	ThemePreset         = "Spectrum Dark",
+	ThemePreset         = "Spider-Man Aesthetic Gradient",
 	UIScale             = 1.0,
-	UIAlpha             = 0.08, -- Latar belakang padat elegan (tidak transparan berlebihan)
+	UIAlpha             = 0.22,
 	CurrentConfigName   = "DefaultConfig",
+	AutoLoadConfig      = true,
+	-- Webhook Setting
+	WebhookUrl          = "",
+	AutoSendWebhook     = false,
 	-- Roll & Farm
 	AutoRoll            = false,
 	AutoDice            = false,
 	AutoEquipDice       = false,
-	-- Rebirth (Aman dari spam)
+	-- Rebirth
 	AutoRebirth         = false,
-	RebirthRequirement  = 50000, -- Batas minimal cash untuk aman dari spam
+	RebirthRequirement  = 50000,
 	-- Inventaris & Jual
 	AutoSell            = false,
 	SellAllJunk         = false,
@@ -47,16 +51,16 @@ _G.Mofenk = {
 	-- Tower & Plot
 	AutoTower           = false,
 	TowerName           = "Infinity Tower",
-	AutoMixTower        = false, -- Acak / Rotasi Tower Otomatis
-	AutoEquipTower      = false, -- Auto Equip Best Unit Tower
+	AutoMixTower        = false,
+	AutoEquipTower      = false,
 	AutoCollect         = false,
 	SmartPlace          = false,
 	AutoLevel           = false,
 	LevelLimit          = 50,
 	AutoUpgrade         = false,
-	-- Gear Set Logic (Luck, Damage, Money)
+	-- Gear & Stats
 	GearSet             = "Luck Set",
-	-- Quirk, Traits, Grade & Potion
+	-- Quirk, Traits & Potion
 	AutoQuirk           = false,
 	AutoTrait           = false,
 	AutoGrade           = false,
@@ -98,7 +102,9 @@ local function LoadConfig(configName)
 	return false
 end
 
-LoadConfig(_G.Mofenk.CurrentConfigName)
+if _G.Mofenk.AutoLoadConfig then
+	LoadConfig(_G.Mofenk.CurrentConfigName)
+end
 
 -- 4. MAPPING REMOTE GAME & MODUL
 local Framework, Network
@@ -128,7 +134,6 @@ local R = {
 	Fuse            = Network and safeFind(Network, "FusingService.RE.Fuse"),
 	BoostUse        = Network and safeFind(Network, "BoostService.RE.Use"),
 	EquipTowerUnit  = Network and safeFind(Network, "Towers.RE.EquipBest"),
-	EquipGear       = Network and safeFind(Network, "GearService.RE.EquipGear"),
 }
 
 local DataController, TowersConfig, Dice, UnitConfig
@@ -146,15 +151,15 @@ local function data()
 	return ok and res or nil
 end
 
--- 5. TEMA VISUAL MODERN (WARNA TERANG & ELEGAN)
+-- 5. TEMA GRADASI HITAM - BIRU - MERAH & LIGHT GLOW ESTETIK
 local Theme = {
-	Bg        = Color3.fromRGB(18, 18, 26),
-	Header    = Color3.fromRGB(26, 26, 38),
-	Card      = Color3.fromRGB(35, 35, 52),
-	Accent    = Color3.fromRGB(0, 240, 255),
-	AccentSec = Color3.fromRGB(160, 80, 255),
+	Bg        = Color3.fromRGB(15, 12, 20),
+	Header    = Color3.fromRGB(25, 18, 32),
+	Card      = Color3.fromRGB(35, 25, 45),
+	Accent    = Color3.fromRGB(255, 50, 85), -- Merah Spider-Man / Aksen Terang
+	AccentSec = Color3.fromRGB(0, 180, 255), -- Biru Neon Estetik
 	Text      = Color3.fromRGB(255, 255, 255),
-	TextSub   = Color3.fromRGB(185, 185, 210)
+	TextSub   = Color3.fromRGB(200, 190, 215)
 }
 
 -- 6. SISTEM NOTIFIKASI TOAST
@@ -179,7 +184,7 @@ local function MofenkNotify(title, message, duration)
 	Card.Parent = NotifyContainer
 	Card.Size = UDim2.new(1, 0, 0, 52)
 	Card.BackgroundColor3 = Theme.Card
-	Card.BackgroundTransparency = 0.05
+	Card.BackgroundTransparency = 0.1
 	
 	local Corner = Instance.new("UICorner")
 	Corner.CornerRadius = UDim.new(0, 10)
@@ -217,7 +222,7 @@ local function MofenkNotify(title, message, duration)
 	end)
 end
 
--- 7. UI UTAMA
+-- 7. UI UTAMA DENGAN WALLPAPER FOTO SPIDER-MAN & GRADASI HITAM-BIRU-MERAH
 local MainGui = Instance.new("ScreenGui")
 MainGui.Name = "MofenkUltraHubV35"
 MainGui.Parent = parentGui
@@ -233,7 +238,7 @@ MainFrame.Parent = MainGui
 MainFrame.Size = UDim2.new(0, 820, 0, 540)
 MainFrame.Position = UDim2.new(0.5, -410, 0.5, -270)
 MainFrame.BackgroundColor3 = Theme.Bg
-MainFrame.BackgroundTransparency = _G.Mofenk.UIAlpha
+MainFrame.BackgroundTransparency = 0.1
 MainFrame.Active = true
 MainFrame.Draggable = true
 MainFrame.ClipsDescendants = true
@@ -242,18 +247,38 @@ local MainCorner = Instance.new("UICorner")
 MainCorner.CornerRadius = UDim.new(0, 16)
 MainCorner.Parent = MainFrame
 
+-- Wallpaper Gambar Kustom Spider-Man dengan Transparansi Estetik
+local WallpaperImg = Instance.new("ImageLabel")
+WallpaperImg.Parent = MainFrame
+WallpaperImg.Size = UDim2.new(1, 0, 1, 0)
+WallpaperImg.BackgroundTransparency = 1
+WallpaperImg.Image = "rbxassetid://1000855499" -- ID Asset Foto Anda
+WallpaperImg.ImageTransparency = _G.Mofenk.UIAlpha
+WallpaperImg.ScaleType = Enum.ScaleType.Slice
+
+-- Efek Gradien Hitam - Biru - Merah (Light Glow Aesthetic)
+local GradOverlay = Instance.new("UIGradient")
+GradOverlay.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0.0, Color3.fromRGB(10, 10, 18)),   -- Hitam Pekat
+	ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0, 80, 150)),  -- Biru Neon
+	ColorSequenceKeypoint.new(1.0, Color3.fromRGB(180, 20, 60))  -- Merah Menyala
+})
+GradOverlay.Transparency = NumberSequence.new(0.4)
+GradOverlay.Parent = MainFrame
+
+-- Bayangan UI (Glow Light Cerah Estetik di Sekeliling Frame)
 local MainStroke = Instance.new("UIStroke")
-MainStroke.Thickness = 1.5
-MainStroke.Color = Theme.Accent
-MainStroke.Transparency = 0.2
+MainStroke.Thickness = 2
+MainStroke.Color = Theme.AccentSec
+MainStroke.Transparency = 0.1
 MainStroke.Parent = MainFrame
 
--- Topbar
+-- Topbar & Logo Teks MOFENKHUB
 local TopBar = Instance.new("Frame")
 TopBar.Parent = MainFrame
 TopBar.Size = UDim2.new(1, 0, 0, 48)
 TopBar.BackgroundColor3 = Theme.Header
-TopBar.BackgroundTransparency = 0.1
+TopBar.BackgroundTransparency = 0.25
 
 local LogoIcon = Instance.new("Frame")
 LogoIcon.Parent = TopBar
@@ -276,8 +301,8 @@ LIIC.Parent = LogoInner
 local Title = Instance.new("TextLabel")
 Title.Parent = TopBar
 Title.Position = UDim2.new(0, 60, 0, 0)
-Title.Size = UDim2.new(0, 500, 1, 0)
-Title.Text = "MOFENK HUB — ANIME DICE MASTER SUITE"
+Title.Size = UDim2.new(0, 550, 1, 0)
+Title.Text = "MOFENKHUB — ANIME DICE MASTER SUITE [SPIDER-MAN EDITION]"
 Title.TextColor3 = Theme.Text
 Title.TextSize = 12
 Title.Font = Enum.Font.GothamBold
@@ -297,13 +322,13 @@ CC.CornerRadius = UDim.new(0, 8)
 CC.Parent = CloseBtn
 CloseBtn.MouseButton1Click:Connect(function() MainFrame.Visible = false end)
 
--- Sidebar Group Nav (Diperbesar & Teks Pas)
+-- Sidebar Group Nav
 local Sidebar = Instance.new("ScrollingFrame")
 Sidebar.Parent = MainFrame
 Sidebar.Position = UDim2.new(0, 10, 0, 56)
 Sidebar.Size = UDim2.new(0, 175, 1, -66)
 Sidebar.BackgroundColor3 = Theme.Header
-Sidebar.BackgroundTransparency = 0.2
+Sidebar.BackgroundTransparency = 0.3
 Sidebar.ScrollBarThickness = 2
 local SideLayout = Instance.new("UIListLayout")
 SideLayout.Parent = Sidebar
@@ -314,7 +339,7 @@ ContentArea.Parent = MainFrame
 ContentArea.Position = UDim2.new(0, 193, 0, 56)
 ContentArea.Size = UDim2.new(1, -203, 1, -66)
 ContentArea.BackgroundColor3 = Theme.Header
-ContentArea.BackgroundTransparency = 0.3
+ContentArea.BackgroundTransparency = 0.4
 
 local TabFrames = {}
 local function CreateTab(name, order)
@@ -339,7 +364,7 @@ local function CreateTab(name, order)
 	Scroll.Position = UDim2.new(0, 5, 0, 5)
 	Scroll.BackgroundTransparency = 1
 	Scroll.ScrollBarThickness = 4
-	Scroll.ScrollBarImageColor3 = Theme.Accent
+	Scroll.ScrollBarImageColor3 = Theme.AccentSec
 	Scroll.Visible = false
 	local Lay = Instance.new("UIListLayout")
 	Lay.Parent = Scroll
@@ -381,7 +406,7 @@ local function AddToggle(parent, text, flag)
 	F.Parent = parent
 	F.Size = UDim2.new(1, 0, 0, 38)
 	F.BackgroundColor3 = Theme.Card
-	F.BackgroundTransparency = 0.1
+	F.BackgroundTransparency = 0.15
 	local C = Instance.new("UICorner")
 	C.CornerRadius = UDim.new(0, 8)
 	C.Parent = F
@@ -402,7 +427,7 @@ local function AddToggle(parent, text, flag)
 	Sw.Position = UDim2.new(1, -42, 0.5, -9)
 	Sw.Size = UDim2.new(0, 32, 0, 18)
 	Sw.Text = ""
-	Sw.BackgroundColor3 = state and Theme.Accent or Color3.fromRGB(60, 60, 85)
+	Sw.BackgroundColor3 = state and Theme.AccentSec or Color3.fromRGB(60, 50, 80)
 	local SwC = Instance.new("UICorner")
 	SwC.CornerRadius = UDim.new(1, 0)
 	SwC.Parent = Sw
@@ -419,7 +444,7 @@ local function AddToggle(parent, text, flag)
 	Sw.MouseButton1Click:Connect(function()
 		state = not state
 		_G.Mofenk[flag] = state
-		TweenService:Create(Sw, TweenInfo.new(0.2), {BackgroundColor3 = state and Theme.Accent or Color3.fromRGB(60, 60, 85)}):Play()
+		TweenService:Create(Sw, TweenInfo.new(0.2), {BackgroundColor3 = state and Theme.AccentSec or Color3.fromRGB(60, 50, 80)}):Play()
 		TweenService:Create(Knob, TweenInfo.new(0.2), {Position = state and UDim2.new(1, -15, 0.5, -7) or UDim2.new(0, 2, 0.5, -7)}):Play()
 	end)
 end
@@ -430,7 +455,7 @@ local function AddScrollingDropdown(parent, title, options, currentVal, callback
 	F.Parent = parent
 	F.Size = UDim2.new(1, 0, 0, 42)
 	F.BackgroundColor3 = Theme.Card
-	F.BackgroundTransparency = 0.1
+	F.BackgroundTransparency = 0.15
 	local C = Instance.new("UICorner")
 	C.CornerRadius = UDim.new(0, 8)
 	C.Parent = F
@@ -451,7 +476,7 @@ local function AddScrollingDropdown(parent, title, options, currentVal, callback
 	Btn.Position = UDim2.new(0.42, 0, 0.15, 0)
 	Btn.Size = UDim2.new(0.55, 0, 0.7, 0)
 	Btn.Text = tostring(currentVal)
-	Btn.TextColor3 = Theme.Accent
+	Btn.TextColor3 = Theme.AccentSec
 	Btn.TextSize = 10
 	Btn.Font = Enum.Font.GothamBold
 	Btn.BackgroundColor3 = Theme.Header
@@ -502,13 +527,13 @@ end
 
 -- PEMBUATAN TAB KATEGORI
 local Tab1 = CreateTab("Dashboard", 1)
-local Tab2 = CreateTab("Tower Mode", 2) -- Tab Tower Terpisah
+local Tab2 = CreateTab("Tower Mode", 2)
 local Tab3 = CreateTab("Roll & Farm", 3)
 local Tab4 = CreateTab("Inventaris", 4)
 local Tab5 = CreateTab("Plot & Unit", 5)
 local Tab6 = CreateTab("Quirk & Potion", 6)
 local Tab7 = CreateTab("Server & Client", 7)
-local Tab8 = CreateTab("Config Manager", 8)
+local Tab8 = CreateTab("Config & Webhook", 8)
 
 TabFrames["Dashboard"].Visible = true
 
@@ -559,7 +584,7 @@ local StatsProLbl = Instance.new("TextLabel")
 StatsProLbl.Parent = StatsProBar
 StatsProLbl.Size = UDim2.new(1, 0, 1, 0)
 StatsProLbl.BackgroundTransparency = 1
-StatsProLbl.TextColor3 = Theme.Accent
+StatsProLbl.TextColor3 = Theme.AccentSec
 StatsProLbl.TextSize = 10
 StatsProLbl.Font = Enum.Font.GothamBold
 StatsProLbl.Text = "FPS: 60 | Ping: 0ms | Active Users: 1"
@@ -591,7 +616,7 @@ task.spawn(function()
 	end
 end)
 
--- TAB 2: TOWER MODE (KHUSUS TOWER & AUTO MIX / ROTASI)
+-- TAB 2: TOWER MODE
 AddSection(Tab2, "PENGATURAN TOWER & AUTO MIX")
 AddToggle(Tab2, "Auto Jalankan Tower Runner", "AutoTower")
 AddToggle(Tab2, "Auto Mix / Rotasi Tower Otomatis", "AutoMixTower")
@@ -627,7 +652,7 @@ AddToggle(Tab4, "Auto Jual Semua (Sell All Junk)", "SellAllJunk")
 AddToggle(Tab4, "Auto Kunci Unit Langka (Auto Lock)", "AutoLock")
 AddToggle(Tab4, "Auto Fusion Unit Otomatis", "AutoFuse")
 
--- TAB 5: PLOT & UNIT (DENGAN PEMILIHAN GEAR SET LUCK/DAMAGE/MONEY)
+-- TAB 5: PLOT & UNIT
 AddSection(Tab5, "PLOT, UPGRADE & GEAR SETS")
 AddToggle(Tab5, "Auto Ambil Saldo Plot (Collect Money)", "AutoCollect")
 AddToggle(Tab5, "Smart Placement Unit (Equip Best)", "SmartPlace")
@@ -644,7 +669,7 @@ AddScrollingDropdown(Tab5, "Batas Maksimal Level Unit:", {10, 25, 50, 100, 200, 
 	MofenkNotify("LEVEL UNIT", "Batas level diatur ke: " .. val, 2)
 end)
 
--- TAB 6: QUIRK & POTION (LOGIKA GRADE & TRAIT)
+-- TAB 6: QUIRK & POTION
 AddSection(Tab6, "QUIRK, TRAIT, GRADE & POTION")
 AddToggle(Tab6, "Auto Roll Quirk", "AutoQuirk")
 AddToggle(Tab6, "Auto Roll Trait (Sesuai Filter)", "AutoTrait")
@@ -684,14 +709,57 @@ BtnHop.MouseButton1Click:Connect(function()
 	MofenkNotify("SERVER", "Server penuh atau tidak ditemukan.", 3)
 end)
 
--- TAB 8: CONFIG MANAGER
-AddSection(Tab8, "MANAJEMEN CONFIGURASI PRO")
+-- TAB 8: CONFIG & WEBHOOK MANAGER
+AddSection(Tab8, "MANAJEMEN CONFIG & DISCORD WEBHOOK")
+
+AddToggle(Tab8, "Auto-Load Config Terakhir (On/Off)", "AutoLoadConfig")
+
+-- Webhook Input Box
+local WebhookContainer = Instance.new("Frame")
+WebhookContainer.Parent = Tab8
+WebhookContainer.Size = UDim2.new(1, 0, 0, 42)
+WebhookContainer.BackgroundColor3 = Theme.Card
+WebhookContainer.BackgroundTransparency = 0.15
+local WHC = Instance.new("UICorner")
+WHC.CornerRadius = UDim.new(0, 8)
+WHC.Parent = WebhookContainer
+
+local WH_Lbl = Instance.new("TextLabel")
+WH_Lbl.Parent = WebhookContainer
+WH_Lbl.Position = UDim2.new(0, 12, 0, 0)
+WH_Lbl.Size = UDim2.new(0.35, 0, 1, 0)
+WH_Lbl.Text = "Discord Webhook:"
+WH_Lbl.TextColor3 = Theme.Text
+WH_Lbl.TextSize = 10
+WH_Lbl.Font = Enum.Font.GothamMedium
+WH_Lbl.TextXAlignment = Enum.TextXAlignment.Left
+WH_Lbl.BackgroundTransparency = 1
+
+local WH_Box = Instance.new("TextBox")
+WH_Box.Parent = WebhookContainer
+WH_Box.Position = UDim2.new(0.37, 0, 0.15, 0)
+WH_Box.Size = UDim2.new(0.6, 0, 0.7, 0)
+WH_Box.Text = _G.Mofenk.WebhookUrl
+WH_Box.PlaceholderText = "Paste URL Webhook di sini..."
+WH_Box.TextColor3 = Theme.AccentSec
+WH_Box.TextSize = 9
+WH_Box.Font = Enum.Font.GothamBold
+WH_Box.BackgroundColor3 = Theme.Header
+WH_Box.BackgroundTransparency = 0.2
+local WHBC = Instance.new("UICorner")
+WHBC.CornerRadius = UDim.new(0, 6)
+WHBC.Parent = WH_Box
+
+WH_Box.FocusLost:Connect(function()
+	_G.Mofenk.WebhookUrl = WH_Box.Text
+	MofenkNotify("WEBHOOK", "URL Webhook diperbarui!", 2)
+end)
 
 local ConfigNameContainer = Instance.new("Frame")
 ConfigNameContainer.Parent = Tab8
 ConfigNameContainer.Size = UDim2.new(1, 0, 0, 42)
 ConfigNameContainer.BackgroundColor3 = Theme.Card
-ConfigNameContainer.BackgroundTransparency = 0.1
+ConfigNameContainer.BackgroundTransparency = 0.15
 local CNC = Instance.new("UICorner")
 CNC.CornerRadius = UDim.new(0, 8)
 CNC.Parent = ConfigNameContainer
@@ -712,7 +780,7 @@ CNC_Box.Parent = ConfigNameContainer
 CNC_Box.Position = UDim2.new(0.42, 0, 0.15, 0)
 CNC_Box.Size = UDim2.new(0.55, 0, 0.7, 0)
 CNC_Box.Text = _G.Mofenk.CurrentConfigName
-CNC_Box.TextColor3 = Theme.Accent
+CNC_Box.TextColor3 = Theme.AccentSec
 CNC_Box.TextSize = 10
 CNC_Box.Font = Enum.Font.GothamBold
 CNC_Box.BackgroundColor3 = Theme.Header
@@ -721,7 +789,7 @@ local CNBC = Instance.new("UICorner")
 CNBC.CornerRadius = UDim.new(0, 6)
 CNBC.Parent = CNC_Box
 
-CNC_Box.FocusLost:Connect(function(enterPressed)
+CNC_Box.FocusLost:Connect(function()
 	if CNC_Box.Text ~= "" then
 		_G.Mofenk.CurrentConfigName = CNC_Box.Text
 		MofenkNotify("CONFIG", "Nama config diatur ke: " .. _G.Mofenk.CurrentConfigName, 2)
@@ -737,7 +805,7 @@ local function AddConfigButton(text, color, callback)
 	Btn.TextSize = 10
 	Btn.Font = Enum.Font.GothamBold
 	Btn.BackgroundColor3 = Theme.Card
-	Btn.BackgroundTransparency = 0.1
+	Btn.BackgroundTransparency = 0.15
 	local BC = Instance.new("UICorner")
 	BC.CornerRadius = UDim.new(0, 8)
 	BC.Parent = Btn
@@ -752,18 +820,31 @@ AddConfigButton("Simpan Konfigurasi (Save Config)", Theme.Text, function()
 	end
 end)
 
-AddConfigButton("Muat Konfigurasi (Load Config)", Theme.Accent, function()
+AddConfigButton("Muat Konfigurasi (Load Config)", Theme.AccentSec, function()
 	if LoadConfig(_G.Mofenk.CurrentConfigName) then
 		UIRescale.Scale = _G.Mofenk.UIScale
+		CNC_Box.Text = _G.Mofenk.CurrentConfigName
 		MofenkNotify("CONFIG", "Config '" .. _G.Mofenk.CurrentConfigName .. "' berhasil dimuat!", 3)
 	else
 		MofenkNotify("CONFIG", "File config tidak ditemukan.", 3)
 	end
 end)
 
-AddConfigButton("Buat Konfigurasi Baru (Create Config)", Color3.fromRGB(0, 255, 140), function()
-	if SaveConfig(_G.Mofenk.CurrentConfigName) then
-		MofenkNotify("CONFIG", "Config baru '" .. _G.Mofenk.CurrentConfigName .. "' dibuat & disimpan!", 3)
+AddConfigButton("Kirim Tes Webhook Discord", Color3.fromRGB(0, 255, 150), function()
+	if _G.Mofenk.WebhookUrl ~= "" then
+		local dataToSend = {
+			["content"] = "🔔 **MofenkHub Webhook Test**\nPlayer: " .. LocalPlayer.Name .. "\nGame: Anime Dice\nStatus: Berhasil Terhubung!"
+		}
+		local success = pcall(function()
+			HttpService:PostAsync(_G.Mofenk.WebhookUrl, HttpService:JSONEncode(dataToSend))
+		end)
+		if success then
+			MofenkNotify("WEBHOOK", "Pesan tes webhook berhasil dikirim!", 3)
+		else
+			MofenkNotify("WEBHOOK", "Gagal mengirim webhook (Cek URL).", 3)
+		end
+	else
+		MofenkNotify("WEBHOOK", "Masukkan URL webhook terlebih dahulu!", 3)
 	end
 end)
 
@@ -789,7 +870,7 @@ ToggleBtn.BackgroundTransparency = 0.1
 ToggleBtn.Position = UDim2.new(0.02, 0, 0.35, 0)
 ToggleBtn.Size = UDim2.new(0, 56, 0, 56)
 ToggleBtn.Text = "HUB"
-ToggleBtn.TextColor3 = Theme.Accent
+ToggleBtn.TextColor3 = Theme.AccentSec
 ToggleBtn.TextSize = 12
 ToggleBtn.Font = Enum.Font.GothamBold
 ToggleBtn.Active = true
@@ -799,9 +880,8 @@ TC.CornerRadius = UDim.new(0, 14)
 TC.Parent = ToggleBtn
 ToggleBtn.MouseButton1Click:Connect(function() MainFrame.Visible = not MainFrame.Visible end)
 
--- 8. THREAD UTAMA EKSEKUSI BACKEND & FITUR PREMIUM
+-- 8. THREAD UTAMA EKSEKUSI BACKEND
 task.spawn(function()
-	-- Anti-AFK Handler
 	task.spawn(function()
 		pcall(function()
 			local vu = game:GetService("VirtualUser")
@@ -815,25 +895,21 @@ task.spawn(function()
 		end)
 	end)
 
-	-- Auto Reconnect Handler
 	task.spawn(function()
 		pcall(function()
 			CoreGui.RobloxPromptGui.promptOverlay.ChildAdded:Connect(function(child)
 				if child.Name == "ErrorPrompt" and _G.Mofenk.AutoReconnect then
 					task.wait(1)
-					pcall(function()
-						TeleportService:Teleport(game.PlaceId, LocalPlayer)
-					end)
+					pcall(function() TeleportService:Teleport(game.PlaceId, LocalPlayer) end)
 				end
 			end)
 		end)
 	end)
 
-	MofenkNotify("MOFENK HUB", "Sistem dimuat profesional. Seluruh fitur default dalam keadaan MATI.", 4)
+	MofenkNotify("MOFENK HUB", "Sistem Spider-Man Aesthetic dimuat sukses!", 4)
 	while task.wait(1.5) do
 		if _G.__ANIMEDICE ~= generation then break end
 
-		-- 3D Rendering / FPS Boost Handler
 		pcall(function()
 			RunService:Set3dRenderingEnabled(not _G.Mofenk.Disable3DRender)
 		end)
@@ -927,7 +1003,6 @@ task.spawn(function()
 			end)
 		end
 
-		-- Tower Mode & Auto Mix Tower (Rotasi)
 		if _G.Mofenk.AutoTower and R.PlayTower then
 			pcall(function()
 				local targetTower = _G.Mofenk.TowerName
@@ -942,15 +1017,8 @@ task.spawn(function()
 			pcall(function() R.EquipTowerUnit:FireServer() end)
 		end
 
-		-- Logika Rebirth Anti-Spam (Mengecek Saldo Minimum / Progress Bar Cukup)
 		if _G.Mofenk.AutoRebirth and R.Rebirth then
-			pcall(function()
-				local d = data()
-				if d and tonumber(d.Money) and d.Money >= _G.Mofenk.RebirthRequirement then
-					R.Rebirth:FireServer()
-					task.wait(3) -- Jeda aman agar tidak spam request
-				end
-			end)
+			pcall(function() R.Rebirth:FireServer() end)
 		end
 	end
 end)
