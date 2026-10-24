@@ -1,10 +1,9 @@
 -- =====================================================================
--- 👑 MOFENKHUB V32.0 — ULTIMATE MASTER UNCUT EDITION (ZERO ERROR)
--- Game: Anime Dice | 100% Robust Nil Protection, Full 10 Tabs UI,
--- Tower Math Simulator, Auto Roll/Sell/Upgrade/Rebirth, Configs & Server Hop
+-- 👑 MOFENKHUB V35.0 — MASTER CONTROL ULTIMATE UNCUT (CUSTOM SYNCED)
+-- Game: Anime Dice | Complete UI Interface, Syncing All Features & Spy Debugger
 -- =====================================================================
 
-task.wait(1.5) -- Inisialisasi aman untuk mencegah race condition
+task.wait(1.5)
 
 local Players           = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -12,24 +11,26 @@ local CoreGui           = game:GetService("CoreGui")
 local TeleportService   = game:GetService("TeleportService")
 local HttpService      = game:GetService("HttpService")
 local RunService        = game:GetService("RunService")
-local UserInputService  = game:GetService("UserInputService")
 local TweenService      = game:GetService("TweenService")
 local LocalPlayer       = Players.LocalPlayer
 
 local parentGui = pcall(function() return CoreGui end) and CoreGui or LocalPlayer:WaitForChild("PlayerGui")
 
--- 1. CLEANUP INSTANCE LAMA
+-- 1. BERSIHKAN INSTANCE SEBELUMNYA
 for _, v in pairs(parentGui:GetChildren()) do 
-    if v.Name == "MofenkUltraHubV32" or v.Name == "MofenkToggleGui" or v.Name == "MofenkNotifyGui" then 
+    if v.Name == "MofenkUltraHubV35" or v.Name == "MofenkToggleGui" or v.Name == "MofenkNotifyGui" then 
         pcall(function() v:Destroy() end) 
     end 
 end
 
--- 2. MASTER CONFIG GLOBAL
+-- 2. KONFIGURASI UTAMA & PREFERENSI GLOBAL LENGKAP
 _G.Mofenk = {
     AutoAFK            = true,
     AutoReconnect      = true,
     SmartNotifications = true,
+    SpyEnabled         = true,
+    SpyConsoleLog      = true,
+    
     CurrentConfigName  = "DefaultConfig",
     AutoLoadConfig     = false,
     
@@ -39,22 +40,40 @@ _G.Mofenk = {
     SmartPlace   = true,
     AutoLevel    = true,
     AutoTower    = true,
-    TowerName    = "Auto (best)",
+    TowerName    = "Infinity Tower",
     AutoDice     = true,
     AutoUpgrade  = true,
     AutoRebirth  = true,
     AutoSell     = true,
     SellRarity   = 3,
     KeepBest     = 20,
+    
+    -- Fitur Tambahan Sesuai Referensi UI
+    AutoFuse     = true,
+    AutoQuirk    = true,
+    QuirkMode    = "Pilih Otomatis (Best)",
+    AutoTrait    = true,
+    AutoGrade    = true,
+    AutoPotion   = true,
+    AutoGear     = true,
+    AutoLock     = true,
     AutoCodes    = true,
     AutoClaim    = true,
     AutoQuests   = true,
-    AutoStats    = true,
-    AutoFusion   = false,
-    AutoPasses   = true
+    
+    -- Client & Performance Settings
+    FpsBoost     = false,
+    RemoveDrops  = false,
+    HideUiStart  = false,
+    
+    -- Webhook Integrations
+    RollHookUrl  = "",
+    RollHookOn   = false,
+    StatHookUrl  = "",
+    StatHookOn   = false,
 }
 
--- 3. CONFIG FILE MANAGER (JSON)
+-- 3. MANAJEMEN BERKAS CONFIG (JSON READ/WRITE)
 local ConfigFolder = "MofenkHub/Configs"
 if isfolder and not isfolder(ConfigFolder) then
     pcall(function() makefolder("MofenkHub") makefolder(ConfigFolder) end)
@@ -82,7 +101,7 @@ local function LoadConfiguration(name)
     return false
 end
 
--- 4. THEME & PALETTE (MODERN DARK GLASS)
+-- 4. SKEMA TEMA VISUAL MODERN (DARK GLASS)
 local Theme = {
     Bg        = Color3.fromRGB(12, 12, 18),
     Header    = Color3.fromRGB(18, 18, 26),
@@ -93,7 +112,7 @@ local Theme = {
     TextSub   = Color3.fromRGB(150, 150, 175)
 }
 
--- 5. TOAST NOTIFICATION SYSTEM
+-- 5. SISTEM NOTIFIKASI TOAST PROFESSIONAL
 local NotifyGui = Instance.new("ScreenGui")
 NotifyGui.Name = "MofenkNotifyGui"
 NotifyGui.Parent = parentGui
@@ -157,7 +176,7 @@ local function MofenkNotify(title, message, nType, duration)
     end)
 end
 
--- 6. SAFE SERVICE & REMOTE MAPPING (DENGAN NULL-CHECK AMAN)
+-- 6. PEMETAAN LAYANAN SERVER & REMOTE
 local Framework, Network
 pcall(function() Framework = ReplicatedStorage:WaitForChild("Framework", 15) end)
 pcall(function() Network = ReplicatedStorage:WaitForChild("Network", 15) end)
@@ -177,14 +196,12 @@ local R = {
     CompleteFloor  = Network and (safeFind(Network, "Towers.RF.CompleteTowerFloor") or safeFind(Network, "Towers.RE.CompleteTowerFloor")),
     CancelTower    = Network and (safeFind(Network, "Towers.RF.CancelTower") or safeFind(Network, "Towers.RE.CancelTower")),
     SellInventory  = Network and (safeFind(Network, "SellService.RF.SellInventory") or safeFind(Network, "SellService.RE.SellInventory")),
+    Fuse           = Network and safeFind(Network, "FusingService.RE.Fuse"),
 }
 
-local DataController, TowersConfig
+local DataController
 pcall(function()
-    if Framework then 
-        DataController = require(Framework.Features.Data.DataController)
-        TowersConfig = require(Framework.Features.Towers.Towers)
-    end
+    if Framework then DataController = require(Framework.Features.Data.DataController) end
 end)
 
 local function data()
@@ -192,12 +209,10 @@ local function data()
     return ok and res or nil
 end
 
--- SERVER UTILITIES
 local function ServerHop()
-    MofenkNotify("SERVER HOP", "Mencari server publik kosong...", "info", 3)
-    local Http = game:GetService("HttpService")
+    MofenkNotify("SERVER", "Mencari instans server publik baru...", "info", 3)
     local Api = "https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100"
-    local success, res = pcall(function() return Http:JSONDecode(game:HttpGet(Api)) end)
+    local success, res = pcall(function() return HttpService:JSONDecode(game:HttpGet(Api)) end)
     if success and res and res.data then
         for _, s in ipairs(res.data) do
             if s.playing < s.maxPlayers and s.id ~= game.JobId then
@@ -209,21 +224,49 @@ local function ServerHop()
 end
 
 local function RejoinServer()
-    MofenkNotify("REJOIN", "Menghubungkan ulang...", "info", 3)
+    MofenkNotify("SERVER", "Memuat ulang sesi server saat ini...", "info", 3)
     TeleportService:Teleport(game.PlaceId, LocalPlayer)
 end
 
--- 7. UI UTAMA V32 PRO (10 TABS + PROFILE DATA + ZERO ERROR)
+-- 7. SPY DEBUGGER INTERCEPTOR LENGKAP (UNTUK DETEKSI SCRIPT GAGAL / ERROR)
+local SpyLogsList = {}
+local rawNamecall = getrawmetatable and getrawmetatable(game) and getrawmetatable(game).__namecall
+if hookmetatable and rawNamecall then
+    local oldNamecall
+    oldNamecall = hookmetatable(game, "__namecall", newcclosure(function(self, ...)
+        local method = getnamecallmethod()
+        if _G.Mofenk.SpyEnabled and (method == "FireServer" or method == "InvokeServer") then
+            local args = {...}
+            task.spawn(function()
+                local argsString = ""
+                pcall(function()
+                    for i, arg in ipairs(args) do
+                        argsString = argsString .. tostring(arg) .. (i < #args and ", " or "")
+                    end
+                end)
+                local logText = string.format("[SPY] %s | Remote: %s | Args: [%s]", method, self.Name, argsString)
+                if _G.Mofenk.SpyConsoleLog then
+                    print(logText)
+                end
+                table.insert(SpyLogsList, 1, logText)
+                if #SpyLogsList > 60 then table.remove(SpyLogsList, 61) end
+            end)
+        end
+        return oldNamecall(self, ...)
+    end))
+end
+
+-- 8. ANTARES UI DASHBOARD (11 TAB LENGKAP SESUAI REFERENSI)
 local MainGui = Instance.new("ScreenGui")
-MainGui.Name = "MofenkUltraHubV32"
+MainGui.Name = "MofenkUltraHubV35"
 MainGui.Parent = parentGui
 MainGui.ResetOnSpawn = false
 
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
 MainFrame.Parent = MainGui
-MainFrame.Size = UDim2.new(0, 750, 0, 520)
-MainFrame.Position = UDim2.new(0.5, -375, 0.5, -260)
+MainFrame.Size = UDim2.new(0, 780, 0, 540)
+MainFrame.Position = UDim2.new(0.5, -390, 0.5, -270)
 MainFrame.BackgroundColor3 = Theme.Bg
 MainFrame.Active = true
 MainFrame.Draggable = true
@@ -238,7 +281,6 @@ MainStroke.Thickness = 2
 MainStroke.Color = Theme.Accent
 MainStroke.Parent = MainFrame
 
--- Header Topbar
 local TopBar = Instance.new("Frame")
 TopBar.Parent = MainFrame
 TopBar.Size = UDim2.new(1, 0, 0, 48)
@@ -247,8 +289,8 @@ TopBar.BackgroundColor3 = Theme.Header
 local Title = Instance.new("TextLabel")
 Title.Parent = TopBar
 Title.Position = UDim2.new(0, 16, 0, 0)
-Title.Size = UDim2.new(0, 320, 1, 0)
-Title.Text = "👑 MOFENKHUB V32.0 (ZERO ERROR)"
+Title.Size = UDim2.new(0, 420, 1, 0)
+Title.Text = "MOFENKHUB V35.0 — MASTER CONTROL + SPY"
 Title.TextColor3 = Theme.Text
 Title.TextSize = 11
 Title.Font = Enum.Font.GothamBold
@@ -270,11 +312,10 @@ MinCorner.Parent = MinimizeBtn
 
 MinimizeBtn.MouseButton1Click:Connect(function() MainFrame.Visible = not MainFrame.Visible end)
 
--- Sidebar & Content Area
 local Sidebar = Instance.new("ScrollingFrame")
 Sidebar.Parent = MainFrame
 Sidebar.Position = UDim2.new(0, 10, 0, 58)
-Sidebar.Size = UDim2.new(0, 170, 1, -68)
+Sidebar.Size = UDim2.new(0, 185, 1, -68)
 Sidebar.BackgroundColor3 = Theme.Header
 Sidebar.ScrollBarThickness = 3
 
@@ -284,8 +325,8 @@ SideLayout.Padding = UDim.new(0, 4)
 
 local ContentArea = Instance.new("Frame")
 ContentArea.Parent = MainFrame
-ContentArea.Position = UDim2.new(0, 190, 0, 58)
-ContentArea.Size = UDim2.new(1, -200, 1, -68)
+ContentArea.Position = UDim2.new(0, 205, 0, 58)
+ContentArea.Size = UDim2.new(1, -215, 1, -68)
 ContentArea.BackgroundColor3 = Theme.Header
 
 local TabFrames = {}
@@ -416,7 +457,7 @@ local function AddButton(parent, text, cb)
     B.MouseButton1Click:Connect(function() pcall(cb) end)
 end
 
-local function AddTextbox(parent, placeholder, cb)
+local function AddTextbox(parent, placeholder, flag)
     local F = Instance.new("Frame")
     F.Parent = parent
     F.Size = UDim2.new(1, 0, 0, 34)
@@ -431,7 +472,7 @@ local function AddTextbox(parent, placeholder, cb)
     Box.Size = UDim2.new(1, -20, 1, 0)
     Box.Position = UDim2.new(0, 10, 0, 0)
     Box.PlaceholderText = placeholder
-    Box.Text = _G.Mofenk.CurrentConfigName
+    Box.Text = tostring(_G.Mofenk[flag] or "")
     Box.TextColor3 = Theme.Text
     Box.PlaceholderColor3 = Theme.TextSub
     Box.TextSize = 10
@@ -439,30 +480,31 @@ local function AddTextbox(parent, placeholder, cb)
     Box.TextXAlignment = Enum.TextXAlignment.Left
     Box.BackgroundTransparency = 1
 
-    Box.FocusLost:Connect(function(enter)
-        if cb then cb(Box.Text) end
+    Box.FocusLost:Connect(function()
+        _G.Mofenk[flag] = Box.Text
     end)
 end
 
--- ==================== 10 TAB LENGKAP ====================
-local Tab1  = CreateTab("🏠 1. Home Dashboard", 1)
-local Tab2  = CreateTab("👤 2. Profile Data", 2)
-local Tab3  = CreateTab("🎲 3. Farm & Rolls", 3)
-local Tab4  = CreateTab("💰 4. Sell & Inventory", 4)
-local Tab5  = CreateTab("🏰 5. Tower Automations", 5)
-local Tab6  = CreateTab("⚡ 6. Upgrades & Rebirth", 6)
-local Tab7  = CreateTab("🔮 7. Fusion & Traits", 7)
-local Tab8  = CreateTab("🎁 8. Codes & Quests", 8)
-local Tab9  = CreateTab("📁 9. Config Manager", 9)
-local Tab10 = CreateTab("🌐 10. Server Utilities", 10)
+-- INISIALISASI TAB LENGKAP
+local Tab1  = CreateTab("🏠 1. Dashboard", 1)
+local Tab2  = CreateTab("👤 2. Profil", 2)
+local Tab3  = CreateTab("🎲 3. Roll & Farm", 3)
+local Tab4  = CreateTab("💰 4. Jual & Gear", 4)
+local Tab5  = CreateTab("🏰 5. Tower", 5)
+local Tab6  = CreateTab("⚡ 6. Upgrade", 6)
+local Tab7  = CreateTab("🔮 7. Quirk & Potion", 7)
+local Tab8  = CreateTab("🎁 8. Kode & Quest", 8)
+local Tab9  = CreateTab("💻 9. Klien & Performa", 9)
+local Tab10 = CreateTab("📁 10. Config", 10)
+local Tab11 = CreateTab("🌐 11. Webhook & Spy", 11)
 
-TabFrames["🏠 1. Home Dashboard"].Visible = true
+TabFrames["🏠 1. Dashboard"].Visible = true
 
--- ISI TAB 1: HOME
-AddSection(Tab1, "📊 GAME STATISTICS & INFO")
+-- ISI TAB 1: DASHBOARD
+AddSection(Tab1, "📊 STATISTIK SESI LIVE")
 local InfoCard = Instance.new("TextLabel")
 InfoCard.Parent = Tab1
-InfoCard.Size = UDim2.new(1, 0, 0, 65)
+InfoCard.Size = UDim2.new(1, 0, 0, 75)
 InfoCard.BackgroundColor3 = Theme.Card
 InfoCard.TextColor3 = Theme.Text
 InfoCard.TextSize = 11
@@ -477,19 +519,49 @@ task.spawn(function()
     while task.wait(1) do
         pcall(function()
             local d = data()
-            InfoCard.Text = string.format("  Player: %s | ID: %d\n  Uang: %s | Rebirth: %s", LocalPlayer.Name, LocalPlayer.UserId, tostring(d and d.Money or 0), tostring(d and d.Rebirth or 0))
+            InfoCard.Text = string.format("  Pengguna: %s (ID: %d)\n  Saldo: %s | Rebirth: %s\n  Total Roll: %s | Dadu: %s", 
+                LocalPlayer.Name, LocalPlayer.UserId, 
+                tostring(d and d.Money or 0), tostring(d and d.Rebirth or 0),
+                tostring(d and d.Rolls or 0), tostring(d and d.Dice or "-"))
         end)
     end
 end)
 
--- ISI TAB 2: PROFILE DATA LENGKAP
-AddSection(Tab2, "👤 IN-GAME PROFILE STATS")
+-- ISI TAB 2: PROFIL
+AddSection(Tab2, "👤 AVATAR 3D & PROFIL PENGGUNA")
+local Viewport = Instance.new("ViewportFrame")
+Viewport.Parent = Tab2
+Viewport.Size = UDim2.new(1, 0, 0, 130)
+Viewport.BackgroundColor3 = Theme.Card
+local VPC = Instance.new("UICorner")
+VPC.CornerRadius = UDim.new(0, 8)
+VPC.Parent = Viewport
+
+task.spawn(function()
+    local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+    char:WaitForChild("HumanoidRootPart")
+    char.Archivable = true
+    local clone = char:Clone()
+    clone.Parent = Viewport
+
+    local cam = Instance.new("Camera")
+    cam.Parent = Viewport
+    cam.CFrame = CFrame.new(clone.HumanoidRootPart.Position + Vector3.new(0, 1.5, 5), clone.HumanoidRootPart.Position)
+    Viewport.CurrentCamera = cam
+
+    RunService.RenderStepped:Connect(function()
+        if clone and clone:FindFirstChild("HumanoidRootPart") then
+            clone.HumanoidRootPart.CFrame = clone.HumanoidRootPart.CFrame * CFrame.Angles(0, math.rad(1.2), 0)
+        end
+    end)
+end)
+
 local ProfileCard = Instance.new("TextLabel")
 ProfileCard.Parent = Tab2
-ProfileCard.Size = UDim2.new(1, 0, 0, 160)
+ProfileCard.Size = UDim2.new(1, 0, 0, 110)
 ProfileCard.BackgroundColor3 = Theme.Card
 ProfileCard.TextColor3 = Theme.Text
-ProfileCard.TextSize = 11
+ProfileCard.TextSize = 10
 ProfileCard.Font = Enum.Font.GothamMedium
 ProfileCard.TextXAlignment = Enum.TextXAlignment.Left
 ProfileCard.TextYAlignment = Enum.TextYAlignment.Top
@@ -502,69 +574,155 @@ task.spawn(function()
         pcall(function()
             local d = data()
             ProfileCard.Text = string.format(
-                "  📋 DETAIL PROFIL AKUN:\n  • Nama: %s\n  • User ID: %s\n  • Balance / Uang: %s\n  • Total Rebirth: %s\n  • Status Hub: Aktif & Aman",
-                LocalPlayer.Name,
-                tostring(LocalPlayer.UserId),
-                tostring(d and d.Money or 0),
-                tostring(d and d.Rebirth or 0)
+                "  📋 DETAIL PROFIL AKUN:\n  • Nama: %s (ID: %s)\n  • Saldo Uang: %s\n  • Level Rebirth: %s\n  • Dadu Terpasang: %s\n  • Status Sesi: Stabil",
+                LocalPlayer.Name, tostring(LocalPlayer.UserId),
+                tostring(d and d.Money or 0), tostring(d and d.Rebirth or 0), tostring(d and d.Dice or "-")
             )
         end)
     end
 end)
 
--- ISI TAB 3: FARM & ROLLS
-AddSection(Tab3, "🎲 ROLLS & AUTOMATION")
-AddToggle(Tab3, "Auto Roll Dice", "AutoRoll")
-AddToggle(Tab3, "Auto Roll Spins", "AutoSpins")
-AddToggle(Tab3, "Auto Buy Best Dice", "AutoDice")
+-- ISI TAB 3: ROLL & FARM
+AddSection(Tab3, "🎲 PENGATURAN ROLL & OTOMATISASI")
+AddToggle(Tab3, "Otomatis Roll Dadu", "AutoRoll")
+AddToggle(Tab3, "Otomatis Putar Spin", "AutoSpins")
+AddToggle(Tab3, "Otomatis Beli Dadu Terbaik", "AutoDice")
 
--- ISI TAB 4: SELL & INVENTORY
-AddSection(Tab4, "💰 INVENTORY & SELLING")
-AddToggle(Tab4, "Auto Sell Inventory Junk", "AutoSell")
+-- ISI TAB 4: JUAL & GEAR
+AddSection(Tab4, "💰 MANAJEMEN INVENTARIS & GEAR")
+AddToggle(Tab4, "Otomatis Jual Item/Unit Sampah", "AutoSell")
+AddToggle(Tab4, "Otomatis Kunci Unit Langka", "AutoLock")
+AddToggle(Tab4, "Otomatis Pasang Gear Terbaik", "AutoGear")
 
 -- ISI TAB 5: TOWER
-AddSection(Tab5, "🏰 TOWER AUTOMATION")
-AddToggle(Tab5, "Auto Collect Plot Balance", "AutoCollect")
-AddToggle(Tab5, "Smart Placement", "SmartPlace")
-AddToggle(Tab5, "Auto Level Up Slots", "AutoLevel")
-AddToggle(Tab5, "Auto Tower Runner", "AutoTower")
+AddSection(Tab5, "🏰 OTOMATISASI TOWER & SELEKTOR")
+AddToggle(Tab5, "Otomatis Ambil Saldo Plot", "AutoCollect")
+AddToggle(Tab5, "Penempatan Cerdas (Smart Placement)", "SmartPlace")
+AddToggle(Tab5, "Otomatis Tingkatkan Level Slot", "AutoLevel")
+AddToggle(Tab5, "Otomatis Jalankan Tower", "AutoTower")
 
--- ISI TAB 6: UPGRADES & REBIRTH
-AddSection(Tab6, "⚡ UPGRADES & REBIRTH")
-AddToggle(Tab6, "Auto Buy Pad Upgrades", "AutoUpgrade")
-AddToggle(Tab6, "Auto Rebirth", "AutoRebirth")
+local TowerSelContainer = Instance.new("Frame")
+TowerSelContainer.Parent = Tab5
+TowerSelContainer.Size = UDim2.new(1, 0, 0, 36)
+TowerSelContainer.BackgroundColor3 = Theme.Card
+local TSC = Instance.new("UICorner")
+TSC.CornerRadius = UDim.new(0, 6)
+TSC.Parent = TowerSelContainer
 
--- ISI TAB 7: FUSION & TRAITS
-AddSection(Tab7, "🔮 FUSION & TRAITS")
-AddToggle(Tab7, "Auto Fuse Units", "AutoFusion")
+local TowerLbl = Instance.new("TextLabel")
+TowerLbl.Parent = TowerSelContainer
+TowerLbl.Position = UDim2.new(0, 10, 0, 0)
+TowerLbl.Size = UDim2.new(0.5, 0, 1, 0)
+TowerLbl.Text = "Target Tower:"
+TowerLbl.TextColor3 = Theme.Text
+TowerLbl.TextSize = 10
+TowerLbl.Font = Enum.Font.GothamMedium
+TowerLbl.TextXAlignment = Enum.TextXAlignment.Left
+TowerLbl.BackgroundTransparency = 1
 
--- ISI TAB 8: CODES & QUESTS
-AddSection(Tab8, "🎁 CODES & QUESTS")
-AddToggle(Tab8, "Auto Redeem Codes", "AutoCodes")
-AddToggle(Tab8, "Auto Claim Rewards", "AutoClaim")
-AddToggle(Tab8, "Auto Claim Quests", "AutoQuests")
+local TowerBtnSel = Instance.new("TextButton")
+TowerBtnSel.Parent = TowerSelContainer
+TowerBtnSel.Position = UDim2.new(0.5, 0, 0.15, 0)
+TowerBtnSel.Size = UDim2.new(0.48, 0, 0.7, 0)
+TowerBtnSel.Text = _G.Mofenk.TowerName
+TowerBtnSel.TextColor3 = Theme.Accent
+TowerBtnSel.TextSize = 10
+TowerBtnSel.Font = Enum.Font.GothamBold
+TowerBtnSel.BackgroundColor3 = Theme.Header
+local TBSC = Instance.new("UICorner")
+TBSC.CornerRadius = UDim.new(0, 4)
+TBSC.Parent = TowerBtnSel
 
--- ISI TAB 9: CONFIG MANAGER
-AddSection(Tab9, "📁 CONFIGURASI JSON")
-AddTextbox(Tab9, "Nama Config...", function(txt) _G.Mofenk.CurrentConfigName = txt end)
-AddButton(Tab9, "💾 Simpan Config Sekarang", function()
+local towersList = {"Infinity Tower", "Dragon Tower", "Cursed Tower", "Pirate Tower", "Hidden Leaf Tower"}
+local tIdx = 1
+TowerBtnSel.MouseButton1Click:Connect(function()
+    tIdx = tIdx % #towersList + 1
+    _G.Mofenk.TowerName = towersList[tIdx]
+    TowerBtnSel.Text = _G.Mofenk.TowerName
+    MofenkNotify("TOWER", "Tower diubah ke: " .. _G.Mofenk.TowerName, "success", 2)
+end)
+
+-- ISI TAB 6: UPGRADE
+AddSection(Tab6, "⚡ PENINGKATAN & REBIRTH")
+AddToggle(Tab6, "Otomatis Beli Upgrade Pad", "AutoUpgrade")
+AddToggle(Tab6, "Otomatis Rebirth", "AutoRebirth")
+
+-- ISI TAB 7: QUIRK & POTION
+AddSection(Tab7, "🔮 FUSION & POTION")
+AddToggle(Tab7, "Otomatis Gabungkan Unit (Fusion)", "AutoFuse")
+AddToggle(Tab7, "Otomatis Gunakan Potion", "AutoPotion")
+
+AddSection(Tab7, "⚡ TOOLSQUIRT & OPSI QUIRK")
+AddToggle(Tab7, "Otomatis Roll Quirk", "AutoQuirk")
+AddToggle(Tab7, "Otomatis Roll Trait", "AutoTrait")
+AddToggle(Tab7, "Otomatis Roll Grade", "AutoGrade")
+
+-- ISI TAB 8: KODE & QUEST
+AddSection(Tab8, "🎁 KODE, HADIAH & QUEST")
+AddToggle(Tab8, "Otomatis Klaim Kode Redeem", "AutoCodes")
+AddToggle(Tab8, "Otomatis Klaim Reward Login", "AutoClaim")
+AddToggle(Tab8, "Otomatis Klaim Semua Quest", "AutoQuests")
+
+-- ISI TAB 9: KLIEN & PERFORMA
+AddSection(Tab9, "💻 PENGATURAN PERFORMA KLIEN")
+AddToggle(Tab9, "FPS Boost Mode", "FpsBoost")
+AddToggle(Tab9, "Hapus Dropped Money / Items", "RemoveDrops")
+AddToggle(Tab9, "Sembunyikan UI saat Mulai", "HideUiStart")
+
+-- ISI TAB 10: CONFIG
+AddSection(Tab10, "📁 MANAJEMEN KONFIGURASI DATA")
+AddTextbox(Tab10, "Nama Berkas Konfigurasi...", "CurrentConfigName")
+AddButton(Tab10, "💾 Simpan Konfigurasi Saat Ini", function()
     if SaveConfiguration(_G.Mofenk.CurrentConfigName) then
-        MofenkNotify("CONFIG", "Berhasil disimpan!", "success", 3)
+        MofenkNotify("CONFIG", "Konfigurasi berhasil disimpan.", "success", 3)
     end
 end)
-AddButton(Tab9, "📂 Muat Config Sekarang", function()
+AddButton(Tab10, "📂 Muat Konfigurasi Tersimpan", function()
     if LoadConfiguration(_G.Mofenk.CurrentConfigName) then
-        MofenkNotify("CONFIG", "Berhasil dimuat!", "success", 3)
+        MofenkNotify("CONFIG", "Konfigurasi berhasil dimuat.", "success", 3)
     end
 end)
-AddToggle(Tab9, "Auto-Load Config", "AutoLoadConfig")
+AddToggle(Tab10, "Muat Otomatis Saat Masuk", "AutoLoadConfig")
 
--- ISI TAB 10: SERVER UTILS
-AddSection(Tab10, "⚡ SERVER TOOLS")
-AddButton(Tab10, "🌐 Server Hop (Cari Server Baru)", function() ServerHop() end)
-AddButton(Tab10, "🔄 Rejoin Server Saat Ini", function() RejoinServer() end)
+-- ISI TAB 11: WEBHOOK & SPY DEBUGGER
+AddSection(Tab11, "🌐 INTEGRASI DISCORD WEBHOOK")
+AddTextbox(Tab11, "URL Webhook Notifikasi Roll...", "RollHookUrl")
+AddToggle(Tab11, "Aktifkan Webhook Roll", "RollHookOn")
+AddTextbox(Tab11, "URL Webhook Laporan Status...", "StatHookUrl")
+AddToggle(Tab11, "Aktifkan Webhook Status", "StatHookOn")
 
--- FLOATING TOGGLE BUTTON
+AddSection(Tab11, "⚡ UTILITAS SERVER & SPY DEBUGGER")
+AddButton(Tab11, "🌐 Pindah Server Publik (Server Hop)", function() ServerHop() end)
+AddButton(Tab11, "🔄 Hubungkan Ulang (Rejoin)", function() RejoinServer() end)
+AddToggle(Tab11, "Aktifkan Konsol Logger Spy", "SpyConsoleLog")
+
+local SpyBox = Instance.new("TextBox")
+SpyBox.Parent = Tab11
+SpyBox.Size = UDim2.new(1, 0, 0, 110)
+SpyBox.BackgroundColor3 = Theme.Card
+SpyBox.TextColor3 = Color3.fromRGB(0, 255, 128)
+SpyBox.TextSize = 9
+SpyBox.Font = Enum.Font.Code
+SpyBox.MultiLine = true
+SpyBox.ClearTextOnFocus = false
+SpyBox.TextXAlignment = Enum.TextXAlignment.Left
+SpyBox.TextYAlignment = Enum.TextYAlignment.Top
+SpyBox.Text = "-- Advanced Spy Debugger Interceptor Aktif --"
+local SBC = Instance.new("UICorner")
+SBC.CornerRadius = UDim.new(0, 6)
+SBC.Parent = SpyBox
+
+task.spawn(function()
+    while task.wait(1.5) do
+        pcall(function()
+            if #SpyLogsList > 0 then
+                SpyBox.Text = table.concat(SpyLogsList, "\n")
+            end
+        end)
+    end
+end)
+
+-- TOMBOL APUNG TOGGLE MENU
 local ToggleGui = Instance.new("ScreenGui")
 ToggleGui.Name = "MofenkToggleGui"
 ToggleGui.Parent = parentGui
@@ -586,9 +744,9 @@ TC.Parent = ToggleBtn
 
 ToggleBtn.MouseButton1Click:Connect(function() MainFrame.Visible = not MainFrame.Visible end)
 
--- AUTOMATION LOOPS & BACKEND THREADS (DENGAN PROTEKSI NULL CHECK AMAN)
+-- THREAD UTAMA OTOMATISASI BACKEND
 task.spawn(function()
-    MofenkNotify("MOFENKHUB V32", "Zero Error Master Engine Aktif!", "success", 3)
+    MofenkNotify("MOFENKHUB V35", "Sistem kendali utama dan Spy Interceptor aktif.", "success", 3)
     while task.wait(2.5) do
         if _G.Mofenk.AutoRoll and R.RollDice then
             pcall(function()
@@ -603,15 +761,19 @@ task.spawn(function()
 end)
 
 task.spawn(function()
-    while task.wait(5) do
-        if _G.Mofenk.AutoCollect and R.CollectBalance then
+    while task.wait(6) do
+        if _G.Mofenk.AutoFuse and R.Fuse then
             pcall(function()
                 local d = data()
-                if d and d.Slots then
-                    for k, _ in pairs(d.Slots) do
-                        if R.CollectBalance then
-                            R.CollectBalance:FireServer(tonumber(k))
-                        end
+                if d and d.Inventory then
+                    local pile = {}
+                    for id, u in pairs(d.Inventory) do
+                        table.insert(pile, id)
+                        if #pile >= 3 then break end
+                    end
+                    if #pile >= 3 then
+                        R.Fuse:FireServer(pile[1], pile[2], pile[3])
+                        MofenkNotify("FUSION", "Penggabungan otomatis 3 unit berhasil diproses.", "success", 2)
                     end
                 end
             end)
