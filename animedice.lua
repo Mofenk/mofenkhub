@@ -1,6 +1,6 @@
 -- =====================================================================
--- 👑 MOFENKHUB V1.0 — ANIME DICE EDITION (WINDUI FRAMEWORK)
--- Game: Anime Dice | WindUI, Deep Network Spy, Remote Scanner & Clean Setup
+-- 👑 MOFENKHUB V1.0 — ANIME DICE EDITION (FLUENT UI FRAMEWORK)
+-- Game: Anime Dice | Fluent UI, Deep Network Spy & Data Scanner Setup
 -- =====================================================================
 
 local Players = game:GetService("Players")
@@ -14,7 +14,7 @@ local LocalPlayer = Players.LocalPlayer
 -- 1. PEMBERSIHAN UI LAMA
 local uiTarget = pcall(function() return CoreGui end) and CoreGui or LocalPlayer:WaitForChild("PlayerGui")
 for _, v in pairs(uiTarget:GetChildren()) do 
-    if v.Name == "MofenkHubAnimeDice" or v.Name == "WindUI" or v.Name == "MofenkSpyTerminal" or v.Name == "Rayfield" then 
+    if v.Name == "MofenkHubAnimeDice" or v.Name == "Fluent" or v.Name == "WindUI" or v.Name == "Rayfield" then 
         pcall(function() v:Destroy() end) 
     end 
 end
@@ -37,19 +37,10 @@ _G.Mofenk = {
     EnableWalkSpeed = false, WalkSpeedVal = 16
 }
 
--- LOAD WINDUI LIBRARY (AUTO FALLBACK LINK)
-local WindUI
-local success = pcall(function()
-    WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/FootGes/WindUI/main/Source.lua"))()
-end)
+-- 3. LOAD FLUENT UI LIBRARY (LINK RILIS RESMI STABIL)
+local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
 
-if not success or not WindUI then
-    WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/FootGes/WindUI/main/main.lua"))()
-end
-
--- ==========================================
--- 3. AUTO EXECUTE (QUEUE ON TELEPORT)
--- ==========================================
+-- 4. AUTO EXECUTE (QUEUE ON TELEPORT)
 local function ApplyQueueOnTeleport()
     if _G.Mofenk.AutoExecute then
         local queueFunc = queueonteleport or (syn and syn.queue_on_teleport) or (fluxus and fluxus.queue_on_teleport) or (queue_on_teleport)
@@ -57,16 +48,14 @@ local function ApplyQueueOnTeleport()
             pcall(function()
                 queueFunc([[
                     repeat task.wait(1) until game:IsLoaded()
-                    print("[MofenkHub] Auto Execute Triggered After Teleport (WindUI Anime Dice)!")
+                    print("[MofenkHub] Auto Execute Triggered After Teleport!")
                 ]])
             end)
         end
     end
 end
 
--- ==========================================
--- 4. ALL-IN-ONE DATA SCANNER ENGINE 🔍
--- ==========================================
+-- 5. DATA SCANNER ENGINE 🔍
 local function ScanGameRemotes()
     print("\n==========================================")
     print("📡 [ANIME DICE SCANNER] REPLICATEDSTORAGE & GAME REMOTES")
@@ -79,7 +68,7 @@ local function ScanGameRemotes()
         end
     end
     print("==========================================\n")
-    WindUI:Notify({
+    Fluent:Notify({
         Title = "Remote Scan Selesai! 📡",
         Content = "Ditemukan " .. count .. " Remote. Hasil lengkap dicetak ke F9 Console!",
         Duration = 5
@@ -108,7 +97,7 @@ local function ScanInventoryAndStats()
         print("GUI Layer: " .. gui.Name)
     end
     print("==========================================\n")
-    WindUI:Notify({
+    Fluent:Notify({
         Title = "Inventory Scan Selesai! 📦",
         Content = "Data Stats & GUI dicetak ke F9 Console!",
         Duration = 5
@@ -127,16 +116,14 @@ local function ScanWorkspacePrompts()
         end
     end
     print("==========================================\n")
-    WindUI:Notify({
+    Fluent:Notify({
         Title = "Prompt Scan Selesai! 🏗️",
         Content = "Ditemukan " .. count .. " Interactive Object di Workspace (Cek F9)!",
         Duration = 5
     })
 end
 
--- ==========================================
--- 5. REAL-TIME NETWORK SPY HOOK (__NAMECALL) 🕵️
--- ==========================================
+-- 6. REAL-TIME NETWORK SPY HOOK (__NAMECALL) 🕵️
 local rawNamecall = getrawmetatable and getrawmetatable(game) and getrawmetatable(game).__namecall
 if hookmetatable and rawNamecall then
     local oldNamecall
@@ -157,7 +144,7 @@ if hookmetatable and rawNamecall then
                     print(logMessage)
                 end
                 
-                WindUI:Notify({
+                Fluent:Notify({
                     Title = "📡 Remote: " .. self.Name,
                     Content = "Method: " .. method .. "\nArgs: " .. (argStr ~= "" and argStr or "Tanpa Argument"),
                     Duration = 3
@@ -168,9 +155,7 @@ if hookmetatable and rawNamecall then
     end))
 end
 
--- ==========================================
--- 6. UTILITIES & PLAYER CONTROL
--- ==========================================
+-- 7. UTILITIES & PLAYER CONTROL
 local function ToggleFlySystem(state)
     local char = LocalPlayer.Character
     if not char or not char:FindFirstChild("HumanoidRootPart") then return end
@@ -243,153 +228,143 @@ LocalPlayer.Idled:Connect(function()
     end
 end)
 
--- ==========================================
--- 7. WINDUI SETUP
--- ==========================================
-local Window = WindUI:CreateWindow({
+-- 8. FLUENT UI WINDOW & TABS SETUP
+local Window = Fluent:CreateWindow({
     Title = "MofenkHub | Anime Dice 🎲",
-    Icon = "dice",
-    Author = "Mofenk",
-    Folder = "MofenkAnimeDice",
+    SubTitle = "by Mofenk",
+    TabWidth = 160,
     Size = UDim2.fromOffset(580, 460),
-    Transparent = true,
     Theme = "Dark"
 })
 
-WindUI:Notify({ 
-    Title = "MofenkHub Ready! 🎲", 
-    Content = "WindUI & Modul Spy Scanner Siap Digunakan!", 
-    Duration = 5 
-})
+local Tabs = {
+    Home = Window:AddTab({ Title = "Home", Icon = "home" }),
+    Spy = Window:AddTab({ Title = "Spy & Scanner", Icon = "search" }),
+    Main = Window:AddTab({ Title = "Main & Farm", Icon = "gamepad-2" }),
+    Player = Window:AddTab({ Title = "Player & Utilities", Icon = "user" })
+}
 
 -- TAB 1: HOME
-local TabHome = Window:Tab({ Title = "Home", Icon = "house" })
-TabHome:Section({ Title = "Akun & Monitor" })
-TabHome:Paragraph({
-    Title = LocalPlayer.Name, 
-    Desc = "Game: Anime Dice\nStatus: Online & Scanning"
+Tabs.Home:AddParagraph({
+    Title = "Akun & Monitor",
+    Content = "Player: " .. LocalPlayer.Name .. "\nGame: Anime Dice\nStatus: Online & Scanning"
 })
 
 -- TAB 2: SPY & SCANNER
-local TabSpy = Window:Tab({ Title = "Spy & Scanner", Icon = "search" })
-TabSpy:Section({ Title = "Real-Time Network Spy" })
-TabSpy:Toggle({
-    Title = "Real-Time Remote Spy (Notifikasi Screen)", 
-    Value = true, 
+Tabs.Spy:AddSection("Real-Time Network Spy")
+Tabs.Spy:AddToggle("SpyToggle", {
+    Title = "Real-Time Remote Spy (Notifikasi Screen)",
+    Default = true,
     Callback = function(V) _G.Mofenk.SpyEnabled = V end
 })
-TabSpy:Toggle({
-    Title = "Cetak Detail Remote ke F9 Console", 
-    Value = true, 
+Tabs.Spy:AddToggle("ConsoleLogToggle", {
+    Title = "Cetak Detail Remote ke F9 Console",
+    Default = true,
     Callback = function(V) _G.Mofenk.SpyConsoleLog = V end
 })
 
-TabSpy:Section({ Title = "Manual Data Scanner" })
-TabSpy:Button({
-    Title = "Scan Semua Remote Event & Function", 
+Tabs.Spy:AddSection("Manual Data Scanner")
+Tabs.Spy:AddButton({
+    Title = "Scan Semua Remote Event & Function",
     Callback = function() ScanGameRemotes() end
 })
-TabSpy:Button({
-    Title = "Scan Inventory, Backpack & Stats", 
+Tabs.Spy:AddButton({
+    Title = "Scan Inventory, Backpack & Stats",
     Callback = function() ScanInventoryAndStats() end
 })
-TabSpy:Button({
-    Title = "Scan Interactive ProximityPrompts", 
+Tabs.Spy:AddButton({
+    Title = "Scan Interactive ProximityPrompts",
     Callback = function() ScanWorkspacePrompts() end
 })
 
 -- TAB 3: MAIN & FARM (FITUR KOSONG)
-local TabMain = Window:Tab({ Title = "Main & Farm", Icon = "gamepad-2" })
-TabMain:Section({ Title = "Roll Automation" })
-TabMain:Toggle({
-    Title = "Auto Roll (Butuh Remote)", 
-    Value = false, 
+Tabs.Main:AddSection("Roll Automation")
+Tabs.Main:AddToggle("AutoRollToggle", {
+    Title = "Auto Roll (Butuh Remote)",
+    Default = false,
     Callback = function(V) _G.Mofenk.AutoRoll = V end
 })
 
-TabMain:Section({ Title = "Inventory Automation" })
-TabMain:Toggle({
-    Title = "Auto Equip Best (Butuh Remote)", 
-    Value = false, 
+Tabs.Main:AddSection("Inventory Automation")
+Tabs.Main:AddToggle("AutoEquipToggle", {
+    Title = "Auto Equip Best (Butuh Remote)",
+    Default = false,
     Callback = function(V) _G.Mofenk.AutoEquipBest = V end
 })
-TabMain:Toggle({
-    Title = "Auto Rebirth (Butuh Remote)", 
-    Value = false, 
+Tabs.Main:AddToggle("AutoRebirthToggle", {
+    Title = "Auto Rebirth (Butuh Remote)",
+    Default = false,
     Callback = function(V) _G.Mofenk.AutoRebirth = V end
 })
-TabMain:Toggle({
-    Title = "Auto Sell (Butuh Remote)", 
-    Value = false, 
+Tabs.Main:AddToggle("AutoSellToggle", {
+    Title = "Auto Sell (Butuh Remote)",
+    Default = false,
     Callback = function(V) _G.Mofenk.AutoSell = V end
 })
 
 -- TAB 4: PLAYER & UTILITIES
-local TabPlayer = Window:Tab({ Title = "Player & Utilities", Icon = "user" })
-TabPlayer:Section({ Title = "Protection & Automation" })
-TabPlayer:Toggle({
-    Title = "Auto AFK (Anti Idle Disconnect)", 
-    Value = true, 
+Tabs.Player:AddSection("Protection & Automation")
+Tabs.Player:AddToggle("AutoAFKToggle", {
+    Title = "Auto AFK (Anti Idle Disconnect)",
+    Default = true,
     Callback = function(V) _G.Mofenk.AutoAFK = V end
 })
-TabPlayer:Toggle({
-    Title = "Auto Execute (Queue On Teleport)", 
-    Value = true, 
+Tabs.Player:AddToggle("AutoExecToggle", {
+    Title = "Auto Execute (Queue On Teleport)",
+    Default = true,
     Callback = function(V) _G.Mofenk.AutoExecute = V end
 })
-TabPlayer:Toggle({
-    Title = "Auto Reconnect (Anti DC)", 
-    Value = true, 
+Tabs.Player:AddToggle("AutoReconnToggle", {
+    Title = "Auto Reconnect (Anti DC)",
+    Default = true,
     Callback = function(V) _G.Mofenk.AutoReconnect = V end
 })
 
-TabPlayer:Section({ Title = "Movement" })
-TabPlayer:Toggle({
-    Title = "Aktifkan Fly", 
-    Value = false, 
+Tabs.Player:AddSection("Movement")
+Tabs.Player:AddToggle("FlyToggle", {
+    Title = "Aktifkan Fly",
+    Default = false,
     Callback = function(V) 
         _G.Mofenk.EnableFly = V 
         ToggleFlySystem(V)
     end
 })
-TabPlayer:Slider({
-    Title = "Kecepatan Fly", 
-    Min = 20, 
-    Max = 200, 
-    Default = 50, 
+Tabs.Player:AddSlider("FlySpeedSlider", {
+    Title = "Kecepatan Fly",
+    Min = 20,
+    Max = 200,
+    Default = 50,
+    Rounding = 0,
     Callback = function(V) _G.Mofenk.FlySpeed = V end
 })
-TabPlayer:Toggle({
-    Title = "Aktifkan Custom WalkSpeed", 
-    Value = false, 
+Tabs.Player:AddToggle("WalkSpeedToggle", {
+    Title = "Aktifkan Custom WalkSpeed",
+    Default = false,
     Callback = function(V) _G.Mofenk.EnableWalkSpeed = V end
 })
-TabPlayer:Slider({
-    Title = "WalkSpeed", 
-    Min = 16, 
-    Max = 200, 
-    Default = 16, 
+Tabs.Player:AddSlider("WalkSpeedSlider", {
+    Title = "WalkSpeed",
+    Min = 16,
+    Max = 200,
+    Default = 16,
+    Rounding = 0,
     Callback = function(V) _G.Mofenk.WalkSpeedVal = V end
 })
 
-TabPlayer:Section({ Title = "Server Utilities" })
-TabPlayer:Button({
-    Title = "Copy Server JobID", 
+Tabs.Player:AddSection("Server Utilities")
+Tabs.Player:AddButton({
+    Title = "Copy Server JobID",
     Callback = function() 
         CopyServerID()
-        WindUI:Notify({ Title = "Berhasil Disalin! ✅", Content = "Job ID disalin ke clipboard.", Duration = 3 })
+        Fluent:Notify({ Title = "Berhasil Disalin! ✅", Content = "Job ID disalin ke clipboard.", Duration = 3 })
     end
 })
-TabPlayer:Button({
-    Title = "Server Hop", 
-    Callback = function() 
-        ServerHop() 
-    end
+Tabs.Player:AddButton({
+    Title = "Server Hop",
+    Callback = function() ServerHop() end
 })
 
--- ==========================================
--- 8. BACKGROUND MAIN LOOP ENGINE
--- ==========================================
+-- 9. BACKGROUND MAIN LOOP ENGINE
 task.spawn(function()
     while task.wait(0.2) do
         pcall(function()
