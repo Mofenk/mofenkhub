@@ -1,9 +1,10 @@
 -- =====================================================================
--- 👑 MOFENKHUB V30.0 — SAFE START FULL MASTER ENGINE
--- Game: Anime Dice | Safe Initialization, Zero Error Line 1, 10 Tabs UI
+-- 👑 MOFENKHUB V32.0 — ULTIMATE MASTER UNCUT EDITION (ZERO ERROR)
+-- Game: Anime Dice | 100% Robust Nil Protection, Full 10 Tabs UI,
+-- Tower Math Simulator, Auto Roll/Sell/Upgrade/Rebirth, Configs & Server Hop
 -- =====================================================================
 
-task.wait(1) -- Memberikan jeda agar game dan service selesai dimuat sepenuhnya
+task.wait(1.5) -- Inisialisasi aman untuk mencegah race condition
 
 local Players           = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -17,14 +18,14 @@ local LocalPlayer       = Players.LocalPlayer
 
 local parentGui = pcall(function() return CoreGui end) and CoreGui or LocalPlayer:WaitForChild("PlayerGui")
 
--- 1. CLEANUP SISA INSTANCE RUN SEBELUMNYA
+-- 1. CLEANUP INSTANCE LAMA
 for _, v in pairs(parentGui:GetChildren()) do 
-    if v.Name == "MofenkUltraHubV30" or v.Name == "MofenkToggleGui" or v.Name == "MofenkNotifyGui" then 
+    if v.Name == "MofenkUltraHubV32" or v.Name == "MofenkToggleGui" or v.Name == "MofenkNotifyGui" then 
         pcall(function() v:Destroy() end) 
     end 
 end
 
--- 2. MASTER CONFIG GLOBAL LENGKAP
+-- 2. MASTER CONFIG GLOBAL
 _G.Mofenk = {
     AutoAFK            = true,
     AutoReconnect      = true,
@@ -53,7 +54,7 @@ _G.Mofenk = {
     AutoPasses   = true
 }
 
--- 3. CONFIG FILE MANAGER (READ/WRITE JSON)
+-- 3. CONFIG FILE MANAGER (JSON)
 local ConfigFolder = "MofenkHub/Configs"
 if isfolder and not isfolder(ConfigFolder) then
     pcall(function() makefolder("MofenkHub") makefolder(ConfigFolder) end)
@@ -81,7 +82,7 @@ local function LoadConfiguration(name)
     return false
 end
 
--- 4. PALETTE & THEME SYSTEM (MODERN DARK GLASS)
+-- 4. THEME & PALETTE (MODERN DARK GLASS)
 local Theme = {
     Bg        = Color3.fromRGB(12, 12, 18),
     Header    = Color3.fromRGB(18, 18, 26),
@@ -156,10 +157,10 @@ local function MofenkNotify(title, message, nType, duration)
     end)
 end
 
--- 6. SAFE SERVICE MAPPING (DENGAN PROTEKSI NIL)
+-- 6. SAFE SERVICE & REMOTE MAPPING (DENGAN NULL-CHECK AMAN)
 local Framework, Network
-pcall(function() Framework = ReplicatedStorage:WaitForChild("Framework", 10) end)
-pcall(function() Network = ReplicatedStorage:WaitForChild("Network", 10) end)
+pcall(function() Framework = ReplicatedStorage:WaitForChild("Framework", 15) end)
+pcall(function() Network = ReplicatedStorage:WaitForChild("Network", 15) end)
 
 local function safeFind(parent, path)
     local node = parent
@@ -173,11 +174,17 @@ local R = {
     RollDice       = Network and (safeFind(Network, "RollService.RF.RollDice") or safeFind(Network, "RollService.RE.RollDice")),
     CollectBalance = Network and (safeFind(Network, "PlotService.RE.CollectBalance") or safeFind(Network, "PlotService.RF.CollectBalance")),
     PlayTower      = Network and (safeFind(Network, "Towers.RF.PlayTower") or safeFind(Network, "Towers.RE.PlayTower")),
+    CompleteFloor  = Network and (safeFind(Network, "Towers.RF.CompleteTowerFloor") or safeFind(Network, "Towers.RE.CompleteTowerFloor")),
+    CancelTower    = Network and (safeFind(Network, "Towers.RF.CancelTower") or safeFind(Network, "Towers.RE.CancelTower")),
+    SellInventory  = Network and (safeFind(Network, "SellService.RF.SellInventory") or safeFind(Network, "SellService.RE.SellInventory")),
 }
 
-local DataController
+local DataController, TowersConfig
 pcall(function()
-    if Framework then DataController = require(Framework.Features.Data.DataController) end
+    if Framework then 
+        DataController = require(Framework.Features.Data.DataController)
+        TowersConfig = require(Framework.Features.Towers.Towers)
+    end
 end)
 
 local function data()
@@ -206,9 +213,9 @@ local function RejoinServer()
     TeleportService:Teleport(game.PlaceId, LocalPlayer)
 end
 
--- 7. UI UTAMA V30 PRO (10 TABS + PROFILE DATA)
+-- 7. UI UTAMA V32 PRO (10 TABS + PROFILE DATA + ZERO ERROR)
 local MainGui = Instance.new("ScreenGui")
-MainGui.Name = "MofenkUltraHubV30"
+MainGui.Name = "MofenkUltraHubV32"
 MainGui.Parent = parentGui
 MainGui.ResetOnSpawn = false
 
@@ -241,7 +248,7 @@ local Title = Instance.new("TextLabel")
 Title.Parent = TopBar
 Title.Position = UDim2.new(0, 16, 0, 0)
 Title.Size = UDim2.new(0, 320, 1, 0)
-Title.Text = "👑 MOFENKHUB V30.0 (SAFE PRO)"
+Title.Text = "👑 MOFENKHUB V32.0 (ZERO ERROR)"
 Title.TextColor3 = Theme.Text
 Title.TextSize = 11
 Title.Font = Enum.Font.GothamBold
@@ -579,14 +586,17 @@ TC.Parent = ToggleBtn
 
 ToggleBtn.MouseButton1Click:Connect(function() MainFrame.Visible = not MainFrame.Visible end)
 
--- AUTOMATION LOOPS & BACKEND THREADS
+-- AUTOMATION LOOPS & BACKEND THREADS (DENGAN PROTEKSI NULL CHECK AMAN)
 task.spawn(function()
-    MofenkNotify("MOFENKHUB V30", "Safe Master Engine & 10 Tabs Aktif!", "success", 3)
+    MofenkNotify("MOFENKHUB V32", "Zero Error Master Engine Aktif!", "success", 3)
     while task.wait(2.5) do
         if _G.Mofenk.AutoRoll and R.RollDice then
             pcall(function()
-                if R.RollDice.ClassName == "RemoteFunction" then R.RollDice:InvokeServer()
-                elseif R.RollDice.ClassName == "RemoteEvent" then R.RollDice:FireServer() end
+                if R.RollDice.ClassName == "RemoteFunction" then 
+                    R.RollDice:InvokeServer()
+                elseif R.RollDice.ClassName == "RemoteEvent" then 
+                    R.RollDice:FireServer() 
+                end
             end)
         end
     end
@@ -599,7 +609,9 @@ task.spawn(function()
                 local d = data()
                 if d and d.Slots then
                     for k, _ in pairs(d.Slots) do
-                        R.CollectBalance:FireServer(tonumber(k))
+                        if R.CollectBalance then
+                            R.CollectBalance:FireServer(tonumber(k))
+                        end
                     end
                 end
             end)
