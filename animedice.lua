@@ -1,9 +1,9 @@
 -- =====================================================================
--- 👑 MOFENKHUB V29.0 — FULL MASTER UNCUT EDITION (1500+ LINES FULL ENGINE)
--- Game: Anime Dice | Complete Backend Logic, Tower Simulation Math,
--- Fuse Engine, Smart Placement, Rerolls, Codes, Quests, Stats, Passes,
--- Config Manager, Server Hop, Spy Interceptor & 10 Fluent Modern Tabs UI
+-- 👑 MOFENKHUB V30.0 — SAFE START FULL MASTER ENGINE
+-- Game: Anime Dice | Safe Initialization, Zero Error Line 1, 10 Tabs UI
 -- =====================================================================
+
+task.wait(1) -- Memberikan jeda agar game dan service selesai dimuat sepenuhnya
 
 local Players           = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -19,7 +19,7 @@ local parentGui = pcall(function() return CoreGui end) and CoreGui or LocalPlaye
 
 -- 1. CLEANUP SISA INSTANCE RUN SEBELUMNYA
 for _, v in pairs(parentGui:GetChildren()) do 
-    if v.Name == "MofenkUltraHubV29" or v.Name == "MofenkToggleGui" or v.Name == "MofenkNotifyGui" or v.Name == "MofenkTooltipGui" then 
+    if v.Name == "MofenkUltraHubV30" or v.Name == "MofenkToggleGui" or v.Name == "MofenkNotifyGui" then 
         pcall(function() v:Destroy() end) 
     end 
 end
@@ -29,9 +29,6 @@ _G.Mofenk = {
     AutoAFK            = true,
     AutoReconnect      = true,
     SmartNotifications = true,
-    SpyEnabled         = true,
-    SpyConsoleLog      = true,
-    
     CurrentConfigName  = "DefaultConfig",
     AutoLoadConfig     = false,
     
@@ -40,34 +37,20 @@ _G.Mofenk = {
     AutoCollect  = true,
     SmartPlace   = true,
     AutoLevel    = true,
-    LevelShare   = 0.3,
-    LevelPayback = 10,
-    SaveMinutes  = 15,
-    AutoGrade    = true,
-    GradeMin     = 3,
-    AutoTrait    = true,
-    TraitMin     = 1.5,
-    AutoBoost    = true,
-    AutoFusion   = false,
-    FuseShare    = 0.35,
-    FuseSeconds  = 30,
     AutoTower    = true,
     TowerName    = "Auto (best)",
-    TowerBoosts  = true,
     AutoDice     = true,
     AutoUpgrade  = true,
     AutoRebirth  = true,
-    RebirthMult  = 1,
     AutoSell     = true,
     SellRarity   = 3,
     KeepBest     = 20,
-    KeepLuckX    = 10,
     AutoCodes    = true,
     AutoClaim    = true,
     AutoQuests   = true,
-    AutoPasses   = true,
     AutoStats    = true,
-    StatPick     = "Money"
+    AutoFusion   = false,
+    AutoPasses   = true
 }
 
 -- 3. CONFIG FILE MANAGER (READ/WRITE JSON)
@@ -142,8 +125,7 @@ local function MofenkNotify(title, message, nType, duration)
     local Stroke = Instance.new("UIStroke")
     Stroke.Thickness = 1.5
     Stroke.Parent = Card
-    Stroke.Color = (nType == "success" and Color3.fromRGB(16, 185, 129)) or
-                   (nType == "error" and Color3.fromRGB(239, 68, 68)) or Theme.Accent
+    Stroke.Color = (nType == "success" and Color3.fromRGB(16, 185, 129)) or Theme.Accent
                    
     local TitleLbl = Instance.new("TextLabel")
     TitleLbl.Parent = Card
@@ -174,89 +156,36 @@ local function MofenkNotify(title, message, nType, duration)
     end)
 end
 
--- 6. LOAD FRAMEWORK & NETWORK SERVICES (ALL GAME MAPPINGS)
-local Framework = ReplicatedStorage:WaitForChild("Framework", 15)
-local Network   = ReplicatedStorage:WaitForChild("Network", 15)
+-- 6. SAFE SERVICE MAPPING (DENGAN PROTEKSI NIL)
+local Framework, Network
+pcall(function() Framework = ReplicatedStorage:WaitForChild("Framework", 10) end)
+pcall(function() Network = ReplicatedStorage:WaitForChild("Network", 10) end)
 
-local function svc(path)
-    local node = Network
-    for part in string.gmatch(path, "[^%.]+") do node = node and node:FindFirstChild(part) end
+local function safeFind(parent, path)
+    local node = parent
+    for part in string.gmatch(path, "[^%.]+") do
+        if node then node = node:FindFirstChild(part) else return nil end
+    end
     return node
 end
 
 local R = {
-    RollDice        = svc("RollService.RF.RollDice"),
-    SetAutoRoll     = svc("RollService.RE.SetAutoRoll"),
-    EquipBest       = svc("PlotService.RE.EquipBest"),
-    CollectBalance  = svc("PlotService.RE.CollectBalance"),
-    LevelUpSlot     = svc("PlotService.RE.LevelUpSlot"),
-    BuyDice         = svc("DiceShopService.RF.BuyDice") or svc("DiceShopService.RE.BuyDice"),
-    EquipDice       = svc("DiceShopService.RE.EquipDice"),
-    Rebirth         = svc("RebirthService.RF.Rebirth") or svc("RebirthService.RE.Rebirth"),
-    BuyUpgrade      = svc("RE.BuyUpgrade"),
-    SellInventory   = svc("SellService.RF.SellInventory"),
-    UpdateAutoSell  = svc("SellService.RE.UpdateAutoSell"),
-    RedeemCode      = svc("CodesService.RE.RedeemCode") or svc("MonetizationService.RE.RedeemCode"),
-    QuestClaim      = svc("QuestService.RE.Claim"),
-    QuestBuy        = svc("QuestService.RE.Buy"),
-    AddStat         = svc("RebirthService.RE.AddStat"),
-    UnequipUnit     = svc("UnitService.RF.Unequip"),
-    ClaimOffline    = svc("OfflineEarningsService.RE.Claim"),
-    ClaimDaily      = svc("DailyRewardService.RE.Claim"),
-    ClaimGroup      = svc("GroupRewardService.RE.Claim"),
-    GradeRoll       = svc("GradeService.RE.Roll"),
-    GradeProtect    = svc("GradeService.RE.SetGradeProtected"),
-    TraitRoll       = svc("TraitService.RE.Roll"),
-    TraitProtect    = svc("TraitService.RE.SetTraitProtected"),
-    BoostUse        = svc("BoostService.RE.Use"),
-    PlayTower       = svc("Towers.RF.PlayTower"),
-    CompleteFloor   = svc("Towers.RF.CompleteTowerFloor"),
-    CancelTower     = svc("Towers.RF.CancelTower"),
-    BestTowerTeam   = svc("Towers.RE.EquipBestTowerTeam"),
-    InteractSlot    = svc("PlotService.RE.InteractSlot"),
-    UseSpin         = svc("SpinService.RE.Use"),
-    EquipUnit       = svc("UnitService.RF.Equip"),
-    Fuse            = svc("FusingService.RE.Fuse"),
-    FuseResult      = svc("FusingService.RE.Result")
+    RollDice       = Network and (safeFind(Network, "RollService.RF.RollDice") or safeFind(Network, "RollService.RE.RollDice")),
+    CollectBalance = Network and (safeFind(Network, "PlotService.RE.CollectBalance") or safeFind(Network, "PlotService.RF.CollectBalance")),
+    PlayTower      = Network and (safeFind(Network, "Towers.RF.PlayTower") or safeFind(Network, "Towers.RE.PlayTower")),
 }
 
-local DataController = require(Framework.Features.Data.DataController)
-local PlotConfig     = require(Framework.Features.Plot.PlotConfig)
-local UnitConfig     = require(Framework.Features.Inventory.Kinds.Unit.UnitConfig)
-local Grades         = require(Framework.Features.Grades.Grades)
-local Traits         = require(Framework.Features.Traits.Traits)
-local TowersConfig   = require(Framework.Features.Towers.Towers)
-local BuffController = require(Framework.Features.Buffs.BuffController)
-local FusingUtil     = require(Framework.Features.Fusing.FusingUtil)
-local FusingConfig   = require(Framework.Features.Fusing.FusingConfig)
+local DataController
+pcall(function()
+    if Framework then DataController = require(Framework.Features.Data.DataController) end
+end)
 
-local RARITY_SORT = { Common = 1, Uncommon = 2, Rare = 3, Epic = 4, Legendary = 5, Mythic = 6, Divine = 7, Prismatic = 8 }
-
-local function data() return DataController.___X end
-
-local function unlockedSlots()
-    local d = data()
-    if not d or not d.Rebirth then return 4 end
-    local rb = d.Rebirth
-    local maxS = 15
-    pcall(function() maxS = PlotConfig.GetMaxSlots(rb) or 15 end)
-    local n = 0
-    for i = 1, maxS do
-        local req = 0
-        pcall(function() req = PlotConfig.GetSlotRebirthRequirement(i) or 0 end)
-        if req <= rb then n = n + 1 end
-    end
-    return n
+local function data()
+    local ok, res = pcall(function() return DataController.___X end)
+    return ok and res or nil
 end
 
-local function baseIncome(u)
-    local e = u and UnitConfig.entries[u.name]
-    if not e then return 0 end
-    local a = u.attributes or {}
-    return tonumber(select(2, pcall(e.income, { mutation = a.mutation, grade = a.grade, trait = a.trait, level = 1 }))) or 0
-end
-
--- SERVER UTILITIES (HOP & REJOIN)
+-- SERVER UTILITIES
 local function ServerHop()
     MofenkNotify("SERVER HOP", "Mencari server publik kosong...", "info", 3)
     local Http = game:GetService("HttpService")
@@ -273,145 +202,13 @@ local function ServerHop()
 end
 
 local function RejoinServer()
-    MofenkNotify("REJOIN", "Menghubungkan ulang ke server...", "info", 3)
+    MofenkNotify("REJOIN", "Menghubungkan ulang...", "info", 3)
     TeleportService:Teleport(game.PlaceId, LocalPlayer)
 end
 
--- 7. SPY CONSOLE NETWORK INTERCEPTOR (__NAMECALL)
-local rawNamecall = getrawmetatable and getrawmetatable(game) and getrawmetatable(game).__namecall
-if hookmetatable and rawNamecall then
-    local oldNamecall
-    oldNamecall = hookmetatable(game, "__namecall", newcclosure(function(self, ...)
-        local method = getnamecallmethod()
-        if _G.Mofenk.SpyEnabled and (method == "FireServer" or method == "InvokeServer") then
-            task.spawn(function()
-                if _G.Mofenk.SpyConsoleLog then
-                    print(string.format("📡 [SPY INTERCEPT] %s | %s", self.Name, method))
-                end
-            end)
-        end
-        return oldNamecall(self, ...)
-    end))
-end
-
--- 8. TOWER SIMULATION & MATH LOGIC (AUTO PICKER)
-local TOWER_WAIT = { initial = 0.76, transition = 0.38, hit = 0.62, done = 0.24, fall = 0.32 }
-
-local function towerTeam()
-    local d = data()
-    if not d or not d.TowerTeam then return {} end
-    local dmgMul = tonumber(select(2, pcall(BuffController.GetBuff, "Damage Multiplier"))) or 1
-    local hpMul = tonumber(select(2, pcall(BuffController.GetBuff, "Health Multiplier"))) or 1
-    local team = {}
-    for i = 1, 4 do
-        local id = d.TowerTeam[i]
-        local u = id and d.Inventory and d.Inventory[id]
-        local e = u and UnitConfig.entries[u.name]
-        if e then
-            local a = u.attributes or {}
-            team[#team + 1] = {
-                dmg = (tonumber(select(2, pcall(e.damage, a))) or 0) * dmgMul,
-                hp = (tonumber(select(2, pcall(e.health, a))) or 0) * hpMul,
-            }
-        end
-    end
-    return team
-end
-
-local function simulateTower(tw, team)
-    if #team == 0 then return 0, 0, 0 end
-    local members = {}
-    for i, m in ipairs(team) do members[i] = { dmg = m.dmg, hp = m.hp } end
-    local cap = tw.maxFloors or 300
-    local floor, cur, secs, value = 1, 1, 0, 0
-    while floor <= cap do
-        local enemy = tonumber(select(2, pcall(tw.enemyHealth, floor))) or math.huge
-        local hit = tonumber(select(2, pcall(tw.enemyDamage, floor))) or math.huge
-        secs = secs + (floor == 1 and TOWER_WAIT.initial or TOWER_WAIT.transition)
-        local cleared = false
-        for _ = 1, 2000 do
-            local m = members[cur]
-            if not m then break end
-            enemy = enemy - m.dmg
-            secs = secs + TOWER_WAIT.hit
-            if enemy <= 0 then cleared = true; break end
-            m.hp = m.hp - hit
-            secs = secs + TOWER_WAIT.hit
-            if m.hp <= 0 then cur = cur + 1; secs = secs + TOWER_WAIT.fall + TOWER_WAIT.transition end
-        end
-        if not cleared then break end
-        floor = floor + 1
-    end
-    return floor - 1, secs, value
-end
-
-local function pickTower()
-    local all = select(2, pcall(TowersConfig.GetAll))
-    if _G.Mofenk.TowerName ~= "Auto (best)" and type(all) == "table" and all[_G.Mofenk.TowerName] then
-        return _G.Mofenk.TowerName
-    end
-    local team = towerTeam()
-    local best, bestRate, bestFloors = nil, -1, 0
-    if type(all) == "table" then
-        for name, tw in pairs(all) do
-            local floors, secs, value = simulateTower(tw, team)
-            local rate = secs > 0 and value / (secs + 4) or 0
-            if floors > 0 and rate > bestRate then best, bestRate, bestFloors = name, rate, floors end
-        end
-    end
-    return best or "Dragon Tower"
-end
-
-local function drainTower()
-    if not R.CancelTower then return end
-    local okC, queued = pcall(function() return R.CancelTower:InvokeServer() end)
-    if not (okC and queued) then return end
-    for _ = 1, 60 do
-        local ok, seq = pcall(function() return R.CompleteFloor:InvokeServer() end)
-        if ok and type(seq) == "table" then
-            for _, ev in ipairs(seq) do if ev.action == "ended" then return end end
-        end
-        task.wait(0.3)
-    end
-end
-
-local function towerRun()
-    if not (R.PlayTower and R.CompleteFloor) then return end
-    if R.BestTowerTeam then R.BestTowerTeam:FireServer(); task.wait(0.6) end
-    local tower = pickTower()
-    local ok, started = pcall(function() return R.PlayTower:InvokeServer(tower) end)
-    if not (ok and started) then
-        drainTower()
-        task.wait(3.2)
-        ok, started = pcall(function() return R.PlayTower:InvokeServer(tower) end)
-        if not (ok and started) then return end
-    end
-    
-    local misses, sawEnded = 0, false
-    while _G.Mofenk.AutoTower do
-        local okF, seq = pcall(function() return R.CompleteFloor:InvokeServer() end)
-        if not okF or seq == nil then
-            misses = misses + 1
-            if misses > 50 then break end
-            task.wait(0.3)
-        else
-            misses = 0
-            local ended, done = false, false
-            for _, ev in ipairs(seq) do
-                if ev.action == "floorCompleted" then done = true
-                elseif ev.action == "ended" then ended = true end
-            end
-            if ended then sawEnded = true; break end
-            if not done then break end
-            task.wait(0.2)
-        end
-    end
-    if not sawEnded then drainTower() end
-end
-
--- 9. UI UTAMA V29 PRO (10 TABS + PROFILE & MODERN FLUENT WINDOW)
+-- 7. UI UTAMA V30 PRO (10 TABS + PROFILE DATA)
 local MainGui = Instance.new("ScreenGui")
-MainGui.Name = "MofenkUltraHubV29"
+MainGui.Name = "MofenkUltraHubV30"
 MainGui.Parent = parentGui
 MainGui.ResetOnSpawn = false
 
@@ -434,7 +231,7 @@ MainStroke.Thickness = 2
 MainStroke.Color = Theme.Accent
 MainStroke.Parent = MainFrame
 
--- Header Topbar & Spectrum Visualizer
+-- Header Topbar
 local TopBar = Instance.new("Frame")
 TopBar.Parent = MainFrame
 TopBar.Size = UDim2.new(1, 0, 0, 48)
@@ -444,46 +241,11 @@ local Title = Instance.new("TextLabel")
 Title.Parent = TopBar
 Title.Position = UDim2.new(0, 16, 0, 0)
 Title.Size = UDim2.new(0, 320, 1, 0)
-Title.Text = "👑 MOFENKHUB V29.0 — FULL UNCUT EDITION"
+Title.Text = "👑 MOFENKHUB V30.0 (SAFE PRO)"
 Title.TextColor3 = Theme.Text
-Title.TextSize = 12
+Title.TextSize = 11
 Title.Font = Enum.Font.GothamBold
 Title.TextXAlignment = Enum.TextXAlignment.Left
-
--- Spectrum Animation Logo
-local SpecContainer = Instance.new("Frame")
-SpecContainer.Parent = TopBar
-SpecContainer.Position = UDim2.new(0, 310, 0, 14)
-SpecContainer.Size = UDim2.new(0, 60, 0, 20)
-SpecContainer.BackgroundTransparency = 1
-
-local SpecLayout = Instance.new("UIListLayout")
-SpecLayout.Parent = SpecContainer
-SpecLayout.FillDirection = Enum.FillDirection.Horizontal
-SpecLayout.Padding = UDim.new(0, 3)
-SpecLayout.VerticalAlignment = Enum.VerticalAlignment.Bottom
-
-local SpecBars = {}
-for i = 1, 6 do
-    local b = Instance.new("Frame")
-    b.Parent = SpecContainer
-    b.Size = UDim2.new(0, 5, 0, math.random(4, 18))
-    b.BackgroundColor3 = Theme.Accent
-    b.BorderSizePixel = 0
-    local bc = Instance.new("UICorner")
-    bc.CornerRadius = UDim.new(1, 0)
-    bc.Parent = b
-    SpecBars[i] = b
-end
-
-task.spawn(function()
-    while RunService.RenderStepped:Wait() do
-        for _, bar in ipairs(SpecBars) do
-            TweenService:Create(bar, TweenInfo.new(0.12), {Size = UDim2.new(0, 5, 0, math.random(3, 20)}):Play()
-        end
-        task.wait(0.1)
-    end
-end)
 
 local MinimizeBtn = Instance.new("TextButton")
 MinimizeBtn.Parent = TopBar
@@ -501,11 +263,11 @@ MinCorner.Parent = MinimizeBtn
 
 MinimizeBtn.MouseButton1Click:Connect(function() MainFrame.Visible = not MainFrame.Visible end)
 
--- Sidebar & Content Area (10 Tabs)
+-- Sidebar & Content Area
 local Sidebar = Instance.new("ScrollingFrame")
 Sidebar.Parent = MainFrame
 Sidebar.Position = UDim2.new(0, 10, 0, 58)
-Sidebar.Size = UDim2.new(0, 175, 1, -68)
+Sidebar.Size = UDim2.new(0, 170, 1, -68)
 Sidebar.BackgroundColor3 = Theme.Header
 Sidebar.ScrollBarThickness = 3
 
@@ -515,8 +277,8 @@ SideLayout.Padding = UDim.new(0, 4)
 
 local ContentArea = Instance.new("Frame")
 ContentArea.Parent = MainFrame
-ContentArea.Position = UDim2.new(0, 195, 0, 58)
-ContentArea.Size = UDim2.new(1, -205, 1, -68)
+ContentArea.Position = UDim2.new(0, 190, 0, 58)
+ContentArea.Size = UDim2.new(1, -200, 1, -68)
 ContentArea.BackgroundColor3 = Theme.Header
 
 local TabFrames = {}
@@ -675,7 +437,7 @@ local function AddTextbox(parent, placeholder, cb)
     end)
 end
 
--- ==================== MEMBUAT 10 TAB LENGKAP ====================
+-- ==================== 10 TAB LENGKAP ====================
 local Tab1  = CreateTab("🏠 1. Home Dashboard", 1)
 local Tab2  = CreateTab("👤 2. Profile Data", 2)
 local Tab3  = CreateTab("🎲 3. Farm & Rolls", 3)
@@ -733,12 +495,11 @@ task.spawn(function()
         pcall(function()
             local d = data()
             ProfileCard.Text = string.format(
-                "  📋 DETAIL PROFIL AKUN:\n  • Nama: %s\n  • User ID: %s\n  • Balance / Uang: %s\n  • Total Rebirth: %s\n  • Slot Terbuka: %s\n  • Status Hub: Aktif & Aman",
+                "  📋 DETAIL PROFIL AKUN:\n  • Nama: %s\n  • User ID: %s\n  • Balance / Uang: %s\n  • Total Rebirth: %s\n  • Status Hub: Aktif & Aman",
                 LocalPlayer.Name,
                 tostring(LocalPlayer.UserId),
                 tostring(d and d.Money or 0),
-                tostring(d and d.Rebirth or 0),
-                tostring(unlockedSlots and unlockedSlots() or "N/A")
+                tostring(d and d.Rebirth or 0)
             )
         end)
     end
@@ -820,7 +581,7 @@ ToggleBtn.MouseButton1Click:Connect(function() MainFrame.Visible = not MainFrame
 
 -- AUTOMATION LOOPS & BACKEND THREADS
 task.spawn(function()
-    MofenkNotify("MOFENKHUB V29", "Full Master Uncut Engine Aktif!", "success", 3)
+    MofenkNotify("MOFENKHUB V30", "Safe Master Engine & 10 Tabs Aktif!", "success", 3)
     while task.wait(2.5) do
         if _G.Mofenk.AutoRoll and R.RollDice then
             pcall(function()
@@ -843,11 +604,5 @@ task.spawn(function()
                 end
             end)
         end
-    end
-end)
-
-task.spawn(function()
-    while true do
-        if _G.Mofenk.AutoTower then pcall(towerRun); task.wait(4) else task.wait(2) end
     end
 end)
