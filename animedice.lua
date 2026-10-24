@@ -1,6 +1,6 @@
 -- =====================================================================
--- 👑 MOFENKHUB V3.0 — RAYFIELD & OUROBOROS HYBRID ULTRA EDITION
--- 100% Standalone Pure Lua Script (No Loadstring / Anti HTTP 404 Error)
+-- 👑 MOFENKHUB V4.0 — ULTRA DIAGNOSTIC & RESIZABLE EDITION
+-- Game: Anime Dice | Full Sell Remotes, Diagnostics, Resizable & Draggable UI
 -- Compatible: Delta, Delta Lite, UgPhone, vsphone, Hydrogen, Codex
 -- =====================================================================
 
@@ -11,13 +11,14 @@ local TeleportService = game:GetService("TeleportService")
 local HttpService = game:GetService("HttpService")
 local VirtualUser = game:GetService("VirtualUser")
 local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
 local Stats = game:GetService("Stats")
 local LocalPlayer = Players.LocalPlayer
 
--- 1. PEMBERSIHAN UI SISA DARI RUN SEBELUMNYA
+-- 1. PEMBERSIHAN UI LAMA
 local parentGui = pcall(function() return CoreGui end) and CoreGui or LocalPlayer:WaitForChild("PlayerGui")
 for _, v in pairs(parentGui:GetChildren()) do 
-    if v.Name == "MofenkUltraHub" or v.Name == "MofenkToggleGui" then 
+    if v.Name == "MofenkUltraHubV4" or v.Name == "MofenkToggleGui" then 
         pcall(function() v:Destroy() end) 
     end 
 end
@@ -34,6 +35,8 @@ _G.Mofenk = {
     -- Feature Toggles
     AutoRoll = false,
     AutoSellInventory = false,
+    AutoSellEquipped = false,
+    EnableGameAutoSell = false,
     AutoClaimQuests = false,
     AutoClaimRewards = false,
     AutoCollectBalance = false,
@@ -46,9 +49,7 @@ _G.Mofenk = {
     AutoFuse = false,
     AutoUseBoosts = false,
     AutoBuyDice = false,
-    SelectedDiceType = "Basic",
     AutoBuyUpgrade = false,
-    CodeToRedeem = "",
     
     EnableFly = false, FlySpeed = 50,
     EnableWalkSpeed = false, WalkSpeedVal = 16
@@ -74,8 +75,9 @@ local function UpdateThemeColor(newColor)
     end
 end
 
--- 4. PATH REMOTE EVENT & FUNCTION (SAFE RESOLVER)
+-- 4. PATH REMOTE EVENT & FUNCTION (HASIL SCAN CONS0LE F9)
 local Network = ReplicatedStorage:WaitForChild("Network", 5)
+
 local RollService = Network and Network:FindFirstChild("RollService")
 local SellService = Network and Network:FindFirstChild("SellService")
 local QuestService = Network and Network:FindFirstChild("QuestService")
@@ -91,9 +93,9 @@ local FusingService = Network and Network:FindFirstChild("FusingService")
 local CodesService = Network and Network:FindFirstChild("CodesService")
 local BoostService = Network and Network:FindFirstChild("BoostService")
 
--- 5. IN-UI LIVE CONSOLE LOGGING ENGINE 📝
+-- 5. REAL-TIME LOGGING ENGINE 📝
 local LogScroll = nil
-local function MofenkLog(msg, isError)
+local function MofenkLog(msg, logType)
     local timestamp = os.date("%H:%M:%S")
     local formattedMsg = string.format("[%s] %s", timestamp, tostring(msg))
     print(formattedMsg)
@@ -103,7 +105,17 @@ local function MofenkLog(msg, isError)
         LogItem.Parent = LogScroll
         LogItem.Size = UDim2.new(1, -10, 0, 18)
         LogItem.Text = formattedMsg
-        LogItem.TextColor3 = isError and Color3.fromRGB(255, 90, 90) or Color3.fromRGB(180, 220, 255)
+        
+        if logType == "error" then
+            LogItem.TextColor3 = Color3.fromRGB(255, 90, 90)
+        elseif logType == "success" then
+            LogItem.TextColor3 = Color3.fromRGB(100, 255, 150)
+        elseif logType == "warn" then
+            LogItem.TextColor3 = Color3.fromRGB(255, 200, 80)
+        else
+            LogItem.TextColor3 = Color3.fromRGB(180, 220, 255)
+        end
+        
         LogItem.TextSize = 11
         LogItem.Font = Enum.Font.Code
         LogItem.TextXAlignment = Enum.TextXAlignment.Left
@@ -113,45 +125,23 @@ local function MofenkLog(msg, isError)
     end
 end
 
--- 6. REAL-TIME NETWORK SPY HOOK (__NAMECALL)
-local rawNamecall = getrawmetatable and getrawmetatable(game) and getrawmetatable(game).__namecall
-if hookmetatable and rawNamecall then
-    local oldNamecall
-    oldNamecall = hookmetatable(game, "__namecall", newcclosure(function(self, ...)
-        local method = getnamecallmethod()
-        local args = {...}
-
-        if _G.Mofenk.SpyEnabled and (method == "FireServer" or method == "InvokeServer") then
-            task.spawn(function()
-                local argStr = ""
-                for i, arg in ipairs(args) do
-                    argStr = argStr .. string.format("[%d]: %s (%s) | ", i, tostring(arg), typeof(arg))
-                end
-                if _G.Mofenk.SpyConsoleLog then
-                    MofenkLog(string.format("📡 [SPY] Remote: %s | Method: %s | Args: %s", self.Name, method, argStr), false)
-                end
-            end)
-        end
-        return oldNamecall(self, ...)
-    end))
-end
-
--- 7. PURE CUSTOM RAYFIELD / OUROBOROS HYBRID GUI FRAMEWORK
+-- 6. PURE CUSTOM RAYFIELD UI BUILDER (DRAGGABLE + RESIZABLE)
 local MainGui = Instance.new("ScreenGui")
-MainGui.Name = "MofenkUltraHub"
+MainGui.Name = "MofenkUltraHubV4"
 MainGui.Parent = parentGui
 MainGui.ResetOnSpawn = false
 
--- Main Container Frame
+-- Container Utama Frame
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
 MainFrame.Parent = MainGui
 MainFrame.Size = UDim2.new(0, 580, 0, 380)
 MainFrame.Position = UDim2.new(0.5, -290, 0.5, -190)
-MainFrame.BackgroundColor3 = Color3.fromRGB(16, 16, 20)
+MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 19)
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
 MainFrame.Draggable = true
+MainFrame.ClipsDescendants = true
 
 local MainCorner = Instance.new("UICorner")
 MainCorner.CornerRadius = UDim.new(0, 10)
@@ -163,11 +153,11 @@ MainStroke.Color = CurrentTheme
 MainStroke.Parent = MainFrame
 table.insert(ThemeStrokes, MainStroke)
 
--- Header Top Bar (Ouroboros / Rayfield Design)
+-- Top Header Bar
 local TopBar = Instance.new("Frame")
 TopBar.Name = "TopBar"
 TopBar.Parent = MainFrame
-TopBar.Size = UDim2.new(1, 0, 0, 44)
+TopBar.Size = UDim2.new(1, 0, 0, 42)
 TopBar.BackgroundColor3 = Color3.fromRGB(22, 22, 28)
 TopBar.BorderSizePixel = 0
 
@@ -178,32 +168,32 @@ TopCorner.Parent = TopBar
 local TitleLabel = Instance.new("TextLabel")
 TitleLabel.Parent = TopBar
 TitleLabel.Position = UDim2.new(0, 14, 0, 0)
-TitleLabel.Size = UDim2.new(0, 200, 1, 0)
-TitleLabel.Text = "MOFENKHUB V3.0"
+TitleLabel.Size = UDim2.new(0, 180, 1, 0)
+TitleLabel.Text = "MOFENKHUB V4.0"
 TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-TitleLabel.TextSize = 15
+TitleLabel.TextSize = 14
 TitleLabel.Font = Enum.Font.GothamBold
 TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
 
--- FPS & Ping Counter (Spectrum Style Monitor)
+-- FPS & Ping Monitor
 local StatsLabel = Instance.new("TextLabel")
 StatsLabel.Parent = TopBar
-StatsLabel.Position = UDim2.new(0, 190, 0, 0)
+StatsLabel.Position = UDim2.new(0, 180, 0, 0)
 StatsLabel.Size = UDim2.new(0, 260, 1, 0)
-StatsLabel.Text = "FPS: -- | Ping: -- ms | Status: Active"
+StatsLabel.Text = "FPS: -- | Ping: -- ms"
 StatsLabel.TextColor3 = Color3.fromRGB(160, 170, 200)
 StatsLabel.TextSize = 11
 StatsLabel.Font = Enum.Font.GothamMedium
 StatsLabel.TextXAlignment = Enum.TextXAlignment.Left
 
--- Close / Minimize Button
+-- Minimize Button
 local MinimizeBtn = Instance.new("TextButton")
 MinimizeBtn.Parent = TopBar
-MinimizeBtn.Position = UDim2.new(1, -40, 0, 8)
+MinimizeBtn.Position = UDim2.new(1, -38, 0, 7)
 MinimizeBtn.Size = UDim2.new(0, 28, 0, 28)
 MinimizeBtn.Text = "—"
 MinimizeBtn.TextColor3 = Color3.fromRGB(220, 220, 220)
-MinimizeBtn.TextSize = 16
+MinimizeBtn.TextSize = 14
 MinimizeBtn.Font = Enum.Font.GothamBold
 MinimizeBtn.BackgroundColor3 = Color3.fromRGB(34, 34, 44)
 
@@ -215,11 +205,54 @@ MinimizeBtn.MouseButton1Click:Connect(function()
     MainFrame.Visible = false
 end)
 
+-- RESIZE HANDLE (TOMBOL RESIZE POJOK KANAN BAWAH)
+local ResizeBtn = Instance.new("TextButton")
+ResizeBtn.Name = "ResizeHandle"
+ResizeBtn.Parent = MainFrame
+ResizeBtn.Position = UDim2.new(1, -18, 1, -18)
+ResizeBtn.Size = UDim2.new(0, 16, 0, 16)
+ResizeBtn.Text = "⇲"
+ResizeBtn.TextColor3 = Color3.fromRGB(180, 180, 200)
+ResizeBtn.TextSize = 12
+ResizeBtn.Font = Enum.Font.GothamBold
+ResizeBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+ResizeBtn.BackgroundTransparency = 0.3
+
+local ResCorner = Instance.new("UICorner")
+ResCorner.CornerRadius = UDim.new(0, 4)
+ResCorner.Parent = ResizeBtn
+
+local isResizing = false
+local startSize, startPos
+
+ResizeBtn.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        isResizing = true
+        startSize = MainFrame.Size
+        startPos = input.Position
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if isResizing and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local delta = input.Position - startPos
+        local newWidth = math.clamp(startSize.X.Offset + delta.X, 420, 850)
+        local newHeight = math.clamp(startSize.Y.Offset + delta.Y, 280, 600)
+        MainFrame.Size = UDim2.new(0, newWidth, 0, newHeight)
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        isResizing = false
+    end
+end)
+
 -- Sidebar Tabs Container
 local Sidebar = Instance.new("Frame")
 Sidebar.Parent = MainFrame
-Sidebar.Position = UDim2.new(0, 8, 0, 52)
-Sidebar.Size = UDim2.new(0, 140, 1, -60)
+Sidebar.Position = UDim2.new(0, 8, 0, 50)
+Sidebar.Size = UDim2.new(0, 140, 1, -58)
 Sidebar.BackgroundColor3 = Color3.fromRGB(22, 22, 28)
 Sidebar.BorderSizePixel = 0
 
@@ -235,8 +268,8 @@ SideLayout.Padding = UDim.new(0, 4)
 -- Content Area Frame
 local ContentArea = Instance.new("Frame")
 ContentArea.Parent = MainFrame
-ContentArea.Position = UDim2.new(0, 154, 0, 52)
-ContentArea.Size = UDim2.new(1, -162, 1, -60)
+ContentArea.Position = UDim2.new(0, 154, 0, 50)
+ContentArea.Size = UDim2.new(1, -162, 1, -58)
 ContentArea.BackgroundColor3 = Color3.fromRGB(22, 22, 28)
 ContentArea.BorderSizePixel = 0
 
@@ -244,7 +277,7 @@ local ContentCorner = Instance.new("UICorner")
 ContentCorner.CornerRadius = UDim.new(0, 8)
 ContentCorner.Parent = ContentArea
 
--- TAB SYSTEM CREATION
+-- TAB CREATION LOGIC
 local TabFrames = {}
 
 local function CreateTab(tabName, layoutOrder)
@@ -346,7 +379,7 @@ local function AddToggle(parent, text, flag, callback)
     Switch.MouseButton1Click:Connect(function()
         _G.Mofenk[flag] = not _G.Mofenk[flag]
         Switch.BackgroundColor3 = _G.Mofenk[flag] and CurrentTheme or Color3.fromRGB(50, 50, 65)
-        MofenkLog("Feature [" .. text .. "] set to: " .. tostring(_G.Mofenk[flag]), false)
+        MofenkLog("Feature [" .. text .. "] -> " .. tostring(_G.Mofenk[flag]), _G.Mofenk[flag] and "success" or "warn")
         if callback then callback(_G.Mofenk[flag]) end
     end)
 end
@@ -377,9 +410,8 @@ local TabTower  = CreateTab("🏰 Tower & Plot", 3)
 local TabUnit   = CreateTab("⚔️ Unit & Gear", 4)
 local TabShop   = CreateTab("⬆️ Upgrade & Shop", 5)
 local TabPlayer = CreateTab("⚡ Player & Utils", 6)
-local TabConsole= CreateTab("🔍 Spy & Console", 7)
+local TabConsole= CreateTab("🔍 Console & Log", 7)
 
--- Set Default Tab
 TabFrames["🏠 Home & Profil"].Visible = true
 
 -- TAB 1: HOME & PROFIL
@@ -423,7 +455,7 @@ ProfLabel.BackgroundTransparency = 1
 AddSection(TabHome, "📊 LIVE PLAYER LEADERSTATS")
 local StatsTextLabel = Instance.new("TextLabel")
 StatsTextLabel.Parent = TabHome
-StatsTextLabel.Size = UDim2.new(1, 0, 0, 50)
+StatsTextLabel.Size = UDim2.new(1, 0, 0, 45)
 StatsTextLabel.TextColor3 = Color3.fromRGB(200, 200, 220)
 StatsTextLabel.TextSize = 11
 StatsTextLabel.Font = Enum.Font.GothamMedium
@@ -433,14 +465,13 @@ StatsTextLabel.BackgroundTransparency = 1
 AddSection(TabHome, "📦 LIVE INVENTORY & ITEMS")
 local InvTextLabel = Instance.new("TextLabel")
 InvTextLabel.Parent = TabHome
-InvTextLabel.Size = UDim2.new(1, 0, 0, 50)
+InvTextLabel.Size = UDim2.new(1, 0, 0, 45)
 InvTextLabel.TextColor3 = Color3.fromRGB(200, 200, 220)
 InvTextLabel.TextSize = 11
 InvTextLabel.Font = Enum.Font.GothamMedium
 InvTextLabel.TextXAlignment = Enum.TextXAlignment.Left
 InvTextLabel.BackgroundTransparency = 1
 
--- REALTIME PROFILE LOOP
 task.spawn(function()
     while task.wait(1) do
         pcall(function()
@@ -465,11 +496,44 @@ task.spawn(function()
     end
 end)
 
--- TAB 2: KHUSUS FARM
+-- TAB 2: KHUSUS FARM (DENGAN ALL SELL REMOTES INTEGRATED)
 AddSection(TabFarm, "🎲 AUTOMATED FARMING")
 AddToggle(TabFarm, "Auto Roll Dice", "AutoRoll")
-AddToggle(TabFarm, "Auto Sell Inventory", "AutoSellInventory")
-AddToggle(TabFarm, "Smart Rebirth (Anti-Spam Cooldown)", "AutoRebirth")
+AddToggle(TabFarm, "Smart Rebirth (3s Cooldown)", "AutoRebirth")
+
+AddSection(TabFarm, "💰 SELL REMOTES DIAGNOSTIC & AUTOMATION")
+AddToggle(TabFarm, "Auto Sell Inventory (SellInventory)", "AutoSellInventory")
+AddToggle(TabFarm, "Auto Sell Equipped (SellEquipped)", "AutoSellEquipped")
+AddToggle(TabFarm, "Game AutoSell Switcher (SetAutoSell)", "EnableGameAutoSell", function(state)
+    if SellService then
+        if SellService:FindFirstChild("RE") and SellService.RE:FindFirstChild("SetAutoSell") then
+            pcall(function() SellService.RE.SetAutoSell:FireServer(state) end)
+            MofenkLog("SetAutoSell Fired: " .. tostring(state), "info")
+        end
+        if SellService:FindFirstChild("RE") and SellService.RE:FindFirstChild("UpdateAutoSell") then
+            pcall(function() SellService.RE.UpdateAutoSell:FireServer(state) end)
+            MofenkLog("UpdateAutoSell Fired: " .. tostring(state), "info")
+        end
+    end
+end)
+
+AddButton(TabFarm, "Tes Manual Sell Inventory Sekarang", function()
+    if SellService and SellService:FindFirstChild("RF") and SellService.RF:FindFirstChild("SellInventory") then
+        local res = SellService.RF.SellInventory:InvokeServer()
+        MofenkLog("[MANUAL TEST] SellInventory Res: " .. tostring(res), "success")
+    else
+        MofenkLog("[MANUAL TEST] SellInventory RF Tidak Ditemukan!", "error")
+    end
+end)
+
+AddButton(TabFarm, "Tes Manual Sell Equipped Sekarang", function()
+    if SellService and SellService:FindFirstChild("RF") and SellService.RF:FindFirstChild("SellEquipped") then
+        local res = SellService.RF.SellEquipped:InvokeServer()
+        MofenkLog("[MANUAL TEST] SellEquipped Res: " .. tostring(res), "success")
+    else
+        MofenkLog("[MANUAL TEST] SellEquipped RF Tidak Ditemukan!", "error")
+    end
+end)
 
 -- TAB 3: TOWER & PLOT
 AddSection(TabTower, "🏰 TOWER & PLOT AUTOMATION")
@@ -521,7 +585,7 @@ for name, color in pairs(Themes) do
 
     ColorBtn.MouseButton1Click:Connect(function()
         UpdateThemeColor(color)
-        MofenkLog("Theme changed to: " .. name, false)
+        MofenkLog("Theme diubah ke: " .. name, "info")
     end)
 end
 
@@ -552,11 +616,11 @@ end)
 
 AddButton(TabPlayer, "Copy Server Job ID", function()
     if setclipboard then setclipboard(tostring(game.JobId)) end
-    MofenkLog("Job ID disalin ke clipboard!", false)
+    MofenkLog("Job ID disalin ke clipboard!", "success")
 end)
 
 AddButton(TabPlayer, "Server Hop", function()
-    MofenkLog("Mencari server lain...", false)
+    MofenkLog("Mencari server lain...", "warn")
     local servers = {}
     local req = HttpService:JSONDecode(game:HttpGet("https://games.roblox.com/v1/games/"..game.PlaceId.."/servers/Public?sortOrder=Asc&limit=100"))
     if req and req.data then
@@ -567,12 +631,12 @@ AddButton(TabPlayer, "Server Hop", function()
     if #servers > 0 then TeleportService:TeleportToPlaceInstance(game.PlaceId, servers[math.random(1, #servers)], LocalPlayer) end
 end)
 
--- TAB 7: SPY & CONSOLE LOG
+-- TAB 7: CONSOLE LOG & DIAGNOSTICS
 AddSection(TabConsole, "📝 LIVE IN-UI CONSOLE LOG")
 LogScroll = Instance.new("ScrollingFrame")
 LogScroll.Parent = TabConsole
-LogScroll.Size = UDim2.new(1, 0, 0, 180)
-LogScroll.BackgroundColor3 = Color3.fromRGB(14, 14, 18)
+LogScroll.Size = UDim2.new(1, 0, 0, 200)
+LogScroll.BackgroundColor3 = Color3.fromRGB(12, 12, 16)
 LogScroll.BorderSizePixel = 0
 LogScroll.ScrollBarThickness = 4
 
@@ -585,17 +649,9 @@ LogLayout.Parent = LogScroll
 LogLayout.SortOrder = Enum.SortOrder.LayoutOrder
 LogLayout.Padding = UDim.new(0, 2)
 
-AddToggle(TabConsole, "Real-Time Remote Spy", "SpyConsoleLog")
-AddButton(TabConsole, "Scan All Remotes to F9 Console", function()
-    MofenkLog("--- MEMULAI REMOTE SCANNER ---", false)
-    for i, v in ipairs(game:GetDescendants()) do
-        if v:IsA("RemoteEvent") or v:IsA("RemoteFunction") then
-            MofenkLog(string.format("[%d] %s (%s)", i, v.Name, v.ClassName), false)
-        end
-    end
-end)
+AddToggle(TabConsole, "Real-Time Remote Spy Log", "SpyConsoleLog")
 
--- 8. FLOATING LOGO TOGGLE BUTTON
+-- 7. FLOATING LOGO TOGGLE BUTTON
 local ToggleGui = Instance.new("ScreenGui")
 ToggleGui.Name = "MofenkToggleGui"
 ToggleGui.Parent = parentGui
@@ -626,7 +682,7 @@ ToggleBtn.MouseButton1Click:Connect(function()
     MainFrame.Visible = not MainFrame.Visible
 end)
 
--- 9. FPS & PING STATS ENGINE
+-- 8. FPS & PING STATS ENGINE
 local frameCount = 0
 local lastTime = tick()
 local currentFPS = 60
@@ -645,12 +701,12 @@ task.spawn(function()
     while task.wait(0.5) do
         pcall(function()
             local ping = math.floor(Stats.Network.ServerStatsItem["Data Ping"]:GetValue())
-            StatsLabel.Text = string.format("FPS: %d | Ping: %d ms | MofenkHub Active", currentFPS, ping)
+            StatsLabel.Text = string.format("FPS: %d | Ping: %d ms", currentFPS, ping)
         end)
     end
 end)
 
--- 10. ANTI-AFK ENGINE
+-- 9. ANTI-AFK ENGINE
 LocalPlayer.Idled:Connect(function()
     if _G.Mofenk.AutoAFK then
         VirtualUser:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
@@ -659,99 +715,66 @@ LocalPlayer.Idled:Connect(function()
     end
 end)
 
--- 11. SMART AUTOMATION & REMOTE EXECUTION ENGINE (WITH ERROR DIAGNOSTICS)
-local lastRebirthTime = 0
-
+-- 10. DIAGNOSTIC MAIN AUTOMATION ENGINE
 task.spawn(function()
-    MofenkLog("MofenkHub V3.0 Berhasil Dijalankan!", false)
-    while task.wait(0.25) do
-        -- AUTO ROLL
-        if _G.Mofenk.AutoRoll then
-            if RollService then
-                local success, err = pcall(function()
-                    if RollService:FindFirstChild("RF") and RollService.RF:FindFirstChild("RollDice") then
-                        RollService.RF.RollDice:InvokeServer()
-                    elseif RollService:FindFirstChild("RE") and RollService.RE:FindFirstChild("SetAutoRoll") then
-                        RollService.RE.SetAutoRoll:FireServer(true)
-                    end
+    MofenkLog("MofenkHub V4.0 Berhasil Dijalankan!", "success")
+    while task.wait(0.5) do
+        -- AUTO SELL INVENTORY (WITH DIAGNOSTIC LOG)
+        if _G.Mofenk.AutoSellInventory then
+            if SellService and SellService:FindFirstChild("RF") and SellService.RF:FindFirstChild("SellInventory") then
+                local success, result = pcall(function()
+                    return SellService.RF.SellInventory:InvokeServer()
                 end)
-                if not success then MofenkLog("AutoRoll Error: " .. tostring(err), true) end
-            else
-                MofenkLog("RollService tidak ditemukan!", true)
-            end
-        end
-
-        -- SMART REBIRTH (WITH 3S COOLDOWN TO PREVENT SPAMMING)
-        if _G.Mofenk.AutoRebirth then
-            if tick() - lastRebirthTime >= 3 then
-                lastRebirthTime = tick()
-                if RebirthService and RebirthService:FindFirstChild("RE") and RebirthService.RE:FindFirstChild("Rebirth") then
-                    local success, err = pcall(function() RebirthService.RE.Rebirth:FireServer() end)
-                    if success then
-                        MofenkLog("Smart Rebirth Fired!", false)
-                    else
-                        MofenkLog("Rebirth Error: " .. tostring(err), true)
-                    end
+                if success then
+                    MofenkLog("[AUTO SELL INVENTORY] Result: " .. tostring(result), "success")
                 else
-                    MofenkLog("Rebirth Remote tidak terdeteksi!", true)
+                    MofenkLog("[AUTO SELL INVENTORY] Error: " .. tostring(result), "error")
                 end
+            else
+                MofenkLog("SellService.RF.SellInventory tidak terdeteksi!", "error")
             end
         end
 
-        -- AUTO COLLECT BALANCE (TOWER / PLOT)
-        if _G.Mofenk.AutoCollectBalance then
-            if PlotService and PlotService:FindFirstChild("RE") and PlotService.RE:FindFirstChild("CollectBalance") then
-                pcall(function() PlotService.RE.CollectBalance:FireServer() end)
+        -- AUTO SELL EQUIPPED (WITH DIAGNOSTIC LOG)
+        if _G.Mofenk.AutoSellEquipped then
+            if SellService and SellService:FindFirstChild("RF") and SellService.RF:FindFirstChild("SellEquipped") then
+                local success, result = pcall(function()
+                    return SellService.RF.SellEquipped:InvokeServer()
+                end)
+                if success then
+                    MofenkLog("[AUTO SELL EQUIPPED] Result: " .. tostring(result), "success")
+                else
+                    MofenkLog("[AUTO SELL EQUIPPED] Error: " .. tostring(result), "error")
+                end
+            else
+                MofenkLog("SellService.RF.SellEquipped tidak terdeteksi!", "error")
             end
+        end
+
+        -- AUTO ROLL
+        if _G.Mofenk.AutoRoll and RollService then
+            pcall(function()
+                if RollService:FindFirstChild("RF") and RollService.RF:FindFirstChild("RollDice") then
+                    RollService.RF.RollDice:InvokeServer()
+                elseif RollService:FindFirstChild("RE") and RollService.RE:FindFirstChild("SetAutoRoll") then
+                    RollService.RE.SetAutoRoll:FireServer(true)
+                end
+            end)
+        end
+
+        -- AUTO COLLECT BALANCE
+        if _G.Mofenk.AutoCollectBalance and PlotService and PlotService:FindFirstChild("RE") and PlotService.RE:FindFirstChild("CollectBalance") then
+            pcall(function() PlotService.RE.CollectBalance:FireServer() end)
         end
 
         -- AUTO LEVEL UP SLOT
-        if _G.Mofenk.AutoLevelUpSlot then
-            if PlotService and PlotService:FindFirstChild("RE") and PlotService.RE:FindFirstChild("LevelUpSlot") then
-                pcall(function() PlotService.RE.LevelUpSlot:FireServer() end)
-            end
+        if _G.Mofenk.AutoLevelUpSlot and PlotService and PlotService:FindFirstChild("RE") and PlotService.RE:FindFirstChild("LevelUpSlot") then
+            pcall(function() PlotService.RE.LevelUpSlot:FireServer() end)
         end
 
-        -- AUTO INTERACT SLOT
-        if _G.Mofenk.AutoInteractSlot then
-            if PlotService and PlotService:FindFirstChild("RE") and PlotService.RE:FindFirstChild("InteractSlot") then
-                pcall(function() PlotService.RE.InteractSlot:FireServer() end)
-            end
-        end
-
-        -- AUTO EQUIP BEST PLOT UNITS
-        if _G.Mofenk.AutoEquipBest then
-            if PlotService and PlotService:FindFirstChild("RE") and PlotService.RE:FindFirstChild("EquipBest") then
-                pcall(function() PlotService.RE.EquipBest:FireServer() end)
-            end
-        end
-
-        -- AUTO EQUIP UNIT
-        if _G.Mofenk.AutoEquipUnit then
-            if UnitService and UnitService:FindFirstChild("RF") and UnitService.RF:FindFirstChild("Equip") then
-                pcall(function() UnitService.RF.Equip:InvokeServer() end)
-            end
-        end
-
-        -- AUTO EQUIP GEAR
-        if _G.Mofenk.AutoEquipGear then
-            if GearService and GearService:FindFirstChild("RE") and GearService.RE:FindFirstChild("Equip") then
-                pcall(function() GearService.RE.Equip:FireServer() end)
-            end
-        end
-
-        -- AUTO BUY DICE
-        if _G.Mofenk.AutoBuyDice then
-            if DiceShopService and DiceShopService:FindFirstChild("RE") and DiceShopService.RE:FindFirstChild("BuyDice") then
-                pcall(function() DiceShopService.RE.BuyDice:FireServer() end)
-            end
-        end
-
-        -- AUTO SELL INVENTORY
-        if _G.Mofenk.AutoSellInventory then
-            if SellService and SellService:FindFirstChild("RF") and SellService.RF:FindFirstChild("SellInventory") then
-                pcall(function() SellService.RF.SellInventory:InvokeServer() end)
-            end
+        -- AUTO EQUIP BEST
+        if _G.Mofenk.AutoEquipBest and PlotService and PlotService:FindFirstChild("RE") and PlotService.RE:FindFirstChild("EquipBest") then
+            pcall(function() PlotService.RE.EquipBest:FireServer() end)
         end
     end
 end)
