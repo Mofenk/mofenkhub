@@ -1,5 +1,5 @@
 -- ===================================================================== --
--- 👑 MOFENKHUB V89.0 — FULL FIXED MASTER SUITE (ANIME DICE PRO)
+-- 👑 MOFENKHUB V89.0 — FULL FIXED MASTER SUITE (NO AUTO-SAVE & NO RARITY SELL)
 -- ===================================================================== --
 
 --!nocheck
@@ -21,18 +21,18 @@ if not successGui or not parentGui then parentGui = LocalPlayer:WaitForChild("Pl
 pcall(function() for _, v in pairs(parentGui:GetChildren()) do if string.find(v.Name, "Mofenk") then v:Destroy() end end end)
 
 -- ===================================================================== --
--- 1. STATE & CONFIGURATION MANAGER (REAL-TIME LIST)
+-- 1. STATE & CONFIGURATION MANAGER (AUTO-SAVE DIHAPUS)
 -- ===================================================================== --
 _G.__ANIMEDICE = (_G.__ANIMEDICE or 0) + 1
 local generation = _G.__ANIMEDICE
 
 local F = {
-	autoSave = true, autoLoad = true, themeIndex = 1, cfgName = "MofenkConfig1",
+	themeIndex = 1, cfgName = "MofenkConfig1",
 	-- Farm & Roll
 	collect = false, levelup = false, maxLevel = 40, smartLevel = false,
 	rebirth = false, upgrades = false, buyDice = false, equipDice = true, autoRoll = false, autoSpins = true,
-	-- Inv & Sell
-	sellAuto = false, smartSell = false, sellRarityLimit = 3, keepBest = 20, autoFuse = false,
+	-- Inv & Sell (Auto Sell tanpa batasan rarity, langsung bersihkan sisa keepBest)
+	sellAuto = false, keepBest = 20, autoFuse = false,
 	-- Potion
 	potionAuto = false, potionBest = true, potionSpecific = {},
 	-- Reroll
@@ -134,17 +134,6 @@ pcall(function()
 	G.DiceModule = require(Framework.Features.Rolling.Dice)
 end)
 
-local RARITY_SORT = {}
-do
-	local ok, Rar = pcall(require, Framework.Other.Rarities)
-	if ok and Rar and Rar.Refs then
-		for _, ref in pairs(Rar.Refs) do
-			local info = select(2, pcall(Rar.Get, ref))
-			if type(info) == "table" and info.sortOrder then RARITY_SORT[ref] = info.sortOrder end
-		end
-	end
-end
-
 local function data() return G.DC and G.DC.___X or {} end
 local function money() pcall(function() return G.DC.Money() end); return data().Money or 0 end
 local function rebirthAmt() pcall(function() return G.DC.Rebirth() end); return data().Rebirth or 0 end
@@ -240,7 +229,7 @@ local function AddToggle(parent, text, flag, callback)
 	local Knob = Instance.new("Frame"); Knob.Parent = Sw; Knob.Size = UDim2.new(0, 18, 0, 18); Knob.Position = F[flag] and UDim2.new(1, -20, 0.5, -9) or UDim2.new(0, 2, 0.5, -9); Knob.BackgroundColor3 = Color3.fromRGB(255, 255, 255); local KC = Instance.new("UICorner"); KC.CornerRadius = UDim.new(1, 0); KC.Parent = Knob
 	if F[flag] then table.insert(ThemeElements.Acc1, Sw) end
 	Sw.MouseButton1Click:Connect(function()
-		F[flag] = not F[flag]; if F.autoSave then pcall(function() saveConfig(F.cfgName) end) end
+		F[flag] = not F[flag]
 		TweenService:Create(Knob, TweenInfo.new(0.2), {Position = F[flag] and UDim2.new(1, -20, 0.5, -9) or UDim2.new(0, 2, 0.5, -9)}):Play()
 		if F[flag] then table.insert(ThemeElements.Acc1, Sw); ApplyTheme(F.themeIndex) else for i,v in ipairs(ThemeElements.Acc1) do if v==Sw then table.remove(ThemeElements.Acc1,i) end end; Sw.BackgroundColor3 = Color3.fromRGB(45,45,55) end
 		if callback then pcall(callback, F[flag]) end
@@ -251,7 +240,7 @@ local function AddInput(parent, text, flag, isNum)
 	local Frm = Instance.new("Frame"); Frm.Parent = parent; Frm.Size = UDim2.new(1, 0, 0, 36); Frm.BackgroundTransparency = 1
 	local L = Instance.new("TextLabel"); L.Parent = Frm; L.Position = UDim2.new(0, 6, 0, 0); L.Size = UDim2.new(0.5, 0, 1, 0); L.Text = text; L.TextColor3 = Color3.fromRGB(255,255,255); L.TextSize = 11; L.Font = Enum.Font.GothamMedium; L.TextXAlignment = Enum.TextXAlignment.Left; L.BackgroundTransparency = 1
 	local Box = Instance.new("TextBox"); Box.Parent = Frm; Box.Position = UDim2.new(0.5, 0, 0.1, 0); Box.Size = UDim2.new(0.48, 0, 0.8, 0); Box.Text = tostring(F[flag] or ""); table.insert(ThemeElements.TextAcc, Box); Box.TextSize = 11; Box.Font = Enum.Font.GothamBold; Box.BackgroundTransparency = 0.2; table.insert(ThemeElements.Header, Box); local BC = Instance.new("UICorner"); BC.CornerRadius = UDim.new(0, 6); BC.Parent = Box
-	Box.FocusLost:Connect(function() F[flag] = isNum and (tonumber(Box.Text) or 0) or Box.Text; if F.autoSave then pcall(function() saveConfig(F.cfgName) end) end end)
+	Box.FocusLost:Connect(function() F[flag] = isNum and (tonumber(Box.Text) or 0) or Box.Text end)
 end
 
 local function AddDropdown(parent, title, options, flag, isMulti)
@@ -284,7 +273,7 @@ local function AddDropdown(parent, title, options, flag, isMulti)
 					local found = false; for i,v in ipairs(F[flag]) do if v==opt.val then table.remove(F[flag],i); found=true break end end
 					if not found then table.insert(F[flag], opt.val) end; Btn.Text = #(F[flag]).." Terpilih"
 				else F[flag] = opt.val; Btn.Text = opt.label; DropList.Visible = false end
-				updateVisuals(); if F.autoSave then pcall(function() saveConfig(F.cfgName) end) end
+				updateVisuals()
 			end)
 		end
 	end
@@ -350,11 +339,9 @@ AddToggle(G_Farm2, "Auto Level Up Unit", "levelup")
 AddInput(G_Farm2, "Max Level Batas:", "maxLevel", true)
 AddToggle(G_Farm2, "Auto Upgrade Skill Tree", "upgrades")
 
--- 3. INVENTORY (AUTO SELL & SELL ALL)
+-- 3. INVENTORY (AUTO SELL TANPA RATIRY + KEEP BEST)
 local G_Inv = AddGroup(T_Inv, "MANAGEMENT & AUTO SELL")
-AddToggle(G_Inv, "Auto Sell Unit", "sellAuto")
-AddToggle(G_Inv, "Smart Sell (Batas Rarity)", "smartSell")
-AddInput(G_Inv, "Max Rarity Jual (1-5):", "sellRarityLimit", true)
+AddToggle(G_Inv, "Auto Sell Unit (Tanpa Rarity Filter)", "sellAuto")
 AddInput(G_Inv, "Simpan Unit Terbaik (Keep Best):", "keepBest", true)
 AddToggle(G_Inv, "Auto Fusion Unit", "autoFuse")
 
@@ -391,14 +378,12 @@ local G_TwrMon = AddGroup(T_Twr, "LIVE TOWER MONITORING & TRAIT")
 local TwrLbl = Instance.new("TextLabel"); TwrLbl.Parent = G_TwrMon; TwrLbl.Size = UDim2.new(1,0,0,70); TwrLbl.BackgroundTransparency = 1; TwrLbl.TextColor3 = Color3.fromRGB(255,255,255); TwrLbl.TextSize = 11; TwrLbl.Font = Enum.Font.GothamMedium; TwrLbl.TextXAlignment = Enum.TextXAlignment.Left; TwrLbl.TextYAlignment = Enum.TextYAlignment.Top
 task.spawn(function() while task.wait(0.5) do pcall(function() TwrLbl.Text = string.format("🎮 Status: %s\n🏢 Lantai: %d | 💎 Gems Didapat: %d\n🧬 Trait Didapat: %s", STATE.towerLive, STATE.towerFloor, STATE.towerDrops, tostring(STATE.towerTraitsGot)) end) end end)
 
--- 8. SETTINGS & CONFIG LIST MANAGER
+-- 8. SETTINGS & CONFIG LIST MANAGER (AUTO-SAVE DIHAPUS & TAMBAH DELETE)
 local G_Set1 = AddGroup(T_Set, "TEMA & WARNA (NEON GLOW)")
 local BtnTheme = Instance.new("TextButton"); BtnTheme.Parent = G_Set1; BtnTheme.Size = UDim2.new(1, 0, 0, 34); BtnTheme.Text = "🎲 ACAK TEMA WARNA"; BtnTheme.Font = Enum.Font.GothamBlack; BtnTheme.TextSize = 11; table.insert(ThemeElements.Card, BtnTheme); table.insert(ThemeElements.TextAcc, BtnTheme); local BTC = Instance.new("UICorner"); BTC.CornerRadius = UDim.new(0,6); BTC.Parent = BtnTheme
-BtnTheme.MouseButton1Click:Connect(function() F.themeIndex = math.random(1, #THEMES); ApplyTheme(F.themeIndex); if F.autoSave then pcall(function() saveConfig(F.cfgName) end) end end)
+BtnTheme.MouseButton1Click:Connect(function() F.themeIndex = math.random(1, #THEMES); ApplyTheme(F.themeIndex) end)
 
-local G_SetConfig = AddGroup(T_Set, "CONFIG & AUTO LOAD MANAGER")
-AddToggle(G_SetConfig, "Auto Save Config", "autoSave")
-AddToggle(G_SetConfig, "Auto Load Config Saat Nyala", "autoLoad")
+local G_SetConfig = AddGroup(T_Set, "CONFIG & FILE MANAGER")
 AddInput(G_SetConfig, "Nama File Config:", "cfgName", false)
 
 local BtnSave = Instance.new("TextButton"); BtnSave.Parent = G_SetConfig; BtnSave.Size = UDim2.new(1, 0, 0, 32); BtnSave.Text = "💾 SAVE CONFIG SEKARANG"; BtnSave.Font = Enum.Font.GothamBold; BtnSave.TextSize = 11; table.insert(ThemeElements.Header, BtnSave); table.insert(ThemeElements.TextAcc, BtnSave); local BTS = Instance.new("UICorner"); BTS.CornerRadius = UDim.new(0,6); BTS.Parent = BtnSave
@@ -407,9 +392,19 @@ BtnSave.MouseButton1Click:Connect(function() pcall(function() saveConfig(F.cfgNa
 local BtnLoad = Instance.new("TextButton"); BtnLoad.Parent = G_SetConfig; BtnLoad.Size = UDim2.new(1, 0, 0, 32); BtnLoad.Text = "📂 LOAD CONFIG PILIHAN"; BtnLoad.Font = Enum.Font.GothamBold; BtnLoad.TextSize = 11; table.insert(ThemeElements.Header, BtnLoad); table.insert(ThemeElements.TextAcc, BtnLoad); local BTL = Instance.new("UICorner"); BTL.CornerRadius = UDim.new(0,6); BTL.Parent = BtnLoad
 BtnLoad.MouseButton1Click:Connect(function() pcall(function() loadConfig(F.cfgName); ApplyTheme(F.themeIndex) end) end)
 
-local ListTitle = Instance.new("TextLabel"); ListTitle.Parent = G_SetConfig; ListTitle.Size = UDim2.new(1, 0, 0, 20); ListTitle.Text = "📁 PILIH CONFIG TERSEDIA (KLIK UNTUK LOAD):"; ListTitle.TextSize = 10; ListTitle.Font = Enum.Font.GothamBold; ListTitle.BackgroundTransparency = 1; table.insert(ThemeElements.TextAcc, ListTitle)
+local BtnDelete = Instance.new("TextButton"); BtnDelete.Parent = G_SetConfig; BtnDelete.Size = UDim2.new(1, 0, 0, 32); BtnDelete.Text = "🗑️ DELETE CONFIG PILIHAN"; BtnDelete.Font = Enum.Font.GothamBold; BtnDelete.TextSize = 11; BtnDelete.TextColor3 = Color3.fromRGB(255, 60, 60); table.insert(ThemeElements.Header, BtnDelete); local BTD = Instance.new("UICorner"); BTD.CornerRadius = UDim.new(0,6); BTD.Parent = BtnDelete
+BtnDelete.MouseButton1Click:Connect(function()
+	pcall(function()
+		local path = getCfgPath(F.cfgName)
+		if delfile and isfile and isfile(path) then
+			delfile(path)
+		end
+	end)
+end)
 
-local ConfigScroll = Instance.new("ScrollingFrame"); ConfigScroll.Parent = G_SetConfig; ConfigScroll.Size = UDim2.new(1, 0, 0, 100); ConfigScroll.BackgroundTransparency = 0.3; table.insert(ThemeElements.Header, ConfigScroll); ConfigScroll.ScrollBarThickness = 4; ConfigScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y; ConfigScroll.CanvasSize = UDim2.new(0,0,0,0)
+local ListTitle = Instance.new("TextLabel"); ListTitle.Parent = G_SetConfig; ListTitle.Size = UDim2.new(1, 0, 0, 20); ListTitle.Text = "📁 PILIH CONFIG TERSEDIA:"; ListTitle.TextSize = 10; ListTitle.Font = Enum.Font.GothamBold; ListTitle.BackgroundTransparency = 1; table.insert(ThemeElements.TextAcc, ListTitle)
+
+local ConfigScroll = Instance.new("ScrollingFrame"); ConfigScroll.Parent = G_SetConfig; ConfigScroll.Size = UDim2.new(1, 0, 0, 90); ConfigScroll.BackgroundTransparency = 0.3; table.insert(ThemeElements.Header, ConfigScroll); ConfigScroll.ScrollBarThickness = 4; ConfigScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y; ConfigScroll.CanvasSize = UDim2.new(0,0,0,0)
 local CSC = Instance.new("UICorner"); CSC.CornerRadius = UDim.new(0, 6); CSC.Parent = ConfigScroll
 local ConfigLayout = Instance.new("UIListLayout"); ConfigLayout.Parent = ConfigScroll; ConfigLayout.Padding = UDim.new(0, 4)
 
@@ -470,11 +465,9 @@ BtnHop.MouseButton1Click:Connect(function()
 end)
 
 -- ===================================================================== --
--- 6. FULL BACKEND THREADS (FIXED AUTO ROLL & AUTO SELL BERDASARKAN REFERENSI)
+-- 6. FULL BACKEND THREADS (AUTO SELL TANPA RARITY FILTER + AUTO ROLL)
 -- ===================================================================== --
 ApplyTheme(F.themeIndex)
-
-if F.autoLoad then pcall(function() loadConfig(F.cfgName); ApplyTheme(F.themeIndex) end) end
 
 -- Anti-AFK Ganda
 LocalPlayer.Idled:Connect(function()
@@ -503,7 +496,7 @@ end)
 
 local function unlockedSlots() local arr={}; local rb = rebirthAmt(); pcall(function() for i=1, (G.PlotConfig.GetMaxSlots(rb) or 15) do if rb >= (G.PlotConfig.GetSlotRebirthRequirement(i) or 0) then table.insert(arr, i) end end end); return arr end
 
--- Arm Spin sebelum Roll (Sesuai Referensi)
+-- Arm Spin sebelum Roll
 local function armSpin()
 	if not (F.autoSpins and R.UseSpin) then return end
 	local d = data()
@@ -521,7 +514,7 @@ local function armSpin()
 	end
 end
 
--- Auto Roll Thread (Menggunakan jalur server resmi & Cooldown 2.1 detik)
+-- Auto Roll Thread (Cooldown 2.1 detik)
 task.spawn(function()
 	while _G.__ANIMEDICE == generation do
 		if F.autoRoll then
@@ -539,7 +532,7 @@ task.spawn(function()
 	end
 end)
 
--- Auto Sell Thread (Pembersih Backpack & Proteksi Unit Sesuai Referensi)
+-- Auto Sell Thread (Tanpa Rarity Filter - Otomatis Bersihkan Sisa Keep Best)
 task.spawn(function()
 	while _G.__ANIMEDICE == generation do
 		if F.sellAuto and R.SellInventory then
@@ -565,22 +558,15 @@ task.spawn(function()
 					if type(e) == "table" and e.limited then isProt = true end
 
 					if not placed[id] and not isProt then
-						table.insert(units, {
-							id = id, 
-							order = (e and RARITY_SORT[e.rarity]) or tonumber(u.rarity) or 1,
-							mutated = u.attributes and u.attributes.mutation ~= nil
-						})
+						table.insert(units, { id = id })
 					end
 				end
-				table.sort(units, function(a, b) return a.order < b.order end)
 				local pressured = owned >= cap - 3
 
 				local sellable = math.max(0, #units - (F.keepBest or 20))
 				local list = {}
 				for i, unit in ipairs(units) do
-					local belowFloor = not unit.mutated and unit.order > 0 and unit.order < (F.sellRarityLimit or 3) and i <= sellable
-					local surplus = pressured and i <= sellable
-					if belowFloor or surplus then
+					if pressured or i <= sellable then
 						list[#list + 1] = unit.id
 						if #list >= 300 then break end
 					end
