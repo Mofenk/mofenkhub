@@ -1,5 +1,5 @@
 -- ===================================================================== --
--- 👑 MOFENKHUB V89.0 — FULL FIXED MASTER SUITE (NO AUTO-SAVE & NO RARITY SELL)
+-- 👑 MOFENKHUB V89.0 — FULL FIXED MASTER SUITE (NO LUCKY SPINS & NO AUTO-SAVE)
 -- ===================================================================== --
 
 --!nocheck
@@ -21,17 +21,17 @@ if not successGui or not parentGui then parentGui = LocalPlayer:WaitForChild("Pl
 pcall(function() for _, v in pairs(parentGui:GetChildren()) do if string.find(v.Name, "Mofenk") then v:Destroy() end end end)
 
 -- ===================================================================== --
--- 1. STATE & CONFIGURATION MANAGER (AUTO-SAVE DIHAPUS)
+-- 1. STATE & CONFIGURATION MANAGER (AUTO-SAVE & AUTO-LOAD OFF)
 -- ===================================================================== --
 _G.__ANIMEDICE = (_G.__ANIMEDICE or 0) + 1
 local generation = _G.__ANIMEDICE
 
 local F = {
 	themeIndex = 1, cfgName = "MofenkConfig1",
-	-- Farm & Roll
+	-- Farm & Roll (Auto Lucky Spin Dihapus)
 	collect = false, levelup = false, maxLevel = 40, smartLevel = false,
-	rebirth = false, upgrades = false, buyDice = false, equipDice = true, autoRoll = false, autoSpins = true,
-	-- Inv & Sell (Auto Sell tanpa batasan rarity, langsung bersihkan sisa keepBest)
+	rebirth = false, upgrades = false, buyDice = false, equipDice = true, autoRoll = false,
+	-- Inv & Sell (Auto Sell Tanpa Rarity Filter)
 	sellAuto = false, keepBest = 20, autoFuse = false,
 	-- Potion
 	potionAuto = false, potionBest = true, potionSpecific = {},
@@ -80,7 +80,7 @@ local function loadConfig(name)
 		pcall(function() local d = HttpService:JSONDecode(readfile(path)); for k,v in pairs(d) do F[k]=v end end)
 	end
 end
-loadConfig(F.cfgName)
+-- (Auto load config dimatikan sesuai permintaan)
 
 -- ===================================================================== --
 -- 2. FRAMEWORK & MODULE BINDINGS
@@ -112,7 +112,6 @@ local R = {
 	ClaimGroup      = svc("GroupRewardService.RE.Claim"),
 	SellInventory   = svc("SellService.RF.SellInventory"),
 	UpdateAutoSell  = svc("SellService.RE.UpdateAutoSell"),
-	UseSpin         = svc("SpinService.RE.Use"),
 	Fuse            = svc("FusingService.RE.Fuse")
 }
 
@@ -327,11 +326,10 @@ task.spawn(function()
 	end) end
 end)
 
--- 2. FARMING
+-- 2. FARMING (Auto Lucky Spins Dihapus)
 local G_Farm1 = AddGroup(T_Farm, "PLOT, ROLL & REBIRTH")
 AddToggle(G_Farm1, "Auto Collect Plot", "collect")
 AddToggle(G_Farm1, "Auto Roll Dadu (Otomatis)", "autoRoll")
-AddToggle(G_Farm1, "Auto Lucky Spins", "autoSpins")
 AddToggle(G_Farm1, "Auto Rebirth (Anti-Spam)", "rebirth")
 
 local G_Farm2 = AddGroup(T_Farm, "LEVELING & UPGRADES")
@@ -378,7 +376,7 @@ local G_TwrMon = AddGroup(T_Twr, "LIVE TOWER MONITORING & TRAIT")
 local TwrLbl = Instance.new("TextLabel"); TwrLbl.Parent = G_TwrMon; TwrLbl.Size = UDim2.new(1,0,0,70); TwrLbl.BackgroundTransparency = 1; TwrLbl.TextColor3 = Color3.fromRGB(255,255,255); TwrLbl.TextSize = 11; TwrLbl.Font = Enum.Font.GothamMedium; TwrLbl.TextXAlignment = Enum.TextXAlignment.Left; TwrLbl.TextYAlignment = Enum.TextYAlignment.Top
 task.spawn(function() while task.wait(0.5) do pcall(function() TwrLbl.Text = string.format("🎮 Status: %s\n🏢 Lantai: %d | 💎 Gems Didapat: %d\n🧬 Trait Didapat: %s", STATE.towerLive, STATE.towerFloor, STATE.towerDrops, tostring(STATE.towerTraitsGot)) end) end end)
 
--- 8. SETTINGS & CONFIG LIST MANAGER (AUTO-SAVE DIHAPUS & TAMBAH DELETE)
+-- 8. SETTINGS & CONFIG LIST MANAGER (AUTO-SAVE & AUTO-LOAD OFF)
 local G_Set1 = AddGroup(T_Set, "TEMA & WARNA (NEON GLOW)")
 local BtnTheme = Instance.new("TextButton"); BtnTheme.Parent = G_Set1; BtnTheme.Size = UDim2.new(1, 0, 0, 34); BtnTheme.Text = "🎲 ACAK TEMA WARNA"; BtnTheme.Font = Enum.Font.GothamBlack; BtnTheme.TextSize = 11; table.insert(ThemeElements.Card, BtnTheme); table.insert(ThemeElements.TextAcc, BtnTheme); local BTC = Instance.new("UICorner"); BTC.CornerRadius = UDim.new(0,6); BTC.Parent = BtnTheme
 BtnTheme.MouseButton1Click:Connect(function() F.themeIndex = math.random(1, #THEMES); ApplyTheme(F.themeIndex) end)
@@ -465,29 +463,31 @@ BtnHop.MouseButton1Click:Connect(function()
 end)
 
 -- ===================================================================== --
--- 6. FULL BACKEND THREADS (AUTO SELL TANPA RARITY FILTER + AUTO ROLL)
+-- 6. FULL BACKEND THREADS (ANTI-RELOG AMAN & STABIL)
 -- ===================================================================== --
 ApplyTheme(F.themeIndex)
 
--- Anti-AFK Ganda
+-- Anti-AFK Aman & Stabil (Menggunakan simulasi input klik mouse ringan agar tidak terdeteksi idle 20 menit)
 LocalPlayer.Idled:Connect(function()
 	if F.afk then
 		pcall(function()
 			local vu = game:GetService("VirtualUser")
-			if vu then vu:CaptureController(); vu:ClickButton2(Vector2.new(0,0)) end
+			if vu then 
+				vu:CaptureController()
+				vu:ClickButton1(Vector2.new(0,0), workspace.CurrentCamera.CFrame) 
+			end
 		end)
 	end
 end)
 
 task.spawn(function()
-	while task.wait(60) do
+	while task.wait(120) do
 		if F.afk then
 			pcall(function()
-				local cam = workspace.CurrentCamera
-				if cam then
-					cam.CFrame = cam.CFrame * CFrame.Angles(0, math.rad(1), 0)
-					task.wait(0.1)
-					cam.CFrame = cam.CFrame * CFrame.Angles(0, math.rad(-1), 0)
+				local vu = game:GetService("VirtualUser")
+				if vu then 
+					vu:CaptureController()
+					vu:ClickButton1(Vector2.new(0,0), workspace.CurrentCamera.CFrame) 
 				end
 			end)
 		end
@@ -496,30 +496,11 @@ end)
 
 local function unlockedSlots() local arr={}; local rb = rebirthAmt(); pcall(function() for i=1, (G.PlotConfig.GetMaxSlots(rb) or 15) do if rb >= (G.PlotConfig.GetSlotRebirthRequirement(i) or 0) then table.insert(arr, i) end end end); return arr end
 
--- Arm Spin sebelum Roll
-local function armSpin()
-	if not (F.autoSpins and R.UseSpin) then return end
-	local d = data()
-	for _, name in ipairs({ "Jackpot Spin", "Lucky Spin" }) do
-		local active = d.ActiveEntries and d.ActiveEntries[name]
-		if active then return end
-	end
-	for _, name in ipairs({ "Jackpot Spin", "Lucky Spin" }) do
-		local item = d.Inventory and d.Inventory[name]
-		if item and (tonumber(item.amount) or 0) >= 1 then
-			R.UseSpin:FireServer(name)
-			task.wait(0.25)
-			return
-		end
-	end
-end
-
 -- Auto Roll Thread (Cooldown 2.1 detik)
 task.spawn(function()
 	while _G.__ANIMEDICE == generation do
 		if F.autoRoll then
 			pcall(function()
-				pcall(armSpin)
 				if R.RollDice then
 					local ok = pcall(function() return R.RollDice:InvokeServer() end)
 					if ok then STATE.rolled = (STATE.rolled or 0) + 1 end
