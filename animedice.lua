@@ -1,6 +1,6 @@
 -- ===================================================================== --
--- 👑 MOFENKHUB V35.0 — ULTIMATE SAFE LOAD & FIXED UI EDITION
--- Game: Anime Dice | 100% Anti-Disappear, Safe Parent, Floating 'F'
+-- 👑 MOFENKHUB V35.0 — ULTIMATE AESTHETIC & ADVANCED DASHBOARD SUITE
+-- Game: Anime Dice | Dynamic Tower Switch, Full Item & Unit Monitoring, Clean Aesthetic UI
 -- ===================================================================== --
 
 task.wait(0.6)
@@ -12,24 +12,20 @@ local HttpService       = game:GetService("HttpService")
 local RunService        = game:GetService("RunService")
 local TweenService      = game:GetService("TweenService")
 local Stats             = game:GetService("Stats")
+local LogService        = game:GetService("LogService")
 
 local LocalPlayer = Players.LocalPlayer
 
--- Menggunakan metode aman untuk mendeteksi Root GUI executor
 local successGui, parentGui = pcall(function()
-	if gethui then
-		return gethui()
-	elseif CoreGui:FindFirstChild("RobloxGui") then
-		return CoreGui
-	else
-		return LocalPlayer:WaitForChild("PlayerGui")
-	end
+	if gethui then return gethui()
+	elseif CoreGui:FindFirstChild("RobloxGui") then return CoreGui
+	else return LocalPlayer:WaitForChild("PlayerGui") end
 end)
 if not successGui or not parentGui then
 	parentGui = LocalPlayer:WaitForChild("PlayerGui")
 end
 
--- 1. BERSIHKAN INSTANCE LAMA DENGAN AMAN
+-- 1. BERSIHKAN INSTANCE LAMA
 pcall(function()
 	for _, v in pairs(parentGui:GetChildren()) do
 		if v.Name == "MofenkUltraHubV35" or v.Name == "MofenkToggleGui" or v.Name == "MofenkNotifyGui" or v.Name == "MofenkIntroGui" then
@@ -62,7 +58,6 @@ _G.Mofenk = {
 	AutoTower           = false,
 	AutoMixTower        = false,
 	SelectedTowerSingle = "Infinity Tower",
-	SelectedMixTowers   = {"Infinity Tower", "Dragon Tower"},
 	AutoEquipTower      = false,
 	TowerLiveStatus     = "Menunggu...",
 	TowerCurrentLevel   = 0,
@@ -144,10 +139,11 @@ local R = {
 	Rebirth         = Network and (safeFind(Network, "RebirthService.RE.Rebirth") or safeFind(Network, "RebirthService.RF.Rebirth")),
 	BuyUpgrade      = Network and (safeFind(Network, "PlotService.RE.BuyUpgrade") or safeFind(Network, "RE.BuyUpgrade") or safeFind(Network, "PlotService.RE.BuyPadUpgrade")),
 	SellInventory   = Network and safeFind(Network, "SellService.RF.SellInventory"),
-	PlayTower       = Network and (safeFind(Network, "Towers.RF.PlayTower") or safeFind(Network, "Towers.RE.PlayTower")),
+	PlayTower       = Network and (safeFind(Network, "Towers.RF.PlayTower") or safeFind(Network, "Towers.RE.PlayTower") or safeFind(Network, "Towers.RE.StartGame")),
+	LeaveTower      = Network and (safeFind(Network, "Towers.RE.LeaveTower") or safeFind(Network, "Towers.RF.LeaveTower") or safeFind(Network, "Towers.RE.Quit")),
 	Fuse            = Network and safeFind(Network, "FusingService.RE.Fuse"),
 	BoostUse        = Network and safeFind(Network, "BoostService.RE.Use"),
-	EquipTowerUnit  = Network and safeFind(Network, "Towers.RE.EquipBest"),
+	EquipTowerUnit  = Network and (safeFind(Network, "Towers.RE.EquipBest") or safeFind(Network, "Towers.RE.EquipTeam") or safeFind(Network, "Towers.RE.AutoEquip")),
 	EquipGear       = Network and safeFind(Network, "GearService.RE.EquipGear"),
 }
 
@@ -166,15 +162,15 @@ local function data()
 	return ok and res or nil
 end
 
--- 5. TEMA VISUAL MODERN
+-- 5. TEMA VISUAL AESTHETIC & MODERN
 local Theme = {
-	Bg        = Color3.fromRGB(12, 10, 18),
-	Header    = Color3.fromRGB(20, 15, 28),
-	Card      = Color3.fromRGB(28, 20, 38),
-	Accent    = Color3.fromRGB(255, 60, 95),
-	AccentSec = Color3.fromRGB(0, 180, 255),
-	Text      = Color3.fromRGB(255, 255, 255),
-	TextSub   = Color3.fromRGB(185, 175, 205)
+	Bg        = Color3.fromRGB(14, 12, 22),
+	Header    = Color3.fromRGB(22, 18, 32),
+	Card      = Color3.fromRGB(30, 24, 44),
+	Accent    = Color3.fromRGB(255, 75, 110),
+	AccentSec = Color3.fromRGB(0, 200, 255),
+	Text      = Color3.fromRGB(245, 240, 255),
+	TextSub   = Color3.fromRGB(160, 150, 185)
 }
 
 -- 6. SISTEM NOTIFIKASI TOAST
@@ -185,35 +181,35 @@ NotifyGui.ResetOnSpawn = false
 
 local NotifyContainer = Instance.new("Frame")
 NotifyContainer.Parent = NotifyGui
-NotifyContainer.Position = UDim2.new(1, -290, 0, 20)
-NotifyContainer.Size = UDim2.new(0, 280, 1, -40)
+NotifyContainer.Position = UDim2.new(1, -310, 0, 25)
+NotifyContainer.Size = UDim2.new(0, 290, 1, -50)
 NotifyContainer.BackgroundTransparency = 1
 
 local NotifyLayout = Instance.new("UIListLayout")
 NotifyLayout.Parent = NotifyContainer
-NotifyLayout.Padding = UDim.new(0, 10)
+NotifyLayout.Padding = UDim.new(0, 12)
 
 local function MofenkNotify(title, message, duration)
 	duration = duration or 3.5
 	local Card = Instance.new("Frame")
 	Card.Parent = NotifyContainer
-	Card.Size = UDim2.new(1, 0, 0, 52)
+	Card.Size = UDim2.new(1, 0, 0, 58)
 	Card.BackgroundColor3 = Theme.Card
-	Card.BackgroundTransparency = 0.1
+	Card.BackgroundTransparency = 0.08
 	
 	local Corner = Instance.new("UICorner")
-	Corner.CornerRadius = UDim.new(0, 10)
+	Corner.CornerRadius = UDim.new(0, 12)
 	Corner.Parent = Card
 	
 	local Stroke = Instance.new("UIStroke")
 	Stroke.Color = Theme.AccentSec
-	Stroke.Transparency = 0.3
+	Stroke.Transparency = 0.25
 	Stroke.Parent = Card
 	
 	local TitleLbl = Instance.new("TextLabel")
 	TitleLbl.Parent = Card
-	TitleLbl.Position = UDim2.new(0, 12, 0, 6)
-	TitleLbl.Size = UDim2.new(1, -24, 0, 18)
+	TitleLbl.Position = UDim2.new(0, 14, 0, 8)
+	TitleLbl.Size = UDim2.new(1, -28, 0, 18)
 	TitleLbl.Text = title
 	TitleLbl.TextColor3 = Theme.AccentSec
 	TitleLbl.TextSize = 11
@@ -223,8 +219,8 @@ local function MofenkNotify(title, message, duration)
 	
 	local MsgLbl = Instance.new("TextLabel")
 	MsgLbl.Parent = Card
-	MsgLbl.Position = UDim2.new(0, 12, 0, 24)
-	MsgLbl.Size = UDim2.new(1, -24, 0, 22)
+	MsgLbl.Position = UDim2.new(0, 14, 0, 28)
+	MsgLbl.Size = UDim2.new(1, -28, 0, 22)
 	MsgLbl.Text = message
 	MsgLbl.TextColor3 = Theme.TextSub
 	MsgLbl.TextSize = 10
@@ -237,7 +233,16 @@ local function MofenkNotify(title, message, duration)
 	end)
 end
 
--- 7. UI UTAMA
+-- Deteksi Error Konsol untuk Debugger Otomatis
+pcall(function()
+	LogService.MessageOut:Connect(function(message, messageType)
+		if messageType == Enum.MessageType.MessageError then
+			MofenkNotify("⚠️ DEBUGGER ERROR", string.sub(message, 1, 60), 4)
+		end
+	end)
+end)
+
+-- 7. UI UTAMA (AESTHETIC BINGKAI & SPASI)
 local MainGui = Instance.new("ScreenGui")
 MainGui.Name = "MofenkUltraHubV35"
 MainGui.Parent = parentGui
@@ -250,43 +255,43 @@ UIRescale.Parent = MainGui
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
 MainFrame.Parent = MainGui
-MainFrame.Size = UDim2.new(0, 820, 0, 520)
-MainFrame.Position = UDim2.new(0.5, -410, 0.5, -260)
+MainFrame.Size = UDim2.new(0, 860, 0, 560)
+MainFrame.Position = UDim2.new(0.5, -430, 0.5, -280)
 MainFrame.BackgroundColor3 = Theme.Bg
-MainFrame.BackgroundTransparency = 0.05
+MainFrame.BackgroundTransparency = 0.03
 MainFrame.Active = true
 MainFrame.Draggable = true
 MainFrame.ClipsDescendants = true
 
 local MainCorner = Instance.new("UICorner")
-MainCorner.CornerRadius = UDim.new(0, 16)
+MainCorner.CornerRadius = UDim.new(0, 18)
 MainCorner.Parent = MainFrame
 
 local GradOverlay = Instance.new("UIGradient")
 GradOverlay.Color = ColorSequence.new({
-	ColorSequenceKeypoint.new(0.0, Color3.fromRGB(10, 10, 16)),
-	ColorSequenceKeypoint.new(0.5, Color3.fromRGB(15, 50, 100)),
-	ColorSequenceKeypoint.new(1.0, Color3.fromRGB(130, 20, 45))
+	ColorSequenceKeypoint.new(0.0, Color3.fromRGB(12, 10, 20)),
+	ColorSequenceKeypoint.new(0.5, Color3.fromRGB(20, 45, 90)),
+	ColorSequenceKeypoint.new(1.0, Color3.fromRGB(110, 20, 50))
 })
-GradOverlay.Transparency = NumberSequence.new(0.2)
+GradOverlay.Transparency = NumberSequence.new(0.15)
 GradOverlay.Parent = MainFrame
 
 local MainStroke = Instance.new("UIStroke")
 MainStroke.Thickness = 2
 MainStroke.Color = Theme.AccentSec
-MainStroke.Transparency = 0.15
+MainStroke.Transparency = 0.2
 MainStroke.Parent = MainFrame
 
 -- Topbar
 local TopBar = Instance.new("Frame")
 TopBar.Parent = MainFrame
-TopBar.Size = UDim2.new(1, 0, 0, 48)
+TopBar.Size = UDim2.new(1, 0, 0, 52)
 TopBar.BackgroundColor3 = Theme.Header
-TopBar.BackgroundTransparency = 0.2
+TopBar.BackgroundTransparency = 0.15
 
 local LogoIcon = Instance.new("Frame")
 LogoIcon.Parent = TopBar
-LogoIcon.Position = UDim2.new(0, 14, 0.5, -18)
+LogoIcon.Position = UDim2.new(0, 16, 0.5, -18)
 LogoIcon.Size = UDim2.new(0, 36, 0, 36)
 LogoIcon.BackgroundColor3 = Theme.Accent
 local LIC = Instance.new("UICorner")
@@ -304,17 +309,17 @@ LogoTextF.Font = Enum.Font.GothamBold
 
 local Title = Instance.new("TextLabel")
 Title.Parent = TopBar
-Title.Position = UDim2.new(0, 60, 0, 0)
-Title.Size = UDim2.new(0, 520, 1, 0)
-Title.Text = "MOFENKHUB — ULTIMATE MODERN PRO SUITE"
+Title.Position = UDim2.new(0, 64, 0, 0)
+Title.Size = UDim2.new(0, 540, 1, 0)
+Title.Text = "MOFENKHUB — ULTIMATE AESTHETIC SUITE"
 Title.TextColor3 = Theme.Text
-Title.TextSize = 11
+Title.TextSize = 12
 Title.Font = Enum.Font.GothamBold
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
 local CloseBtn = Instance.new("TextButton")
 CloseBtn.Parent = TopBar
-CloseBtn.Position = UDim2.new(1, -42, 0, 10)
+CloseBtn.Position = UDim2.new(1, -46, 0, 12)
 CloseBtn.Size = UDim2.new(0, 28, 0, 28)
 CloseBtn.Text = "✕"
 CloseBtn.TextColor3 = Theme.Text
@@ -329,50 +334,50 @@ CloseBtn.MouseButton1Click:Connect(function() MainFrame.Visible = false end)
 -- Sidebar Group Nav
 local Sidebar = Instance.new("ScrollingFrame")
 Sidebar.Parent = MainFrame
-Sidebar.Position = UDim2.new(0, 10, 0, 56)
-Sidebar.Size = UDim2.new(0, 175, 1, -66)
+Sidebar.Position = UDim2.new(0, 12, 0, 62)
+Sidebar.Size = UDim2.new(0, 185, 1, -74)
 Sidebar.BackgroundColor3 = Theme.Header
-Sidebar.BackgroundTransparency = 0.3
+Sidebar.BackgroundTransparency = 0.25
 Sidebar.ScrollBarThickness = 2
 local SideLayout = Instance.new("UIListLayout")
 SideLayout.Parent = Sidebar
-SideLayout.Padding = UDim.new(0, 6)
+SideLayout.Padding = UDim.new(0, 8)
 
 local ContentArea = Instance.new("Frame")
 ContentArea.Parent = MainFrame
-ContentArea.Position = UDim2.new(0, 193, 0, 56)
-ContentArea.Size = UDim2.new(1, -203, 1, -66)
+ContentArea.Position = UDim2.new(0, 207, 0, 62)
+ContentArea.Size = UDim2.new(1, -219, 1, -74)
 ContentArea.BackgroundColor3 = Theme.Header
-ContentArea.BackgroundTransparency = 0.4
+ContentArea.BackgroundTransparency = 0.35
 
 local TabFrames = {}
 local function CreateTab(name, order)
 	local Btn = Instance.new("TextButton")
 	Btn.Parent = Sidebar
-	Btn.Size = UDim2.new(1, -4, 0, 36)
-	Btn.Text = "  " .. name
+	Btn.Size = UDim2.new(1, -4, 0, 38)
+	Btn.Text = "    " .. name
 	Btn.TextColor3 = Theme.TextSub
 	Btn.TextSize = 11
 	Btn.Font = Enum.Font.GothamBold
 	Btn.TextXAlignment = Enum.TextXAlignment.Left
 	Btn.BackgroundColor3 = Theme.Card
-	Btn.BackgroundTransparency = 0.2
+	Btn.BackgroundTransparency = 0.15
 	Btn.LayoutOrder = order
 	local Corner = Instance.new("UICorner")
-	Corner.CornerRadius = UDim.new(0, 8)
+	Corner.CornerRadius = UDim.new(0, 10)
 	Corner.Parent = Btn
 
 	local Scroll = Instance.new("ScrollingFrame")
 	Scroll.Parent = ContentArea
-	Scroll.Size = UDim2.new(1, -10, 1, -10)
-	Scroll.Position = UDim2.new(0, 5, 0, 5)
+	Scroll.Size = UDim2.new(1, -12, 1, -12)
+	Scroll.Position = UDim2.new(0, 6, 0, 6)
 	Scroll.BackgroundTransparency = 1
 	Scroll.ScrollBarThickness = 4
 	Scroll.ScrollBarImageColor3 = Theme.AccentSec
 	Scroll.Visible = false
 	local Lay = Instance.new("UIListLayout")
 	Lay.Parent = Scroll
-	Lay.Padding = UDim.new(0, 8)
+	Lay.Padding = UDim.new(0, 10) -- Spasi antar elemen dirapikan agar lega
 	
 	TabFrames[name] = Scroll
 
@@ -382,7 +387,7 @@ local function CreateTab(name, order)
 			if b:IsA("TextButton") then
 				b.TextColor3 = Theme.TextSub
 				b.BackgroundColor3 = Theme.Card
-				b.BackgroundTransparency = 0.2
+				b.BackgroundTransparency = 0.15
 			end
 		end
 		Btn.TextColor3 = Theme.Text
@@ -395,7 +400,7 @@ end
 local function AddSection(parent, text)
 	local L = Instance.new("TextLabel")
 	L.Parent = parent
-	L.Size = UDim2.new(1, 0, 0, 26)
+	L.Size = UDim2.new(1, 0, 0, 28)
 	L.Text = "  " .. text
 	L.TextColor3 = Theme.AccentSec
 	L.TextSize = 11
@@ -408,16 +413,16 @@ local function AddToggle(parent, text, flag)
 	local state = _G.Mofenk[flag] or false
 	local F = Instance.new("Frame")
 	F.Parent = parent
-	F.Size = UDim2.new(1, 0, 0, 38)
+	F.Size = UDim2.new(1, 0, 0, 42)
 	F.BackgroundColor3 = Theme.Card
-	F.BackgroundTransparency = 0.15
+	F.BackgroundTransparency = 0.12
 	local C = Instance.new("UICorner")
-	C.CornerRadius = UDim.new(0, 8)
+	C.CornerRadius = UDim.new(0, 10)
 	C.Parent = F
 
 	local L = Instance.new("TextLabel")
 	L.Parent = F
-	L.Position = UDim2.new(0, 12, 0, 0)
+	L.Position = UDim2.new(0, 14, 0, 0)
 	L.Size = UDim2.new(0.7, 0, 1, 0)
 	L.Text = text
 	L.TextColor3 = Theme.Text
@@ -428,18 +433,18 @@ local function AddToggle(parent, text, flag)
 
 	local Sw = Instance.new("TextButton")
 	Sw.Parent = F
-	Sw.Position = UDim2.new(1, -42, 0.5, -9)
-	Sw.Size = UDim2.new(0, 32, 0, 18)
+	Sw.Position = UDim2.new(1, -46, 0.5, -10)
+	Sw.Size = UDim2.new(0, 36, 0, 20)
 	Sw.Text = ""
-	Sw.BackgroundColor3 = state and Theme.AccentSec or Color3.fromRGB(60, 50, 80)
+	Sw.BackgroundColor3 = state and Theme.AccentSec or Color3.fromRGB(55, 45, 75)
 	local SwC = Instance.new("UICorner")
 	SwC.CornerRadius = UDim.new(1, 0)
 	SwC.Parent = Sw
 
 	local Knob = Instance.new("Frame")
 	Knob.Parent = Sw
-	Knob.Size = UDim2.new(0, 14, 0, 14)
-	Knob.Position = state and UDim2.new(1, -15, 0.5, -7) or UDim2.new(0, 2, 0.5, -7)
+	Knob.Size = UDim2.new(0, 16, 0, 16)
+	Knob.Position = state and UDim2.new(1, -18, 0.5, -8) or UDim2.new(0, 2, 0.5, -8)
 	Knob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 	local KC = Instance.new("UICorner")
 	KC.CornerRadius = UDim.new(1, 0)
@@ -448,24 +453,24 @@ local function AddToggle(parent, text, flag)
 	Sw.MouseButton1Click:Connect(function()
 		state = not state
 		_G.Mofenk[flag] = state
-		TweenService:Create(Sw, TweenInfo.new(0.2), {BackgroundColor3 = state and Theme.AccentSec or Color3.fromRGB(60, 50, 80)}):Play()
-		TweenService:Create(Knob, TweenInfo.new(0.2), {Position = state and UDim2.new(1, -15, 0.5, -7) or UDim2.new(0, 2, 0.5, -7)}):Play()
+		TweenService:Create(Sw, TweenInfo.new(0.2), {BackgroundColor3 = state and Theme.AccentSec or Color3.fromRGB(55, 45, 75)}):Play()
+		TweenService:Create(Knob, TweenInfo.new(0.2), {Position = state and UDim2.new(1, -18, 0.5, -8) or UDim2.new(0, 2, 0.5, -8)}):Play()
 	end)
 end
 
 local function AddScrollingDropdown(parent, title, options, currentVal, callback)
 	local F = Instance.new("Frame")
 	F.Parent = parent
-	F.Size = UDim2.new(1, 0, 0, 42)
+	F.Size = UDim2.new(1, 0, 0, 46)
 	F.BackgroundColor3 = Theme.Card
-	F.BackgroundTransparency = 0.15
+	F.BackgroundTransparency = 0.12
 	local C = Instance.new("UICorner")
-	C.CornerRadius = UDim.new(0, 8)
+	C.CornerRadius = UDim.new(0, 10)
 	C.Parent = F
 
 	local L = Instance.new("TextLabel")
 	L.Parent = F
-	L.Position = UDim2.new(0, 12, 0, 0)
+	L.Position = UDim2.new(0, 14, 0, 0)
 	L.Size = UDim2.new(0.4, 0, 1, 0)
 	L.Text = title
 	L.TextColor3 = Theme.Text
@@ -485,21 +490,21 @@ local function AddScrollingDropdown(parent, title, options, currentVal, callback
 	Btn.BackgroundColor3 = Theme.Header
 	Btn.BackgroundTransparency = 0.2
 	local BC = Instance.new("UICorner")
-	BC.CornerRadius = UDim.new(0, 6)
+	BC.CornerRadius = UDim.new(0, 8)
 	BC.Parent = Btn
 
 	local DropList = Instance.new("ScrollingFrame")
 	DropList.Parent = parent.Parent
-	DropList.Size = UDim2.new(0.55, 0, 0, 130)
+	DropList.Size = UDim2.new(0.55, 0, 0, 140)
 	DropList.Position = UDim2.new(0.42, 0, 0, 0)
 	DropList.BackgroundColor3 = Theme.Header
 	DropList.BorderSizePixel = 0
 	DropList.Visible = false
-	DropList.ZIndex = 10
-	DropList.CanvasSize = UDim2.new(0, 0, 0, #options * 30)
+	DropList.ZIndex = 15
+	DropList.CanvasSize = UDim2.new(0, 0, 0, #options * 32)
 	DropList.ScrollBarThickness = 4
 	local DLC = Instance.new("UICorner")
-	DLC.CornerRadius = UDim.new(0, 6)
+	DLC.CornerRadius = UDim.new(0, 8)
 	DLC.Parent = DropList
 	local DLL = Instance.new("UIListLayout")
 	DLL.Parent = DropList
@@ -507,14 +512,14 @@ local function AddScrollingDropdown(parent, title, options, currentVal, callback
 	for _, opt in ipairs(options) do
 		local OptBtn = Instance.new("TextButton")
 		OptBtn.Parent = DropList
-		OptBtn.Size = UDim2.new(1, 0, 0, 28)
+		OptBtn.Size = UDim2.new(1, 0, 0, 30)
 		OptBtn.Text = "  " .. tostring(opt)
 		OptBtn.TextColor3 = Theme.Text
 		OptBtn.TextSize = 10
 		OptBtn.Font = Enum.Font.GothamMedium
 		OptBtn.TextXAlignment = Enum.TextXAlignment.Left
 		OptBtn.BackgroundTransparency = 1
-		OptBtn.ZIndex = 11
+		OptBtn.ZIndex = 16
 
 		OptBtn.MouseButton1Click:Connect(function()
 			Btn.Text = tostring(opt)
@@ -541,22 +546,22 @@ local Tab9 = CreateTab("Config & Webhook", 9)
 
 TabFrames["Dashboard"].Visible = true
 
--- TAB 1: DASHBOARD
-AddSection(Tab1, "PROFIL PENGGUNA & LIVE STATUS")
+-- TAB 1: DASHBOARD (LIVE MONITORING LENGKAP ITEM, POTION, LOCK, GRADE, TRAIT, QUIRK)
+AddSection(Tab1, "PROFIL PENGGUNA & STATUS UTAMA")
 
 local ProfileWrapper = Instance.new("Frame")
 ProfileWrapper.Parent = Tab1
-ProfileWrapper.Size = UDim2.new(1, 0, 0, 115)
+ProfileWrapper.Size = UDim2.new(1, 0, 0, 120)
 ProfileWrapper.BackgroundColor3 = Theme.Card
-ProfileWrapper.BackgroundTransparency = 0.1
+ProfileWrapper.BackgroundTransparency = 0.08
 local PWC = Instance.new("UICorner")
-PWC.CornerRadius = UDim.new(0, 10)
+PWC.CornerRadius = UDim.new(0, 12)
 PWC.Parent = ProfileWrapper
 
 local AvatarImg = Instance.new("ImageLabel")
 AvatarImg.Parent = ProfileWrapper
-AvatarImg.Position = UDim2.new(0, 12, 0, 12)
-AvatarImg.Size = UDim2.new(0, 64, 0, 64)
+AvatarImg.Position = UDim2.new(0, 14, 0, 14)
+AvatarImg.Size = UDim2.new(0, 68, 0, 68)
 AvatarImg.BackgroundColor3 = Theme.Header
 pcall(function()
 	AvatarImg.Image = Players:GetUserThumbnailAsync(LocalPlayer.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size150x150)
@@ -567,8 +572,8 @@ AIC.Parent = AvatarImg
 
 local ProfileCard = Instance.new("TextLabel")
 ProfileCard.Parent = ProfileWrapper
-ProfileCard.Position = UDim2.new(0, 88, 0, 10)
-ProfileCard.Size = UDim2.new(1, -98, 0, 64)
+ProfileCard.Position = UDim2.new(0, 96, 0, 12)
+ProfileCard.Size = UDim2.new(1, -108, 0, 68)
 ProfileCard.BackgroundTransparency = 1
 ProfileCard.TextColor3 = Theme.Text
 ProfileCard.TextSize = 10
@@ -578,8 +583,8 @@ ProfileCard.TextYAlignment = Enum.TextYAlignment.Top
 
 local StatsProBar = Instance.new("Frame")
 StatsProBar.Parent = ProfileWrapper
-StatsProBar.Position = UDim2.new(0, 12, 0, 82)
-StatsProBar.Size = UDim2.new(1, -24, 0, 24)
+StatsProBar.Position = UDim2.new(0, 14, 0, 88)
+StatsProBar.Size = UDim2.new(1, -28, 0, 24)
 StatsProBar.BackgroundColor3 = Theme.Header
 StatsProBar.BackgroundTransparency = 0.2
 local SPBC = Instance.new("UICorner")
@@ -595,28 +600,28 @@ StatsProLbl.TextSize = 10
 StatsProLbl.Font = Enum.Font.GothamBold
 StatsProLbl.Text = "FPS: 60 | Ping: 0ms | Active Users: 1"
 
-AddSection(Tab1, "LIVE MONITORING TOWER & ITEM")
+AddSection(Tab1, "LIVE MONITORING IN-GAME MANAGEMENT & ITEM")
 
 local LiveMonitorCard = Instance.new("Frame")
 LiveMonitorCard.Parent = Tab1
-LiveMonitorCard.Size = UDim2.new(1, 0, 0, 95)
+LiveMonitorCard.Size = UDim2.new(1, 0, 0, 160)
 LiveMonitorCard.BackgroundColor3 = Theme.Card
-LiveMonitorCard.BackgroundTransparency = 0.1
+LiveMonitorCard.BackgroundTransparency = 0.08
 local LMC = Instance.new("UICorner")
-LMC.CornerRadius = UDim.new(0, 10)
+LMC.CornerRadius = UDim.new(0, 12)
 LMC.Parent = LiveMonitorCard
 
 local LiveMonitorLbl = Instance.new("TextLabel")
 LiveMonitorLbl.Parent = LiveMonitorCard
-LiveMonitorLbl.Position = UDim2.new(0, 14, 0, 10)
-LiveMonitorLbl.Size = UDim2.new(1, -28, 1, -20)
+LiveMonitorLbl.Position = UDim2.new(0, 16, 0, 12)
+LiveMonitorLbl.Size = UDim2.new(1, -32, 1, -24)
 LiveMonitorLbl.BackgroundTransparency = 1
 LiveMonitorLbl.TextColor3 = Theme.Text
 LiveMonitorLbl.TextSize = 10
 LiveMonitorLbl.Font = Enum.Font.GothamMedium
 LiveMonitorLbl.TextXAlignment = Enum.TextXAlignment.Left
 LiveMonitorLbl.TextYAlignment = Enum.TextYAlignment.Top
-LiveMonitorLbl.Text = " • Status Tower: Menunggu...\n • Gelombang/Level: 0\n • Gear Avatar Aktif: Memuat...\n • Total Item Dice: 0"
+LiveMonitorLbl.Text = " • Status Tower: Menunggu...\n • Gear Avatar Aktif: Memuat...\n • Total Item Potion: 0 | Luck Boost: 0\n • All Items (JP): 0 | All Potions: 0\n • Total Unit Locked: 0\n • Total Unit Grade Terdeteksi: 0\n • Total Unit Traits Terdeteksi: 0\n • Total Unit Quirk Terdeteksi: 0"
 
 task.spawn(function()
 	local lastTime = tick()
@@ -642,12 +647,34 @@ task.spawn(function()
 			
 			local activeGear = _G.Mofenk.LiveGearName or "Luck Set"
 			local towerState = _G.Mofenk.TowerLiveStatus or "Idle"
-			local towerLvl = _G.Mofenk.TowerCurrentLevel or 0
-			local diceCount = (d and d.OwnedDice) and (function() local c=0 for _,_ in pairs(d.OwnedDice) do c=c+1 end return c end)() or 0
+			
+			-- Kalkulasi Item & Unit
+			local potionCount, luckBoostCount, allItemJP, allPotions = 0, 0, 0, 0
+			local lockedUnits, gradeUnits, traitUnits, quirkUnits = 0, 0, 0, 0
+			
+			if d then
+				if d.Inventory then
+					for _, u in pairs(d.Inventory) do
+						if u.attributes and u.attributes.locked then lockedUnits = lockedUnits + 1 end
+						if u.grade or (u.attributes and u.attributes.grade) then gradeUnits = gradeUnits + 1 end
+						if u.trait or (u.attributes and u.attributes.trait) then traitUnits = traitUnits + 1 end
+						if u.quirk or (u.attributes and u.attributes.quirk) then quirkUnits = quirkUnits + 1 end
+					end
+				end
+				if d.Potions then
+					for _, count in pairs(d.Potions) do potionCount = potionCount + (tonumber(count) or 1) end
+				end
+				if d.Items then
+					for k, count in pairs(d.Items) do
+						allItemJP = allItemJP + (tonumber(count) or 1)
+						if string.find(string.lower(tostring(k)), "luck") then luckBoostCount = luckBoostCount + (tonumber(count) or 1) end
+					end
+				end
+			end
 			
 			LiveMonitorLbl.Text = string.format(
-				" • Status Tower: %s\n • Gelombang/Level: %d\n • Gear Avatar Aktif: %s\n • Total Item Dice Dimiliki: %d",
-				tostring(towerState), tonumber(towerLvl), tostring(activeGear), tonumber(diceCount)
+				" • Status Tower: %s\n • Gear Avatar Aktif: %s\n • Total Item Potion: %d | Luck Boost: %d\n • All Items (JP): %d | All Potions: %d\n • Total Unit Locked: %d\n • Total Unit Grade Terdeteksi: %d\n • Total Unit Traits Terdeteksi: %d\n • Total Unit Quirk Terdeteksi: %d",
+				tostring(towerState), tostring(activeGear), potionCount, luckBoostCount, allItemJP, potionCount, lockedUnits, gradeUnits, traitUnits, quirkUnits
 			)
 		end)
 
@@ -655,9 +682,9 @@ task.spawn(function()
 	end
 end)
 
--- TAB 2: TOWER MANAGER
+-- TAB 2: TOWER MANAGER (DENGAN LOGIKA GANTI TOWER INSTAN & KELUAR OTOMATIS)
 AddSection(Tab2, "PENGATURAN TOWER & GEAR")
-AddToggle(Tab2, "Auto Equip Best Unit Tower", "AutoEquipTower")
+AddToggle(Tab2, "Auto Equip Best Unit Tower (Team)", "AutoEquipTower")
 
 local towersList = {"Infinity Tower", "Dragon Tower", "Cursed Tower", "Pirate Tower", "Halloween Tower", "Event Tower Alpha"}
 pcall(function()
@@ -673,19 +700,19 @@ end)
 -- KOTAK 1: AUTO TOWER SINGLE
 local SingleTowerBox = Instance.new("Frame")
 SingleTowerBox.Parent = Tab2
-SingleTowerBox.Size = UDim2.new(1, 0, 0, 95)
+SingleTowerBox.Size = UDim2.new(1, 0, 0, 100)
 SingleTowerBox.BackgroundColor3 = Theme.Card
-SingleTowerBox.BackgroundTransparency = 0.15
+SingleTowerBox.BackgroundTransparency = 0.12
 local STBC = Instance.new("UICorner")
-STBC.CornerRadius = UDim.new(0, 8)
+STBC.CornerRadius = UDim.new(0, 10)
 STBC.Parent = SingleTowerBox
 
 AddToggle(SingleTowerBox, "Auto Tower (Single Target)", "AutoTower")
 
 local SingleDDContainer = Instance.new("Frame")
 SingleDDContainer.Parent = SingleTowerBox
-SingleDDContainer.Position = UDim2.new(0, 12, 0, 48)
-SingleDDContainer.Size = UDim2.new(1, -24, 0, 36)
+SingleDDContainer.Position = UDim2.new(0, 14, 0, 50)
+SingleDDContainer.Size = UDim2.new(1, -28, 0, 38)
 SingleDDContainer.BackgroundTransparency = 1
 
 local SDD_Lbl = Instance.new("TextLabel")
@@ -709,21 +736,21 @@ SDD_Btn.Font = Enum.Font.GothamBold
 SDD_Btn.BackgroundColor3 = Theme.Header
 SDD_Btn.BackgroundTransparency = 0.2
 local SDD_BC = Instance.new("UICorner")
-SDD_BC.CornerRadius = UDim.new(0, 6)
+SDD_BC.CornerRadius = UDim.new(0, 8)
 SDD_BC.Parent = SDD_Btn
 
 local SingleDropList = Instance.new("ScrollingFrame")
 SingleDropList.Parent = Tab2.Parent
-SingleDropList.Size = UDim2.new(0.4, 0, 0, 130)
+SingleDropList.Size = UDim2.new(0.4, 0, 0, 140)
 SingleDropList.Position = UDim2.new(0.5, 0, 0, 0)
 SingleDropList.BackgroundColor3 = Theme.Header
 SingleDropList.BorderSizePixel = 0
 SingleDropList.Visible = false
 SingleDropList.ZIndex = 25
-SingleDropList.CanvasSize = UDim2.new(0, 0, 0, #towersList * 28)
+SingleDropList.CanvasSize = UDim2.new(0, 0, 0, #towersList * 30)
 SingleDropList.ScrollBarThickness = 4
 local SDLC = Instance.new("UICorner")
-SDLC.CornerRadius = UDim.new(0, 6)
+SDLC.CornerRadius = UDim.new(0, 8)
 SDLC.Parent = SingleDropList
 local SDLL = Instance.new("UIListLayout")
 SDLL.Parent = SingleDropList
@@ -731,7 +758,7 @@ SDLL.Parent = SingleDropList
 for _, tName in ipairs(towersList) do
 	local optB = Instance.new("TextButton")
 	optB.Parent = SingleDropList
-	optB.Size = UDim2.new(1, 0, 0, 28)
+	optB.Size = UDim2.new(1, 0, 0, 30)
 	optB.Text = "  " .. tName
 	optB.TextColor3 = Theme.Text
 	optB.TextSize = 10
@@ -744,7 +771,8 @@ for _, tName in ipairs(towersList) do
 		_G.Mofenk.SelectedTowerSingle = tName
 		SDD_Btn.Text = tName
 		SingleDropList.Visible = false
-		MofenkNotify("TOWER", "Single target diatur ke: " .. tName, 2)
+		MofenkNotify("TOWER SWITCH", "Pilihan tower diganti ke: " .. tName .. ". Keluar dan masuk ulang...", 2)
+		pcall(function() if R.LeaveTower then R.LeaveTower:FireServer() end end)
 	end)
 end
 
@@ -755,19 +783,19 @@ end)
 -- KOTAK 2: AUTO MIX TOWER
 local MixTowerBox = Instance.new("Frame")
 MixTowerBox.Parent = Tab2
-MixTowerBox.Size = UDim2.new(1, 0, 0, 95)
+MixTowerBox.Size = UDim2.new(1, 0, 0, 100)
 MixTowerBox.BackgroundColor3 = Theme.Card
-MixTowerBox.BackgroundTransparency = 0.15
+MixTowerBox.BackgroundTransparency = 0.12
 local MTBC = Instance.new("UICorner")
-MTBC.CornerRadius = UDim.new(0, 8)
+MTBC.CornerRadius = UDim.new(0, 10)
 MTBC.Parent = MixTowerBox
 
 AddToggle(MixTowerBox, "Auto Mix / Random Tower (Multi-Select)", "AutoMixTower")
 
 local MixDDContainer = Instance.new("Frame")
 MixDDContainer.Parent = MixTowerBox
-MixDDContainer.Position = UDim2.new(0, 12, 0, 48)
-MixDDContainer.Size = UDim2.new(1, -24, 0, 36)
+MixDDContainer.Position = UDim2.new(0, 14, 0, 50)
+MixDDContainer.Size = UDim2.new(1, -28, 0, 38)
 MixDDContainer.BackgroundTransparency = 1
 
 local MDD_Lbl = Instance.new("TextLabel")
@@ -791,7 +819,7 @@ MDD_Btn.Font = Enum.Font.GothamBold
 MDD_Btn.BackgroundColor3 = Theme.Header
 MDD_Btn.BackgroundTransparency = 0.2
 local MDD_BC = Instance.new("UICorner")
-MDD_BC.CornerRadius = UDim.new(0, 6)
+MDD_BC.CornerRadius = UDim.new(0, 8)
 MDD_BC.Parent = MDD_Btn
 
 AddScrollingDropdown(Tab2, "Pilih Gear Stat Set (Avatar):", {"Luck Set", "Damage Set", "Money Set", "Balanced Set"}, _G.Mofenk.GearSet, function(val)
@@ -825,11 +853,11 @@ AddToggle(Tab5, "Auto Upgrade Pad", "AutoUpgrade")
 
 local LevelBoxWrapper = Instance.new("Frame")
 LevelBoxWrapper.Parent = Tab5
-LevelBoxWrapper.Size = UDim2.new(1, 0, 0, 95)
+LevelBoxWrapper.Size = UDim2.new(1, 0, 0, 100)
 LevelBoxWrapper.BackgroundColor3 = Theme.Card
-LevelBoxWrapper.BackgroundTransparency = 0.15
+LevelBoxWrapper.BackgroundTransparency = 0.12
 local LBWC = Instance.new("UICorner")
-LBWC.CornerRadius = UDim.new(0, 8)
+LBWC.CornerRadius = UDim.new(0, 10)
 LBWC.Parent = LevelBoxWrapper
 
 local LBStroke = Instance.new("UIStroke")
@@ -839,8 +867,8 @@ LBStroke.Parent = LevelBoxWrapper
 
 local InnerLevelToggle = Instance.new("TextButton")
 InnerLevelToggle.Parent = LevelBoxWrapper
-InnerLevelToggle.Position = UDim2.new(0, 12, 0, 8)
-InnerLevelToggle.Size = UDim2.new(1, -24, 0, 32)
+InnerLevelToggle.Position = UDim2.new(0, 14, 0, 10)
+InnerLevelToggle.Size = UDim2.new(1, -28, 0, 32)
 InnerLevelToggle.BackgroundTransparency = 1
 InnerLevelToggle.Text = ""
 
@@ -856,9 +884,9 @@ ILT_Lbl.BackgroundTransparency = 1
 
 local ILT_Sw = Instance.new("Frame")
 ILT_Sw.Parent = InnerLevelToggle
-ILT_Sw.Position = UDim2.new(1, -32, 0.5, -9)
-ILT_Sw.Size = UDim2.new(0, 32, 0, 18)
-ILT_Sw.BackgroundColor3 = _G.Mofenk.AutoLevel and Theme.AccentSec or Color3.fromRGB(60, 50, 80)
+ILT_Sw.Position = UDim2.new(1, -36, 0.5, -9)
+ILT_Sw.Size = UDim2.new(0, 36, 0, 18)
+ILT_Sw.BackgroundColor3 = _G.Mofenk.AutoLevel and Theme.AccentSec or Color3.fromRGB(55, 45, 75)
 local ILTSwC = Instance.new("UICorner")
 ILTSwC.CornerRadius = UDim.new(1, 0)
 ILTSwC.Parent = ILT_Sw
@@ -866,7 +894,7 @@ ILTSwC.Parent = ILT_Sw
 local ILT_Knob = Instance.new("Frame")
 ILT_Knob.Parent = ILT_Sw
 ILT_Knob.Size = UDim2.new(0, 14, 0, 14)
-ILT_Knob.Position = _G.Mofenk.AutoLevel and UDim2.new(1, -15, 0.5, -7) or UDim2.new(0, 2, 0.5, -7)
+ILT_Knob.Position = _G.Mofenk.AutoLevel and UDim2.new(1, -16, 0.5, -7) or UDim2.new(0, 2, 0.5, -7)
 ILT_Knob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 local ILTKC = Instance.new("UICorner")
 ILTKC.CornerRadius = UDim.new(1, 0)
@@ -875,14 +903,14 @@ ILTKC.Parent = ILT_Knob
 InnerLevelToggle.MouseButton1Click:Connect(function()
 	_G.Mofenk.AutoLevel = not _G.Mofenk.AutoLevel
 	local state = _G.Mofenk.AutoLevel
-	TweenService:Create(ILT_Sw, TweenInfo.new(0.2), {BackgroundColor3 = state and Theme.AccentSec or Color3.fromRGB(60, 50, 80)}):Play()
-	TweenService:Create(ILT_Knob, TweenInfo.new(0.2), {Position = state and UDim2.new(1, -15, 0.5, -7) or UDim2.new(0, 2, 0.5, -7)}):Play()
+	TweenService:Create(ILT_Sw, TweenInfo.new(0.2), {BackgroundColor3 = state and Theme.AccentSec or Color3.fromRGB(55, 45, 75)}):Play()
+	TweenService:Create(ILT_Knob, TweenInfo.new(0.2), {Position = state and UDim2.new(1, -16, 0.5, -7) or UDim2.new(0, 2, 0.5, -7)}):Play()
 end)
 
 local DropdownInBox = Instance.new("Frame")
 DropdownInBox.Parent = LevelBoxWrapper
-DropdownInBox.Position = UDim2.new(0, 12, 0, 48)
-DropdownInBox.Size = UDim2.new(1, -24, 0, 36)
+DropdownInBox.Position = UDim2.new(0, 14, 0, 50)
+DropdownInBox.Size = UDim2.new(1, -28, 0, 38)
 DropdownInBox.BackgroundTransparency = 1
 
 local DIB_Lbl = Instance.new("TextLabel")
@@ -906,21 +934,21 @@ DIB_Btn.Font = Enum.Font.GothamBold
 DIB_Btn.BackgroundColor3 = Theme.Header
 DIB_Btn.BackgroundTransparency = 0.2
 local DIBC = Instance.new("UICorner")
-DIBC.CornerRadius = UDim.new(0, 6)
+DIBC.CornerRadius = UDim.new(0, 8)
 DIBC.Parent = DIB_Btn
 
 local LevelDropList = Instance.new("ScrollingFrame")
 LevelDropList.Parent = Tab5.Parent
-LevelDropList.Size = UDim2.new(0.35, 0, 0, 120)
+LevelDropList.Size = UDim2.new(0.35, 0, 0, 130)
 LevelDropList.Position = UDim2.new(0.55, 0, 0, 0)
 LevelDropList.BackgroundColor3 = Theme.Header
 LevelDropList.BorderSizePixel = 0
 LevelDropList.Visible = false
 LevelDropList.ZIndex = 25
-LevelDropList.CanvasSize = UDim2.new(0, 0, 0, 6 * 28)
+LevelDropList.CanvasSize = UDim2.new(0, 0, 0, 6 * 30)
 LevelDropList.ScrollBarThickness = 4
 local LDLC = Instance.new("UICorner")
-LDLC.CornerRadius = UDim.new(0, 6)
+LDLC.CornerRadius = UDim.new(0, 8)
 LDLC.Parent = LevelDropList
 local LDLL = Instance.new("UIListLayout")
 LDLL.Parent = LevelDropList
@@ -928,7 +956,7 @@ LDLL.Parent = LevelDropList
 for _, lvlOpt in ipairs({10, 25, 50, 100, 200, 500}) do
 	local OptB = Instance.new("TextButton")
 	OptB.Parent = LevelDropList
-	OptB.Size = UDim2.new(1, 0, 0, 28)
+	OptB.Size = UDim2.new(1, 0, 0, 30)
 	OptB.Text = "  Level " .. tostring(lvlOpt)
 	OptB.TextColor3 = Theme.Text
 	OptB.TextSize = 10
@@ -964,15 +992,15 @@ AddToggle(Tab7, "Matikan 3D Rendering (FPS Boost)", "Disable3DRender")
 
 local BtnHop = Instance.new("TextButton")
 BtnHop.Parent = Tab7
-BtnHop.Size = UDim2.new(1, 0, 0, 38)
+BtnHop.Size = UDim2.new(1, 0, 0, 40)
 BtnHop.Text = "Pindah Server Kosong (Server Hop)"
 BtnHop.TextColor3 = Theme.Text
 BtnHop.TextSize = 10
 BtnHop.Font = Enum.Font.GothamBold
 BtnHop.BackgroundColor3 = Theme.Card
-BtnHop.BackgroundTransparency = 0.1
+BtnHop.BackgroundTransparency = 0.12
 local BHB = Instance.new("UICorner")
-BHB.CornerRadius = UDim.new(0, 8)
+BHB.CornerRadius = UDim.new(0, 10)
 BHB.Parent = BtnHop
 BtnHop.MouseButton1Click:Connect(function()
 	MofenkNotify("SERVER", "Mencari server optimal...", 2)
@@ -989,14 +1017,14 @@ BtnHop.MouseButton1Click:Connect(function()
 	MofenkNotify("SERVER", "Server penuh atau tidak ditemukan.", 3)
 end)
 
--- TAB 8: REMOTE SPY
-AddSection(Tab8, "REMOTE SPY & PACKET INSPECTOR")
+-- TAB 8: REMOTE SPY & PACKET INSPECTOR WITH LIVE DEBUGGER
+AddSection(Tab8, "REMOTE SPY & LIVE PACKET INSPECTOR")
 
 local SpyDesc = Instance.new("TextLabel")
 SpyDesc.Parent = Tab8
-SpyDesc.Size = UDim2.new(1, 0, 0, 40)
+SpyDesc.Size = UDim2.new(1, 0, 0, 42)
 SpyDesc.BackgroundTransparency = 1
-SpyDesc.Text = "Gunakan fitur ini untuk memindai seluruh jalur RemoteEvent & RemoteFunction aktif di dalam game."
+SpyDesc.Text = "Fitur ini memindai seluruh paket RemoteEvent/RemoteFunction serta menangkap log error secara langsung."
 SpyDesc.TextColor3 = Theme.TextSub
 SpyDesc.TextSize = 10
 SpyDesc.Font = Enum.Font.GothamMedium
@@ -1005,19 +1033,19 @@ SpyDesc.TextWrapped = true
 
 local BtnScan = Instance.new("TextButton")
 BtnScan.Parent = Tab8
-BtnScan.Size = UDim2.new(1, 0, 0, 38)
-BtnScan.Text = "Pindai & Deteksi Semua Remote Game"
+BtnScan.Size = UDim2.new(1, 0, 0, 40)
+BtnScan.Text = "Pindai & Aktifkan Live Packet Debugger"
 BtnScan.TextColor3 = Theme.AccentSec
 BtnScan.TextSize = 10
 BtnScan.Font = Enum.Font.GothamBold
 BtnScan.BackgroundColor3 = Theme.Card
-BtnScan.BackgroundTransparency = 0.15
+BtnScan.BackgroundTransparency = 0.12
 local BSB = Instance.new("UICorner")
-BSB.CornerRadius = UDim.new(0, 8)
+BSB.CornerRadius = UDim.new(0, 10)
 BSB.Parent = BtnScan
 
 BtnScan.MouseButton1Click:Connect(function()
-	MofenkNotify("REMOTE SPY", "Memindai folder Network & ReplicatedStorage...", 3)
+	MofenkNotify("REMOTE SPY", "Packet Inspector & Debugger Aktif!", 3)
 	local count = 0
 	if Network then
 		for _, v in ipairs(Network:GetDescendants()) do
@@ -1026,7 +1054,7 @@ BtnScan.MouseButton1Click:Connect(function()
 			end
 		end
 	end
-	MofenkNotify("REMOTE SPY", "Berhasil mendeteksi " .. tostring(count) + 5 .. " jalur remote aktif!", 4)
+	MofenkNotify("REMOTE SPY", "Terdeteksi " .. tostring(count) .. " jalur remote aman dan terhubung!", 4)
 end)
 
 -- TAB 9: CONFIG & WEBHOOK
@@ -1036,16 +1064,16 @@ AddToggle(Tab9, "Auto-Load Config Terakhir (On/Off)", "AutoLoadConfig")
 
 local WebhookContainer = Instance.new("Frame")
 WebhookContainer.Parent = Tab9
-WebhookContainer.Size = UDim2.new(1, 0, 0, 42)
+WebhookContainer.Size = UDim2.new(1, 0, 0, 46)
 WebhookContainer.BackgroundColor3 = Theme.Card
-WebhookContainer.BackgroundTransparency = 0.15
+WebhookContainer.BackgroundTransparency = 0.12
 local WHC = Instance.new("UICorner")
-WHC.CornerRadius = UDim.new(0, 8)
+WHC.CornerRadius = UDim.new(0, 10)
 WHC.Parent = WebhookContainer
 
 local WH_Lbl = Instance.new("TextLabel")
 WH_Lbl.Parent = WebhookContainer
-WH_Lbl.Position = UDim2.new(0, 12, 0, 0)
+WH_Lbl.Position = UDim2.new(0, 14, 0, 0)
 WH_Lbl.Size = UDim2.new(0.35, 0, 1, 0)
 WH_Lbl.Text = "Discord Webhook:"
 WH_Lbl.TextColor3 = Theme.Text
@@ -1066,7 +1094,7 @@ WH_Box.Font = Enum.Font.GothamBold
 WH_Box.BackgroundColor3 = Theme.Header
 WH_Box.BackgroundTransparency = 0.2
 local WHBC = Instance.new("UICorner")
-WHBC.CornerRadius = UDim.new(0, 6)
+WHBC.CornerRadius = UDim.new(0, 8)
 WHBC.Parent = WH_Box
 
 WH_Box.FocusLost:Connect(function()
@@ -1076,16 +1104,16 @@ end)
 
 local ConfigNameContainer = Instance.new("Frame")
 ConfigNameContainer.Parent = Tab9
-ConfigNameContainer.Size = UDim2.new(1, 0, 0, 42)
+ConfigNameContainer.Size = UDim2.new(1, 0, 0, 46)
 ConfigNameContainer.BackgroundColor3 = Theme.Card
-ConfigNameContainer.BackgroundTransparency = 0.15
+ConfigNameContainer.BackgroundTransparency = 0.12
 local CNC = Instance.new("UICorner")
-CNC.CornerRadius = UDim.new(0, 8)
+CNC.CornerRadius = UDim.new(0, 10)
 CNC.Parent = ConfigNameContainer
 
 local CNC_Lbl = Instance.new("TextLabel")
 CNC_Lbl.Parent = ConfigNameContainer
-CNC_Lbl.Position = UDim2.new(0, 12, 0, 0)
+CNC_Lbl.Position = UDim2.new(0, 14, 0, 0)
 CNC_Lbl.Size = UDim2.new(0.4, 0, 1, 0)
 CNC_Lbl.Text = "Nama Config:"
 CNC_Lbl.TextColor3 = Theme.Text
@@ -1105,7 +1133,7 @@ CNC_Box.Font = Enum.Font.GothamBold
 CNC_Box.BackgroundColor3 = Theme.Header
 CNC_Box.BackgroundTransparency = 0.2
 local CNBC = Instance.new("UICorner")
-CNBC.CornerRadius = UDim.new(0, 6)
+CNBC.CornerRadius = UDim.new(0, 8)
 CNBC.Parent = CNC_Box
 
 CNC_Box.FocusLost:Connect(function()
@@ -1118,15 +1146,15 @@ end)
 local function AddConfigButton(text, color, callback)
 	local Btn = Instance.new("TextButton")
 	Btn.Parent = Tab9
-	Btn.Size = UDim2.new(1, 0, 0, 38)
+	Btn.Size = UDim2.new(1, 0, 0, 40)
 	Btn.Text = text
 	Btn.TextColor3 = color
 	Btn.TextSize = 10
 	Btn.Font = Enum.Font.GothamBold
 	Btn.BackgroundColor3 = Theme.Card
-	Btn.BackgroundTransparency = 0.15
+	Btn.BackgroundTransparency = 0.12
 	local BC = Instance.new("UICorner")
-	BC.CornerRadius = UDim.new(0, 8)
+	BC.CornerRadius = UDim.new(0, 10)
 	BC.Parent = Btn
 	Btn.MouseButton1Click:Connect(callback)
 end
@@ -1152,7 +1180,7 @@ end)
 AddConfigButton("Kirim Tes Webhook Discord", Color3.fromRGB(0, 255, 150), function()
 	if _G.Mofenk.WebhookUrl ~= "" then
 		local dataToSend = {
-			["content"] = "🔔 **MofenkHub Modern Edition**\nPlayer: " .. LocalPlayer.Name .. "\nGame: Anime Dice\nStatus: Webhook Terhubung Aktif!"
+			["content"] = "🔔 **MofenkHub Aesthetic Edition**\nPlayer: " .. LocalPlayer.Name .. "\nGame: Anime Dice\nStatus: Webhook Terhubung Aktif!"
 		}
 		local success = pcall(function()
 			HttpService:PostAsync(_G.Mofenk.WebhookUrl, HttpService:JSONEncode(dataToSend))
@@ -1199,7 +1227,7 @@ TC.CornerRadius = UDim.new(0, 18)
 TC.Parent = ToggleBtn
 ToggleBtn.MouseButton1Click:Connect(function() MainFrame.Visible = not MainFrame.Visible end)
 
--- 11. THREAD UTAMA EKSEKUSI BACKEND (AMAN DARI ERROR NIL)
+-- 11. THREAD UTAMA EKSEKUSI BACKEND
 task.spawn(function()
 	task.spawn(function()
 		pcall(function()
@@ -1225,8 +1253,8 @@ task.spawn(function()
 		end)
 	end)
 
-	MofenkNotify("MOFENK HUB", "Sistem Aman & Stabil Aktif!", 4)
-	while task.wait(1.5) do
+	MofenkNotify("MOFENK HUB", "Sistem Aesthetic Suite Siap Digunakan!", 4)
+	while task.wait(2.0) do
 		if _G.__ANIMEDICE ~= generation then break end
 
 		pcall(function()
@@ -1308,7 +1336,6 @@ task.spawn(function()
 			end)
 		end
 
-		-- Logika Aman Auto Level Up Unit Slot
 		if _G.Mofenk.AutoLevel and R.LevelUpSlot then
 			pcall(function()
 				local d = data()
@@ -1327,26 +1354,36 @@ task.spawn(function()
 			pcall(function() R.BuyUpgrade:FireServer() end)
 		end
 
-		-- Logika Tower Aman
-		if _G.Mofenk.AutoTower and R.PlayTower then
-			pcall(function()
-				local target = _G.Mofenk.SelectedTowerSingle
-				_G.Mofenk.TowerLiveStatus = "Single: " .. target
-				_G.Mofenk.TowerCurrentLevel = _G.Mofenk.TowerCurrentLevel + 1
-				R.PlayTower:InvokeServer(target)
-			end)
-			task.wait(8)
-		elseif _G.Mofenk.AutoMixTower and R.PlayTower then
-			pcall(function()
-				local mixList = towersList
-				local chosen = mixList[math.random(1, #mixList)]
-				_G.Mofenk.TowerLiveStatus = "Mix/Random: " .. chosen
-				_G.Mofenk.TowerCurrentLevel = _G.Mofenk.TowerCurrentLevel + 1
-				R.PlayTower:InvokeServer(chosen)
-			end)
-			task.wait(8)
+		-- Logika Tower Cerdas (Keluar Otomatis & Ganti Target Instan)
+		local isInGameTower = false
+		pcall(function()
+			if workspace:FindFirstChild("Map") or workspace:FindFirstChild("Enemies") or workspace:FindFirstChild("TowersGame") then
+				isInGameTower = true
+			end
+		end)
+
+		if not isInGameTower then
+			if _G.Mofenk.AutoTower and R.PlayTower then
+				pcall(function()
+					local target = _G.Mofenk.SelectedTowerSingle
+					_G.Mofenk.TowerLiveStatus = "Masuk: " .. target
+					_G.Mofenk.TowerCurrentLevel = _G.Mofenk.TowerCurrentLevel + 1
+					R.PlayTower:InvokeServer(target)
+				end)
+				task.wait(10)
+			elseif _G.Mofenk.AutoMixTower and R.PlayTower then
+				pcall(function()
+					local chosen = towersList[math.random(1, #towersList)]
+					_G.Mofenk.TowerLiveStatus = "Mix: " .. chosen
+					_G.Mofenk.TowerCurrentLevel = _G.Mofenk.TowerCurrentLevel + 1
+					R.PlayTower:InvokeServer(chosen)
+				end)
+				task.wait(10)
+			else
+				_G.Mofenk.TowerLiveStatus = "Standby"
+			end
 		else
-			_G.Mofenk.TowerLiveStatus = "Standby / Berhenti"
+			_G.Mofenk.TowerLiveStatus = "Sedang Bertarung di Tower"
 		end
 
 		if _G.Mofenk.AutoEquipTower and R.EquipTowerUnit then
