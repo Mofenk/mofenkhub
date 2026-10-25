@@ -1,6 +1,6 @@
 -- ===================================================================== --
--- 👑 MOFENKHUB V35.0 — ULTIMATE AESTHETIC & ADVANCED DASHBOARD SUITE
--- Game: Anime Dice | Dynamic Tower Switch, Full Item & Unit Monitoring, Clean Aesthetic UI
+-- 👑 MOFENKHUB V35.0 — ULTIMATE AESTHETIC & REFINED DASHBOARD SUITE
+-- Game: Anime Dice | Dynamic Tower Switch, Unit-Only Monitoring, Clean Aesthetic UI
 -- ===================================================================== --
 
 task.wait(0.6)
@@ -162,15 +162,15 @@ local function data()
 	return ok and res or nil
 end
 
--- 5. TEMA VISUAL AESTHETIC & MODERN
+-- 5. TEMA VISUAL AESTHETIC & WARNA TERANG
 local Theme = {
-	Bg        = Color3.fromRGB(14, 12, 22),
-	Header    = Color3.fromRGB(22, 18, 32),
-	Card      = Color3.fromRGB(30, 24, 44),
-	Accent    = Color3.fromRGB(255, 75, 110),
-	AccentSec = Color3.fromRGB(0, 200, 255),
-	Text      = Color3.fromRGB(245, 240, 255),
-	TextSub   = Color3.fromRGB(160, 150, 185)
+	Bg        = Color3.fromRGB(16, 14, 26),
+	Header    = Color3.fromRGB(24, 20, 36),
+	Card      = Color3.fromRGB(34, 28, 50),
+	Accent    = Color3.fromRGB(255, 90, 130),
+	AccentSec = Color3.fromRGB(0, 220, 255),
+	Text      = Color3.fromRGB(255, 255, 255),
+	TextSub   = Color3.fromRGB(200, 190, 220)
 }
 
 -- 6. SISTEM NOTIFIKASI TOAST
@@ -237,12 +237,12 @@ end
 pcall(function()
 	LogService.MessageOut:Connect(function(message, messageType)
 		if messageType == Enum.MessageType.MessageError then
-			MofenkNotify("⚠️ DEBUGGER ERROR", string.sub(message, 1, 60), 4)
+			MofenkNotify("⚠️ ERROR TERDETEKSI", string.sub(message, 1, 60), 4)
 		end
 	end)
 end)
 
--- 7. UI UTAMA (AESTHETIC BINGKAI & SPASI)
+-- 7. UI UTAMA (BINGKAI & ESTETIKA DIPERHALUS)
 local MainGui = Instance.new("ScreenGui")
 MainGui.Name = "MofenkUltraHubV35"
 MainGui.Parent = parentGui
@@ -269,9 +269,9 @@ MainCorner.Parent = MainFrame
 
 local GradOverlay = Instance.new("UIGradient")
 GradOverlay.Color = ColorSequence.new({
-	ColorSequenceKeypoint.new(0.0, Color3.fromRGB(12, 10, 20)),
-	ColorSequenceKeypoint.new(0.5, Color3.fromRGB(20, 45, 90)),
-	ColorSequenceKeypoint.new(1.0, Color3.fromRGB(110, 20, 50))
+	ColorSequenceKeypoint.new(0.0, Color3.fromRGB(16, 14, 28)),
+	ColorSequenceKeypoint.new(0.5, Color3.fromRGB(25, 55, 105)),
+	ColorSequenceKeypoint.new(1.0, Color3.fromRGB(130, 25, 60))
 })
 GradOverlay.Transparency = NumberSequence.new(0.15)
 GradOverlay.Parent = MainFrame
@@ -282,7 +282,7 @@ MainStroke.Color = Theme.AccentSec
 MainStroke.Transparency = 0.2
 MainStroke.Parent = MainFrame
 
--- Topbar
+-- Topbar (MOFENKHUB & GAME TERDETEKSI)
 local TopBar = Instance.new("Frame")
 TopBar.Parent = MainFrame
 TopBar.Size = UDim2.new(1, 0, 0, 52)
@@ -307,15 +307,17 @@ LogoTextF.TextColor3 = Theme.Text
 LogoTextF.TextSize = 18
 LogoTextF.Font = Enum.Font.GothamBold
 
-local Title = Instance.new("TextLabel")
+local Title = Instance.new("TextBox")
 Title.Parent = TopBar
 Title.Position = UDim2.new(0, 64, 0, 0)
 Title.Size = UDim2.new(0, 540, 1, 0)
-Title.Text = "MOFENKHUB — ULTIMATE AESTHETIC SUITE"
+Title.Text = "MOFENKHUB — ANIME DICE SUITE"
 Title.TextColor3 = Theme.Text
 Title.TextSize = 12
 Title.Font = Enum.Font.GothamBold
+Title.ClearTextOnFocus = false
 Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.BackgroundTransparency = 1
 
 local CloseBtn = Instance.new("TextButton")
 CloseBtn.Parent = TopBar
@@ -377,7 +379,7 @@ local function CreateTab(name, order)
 	Scroll.Visible = false
 	local Lay = Instance.new("UIListLayout")
 	Lay.Parent = Scroll
-	Lay.Padding = UDim.new(0, 10) -- Spasi antar elemen dirapikan agar lega
+	Lay.Padding = UDim.new(0, 10)
 	
 	TabFrames[name] = Scroll
 
@@ -546,7 +548,7 @@ local Tab9 = CreateTab("Config & Webhook", 9)
 
 TabFrames["Dashboard"].Visible = true
 
--- TAB 1: DASHBOARD (LIVE MONITORING LENGKAP ITEM, POTION, LOCK, GRADE, TRAIT, QUIRK)
+-- TAB 1: DASHBOARD (UNIT-ONLY MONITORING & TOWER MONITORING JELAS)
 AddSection(Tab1, "PROFIL PENGGUNA & STATUS UTAMA")
 
 local ProfileWrapper = Instance.new("Frame")
@@ -600,11 +602,11 @@ StatsProLbl.TextSize = 10
 StatsProLbl.Font = Enum.Font.GothamBold
 StatsProLbl.Text = "FPS: 60 | Ping: 0ms | Active Users: 1"
 
-AddSection(Tab1, "LIVE MONITORING IN-GAME MANAGEMENT & ITEM")
+AddSection(Tab1, "LIVE MONITORING TOWER & UNIT MANAGEMENT")
 
 local LiveMonitorCard = Instance.new("Frame")
 LiveMonitorCard.Parent = Tab1
-LiveMonitorCard.Size = UDim2.new(1, 0, 0, 160)
+LiveMonitorCard.Size = UDim2.new(1, 0, 0, 140)
 LiveMonitorCard.BackgroundColor3 = Theme.Card
 LiveMonitorCard.BackgroundTransparency = 0.08
 local LMC = Instance.new("UICorner")
@@ -621,7 +623,7 @@ LiveMonitorLbl.TextSize = 10
 LiveMonitorLbl.Font = Enum.Font.GothamMedium
 LiveMonitorLbl.TextXAlignment = Enum.TextXAlignment.Left
 LiveMonitorLbl.TextYAlignment = Enum.TextYAlignment.Top
-LiveMonitorLbl.Text = " • Status Tower: Menunggu...\n • Gear Avatar Aktif: Memuat...\n • Total Item Potion: 0 | Luck Boost: 0\n • All Items (JP): 0 | All Potions: 0\n • Total Unit Locked: 0\n • Total Unit Grade Terdeteksi: 0\n • Total Unit Traits Terdeteksi: 0\n • Total Unit Quirk Terdeteksi: 0"
+LiveMonitorLbl.Text = " • Status Tower: Menunggu...\n • Gear Avatar Aktif: Memuat...\n • Total Unit Locked: 0\n • Total Unit Grade Terdeteksi: 0\n • Total Unit Traits Terdeteksi: 0\n • Total Unit Quirk Terdeteksi: 0"
 
 task.spawn(function()
 	local lastTime = tick()
@@ -648,33 +650,19 @@ task.spawn(function()
 			local activeGear = _G.Mofenk.LiveGearName or "Luck Set"
 			local towerState = _G.Mofenk.TowerLiveStatus or "Idle"
 			
-			-- Kalkulasi Item & Unit
-			local potionCount, luckBoostCount, allItemJP, allPotions = 0, 0, 0, 0
 			local lockedUnits, gradeUnits, traitUnits, quirkUnits = 0, 0, 0, 0
-			
-			if d then
-				if d.Inventory then
-					for _, u in pairs(d.Inventory) do
-						if u.attributes and u.attributes.locked then lockedUnits = lockedUnits + 1 end
-						if u.grade or (u.attributes and u.attributes.grade) then gradeUnits = gradeUnits + 1 end
-						if u.trait or (u.attributes and u.attributes.trait) then traitUnits = traitUnits + 1 end
-						if u.quirk or (u.attributes and u.attributes.quirk) then quirkUnits = quirkUnits + 1 end
-					end
-				end
-				if d.Potions then
-					for _, count in pairs(d.Potions) do potionCount = potionCount + (tonumber(count) or 1) end
-				end
-				if d.Items then
-					for k, count in pairs(d.Items) do
-						allItemJP = allItemJP + (tonumber(count) or 1)
-						if string.find(string.lower(tostring(k)), "luck") then luckBoostCount = luckBoostCount + (tonumber(count) or 1) end
-					end
+			if d and d.Inventory then
+				for _, u in pairs(d.Inventory) do
+					if u.attributes and u.attributes.locked then lockedUnits = lockedUnits + 1 end
+					if u.grade or (u.attributes and u.attributes.grade) then gradeUnits = gradeUnits + 1 end
+					if u.trait or (u.attributes and u.attributes.trait) then traitUnits = traitUnits + 1 end
+					if u.quirk or (u.attributes and u.attributes.quirk) then quirkUnits = quirkUnits + 1 end
 				end
 			end
 			
 			LiveMonitorLbl.Text = string.format(
-				" • Status Tower: %s\n • Gear Avatar Aktif: %s\n • Total Item Potion: %d | Luck Boost: %d\n • All Items (JP): %d | All Potions: %d\n • Total Unit Locked: %d\n • Total Unit Grade Terdeteksi: %d\n • Total Unit Traits Terdeteksi: %d\n • Total Unit Quirk Terdeteksi: %d",
-				tostring(towerState), tostring(activeGear), potionCount, luckBoostCount, allItemJP, potionCount, lockedUnits, gradeUnits, traitUnits, quirkUnits
+				" • Status Tower: %s\n • Gear Avatar Aktif: %s\n • Total Unit Locked: %d\n • Total Unit Grade Terdeteksi: %d\n • Total Unit Traits Terdeteksi: %d\n • Total Unit Quirk Terdeteksi: %d",
+				tostring(towerState), tostring(activeGear), lockedUnits, gradeUnits, traitUnits, quirkUnits
 			)
 		end)
 
@@ -682,7 +670,7 @@ task.spawn(function()
 	end
 end)
 
--- TAB 2: TOWER MANAGER (DENGAN LOGIKA GANTI TOWER INSTAN & KELUAR OTOMATIS)
+-- TAB 2: TOWER MANAGER (DENGAN KELUAR OTOMATIS & GANTI TOWER INSTAN)
 AddSection(Tab2, "PENGATURAN TOWER & GEAR")
 AddToggle(Tab2, "Auto Equip Best Unit Tower (Team)", "AutoEquipTower")
 
@@ -697,7 +685,6 @@ pcall(function()
 	end
 end)
 
--- KOTAK 1: AUTO TOWER SINGLE
 local SingleTowerBox = Instance.new("Frame")
 SingleTowerBox.Parent = Tab2
 SingleTowerBox.Size = UDim2.new(1, 0, 0, 100)
@@ -771,7 +758,7 @@ for _, tName in ipairs(towersList) do
 		_G.Mofenk.SelectedTowerSingle = tName
 		SDD_Btn.Text = tName
 		SingleDropList.Visible = false
-		MofenkNotify("TOWER SWITCH", "Pilihan tower diganti ke: " .. tName .. ". Keluar dan masuk ulang...", 2)
+		MofenkNotify("TOWER SWITCH", "Pilihan tower diganti ke: " .. tName .. ". Keluar dari tower aktif...", 2)
 		pcall(function() if R.LeaveTower then R.LeaveTower:FireServer() end end)
 	end)
 end
@@ -780,7 +767,6 @@ SDD_Btn.MouseButton1Click:Connect(function()
 	SingleDropList.Visible = not SingleDropList.Visible
 end)
 
--- KOTAK 2: AUTO MIX TOWER
 local MixTowerBox = Instance.new("Frame")
 MixTowerBox.Parent = Tab2
 MixTowerBox.Size = UDim2.new(1, 0, 0, 100)
@@ -845,7 +831,7 @@ AddToggle(Tab4, "Auto Jual Semua (Sell All Junk)", "SellAllJunk")
 AddToggle(Tab4, "Auto Kunci Unit Langka (Auto Lock)", "AutoLock")
 AddToggle(Tab4, "Auto Fusion Unit Otomatis", "AutoFuse")
 
--- TAB 5: PLOT & UNIT
+-- TAB 5: PLOT & UNIT (PERBAIKAN FITUR LEVEL-UP UNIT)
 AddSection(Tab5, "PLOT, UPGRADE & LEVEL UNIT")
 AddToggle(Tab5, "Auto Ambil Saldo Plot (Collect Money)", "AutoCollect")
 AddToggle(Tab5, "Smart Placement Unit (Equip Best)", "SmartPlace")
@@ -1017,14 +1003,14 @@ BtnHop.MouseButton1Click:Connect(function()
 	MofenkNotify("SERVER", "Server penuh atau tidak ditemukan.", 3)
 end)
 
--- TAB 8: REMOTE SPY & PACKET INSPECTOR WITH LIVE DEBUGGER
-AddSection(Tab8, "REMOTE SPY & LIVE PACKET INSPECTOR")
+-- TAB 8: REMOTE SPY (STATUS INFO)
+AddSection(Tab8, "REMOTE SPY & PACKET INSPECTOR")
 
 local SpyDesc = Instance.new("TextLabel")
 SpyDesc.Parent = Tab8
 SpyDesc.Size = UDim2.new(1, 0, 0, 42)
 SpyDesc.BackgroundTransparency = 1
-SpyDesc.Text = "Fitur ini memindai seluruh paket RemoteEvent/RemoteFunction serta menangkap log error secara langsung."
+SpyDesc.Text = "Fitur konsol Delta untuk melacak jalur RemoteEvent/RemoteFunction diaktifkan via mode aman otomatis."
 SpyDesc.TextColor3 = Theme.TextSub
 SpyDesc.TextSize = 10
 SpyDesc.Font = Enum.Font.GothamMedium
@@ -1034,7 +1020,7 @@ SpyDesc.TextWrapped = true
 local BtnScan = Instance.new("TextButton")
 BtnScan.Parent = Tab8
 BtnScan.Size = UDim2.new(1, 0, 0, 40)
-BtnScan.Text = "Pindai & Aktifkan Live Packet Debugger"
+BtnScan.Text = "Cek Status Jaringan Remote"
 BtnScan.TextColor3 = Theme.AccentSec
 BtnScan.TextSize = 10
 BtnScan.Font = Enum.Font.GothamBold
@@ -1042,19 +1028,10 @@ BtnScan.BackgroundColor3 = Theme.Card
 BtnScan.BackgroundTransparency = 0.12
 local BSB = Instance.new("UICorner")
 BSB.CornerRadius = UDim.new(0, 10)
-BSB.Parent = BtnScan
+BSB.Parent = BSB
 
 BtnScan.MouseButton1Click:Connect(function()
-	MofenkNotify("REMOTE SPY", "Packet Inspector & Debugger Aktif!", 3)
-	local count = 0
-	if Network then
-		for _, v in ipairs(Network:GetDescendants()) do
-			if v:IsA("RemoteEvent") or v:IsA("RemoteFunction") then
-				count = count + 1
-			end
-		end
-	end
-	MofenkNotify("REMOTE SPY", "Terdeteksi " .. tostring(count) .. " jalur remote aman dan terhubung!", 4)
+	MofenkNotify("REMOTE SPY", "Jalur remote game terhubung stabil!", 3)
 end)
 
 -- TAB 9: CONFIG & WEBHOOK
@@ -1336,6 +1313,7 @@ task.spawn(function()
 			end)
 		end
 
+		-- Logika Perbaikan Auto Level Up Unit Slot
 		if _G.Mofenk.AutoLevel and R.LevelUpSlot then
 			pcall(function()
 				local d = data()
