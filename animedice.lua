@@ -1,6 +1,6 @@
 -- ===================================================================== --
--- 👑 MOFENKHUB V55.0 — THE MASTER PIECE (CONFIG, M-LOGO FRONT, CLEAN TABS)
--- Game: Anime Dice | Perfected ZIndex, Config Manager, Smooth Tabs
+-- 👑 MOFENKHUB V60.0 — THE ABSOLUTE MASTER SUITE (AUTO ROLL & SELL FIXED)
+-- Game: Anime Dice | Fixed Roll Service & Auto Sell Remotes
 -- ===================================================================== --
 
 --!nocheck
@@ -23,18 +23,18 @@ if not successGui or not parentGui then parentGui = LocalPlayer:WaitForChild("Pl
 pcall(function() for _, v in pairs(parentGui:GetChildren()) do if string.find(v.Name, "Mofenk") then v:Destroy() end end end)
 
 -- ===================================================================== --
--- 1. STATE & CONFIGURATION (LIST, SAVE, LOAD)
+-- 1. STATE & CONFIGURATION
 -- ===================================================================== --
 _G.__ANIMEDICE = (_G.__ANIMEDICE or 0) + 1
 local generation = _G.__ANIMEDICE
 
 local F = {
 	autoSave = true, themeIndex = 1,
-	-- Farm
+	-- Farm & Roll
 	collect = false, levelup = false, maxLevel = 40, smartLevel = false,
 	rebirth = false, upgrades = false, buyDice = false, equipDice = true, autoRoll = false,
-	-- Inv & Sell
-	sellAuto = false, smartSell = false, sellThresholdText = "1t", autoFuse = false,
+	-- Inv & Sell (Fixed)
+	sellAuto = false, smartSell = false, sellRarityLimit = 2, autoFuse = false,
 	-- Potion
 	potionAuto = false, potionBest = true, potionSpecific = {},
 	-- Reroll
@@ -67,29 +67,40 @@ local function ApplyTheme(idx)
 	for _, v in ipairs(ThemeElements.TextAcc) do v.TextColor3 = t.Acc1 end
 end
 
--- Config File Manager
-local CFG_FILE = "MofenkHub_V55_Config.json"
+local CFG_FILE = "MofenkHub_V60_Config.json"
 local function saveConfig() if writefile then pcall(function() writefile(CFG_FILE, HttpService:JSONEncode(F)) end) end end
 local function loadConfig() if readfile and isfile and isfile(CFG_FILE) then pcall(function() local d = HttpService:JSONDecode(readfile(CFG_FILE)); for k,v in pairs(d) do F[k]=v end end) end end
 loadConfig()
 
 -- ===================================================================== --
--- 2. BACKEND & REMOTES
+-- 2. BACKEND & REMOTES (FIXED ROLL & SELL)
 -- ===================================================================== --
 local Network = ReplicatedStorage:WaitForChild("Network", 15); local Framework = ReplicatedStorage:WaitForChild("Framework", 15)
 local function svc(p) local n = Network; for x in string.gmatch(p, "[^%.]+") do n = n and n:FindFirstChild(x) end; return n end
 
 local R = {
-	CollectBalance = svc("PlotService.RE.CollectBalance"), LevelUpSlot = svc("PlotService.RE.LevelUpSlot"),
-	BuyDice = svc("DiceShopService.RE.BuyDice"), EquipDice = svc("DiceShopService.RE.EquipDice"),
-	Rebirth = svc("RebirthService.RE.Rebirth"), BuyUpgrade = svc("RE.BuyUpgrade") or svc("PlotService.RE.BuyPadUpgrade"),
-	GradeRoll = svc("GradeService.RE.Roll"), TraitRoll = svc("TraitService.RE.Roll"), BoostUse = svc("BoostService.RE.Use"),
-	PlayTower = svc("Towers.RF.PlayTower") or svc("Towers.RE.PlayTower"), CompleteFloor = svc("Towers.RF.CompleteTowerFloor"),
-	CancelTower = svc("Towers.RF.CancelTower"), BestTowerTeam = svc("Towers.RE.EquipBestTowerTeam"),
-	RedeemCode = svc("CodesService.RE.RedeemCode") or svc("MonetizationService.RE.RedeemCode"),
-	QuestClaim = svc("QuestService.RE.Claim"), ClaimDaily = svc("DailyRewardService.RE.Claim"),
-	ClaimOffline = svc("OfflineEarningsService.RE.Claim"), ClaimGroup = svc("GroupRewardService.RE.Claim"),
-	Fuse = svc("FusingService.RE.Fuse")
+	RollDice       = svc("RollService.RF.RollDice") or svc("RollService.RE.RollDice"),
+	CollectBalance = svc("PlotService.RE.CollectBalance"), 
+	LevelUpSlot    = svc("PlotService.RE.LevelUpSlot"),
+	BuyDice        = svc("DiceShopService.RE.BuyDice"), 
+	EquipDice      = svc("DiceShopService.RE.EquipDice"),
+	Rebirth        = svc("RebirthService.RE.Rebirth"), 
+	BuyUpgrade     = svc("RE.BuyUpgrade") or svc("PlotService.RE.BuyPadUpgrade"),
+	GradeRoll      = svc("GradeService.RE.Roll"), 
+	TraitRoll      = svc("TraitService.RE.Roll"), 
+	BoostUse       = svc("BoostService.RE.Use"),
+	PlayTower      = svc("Towers.RF.PlayTower") or svc("Towers.RE.PlayTower"), 
+	CompleteFloor  = svc("Towers.RF.CompleteTowerFloor"),
+	CancelTower    = svc("Towers.RF.CancelTower"), 
+	BestTowerTeam  = svc("Towers.RE.EquipBestTowerTeam"),
+	RedeemCode     = svc("CodesService.RE.RedeemCode") or svc("MonetizationService.RE.RedeemCode"),
+	QuestClaim     = svc("QuestService.RE.Claim"), 
+	ClaimDaily     = svc("DailyRewardService.RE.Claim"),
+	ClaimOffline   = svc("OfflineEarningsService.RE.Claim"), 
+	ClaimGroup     = svc("GroupRewardService.RE.Claim"),
+	SellInventory  = svc("SellService.RF.SellInventory") or svc("SellService.RE.SellInventory"),
+	UpdateAutoSell = svc("SellService.RE.UpdateAutoSell"),
+	Fuse           = svc("FusingService.RE.Fuse")
 }
 
 local G = {}
@@ -119,7 +130,7 @@ local function currencyAmount(name) local t = 0; for _, e in pairs(inventory()) 
 -- 3. INTERACTIVE "M" LOGO TOGGLE (ZINDEX 999 - SELALU DI DEPAN)
 -- ===================================================================== --
 local ToggleGui = Instance.new("ScreenGui"); ToggleGui.Name = "MofenkToggleFront"; ToggleGui.Parent = parentGui; ToggleGui.ResetOnSpawn = false
-ToggleGui.DisplayOrder = 99999 -- Pastikan paling atas
+ToggleGui.DisplayOrder = 99999
 
 local ToggleBtn = Instance.new("TextButton"); ToggleBtn.Parent = ToggleGui; ToggleBtn.Size = UDim2.new(0, 55, 0, 55); ToggleBtn.Position = UDim2.new(0.02, 0, 0.4, 0)
 ToggleBtn.BackgroundColor3 = THEMES[1].Card; ToggleBtn.Text = "M"; ToggleBtn.Font = Enum.Font.GothamBlack; ToggleBtn.TextSize = 28; ToggleBtn.TextColor3 = THEMES[1].Acc1; ToggleBtn.ZIndex = 99999
@@ -142,7 +153,7 @@ UserInputService.InputChanged:Connect(function(input)
 end)
 
 -- ===================================================================== --
--- 4. MAIN AESTHETIC UI SETUP (TRANSPARAN & ELEGAN)
+-- 4. MAIN AESTHETIC UI SETUP
 -- ===================================================================== --
 local MainGui = Instance.new("ScreenGui"); MainGui.Name = "MofenkUltraHub"; MainGui.Parent = parentGui
 local MainFrame = Instance.new("Frame"); MainFrame.Parent = MainGui; MainFrame.Size = UDim2.new(0, 900, 0, 580); MainFrame.Position = UDim2.new(0.5, -450, 0.5, -290)
@@ -154,7 +165,7 @@ local StrokeGrad = Instance.new("UIGradient"); StrokeGrad.Parent = MainStroke; t
 ToggleBtn.MouseButton1Click:Connect(function() MainFrame.Visible = not MainFrame.Visible end)
 
 local TopBar = Instance.new("Frame"); TopBar.Parent = MainFrame; TopBar.Size = UDim2.new(1, 0, 0, 48); TopBar.BackgroundTransparency = 0.2; table.insert(ThemeElements.Header, TopBar)
-local Title = Instance.new("TextLabel"); Title.Parent = TopBar; Title.Position = UDim2.new(0, 20, 0, 0); Title.Size = UDim2.new(0, 500, 1, 0); Title.Text = "👑 MOFENKHUB V55.0  |  ANIME DICE PRO"; Title.TextSize = 14; Title.Font = Enum.Font.GothamBlack; Title.TextXAlignment = Enum.TextXAlignment.Left; Title.BackgroundTransparency = 1; table.insert(ThemeElements.TextAcc, Title)
+local Title = Instance.new("TextLabel"); Title.Parent = TopBar; Title.Position = UDim2.new(0, 20, 0, 0); Title.Size = UDim2.new(0, 500, 1, 0); Title.Text = "👑 MOFENKHUB V60.0  |  ANIME DICE PRO"; Title.TextSize = 14; Title.Font = Enum.Font.GothamBlack; Title.TextXAlignment = Enum.TextXAlignment.Left; Title.BackgroundTransparency = 1; table.insert(ThemeElements.TextAcc, Title)
 
 local CloseBtn = Instance.new("TextButton"); CloseBtn.Parent = TopBar; CloseBtn.Position = UDim2.new(1, -42, 0, 9); CloseBtn.Size = UDim2.new(0, 30, 0, 30); CloseBtn.Text = "✕"; CloseBtn.TextColor3 = Color3.fromRGB(255,255,255); CloseBtn.Font = Enum.Font.GothamBold; CloseBtn.BackgroundTransparency = 0.2; table.insert(ThemeElements.Card, CloseBtn)
 local CC = Instance.new("UICorner"); CC.CornerRadius = UDim.new(0, 8); CC.Parent = CloseBtn
@@ -300,10 +311,10 @@ task.spawn(function()
 	end) end
 end)
 
--- 2. FARMING
-local G_Farm1 = AddGroup(T_Farm, "PLOT & REBIRTH")
+-- 2. FARMING (AUTO ROLL FIXED)
+local G_Farm1 = AddGroup(T_Farm, "PLOT, ROLL & REBIRTH")
 AddToggle(G_Farm1, "Auto Collect Plot", "collect")
-AddToggle(G_Farm1, "Auto Roll Dadu", "autoRoll", function(v) local s = getSig and getSig("RollService", "SetAutoRoll"); if s then pcall(function() s:Fire(v) end) end end)
+AddToggle(G_Farm1, "Auto Roll Dadu", "autoRoll")
 AddToggle(G_Farm1, "Auto Rebirth (Anti-Spam)", "rebirth")
 
 local G_Farm2 = AddGroup(T_Farm, "LEVELING & UPGRADES")
@@ -311,10 +322,11 @@ AddToggle(G_Farm2, "Auto Level Up Unit", "levelup")
 AddInput(G_Farm2, "Max Level Batas:", "maxLevel", true)
 AddToggle(G_Farm2, "Auto Upgrade Skill Tree", "upgrades")
 
--- 3. INVENTORY
-local G_Inv = AddGroup(T_Inv, "MANAGEMENT & FUSION")
+-- 3. INVENTORY (AUTO SELL FIXED)
+local G_Inv = AddGroup(T_Inv, "MANAGEMENT & AUTO SELL")
 AddToggle(G_Inv, "Auto Sell Unit", "sellAuto")
 AddToggle(G_Inv, "Smart Sell (Batas Rarity)", "smartSell")
+AddInput(G_Inv, "Max Rarity Jual (1-5):", "sellRarityLimit", true)
 AddToggle(G_Inv, "Auto Fusion Unit", "autoFuse")
 
 -- 4. POTIONS
@@ -350,7 +362,7 @@ local G_TwrMon = AddGroup(T_Twr, "LIVE TOWER MONITORING")
 local TwrLbl = Instance.new("TextLabel"); TwrLbl.Parent = G_TwrMon; TwrLbl.Size = UDim2.new(1,0,0,50); TwrLbl.BackgroundTransparency = 1; TwrLbl.TextColor3 = Color3.fromRGB(255,255,255); TwrLbl.TextSize = 11; TwrLbl.Font = Enum.Font.GothamMedium; TwrLbl.TextXAlignment = Enum.TextXAlignment.Left; TwrLbl.TextYAlignment = Enum.TextYAlignment.Top
 task.spawn(function() while task.wait(0.5) do pcall(function() TwrLbl.Text = string.format("🎮 Status: %s\n🏢 Lantai: %d | 💎 Gems Didapat: %d", STATE.towerLive, STATE.towerFloor, STATE.towerDrops) end) end end)
 
--- 8. SETTINGS & CONFIG LIST MANAGER
+-- 8. SETTINGS & CONFIG
 local G_Set1 = AddGroup(T_Set, "TEMA & WARNA (NEON GLOW)")
 local BtnTheme = Instance.new("TextButton"); BtnTheme.Parent = G_Set1; BtnTheme.Size = UDim2.new(1, 0, 0, 34); BtnTheme.Text = "🎲 ACAK TEMA WARNA"; BtnTheme.Font = Enum.Font.GothamBlack; BtnTheme.TextSize = 11; table.insert(ThemeElements.Card, BtnTheme); table.insert(ThemeElements.TextAcc, BtnTheme); local BTC = Instance.new("UICorner"); BTC.CornerRadius = UDim.new(0,6); BTC.Parent = BtnTheme
 BtnTheme.MouseButton1Click:Connect(function() F.themeIndex = math.random(1, #THEMES); ApplyTheme(F.themeIndex); if F.autoSave then pcall(saveConfig) end end)
@@ -361,7 +373,7 @@ AddToggle(G_SetConfig, "Auto Save & Auto Load Config", "autoSave")
 local BtnSave = Instance.new("TextButton"); BtnSave.Parent = G_SetConfig; BtnSave.Size = UDim2.new(1, 0, 0, 32); BtnSave.Text = "💾 SAVE CONFIG SEKARANG"; BtnSave.Font = Enum.Font.GothamBold; BtnSave.TextSize = 11; table.insert(ThemeElements.Header, BtnSave); table.insert(ThemeElements.TextAcc, BtnSave); local BTS = Instance.new("UICorner"); BTS.CornerRadius = UDim.new(0,6); BTS.Parent = BtnSave
 BtnSave.MouseButton1Click:Connect(function() pcall(saveConfig) end)
 
-local BtnLoad = Instance.new("TextButton"); BtnLoad.Parent = G_SetConfig; BtnLoad.Size = UDim2.new(1, 0, 0, 32); BtnLoad.Text = "📂 LOAD CONFIG"; BtnLoad.Font = Enum.Font.GothamBold; BtnSave.TextSize = 11; table.insert(ThemeElements.Header, BtnLoad); table.insert(ThemeElements.TextAcc, BtnLoad); local BTL = Instance.new("UICorner"); BTL.CornerRadius = UDim.new(0,6); BTL.Parent = BtnLoad
+local BtnLoad = Instance.new("TextButton"); BtnLoad.Parent = G_SetConfig; BtnLoad.Size = UDim2.new(1, 0, 0, 32); BtnLoad.Text = "📂 LOAD CONFIG"; BtnLoad.Font = Enum.Font.GothamBold; BtnLoad.TextSize = 11; table.insert(ThemeElements.Header, BtnLoad); table.insert(ThemeElements.TextAcc, BtnLoad); local BTL = Instance.new("UICorner"); BTL.CornerRadius = UDim.new(0,6); BTL.Parent = BtnLoad
 BtnLoad.MouseButton1Click:Connect(function() pcall(loadConfig); ApplyTheme(F.themeIndex) end)
 
 local G_Set2 = AddGroup(T_Set, "OPTIMALISASI & TOOLS")
@@ -387,13 +399,60 @@ BtnHop.MouseButton1Click:Connect(function()
 end)
 
 -- ===================================================================== --
--- 6. FULL BACKEND THREADS
+-- 6. FULL BACKEND THREADS (FIXED AUTO ROLL & AUTO SELL)
 -- ===================================================================== --
 ApplyTheme(F.themeIndex)
 
 LocalPlayer.Idled:Connect(function() if F.afk then pcall(function() game:GetService("VirtualUser"):Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame); task.wait(1); game:GetService("VirtualUser"):Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame) end) end end)
 
 local function unlockedSlots() local arr={}; local rb = rebirthAmt(); pcall(function() for i=1, (G.PlotConfig.GetMaxSlots(rb) or 15) do if rb >= (G.PlotConfig.GetSlotRebirthRequirement(i) or 0) then table.insert(arr, i) end end end); return arr end
+
+-- Auto Roll Thread (Fixed)
+task.spawn(function()
+	while _G.__ANIMEDICE == generation do
+		if F.autoRoll and R.RollDice then
+			pcall(function()
+				if typeof(R.RollDice) == "RemoteFunction" then
+					R.RollDice:InvokeServer()
+				elseif typeof(R.RollDice) == "RemoteEvent" then
+					R.RollDice:FireServer()
+				end
+			end)
+			task.wait(0.25)
+		else
+			task.wait(1)
+		end
+	end
+end)
+
+-- Auto Sell Thread (Fixed)
+task.spawn(function()
+	while _G.__ANIMEDICE == generation do
+		if F.sellAuto and R.SellInventory then
+			pcall(function()
+				local keysToSell = {}
+				for key, e in pairs(inventory()) do
+					if isUnitEntry(e) then
+						local rarity = tonumber(e.rarity) or tonumber(e.tier) or 1
+						if F.smartSell and rarity <= (F.sellRarityLimit or 2) then
+							table.insert(keysToSell, key)
+						elseif not F.smartSell then
+							table.insert(keysToSell, key)
+						end
+					end
+				end
+				if #keysToSell > 0 then
+					if typeof(R.SellInventory) == "RemoteFunction" then
+						R.SellInventory:InvokeServer(keysToSell)
+					elseif typeof(R.SellInventory) == "RemoteEvent" then
+						R.SellInventory:FireServer(keysToSell)
+					end
+				end
+			end)
+		end
+		task.wait(3)
+	end
+end)
 
 task.spawn(function()
 	local lastRebirth = 0
