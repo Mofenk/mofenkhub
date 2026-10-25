@@ -1,6 +1,6 @@
 -- ===================================================================== --
--- 👑 MOFENKHUB V60.0 — THE ABSOLUTE MASTER SUITE (AUTO ROLL & SELL FIXED)
--- Game: Anime Dice | Fixed Roll Service & Auto Sell Remotes
+-- 👑 MOFENKHUB V70.0 — THE ULTIMATE MASTER SUITE (RARITY SELL & UI FIXED)
+-- Game: Anime Dice | Perfected UI, Auto Roll, Rarity Sell, Config Manager
 -- ===================================================================== --
 
 --!nocheck
@@ -33,7 +33,7 @@ local F = {
 	-- Farm & Roll
 	collect = false, levelup = false, maxLevel = 40, smartLevel = false,
 	rebirth = false, upgrades = false, buyDice = false, equipDice = true, autoRoll = false,
-	-- Inv & Sell (Fixed)
+	-- Inv & Sell by Rarity
 	sellAuto = false, smartSell = false, sellRarityLimit = 2, autoFuse = false,
 	-- Potion
 	potionAuto = false, potionBest = true, potionSpecific = {},
@@ -67,19 +67,18 @@ local function ApplyTheme(idx)
 	for _, v in ipairs(ThemeElements.TextAcc) do v.TextColor3 = t.Acc1 end
 end
 
-local CFG_FILE = "MofenkHub_V60_Config.json"
+local CFG_FILE = "MofenkHub_V70_Config.json"
 local function saveConfig() if writefile then pcall(function() writefile(CFG_FILE, HttpService:JSONEncode(F)) end) end end
 local function loadConfig() if readfile and isfile and isfile(CFG_FILE) then pcall(function() local d = HttpService:JSONDecode(readfile(CFG_FILE)); for k,v in pairs(d) do F[k]=v end end) end end
 loadConfig()
 
 -- ===================================================================== --
--- 2. BACKEND & REMOTES (FIXED ROLL & SELL)
+-- 2. BACKEND & REMOTES
 -- ===================================================================== --
 local Network = ReplicatedStorage:WaitForChild("Network", 15); local Framework = ReplicatedStorage:WaitForChild("Framework", 15)
 local function svc(p) local n = Network; for x in string.gmatch(p, "[^%.]+") do n = n and n:FindFirstChild(x) end; return n end
 
 local R = {
-	RollDice       = svc("RollService.RF.RollDice") or svc("RollService.RE.RollDice"),
 	CollectBalance = svc("PlotService.RE.CollectBalance"), 
 	LevelUpSlot    = svc("PlotService.RE.LevelUpSlot"),
 	BuyDice        = svc("DiceShopService.RE.BuyDice"), 
@@ -99,7 +98,6 @@ local R = {
 	ClaimOffline   = svc("OfflineEarningsService.RE.Claim"), 
 	ClaimGroup     = svc("GroupRewardService.RE.Claim"),
 	SellInventory  = svc("SellService.RF.SellInventory") or svc("SellService.RE.SellInventory"),
-	UpdateAutoSell = svc("SellService.RE.UpdateAutoSell"),
 	Fuse           = svc("FusingService.RE.Fuse")
 }
 
@@ -116,6 +114,8 @@ pcall(function()
 	G.QuestConfig = require(Framework.Features.Quests.QuestConfig)
 	G.EntryRegistry = require(Framework.Features.Inventory.EntryRegistry)
 	G.BuffController = require(Framework.Features.Buffs.BuffController)
+	G.RollController = require(Framework.Features.Rolling.RollController)
+	G.SellController = require(Framework.Features.Sell.SellController)
 end)
 
 local function data() return G.DC and G.DC.___X or {} end
@@ -165,14 +165,14 @@ local StrokeGrad = Instance.new("UIGradient"); StrokeGrad.Parent = MainStroke; t
 ToggleBtn.MouseButton1Click:Connect(function() MainFrame.Visible = not MainFrame.Visible end)
 
 local TopBar = Instance.new("Frame"); TopBar.Parent = MainFrame; TopBar.Size = UDim2.new(1, 0, 0, 48); TopBar.BackgroundTransparency = 0.2; table.insert(ThemeElements.Header, TopBar)
-local Title = Instance.new("TextLabel"); Title.Parent = TopBar; Title.Position = UDim2.new(0, 20, 0, 0); Title.Size = UDim2.new(0, 500, 1, 0); Title.Text = "👑 MOFENKHUB V60.0  |  ANIME DICE PRO"; Title.TextSize = 14; Title.Font = Enum.Font.GothamBlack; Title.TextXAlignment = Enum.TextXAlignment.Left; Title.BackgroundTransparency = 1; table.insert(ThemeElements.TextAcc, Title)
+local Title = Instance.new("TextLabel"); Title.Parent = TopBar; Title.Position = UDim2.new(0, 20, 0, 0); Title.Size = UDim2.new(0, 500, 1, 0); Title.Text = "👑 MOFENKHUB V70.0  |  ANIME DICE PRO"; Title.TextSize = 14; Title.Font = Enum.Font.GothamBlack; Title.TextXAlignment = Enum.TextXAlignment.Left; Title.BackgroundTransparency = 1; table.insert(ThemeElements.TextAcc, Title)
 
 local CloseBtn = Instance.new("TextButton"); CloseBtn.Parent = TopBar; CloseBtn.Position = UDim2.new(1, -42, 0, 9); CloseBtn.Size = UDim2.new(0, 30, 0, 30); CloseBtn.Text = "✕"; CloseBtn.TextColor3 = Color3.fromRGB(255,255,255); CloseBtn.Font = Enum.Font.GothamBold; CloseBtn.BackgroundTransparency = 0.2; table.insert(ThemeElements.Card, CloseBtn)
 local CC = Instance.new("UICorner"); CC.CornerRadius = UDim.new(0, 8); CC.Parent = CloseBtn
 CloseBtn.MouseButton1Click:Connect(function() MainFrame.Visible = false end)
 
 local Sidebar = Instance.new("ScrollingFrame"); Sidebar.Parent = MainFrame; Sidebar.Position = UDim2.new(0, 10, 0, 56); Sidebar.Size = UDim2.new(0, 180, 1, -66); Sidebar.BackgroundTransparency = 1; Sidebar.ScrollBarThickness = 2; Sidebar.AutomaticCanvasSize = Enum.AutomaticSize.Y; Sidebar.CanvasSize = UDim2.new(0,0,0,0)
-local SideLayout = Instance.new("UIListLayout"); SideLayout.Parent = Sidebar; SideLayout.Padding = UDim.new(0, 5)
+local SideLayout = Instance.new("UIListLayout"); SideLayout.Parent = Sidebar; Sidebar.ScrollingDirection = Enum.ScrollingDirection.Y; SideLayout.Padding = UDim.new(0, 5)
 
 local ContentArea = Instance.new("Frame"); ContentArea.Parent = MainFrame; ContentArea.Position = UDim2.new(0, 200, 0, 56); ContentArea.Size = UDim2.new(1, -210, 1, -66); ContentArea.BackgroundTransparency = 0.3; table.insert(ThemeElements.Header, ContentArea)
 local ContentCorner = Instance.new("UICorner"); ContentCorner.CornerRadius = UDim.new(0, 12); ContentCorner.Parent = ContentArea
@@ -182,7 +182,7 @@ local function CreateTab(name, icon)
 	local Btn = Instance.new("TextButton"); Btn.Parent = Sidebar; Btn.Size = UDim2.new(1, -4, 0, 36); Btn.Text = "  " .. icon .. "  " .. name; Btn.TextColor3 = Color3.fromRGB(220,220,220); Btn.TextSize = 11; Btn.Font = Enum.Font.GothamBold; Btn.TextXAlignment = Enum.TextXAlignment.Left; Btn.BackgroundTransparency = 0.3; table.insert(ThemeElements.Card, Btn)
 	local Corner = Instance.new("UICorner"); Corner.CornerRadius = UDim.new(0, 8); Corner.Parent = Btn
 	local Scroll = Instance.new("ScrollingFrame"); Scroll.Parent = ContentArea; Scroll.Size = UDim2.new(1, -16, 1, -16); Scroll.Position = UDim2.new(0, 8, 0, 8); Scroll.BackgroundTransparency = 1; Scroll.ScrollBarThickness = 3; Scroll.Visible = false; Scroll.AutomaticCanvasSize = Enum.AutomaticSize.Y; Scroll.CanvasSize = UDim2.new(0,0,0,0)
-	local Lay = Instance.new("UIListLayout"); Lay.Parent = Scroll; Lay.Padding = UDim.new(0, 10)
+	local Lay = Instance.new("UIListLayout"); Lay.Parent = Scroll; Scroll.ScrollingDirection = Enum.ScrollingDirection.Y; Lay.Padding = UDim.new(0, 10)
 	TabFrames[name] = Scroll; TabButtons[name] = Btn
 	
 	Btn.MouseButton1Click:Connect(function()
@@ -311,7 +311,7 @@ task.spawn(function()
 	end) end
 end)
 
--- 2. FARMING (AUTO ROLL FIXED)
+-- 2. FARMING (AUTO ROLL DIRECT CLICK & CONTROLLER)
 local G_Farm1 = AddGroup(T_Farm, "PLOT, ROLL & REBIRTH")
 AddToggle(G_Farm1, "Auto Collect Plot", "collect")
 AddToggle(G_Farm1, "Auto Roll Dadu", "autoRoll")
@@ -322,7 +322,7 @@ AddToggle(G_Farm2, "Auto Level Up Unit", "levelup")
 AddInput(G_Farm2, "Max Level Batas:", "maxLevel", true)
 AddToggle(G_Farm2, "Auto Upgrade Skill Tree", "upgrades")
 
--- 3. INVENTORY (AUTO SELL FIXED)
+-- 3. INVENTORY (AUTO SELL BY RARITY)
 local G_Inv = AddGroup(T_Inv, "MANAGEMENT & AUTO SELL")
 AddToggle(G_Inv, "Auto Sell Unit", "sellAuto")
 AddToggle(G_Inv, "Smart Sell (Batas Rarity)", "smartSell")
@@ -399,7 +399,7 @@ BtnHop.MouseButton1Click:Connect(function()
 end)
 
 -- ===================================================================== --
--- 6. FULL BACKEND THREADS (FIXED AUTO ROLL & AUTO SELL)
+-- 6. FULL BACKEND THREADS (ROBUST AUTO ROLL & RARITY SELL)
 -- ===================================================================== --
 ApplyTheme(F.themeIndex)
 
@@ -407,15 +407,22 @@ LocalPlayer.Idled:Connect(function() if F.afk then pcall(function() game:GetServ
 
 local function unlockedSlots() local arr={}; local rb = rebirthAmt(); pcall(function() for i=1, (G.PlotConfig.GetMaxSlots(rb) or 15) do if rb >= (G.PlotConfig.GetSlotRebirthRequirement(i) or 0) then table.insert(arr, i) end end end); return arr end
 
--- Auto Roll Thread (Fixed)
+-- Robust Auto Roll Thread (UI Click & Remote)
 task.spawn(function()
 	while _G.__ANIMEDICE == generation do
-		if F.autoRoll and R.RollDice then
+		if F.autoRoll then
 			pcall(function()
-				if typeof(R.RollDice) == "RemoteFunction" then
-					R.RollDice:InvokeServer()
-				elseif typeof(R.RollDice) == "RemoteEvent" then
-					R.RollDice:FireServer()
+				local clicked = false
+				local playerGui = LocalPlayer:FindFirstChild("PlayerGui")
+				if playerGui then
+					for _, gui in ipairs(playerGui:GetDescendants()) do
+						if (gui:IsA("TextButton") or gui:IsA("ImageButton")) and (string.find(string.lower(gui.Name), "roll") or string.find(string.lower(gui.Name), "spin")) then
+							for _, c in ipairs(getconnections(gui.MouseButton1Click) or {}) do c:Fire(); clicked = true end
+						end
+					end
+				end
+				if not clicked and G.RollController and type(G.RollController.Roll) == "function" then
+					G.RollController.Roll()
 				end
 			end)
 			task.wait(0.25)
@@ -425,27 +432,30 @@ task.spawn(function()
 	end
 end)
 
--- Auto Sell Thread (Fixed)
+-- Robust Auto Sell by Rarity Thread
 task.spawn(function()
 	while _G.__ANIMEDICE == generation do
-		if F.sellAuto and R.SellInventory then
+		if F.sellAuto then
 			pcall(function()
 				local keysToSell = {}
 				for key, e in pairs(inventory()) do
 					if isUnitEntry(e) then
 						local rarity = tonumber(e.rarity) or tonumber(e.tier) or 1
-						if F.smartSell and rarity <= (F.sellRarityLimit or 2) then
-							table.insert(keysToSell, key)
-						elseif not F.smartSell then
-							table.insert(keysToSell, key)
+						if not e.attributes or not e.attributes.locked then -- Jangan jual unit yang dikunci
+							if F.smartSell and rarity <= (F.sellRarityLimit or 2) then
+								table.insert(keysToSell, key)
+							elseif not F.smartSell then
+								table.insert(keysToSell, key)
+							end
 						end
 					end
 				end
 				if #keysToSell > 0 then
-					if typeof(R.SellInventory) == "RemoteFunction" then
-						R.SellInventory:InvokeServer(keysToSell)
-					elseif typeof(R.SellInventory) == "RemoteEvent" then
-						R.SellInventory:FireServer(keysToSell)
+					if G.SellController and type(G.SellController.Sell) == "function" then
+						G.SellController.Sell(keysToSell)
+					elseif R.SellInventory then
+						if typeof(R.SellInventory) == "RemoteFunction" then R.SellInventory:InvokeServer(keysToSell)
+						elseif typeof(R.SellInventory) == "RemoteEvent" then R.SellInventory:FireServer(keysToSell) end
 					end
 				end
 			end)
