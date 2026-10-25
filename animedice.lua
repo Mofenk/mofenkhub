@@ -1,5 +1,5 @@
 -- ===================================================================== --
--- 👑 MOFENKHUB V88.0 — FULL MASTER SUITE (ROELDICE & SELLINVENTORY FIXED)
+-- 👑 MOFENKHUB V89.0 — FULL FIXED MASTER SUITE (ANIME DICE PRO)
 -- ===================================================================== --
 
 --!nocheck
@@ -30,9 +30,9 @@ local F = {
 	autoSave = true, autoLoad = true, themeIndex = 1, cfgName = "MofenkConfig1",
 	-- Farm & Roll
 	collect = false, levelup = false, maxLevel = 40, smartLevel = false,
-	rebirth = false, upgrades = false, buyDice = false, equipDice = true, autoRoll = false,
+	rebirth = false, upgrades = false, buyDice = false, equipDice = true, autoRoll = false, autoSpins = true,
 	-- Inv & Sell
-	sellAuto = false, smartSell = false, sellRarityLimit = 2, autoFuse = false,
+	sellAuto = false, smartSell = false, sellRarityLimit = 3, keepBest = 20, autoFuse = false,
 	-- Potion
 	potionAuto = false, potionBest = true, potionSpecific = {},
 	-- Reroll
@@ -83,44 +83,37 @@ end
 loadConfig(F.cfgName)
 
 -- ===================================================================== --
--- 2. FRAMEWORK & SAFE FIND BINDINGS
+-- 2. FRAMEWORK & MODULE BINDINGS
 -- ===================================================================== --
 local Network = ReplicatedStorage:WaitForChild("Network", 15); local Framework = ReplicatedStorage:WaitForChild("Framework", 15)
 
-local function safeFind(parent, path)
-	local current = parent
-	for part in string.gmatch(path, "[^%.]+") do
-		if current then
-			current = current:FindFirstChild(part)
-		else
-			return nil
-		end
-	end
-	return current
-end
+local function svc(p) local n = Network; for x in string.gmatch(p, "[^%.]+") do n = n and n:FindFirstChild(x) end; return n end
 
 local R = {
-	RollDice       = Network and (safeFind(Network, "RollService.RF.RollDice") or safeFind(Network, "RollService.RE.RollDice")),
-	SellInventory  = Network and (safeFind(Network, "SellService.RF.SellInventory") or safeFind(Network, "SellService.RE.SellInventory")),
-	CollectBalance = Network and (safeFind(Network, "PlotService.RE.CollectBalance")), 
-	LevelUpSlot    = Network and (safeFind(Network, "PlotService.RE.LevelUpSlot")),
-	BuyDice        = Network and (safeFind(Network, "DiceShopService.RE.BuyDice")), 
-	EquipDice      = Network and (safeFind(Network, "DiceShopService.RE.EquipDice")),
-	Rebirth        = Network and (safeFind(Network, "RebirthService.RE.Rebirth")), 
-	BuyUpgrade     = Network and (safeFind(Network, "RE.BuyUpgrade") or safeFind(Network, "PlotService.RE.BuyPadUpgrade")),
-	GradeRoll      = Network and (safeFind(Network, "GradeService.RE.Roll")), 
-	TraitRoll      = Network and (safeFind(Network, "TraitService.RE.Roll")), 
-	BoostUse       = Network and (safeFind(Network, "BoostService.RE.Use")),
-	PlayTower      = Network and (safeFind(Network, "Towers.RF.PlayTower") or safeFind(Network, "Towers.RE.PlayTower")), 
-	CompleteFloor  = Network and (safeFind(Network, "Towers.RF.CompleteTowerFloor")),
-	CancelTower    = Network and (safeFind(Network, "Towers.RF.CancelTower")), 
-	BestTowerTeam  = Network and (safeFind(Network, "Towers.RE.EquipBestTowerTeam")),
-	RedeemCode     = Network and (safeFind(Network, "CodesService.RE.RedeemCode") or safeFind(Network, "MonetizationService.RE.RedeemCode")),
-	QuestClaim     = Network and (safeFind(Network, "QuestService.RE.Claim")), 
-	ClaimDaily     = Network and (safeFind(Network, "DailyRewardService.RE.Claim")),
-	ClaimOffline   = Network and (safeFind(Network, "OfflineEarningsService.RE.Claim")), 
-	ClaimGroup     = Network and (safeFind(Network, "GroupRewardService.RE.Claim")),
-	Fuse           = Network and (safeFind(Network, "FusingService.RE.Fuse"))
+	RollDice        = svc("RollService.RF.RollDice"),
+	SetAutoRoll     = svc("RollService.RE.SetAutoRoll"),
+	CollectBalance  = svc("PlotService.RE.CollectBalance"), 
+	LevelUpSlot     = svc("PlotService.RE.LevelUpSlot"),
+	BuyDice         = svc("DiceShopService.RE.BuyDice"), 
+	EquipDice       = svc("DiceShopService.RE.EquipDice"),
+	Rebirth         = svc("RebirthService.RE.Rebirth"), 
+	BuyUpgrade      = svc("RE.BuyUpgrade") or svc("PlotService.RE.BuyPadUpgrade"),
+	GradeRoll       = svc("GradeService.RE.Roll"), 
+	TraitRoll       = svc("TraitService.RE.Roll"), 
+	BoostUse        = svc("BoostService.RE.Use"),
+	PlayTower       = svc("Towers.RF.PlayTower") or svc("Towers.RE.PlayTower"), 
+	CompleteFloor   = svc("Towers.RF.CompleteTowerFloor"),
+	CancelTower     = svc("Towers.RF.CancelTower"), 
+	BestTowerTeam   = svc("Towers.RE.EquipBestTowerTeam"),
+	RedeemCode      = svc("CodesService.RE.RedeemCode") or svc("MonetizationService.RE.RedeemCode"),
+	QuestClaim      = svc("QuestService.RE.Claim"), 
+	ClaimDaily      = svc("DailyRewardService.RE.Claim"),
+	ClaimOffline    = svc("OfflineEarningsService.RE.Claim"), 
+	ClaimGroup      = svc("GroupRewardService.RE.Claim"),
+	SellInventory   = svc("SellService.RF.SellInventory"),
+	UpdateAutoSell  = svc("SellService.RE.UpdateAutoSell"),
+	UseSpin         = svc("SpinService.RE.Use"),
+	Fuse            = svc("FusingService.RE.Fuse")
 }
 
 local G = {}
@@ -140,6 +133,17 @@ pcall(function()
 	G.SellController = require(Framework.Features.Sell.SellController)
 	G.DiceModule = require(Framework.Features.Rolling.Dice)
 end)
+
+local RARITY_SORT = {}
+do
+	local ok, Rar = pcall(require, Framework.Other.Rarities)
+	if ok and Rar and Rar.Refs then
+		for _, ref in pairs(Rar.Refs) do
+			local info = select(2, pcall(Rar.Get, ref))
+			if type(info) == "table" and info.sortOrder then RARITY_SORT[ref] = info.sortOrder end
+		end
+	end
+end
 
 local function data() return G.DC and G.DC.___X or {} end
 local function money() pcall(function() return G.DC.Money() end); return data().Money or 0 end
@@ -188,7 +192,7 @@ local StrokeGrad = Instance.new("UIGradient"); StrokeGrad.Parent = MainStroke; t
 ToggleBtn.MouseButton1Click:Connect(function() MainFrame.Visible = not MainFrame.Visible end)
 
 local TopBar = Instance.new("Frame"); TopBar.Parent = MainFrame; TopBar.Size = UDim2.new(1, 0, 0, 48); TopBar.BackgroundTransparency = 0.2; table.insert(ThemeElements.Header, TopBar)
-local Title = Instance.new("TextLabel"); Title.Parent = TopBar; Title.Position = UDim2.new(0, 20, 0, 0); Title.Size = UDim2.new(0, 500, 1, 0); Title.Text = "👑 MOFENKHUB V88.0  |  ANIME DICE PRO"; Title.TextSize = 14; Title.Font = Enum.Font.GothamBlack; Title.TextXAlignment = Enum.TextXAlignment.Left; Title.BackgroundTransparency = 1; table.insert(ThemeElements.TextAcc, Title)
+local Title = Instance.new("TextLabel"); Title.Parent = TopBar; Title.Position = UDim2.new(0, 20, 0, 0); Title.Size = UDim2.new(0, 500, 1, 0); Title.Text = "👑 MOFENKHUB V89.0  |  ANIME DICE PRO"; Title.TextSize = 14; Title.Font = Enum.Font.GothamBlack; Title.TextXAlignment = Enum.TextXAlignment.Left; Title.BackgroundTransparency = 1; table.insert(ThemeElements.TextAcc, Title)
 
 local CloseBtn = Instance.new("TextButton"); CloseBtn.Parent = TopBar; CloseBtn.Position = UDim2.new(1, -42, 0, 9); CloseBtn.Size = UDim2.new(0, 30, 0, 30); CloseBtn.Text = "✕"; CloseBtn.TextColor3 = Color3.fromRGB(255,255,255); CloseBtn.Font = Enum.Font.GothamBold; CloseBtn.BackgroundTransparency = 0.2; table.insert(ThemeElements.Card, CloseBtn)
 local CC = Instance.new("UICorner"); CC.CornerRadius = UDim.new(0, 8); CC.Parent = CloseBtn
@@ -338,6 +342,7 @@ end)
 local G_Farm1 = AddGroup(T_Farm, "PLOT, ROLL & REBIRTH")
 AddToggle(G_Farm1, "Auto Collect Plot", "collect")
 AddToggle(G_Farm1, "Auto Roll Dadu (Otomatis)", "autoRoll")
+AddToggle(G_Farm1, "Auto Lucky Spins", "autoSpins")
 AddToggle(G_Farm1, "Auto Rebirth (Anti-Spam)", "rebirth")
 
 local G_Farm2 = AddGroup(T_Farm, "LEVELING & UPGRADES")
@@ -350,6 +355,7 @@ local G_Inv = AddGroup(T_Inv, "MANAGEMENT & AUTO SELL")
 AddToggle(G_Inv, "Auto Sell Unit", "sellAuto")
 AddToggle(G_Inv, "Smart Sell (Batas Rarity)", "smartSell")
 AddInput(G_Inv, "Max Rarity Jual (1-5):", "sellRarityLimit", true)
+AddInput(G_Inv, "Simpan Unit Terbaik (Keep Best):", "keepBest", true)
 AddToggle(G_Inv, "Auto Fusion Unit", "autoFuse")
 
 -- 4. POTIONS
@@ -464,13 +470,13 @@ BtnHop.MouseButton1Click:Connect(function()
 end)
 
 -- ===================================================================== --
--- 6. FULL BACKEND THREADS (ROLLDICE, SELLINVENTORY, & ANTI-AFK)
+-- 6. FULL BACKEND THREADS (FIXED AUTO ROLL & AUTO SELL BERDASARKAN REFERENSI)
 -- ===================================================================== --
 ApplyTheme(F.themeIndex)
 
 if F.autoLoad then pcall(function() loadConfig(F.cfgName); ApplyTheme(F.themeIndex) end) end
 
--- Anti-AFK Ganda (Mencegah Kick/Reload 20 Menit)[span_1](start_span)[span_1](end_span)
+-- Anti-AFK Ganda
 LocalPlayer.Idled:Connect(function()
 	if F.afk then
 		pcall(function()
@@ -497,73 +503,94 @@ end)
 
 local function unlockedSlots() local arr={}; local rb = rebirthAmt(); pcall(function() for i=1, (G.PlotConfig.GetMaxSlots(rb) or 15) do if rb >= (G.PlotConfig.GetSlotRebirthRequirement(i) or 0) then table.insert(arr, i) end end end); return arr end
 
--- Auto Roll Thread (Menggunakan jalur RollDice dengan aman)[span_2](start_span)[span_2](end_span)
+-- Arm Spin sebelum Roll (Sesuai Referensi)
+local function armSpin()
+	if not (F.autoSpins and R.UseSpin) then return end
+	local d = data()
+	for _, name in ipairs({ "Jackpot Spin", "Lucky Spin" }) do
+		local active = d.ActiveEntries and d.ActiveEntries[name]
+		if active then return end
+	end
+	for _, name in ipairs({ "Jackpot Spin", "Lucky Spin" }) do
+		local item = d.Inventory and d.Inventory[name]
+		if item and (tonumber(item.amount) or 0) >= 1 then
+			R.UseSpin:FireServer(name)
+			task.wait(0.25)
+			return
+		end
+	end
+end
+
+-- Auto Roll Thread (Menggunakan jalur server resmi & Cooldown 2.1 detik)
 task.spawn(function()
 	while _G.__ANIMEDICE == generation do
 		if F.autoRoll then
 			pcall(function()
-				local executed = false
+				pcall(armSpin)
 				if R.RollDice then
-					if typeof(R.RollDice) == "RemoteFunction" then
-						R.RollDice:InvokeServer()
-						executed = true
-					elseif typeof(R.RollDice) == "RemoteEvent" then
-						R.RollDice:FireServer()
-						executed = true
-					end
-				end
-				if not executed and G.DiceModule and type(G.DiceModule.Roll) == "function" then G.DiceModule.Roll(); executed = true end
-				if not executed and G.RollController and type(G.RollController.Roll) == "function" then G.RollController.Roll(); executed = true end
-				if not executed then
-					local playerGui = LocalPlayer:FindFirstChild("PlayerGui")
-					if playerGui then
-						for _, gui in ipairs(playerGui:GetDescendants()) do
-							if (gui:IsA("TextButton") or gui:IsA("ImageButton")) and (string.find(string.lower(gui.Name), "roll") or string.find(string.lower(gui.Name), "spin")) then
-								for _, c in ipairs(getconnections(gui.MouseButton1Click) or {}) do c:Fire() end
-							end
-						end
-					end
+					local ok = pcall(function() return R.RollDice:InvokeServer() end)
+					if ok then STATE.rolled = (STATE.rolled or 0) + 1 end
 				end
 			end)
-			task.wait(0.15)
+			task.wait(2.1)
 		else
 			task.wait(1)
 		end
 	end
 end)
 
--- Auto Sell Thread (Menggunakan jalur SellInventory aman & SellController)[span_3](start_span)[span_3](end_span)
+-- Auto Sell Thread (Pembersih Backpack & Proteksi Unit Sesuai Referensi)
 task.spawn(function()
 	while _G.__ANIMEDICE == generation do
-		if F.sellAuto then
+		if F.sellAuto and R.SellInventory then
 			pcall(function()
-				local keysToSell = {}
-				for key, e in pairs(inventory()) do
-					if isUnitEntry(e) then
-						local rarity = tonumber(e.rarity) or tonumber(e.tier) or 1
-						if not e.attributes or not e.attributes.locked then
-							if F.smartSell and rarity <= (F.sellRarityLimit or 2) then
-								table.insert(keysToSell, key)
-							elseif not F.smartSell then
-								table.insert(keysToSell, key)
-							end
-						end
+				local d = data()
+				local cap = 100
+				pcall(function()
+					local buff = tonumber(select(2, pcall(G.BuffController.GetBuff, "Unit Storage")))
+					if buff and buff > 0 then cap = buff end
+				end)
+
+				local placed = {}
+				for _, slot in pairs(d.Slots or {}) do if slot.unitId then placed[slot.unitId] = true end end
+				for _, id in pairs(d.TowerTeam or {}) do placed[id] = true end
+
+				local units, owned = {}, 0
+				for id, u in pairs(d.Inventory or {}) do
+					local e = G.UnitConfig and G.UnitConfig.entries[u.name] or (G.EntryRegistry and pcall(function() return G.EntryRegistry.getEntryConfig(u.name) end))
+					if e then owned = owned + 1 end
+					
+					local isProt = false
+					if u.attributes and u.attributes.locked then isProt = true end
+					if type(e) == "table" and e.limited then isProt = true end
+
+					if not placed[id] and not isProt then
+						table.insert(units, {
+							id = id, 
+							order = (e and RARITY_SORT[e.rarity]) or tonumber(u.rarity) or 1,
+							mutated = u.attributes and u.attributes.mutation ~= nil
+						})
 					end
 				end
-				if #keysToSell > 0 then
-					if R.SellInventory then
-						if typeof(R.SellInventory) == "RemoteFunction" then
-							R.SellInventory:InvokeServer(keysToSell)
-						elseif typeof(R.SellInventory) == "RemoteEvent" then
-							R.SellInventory:FireServer(keysToSell)
-						end
-					elseif G.SellController and type(G.SellController.Sell) == "function" then
-						G.SellController.Sell(keysToSell)
+				table.sort(units, function(a, b) return a.order < b.order end)
+				local pressured = owned >= cap - 3
+
+				local sellable = math.max(0, #units - (F.keepBest or 20))
+				local list = {}
+				for i, unit in ipairs(units) do
+					local belowFloor = not unit.mutated and unit.order > 0 and unit.order < (F.sellRarityLimit or 3) and i <= sellable
+					local surplus = pressured and i <= sellable
+					if belowFloor or surplus then
+						list[#list + 1] = unit.id
+						if #list >= 300 then break end
 					end
+				end
+				if #list > 0 then
+					pcall(function() R.SellInventory:InvokeServer(list) end)
 				end
 			end)
 		end
-		task.wait(3)
+		task.wait(4)
 	end
 end)
 
