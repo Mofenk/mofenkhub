@@ -1,5 +1,5 @@
 -- ===================================================================== --
--- 👑 MOFENKHUB V96.0 — ULTRA MASTER SAFE-LOAD EDITION (NO ERRORS)
+-- 👑 MOFENKHUB V97.0 — MASTER EDITION WITH SPY SCANNER RESTORED
 -- ===================================================================== --
 
 --!nocheck
@@ -60,7 +60,8 @@ local F = {
 	tower = false, towerName = "Dragon Tower", towerMix = false, towerEquipBest = true, towerExitOn = false, towerExitFloor = 50,
 	wsOn = false, wsValue = 16, noclip = false, afk = true, fpsOn = false,
 	codesAuto = false, claimQuests = false,
-	webhookEnabled = false, webhookUrl = ""
+	webhookEnabled = false, webhookUrl = "",
+	spyDataOn = false, spyClickOn = false
 }
 
 local STATE = { towerLive = "Standby", towerFloor = 0, towerDrops = 0, towerTraitsGot = "Belum Ada", activeBuffs = "Tidak Ada" }
@@ -217,7 +218,73 @@ local function SendWebhook(title, description, colorCode)
 end
 
 -- ===================================================================== --
--- 3. INTERACTIVE LOGO & MAIN UI
+-- 3. REMOTE & FUNCTION SPY SCANNER (RESTORED)
+-- ===================================================================== --
+local function dumpTable(t, indent)
+	if type(t) ~= "table" then return tostring(t) end
+	indent = indent or ""
+	local res = "{\n"
+	for k, v in pairs(t) do
+		local formatting = indent .. "  [" .. tostring(k) .. "] = "
+		if type(v) == "table" then
+			res = res .. formatting .. dumpTable(v, indent .. "  ") .. ",\n"
+		else
+			res = res .. formatting .. tostring(v) .. " (" .. type(v) .. "),\n"
+		end
+	end
+	return res .. indent .. "}"
+end
+
+pcall(function()
+	local mt = getrawmetatable(game)
+	if mt and setreadonly then
+		local oldNamecall = mt.__namecall
+		setreadonly(mt, false)
+
+		mt.__namecall = newcclosure(function(self, ...)
+			local method = getnamecallmethod()
+			if F.spyDataOn and not checkcaller() and (method == "FireServer" or method == "InvokeServer") then
+				print("\n=======================================================")
+				warn("🔥 [MOFENK SPY] REMOTE " .. string.upper(method) .. " TERDETEKSI! 🔥")
+				print("📍 Path Objek :", self:GetFullName())
+				print("🛠️ Tipe Data  :", self.ClassName)
+				print("📝 ARGUMEN / PAYLOAD:")
+				
+				local args = {...}
+				if #args == 0 then
+					print("   ▶ (Argumen Kosong)")
+				else
+					for i, v in ipairs(args) do
+						if type(v) == "table" then
+							print(string.format("   ▶ Arg [%d] (Table Detail): \n%s", i, dumpTable(v, "       ")))
+						else
+							print(string.format("   ▶ Arg [%d]: %s (Tipe: %s)", i, tostring(v), typeof(v)))
+						end
+					end
+				end
+				print("=======================================================\n")
+			end
+			return oldNamecall(self, ...)
+		end)
+		setreadonly(mt, true)
+	end
+end)
+
+UserInputService.InputBegan:Connect(function(input, gpe)
+	if gpe then return end
+	if input.UserInputType == Enum.UserInputType.MouseButton1 and F.spyClickOn then
+		local mouse = LocalPlayer:GetMouse()
+		local target = mouse.Target
+		if target then
+			warn("\n🖱️ [CLICK SPY] Objek Diklik:")
+			print("📍 Path:", target:GetFullName())
+			print("🧱 Class:", target.ClassName)
+		end
+	end
+end)
+
+-- ===================================================================== --
+-- 4. INTERACTIVE LOGO & MAIN UI
 -- ===================================================================== --
 local ToggleGui = Instance.new("ScreenGui"); ToggleGui.Name = "MofenkToggleFront"; ToggleGui.Parent = parentGui; ToggleGui.ResetOnSpawn = false; ToggleGui.DisplayOrder = 99998
 local ToggleBtn = Instance.new("TextButton"); ToggleBtn.Parent = ToggleGui; ToggleBtn.Size = UDim2.new(0, 60, 0, 60); ToggleBtn.Position = UDim2.new(0.02, 0, 0.4, 0); ToggleBtn.BackgroundColor3 = THEMES[1].Card; ToggleBtn.Text = "M"; ToggleBtn.Font = Enum.Font.GothamBlack; ToggleBtn.TextSize = 34; ToggleBtn.TextColor3 = THEMES[1].Acc1; ToggleBtn.BackgroundTransparency = 0.2; local TC = Instance.new("UICorner"); TC.CornerRadius = UDim.new(0, 16); TC.Parent = ToggleBtn; local TS = Instance.new("UIStroke"); TS.Thickness = 3; TS.Parent = ToggleBtn; table.insert(ThemeElements.Acc1, TS)
@@ -245,7 +312,7 @@ UpdateScale(); workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):
 ToggleBtn.MouseButton1Click:Connect(function() MainFrame.Visible = not MainFrame.Visible; if MainFrame.Visible then SendNotification("Menu Dibuka", "MofenkHub siap digunakan!", 2, false) end end)
 
 local TopBar = Instance.new("Frame"); TopBar.Parent = MainFrame; TopBar.Size = UDim2.new(1, 0, 0, 55); TopBar.BackgroundTransparency = 0.3; table.insert(ThemeElements.Header, TopBar); local TopCorner = Instance.new("UICorner"); TopCorner.CornerRadius = UDim.new(0, 18); TopCorner.Parent = TopBar; local BottomHider = Instance.new("Frame"); BottomHider.Parent = TopBar; BottomHider.Size = UDim2.new(1, 0, 0, 10); BottomHider.Position = UDim2.new(0, 0, 1, -10); BottomHider.BorderSizePixel = 0; BottomHider.BackgroundTransparency = 0.3; table.insert(ThemeElements.Header, BottomHider)
-local Title = Instance.new("TextLabel"); Title.Parent = TopBar; Title.Position = UDim2.new(0, 25, 0, 0); Title.Size = UDim2.new(0, 600, 1, 0); Title.Text = "👑 MOFENKHUB V96.0  |  SAFE-LOAD MASTER EDITION"; Title.TextSize = 16; Title.Font = Enum.Font.GothamBlack; Title.TextXAlignment = Enum.TextXAlignment.Left; Title.BackgroundTransparency = 1; table.insert(ThemeElements.TextAcc, Title)
+local Title = Instance.new("TextLabel"); Title.Parent = TopBar; Title.Position = UDim2.new(0, 25, 0, 0); Title.Size = UDim2.new(0, 600, 1, 0); Title.Text = "👑 MOFENKHUB V97.0  |  MASTER EDITION + SPY"; Title.TextSize = 16; Title.Font = Enum.Font.GothamBlack; Title.TextXAlignment = Enum.TextXAlignment.Left; Title.BackgroundTransparency = 1; table.insert(ThemeElements.TextAcc, Title)
 local CloseBtn = Instance.new("TextButton"); CloseBtn.Parent = TopBar; CloseBtn.Position = UDim2.new(1, -50, 0, 10); CloseBtn.Size = UDim2.new(0, 35, 0, 35); CloseBtn.Text = "✕"; CloseBtn.TextColor3 = Color3.fromRGB(255,255,255); CloseBtn.Font = Enum.Font.GothamBold; CloseBtn.TextSize = 18; CloseBtn.BackgroundTransparency = 0.3; table.insert(ThemeElements.Card, CloseBtn); local CC = Instance.new("UICorner"); CC.CornerRadius = UDim.new(0, 10); CC.Parent = CloseBtn
 CloseBtn.MouseButton1Click:Connect(function() MainFrame.Visible = false end)
 
@@ -383,12 +450,34 @@ local T_Set = CreateTab("Settings", "⚙️")
 
 TabFrames["Dashboard"].Visible = true; Sidebar:GetChildren()[2].BackgroundTransparency = 0.1; table.insert(ThemeElements.Acc1, Sidebar:GetChildren()[2])
 
--- 1. DASHBOARD
+-- 1. DASHBOARD & SPY SCANNER
 local G_Profile = AddGroup(T_Dash, "PROFIL & STATISTIK PENGGUNA")
 local ProfContainer = Instance.new("Frame"); ProfContainer.Parent = G_Profile; ProfContainer.Size = UDim2.new(1, 0, 0, 100); ProfContainer.BackgroundTransparency = 1
 local PImg = Instance.new("ImageLabel"); PImg.Parent = ProfContainer; PImg.AnchorPoint = Vector2.new(0.5, 0.5); PImg.Position = UDim2.new(0.15, 0, 0.5, 0); PImg.Size = UDim2.new(0, 80, 0, 80); pcall(function() PImg.Image = Players:GetUserThumbnailAsync(LocalPlayer.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size100x100) end); local PImgC = Instance.new("UICorner"); PImgC.CornerRadius = UDim.new(1,0); PImgC.Parent = PImg; local PStr = Instance.new("UIStroke"); PStr.Thickness = 3; PStr.Parent = PImg; table.insert(ThemeElements.Acc1, PStr)
 
 local PLbl = Instance.new("TextLabel"); PLbl.Parent = ProfContainer; PLbl.Position = UDim2.new(0.3, 0, 0, 10); PLbl.Size = UDim2.new(0.7, 0, 1, 0); PLbl.BackgroundTransparency = 1; PLbl.TextColor3 = Color3.fromRGB(255,255,255); PLbl.TextSize = 14; PLbl.Font = Enum.Font.GothamMedium; PLbl.TextXAlignment = Enum.TextXAlignment.Left; PLbl.TextYAlignment = Enum.TextYAlignment.Center
+
+local G_Spy = AddGroup(T_Dash, "REMOTE & SPY SCANNER SYSTEM")
+AddToggle(G_Spy, "Aktifkan Remote Spy (Log Delta Console)", "spyDataOn")
+AddToggle(G_Spy, "Aktifkan Click Map Spy", "spyClickOn")
+
+local BtnSpyScan = Instance.new("TextButton"); BtnSpyScan.Parent = G_Spy; BtnSpyScan.Size = UDim2.new(1, 0, 0, 40); BtnSpyScan.Text = "🔎 SCAN SEMUA REMOTES KE CONSOLE"; BtnSpyScan.Font = Enum.Font.GothamBlack; BtnSpyScan.TextSize = 12; table.insert(ThemeElements.Card, BtnSpyScan); table.insert(ThemeElements.TextAcc, BtnSpyScan); local BSS = Instance.new("UICorner"); BSS.CornerRadius = UDim.new(0,8); BSS.Parent = BtnSpyScan
+BtnSpyScan.MouseButton1Click:Connect(function()
+	pcall(function()
+		warn("=====================================================")
+		warn("🔥 [MOFENK] MANUAL REMOTE & FUNCTION SCANNER STARTED 🔥")
+		local countR, countF, countB = 0, 0, 0
+		for _, v in ipairs(game:GetDescendants()) do
+			if v:IsA("RemoteEvent") then countR += 1; print("📡 [RemoteEvent]:", v:GetFullName())
+			elseif v:IsA("RemoteFunction") then countF += 1; print("⚡ [RemoteFunc]:", v:GetFullName())
+			elseif v:IsA("BindableEvent") or v:IsA("BindableFunction") then countB += 1; print("🔗 [Bindable]:", v:GetFullName())
+			end
+		end
+		warn(string.format("✅ Hasil Scan: %d Events | %d Functions | %d Bindables", countR, countF, countB))
+		warn("=====================================================")
+		SendNotification("Scan Selesai", "Cek Delta Console kamu sekarang!", 3, false)
+	end)
+end)
 
 local G_Info = AddGroup(T_Dash, "INFORMASI AKUN & GAME")
 local ILbl = Instance.new("TextLabel"); ILbl.Parent = G_Info; ILbl.Size = UDim2.new(1, 0, 0, 85); ILbl.BackgroundTransparency = 1; ILbl.TextColor3 = Color3.fromRGB(255,255,255); ILbl.TextSize = 13; ILbl.Font = Enum.Font.GothamMedium; ILbl.TextXAlignment = Enum.TextXAlignment.Left; ILbl.TextYAlignment = Enum.TextYAlignment.Top
@@ -522,7 +611,7 @@ local G_Web = AddGroup(T_Set, "DISCORD WEBHOOK")
 AddToggle(G_Web, "Aktifkan Webhook Discord", "webhookEnabled")
 AddInput(G_Web, "Webhook URL:", "webhookUrl", false)
 local BtnTestWeb = Instance.new("TextButton"); BtnTestWeb.Parent = G_Web; BtnTestWeb.Size = UDim2.new(1, 0, 0, 38); BtnTestWeb.Text = "🔔 TEST KIRIM WEBHOOK"; BtnTestWeb.Font = Enum.Font.GothamBold; BtnTestWeb.TextSize = 13; table.insert(ThemeElements.Card, BtnTestWeb); table.insert(ThemeElements.TextAcc, BtnTestWeb); local BTWC = Instance.new("UICorner"); BTWC.CornerRadius = UDim.new(0,8); BTWC.Parent = BtnTestWeb
-BtnTestWeb.MouseButton1Click:Connect(function() SendWebhook("✅ Webhook Connected!", "MofenkHub V96.0 berhasil tersambung.", 3447003); SendNotification("Webhook", "Terkirim!", 3, false) end)
+BtnTestWeb.MouseButton1Click:Connect(function() SendWebhook("✅ Webhook Connected!", "MofenkHub V97.0 berhasil tersambung.", 3447003); SendNotification("Webhook", "Terkirim!", 3, false) end)
 
 local G_Set2 = AddGroup(T_Set, "OPTIMALISASI & TOOLS")
 AddToggle(G_Set2, "Anti-AFK (Cegah Disconnect)", "afk")
@@ -550,7 +639,7 @@ end)
 ApplyTheme(F.themeIndex)
 
 -- ===================================================================== --
--- 7. BACKGROUND THREADS (SAFE LOOP)
+-- 6. BACKGROUND THREADS (SAFE LOOP)
 -- ===================================================================== --
 local vu = game:GetService("VirtualUser")
 LocalPlayer.Idled:Connect(function() if F.afk then pcall(function() vu:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame); task.wait(1); vu:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame) end) end end)
