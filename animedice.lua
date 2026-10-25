@@ -1,9 +1,9 @@
 -- ===================================================================== --
--- 👑 MOFENKHUB V35.0 — ULTIMATE MODERN PRO EDITION (FIXED LOGO 'F' & NIL ERROR)
--- Game: Anime Dice | Intro Screen Animation, Multi-Tower Select, Floating 'F' Button
+-- 👑 MOFENKHUB V35.0 — ULTIMATE SAFE LOAD & FIXED UI EDITION
+-- Game: Anime Dice | 100% Anti-Disappear, Safe Parent, Floating 'F'
 -- ===================================================================== --
 
-task.wait(0.5)
+task.wait(0.6)
 local Players           = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local CoreGui           = game:GetService("CoreGui")
@@ -14,68 +14,31 @@ local TweenService      = game:GetService("TweenService")
 local Stats             = game:GetService("Stats")
 
 local LocalPlayer = Players.LocalPlayer
-local parentGui = pcall(function() return CoreGui end) and CoreGui or LocalPlayer:WaitForChild("PlayerGui")
 
--- 1. BERSIHKAN INSTANCE LAMA
-for _, v in pairs(parentGui:GetChildren()) do
-	if v.Name == "MofenkUltraHubV35" or v.Name == "MofenkToggleGui" or v.Name == "MofenkNotifyGui" or v.Name == "MofenkIntroGui" then
-		pcall(function() v:Destroy() end)
+-- Menggunakan metode aman untuk mendeteksi Root GUI executor
+local successGui, parentGui = pcall(function()
+	if gethui then
+		return gethui()
+	elseif CoreGui:FindFirstChild("RobloxGui") then
+		return CoreGui
+	else
+		return LocalPlayer:WaitForChild("PlayerGui")
 	end
+end)
+if not successGui or not parentGui then
+	parentGui = LocalPlayer:WaitForChild("PlayerGui")
 end
 
--- 2. ANIME LOADING / INTRO SCREEN TEKS "MOFENKHUB"
-local IntroGui = Instance.new("ScreenGui")
-IntroGui.Name = "MofenkIntroGui"
-IntroGui.Parent = parentGui
-IntroGui.ResetOnSpawn = false
-
-local IntroFrame = Instance.new("Frame")
-IntroFrame.Parent = IntroGui
-IntroFrame.Size = UDim2.new(1, 0, 1, 0)
-IntroFrame.BackgroundColor3 = Color3.fromRGB(8, 6, 12)
-IntroFrame.BackgroundTransparency = 0.1
-
-local IntroGrad = Instance.new("UIGradient")
-IntroGrad.Color = ColorSequence.new({
-	ColorSequenceKeypoint.new(0, Color3.fromRGB(15, 10, 25)),
-	ColorSequenceKeypoint.new(1, Color3.fromRGB(120, 15, 45))
-})
-IntroGrad.Parent = IntroFrame
-
-local IntroText = Instance.new("TextLabel")
-IntroText.Parent = IntroFrame
-IntroText.Size = UDim2.new(1, 0, 0, 80)
-IntroText.Position = UDim2.new(0, 0, 0.5, -40)
-IntroText.BackgroundTransparency = 1
-IntroText.Text = "MOFENKHUB"
-IntroText.TextColor3 = Color3.fromRGB(255, 255, 255)
-IntroText.TextSize = 36
-IntroText.Font = Enum.Font.GothamBold
-IntroText.TextTransparency = 1
-
-local IntroSub = Instance.new("TextLabel")
-IntroSub.Parent = IntroFrame
-IntroSub.Size = UDim2.new(1, 0, 0, 30)
-IntroSub.Position = UDim2.new(0, 0, 0.5, 15)
-IntroSub.BackgroundTransparency = 1
-IntroSub.Text = "Loading Professional Suite & Modules..."
-IntroSub.TextColor3 = Color3.fromRGB(0, 190, 255)
-IntroSub.TextSize = 14
-IntroSub.Font = Enum.Font.GothamMedium
-IntroSub.TextTransparency = 1
-
-TweenService:Create(IntroText, TweenInfo.new(0.8), {TextTransparency = 0}):Play()
-TweenService:Create(IntroSub, TweenInfo.new(0.8), {TextTransparency = 0}):Play()
-
-task.delay(1.8, function()
-	TweenService:Create(IntroText, TweenInfo.new(0.5), {TextTransparency = 1}):Play()
-	TweenService:Create(IntroSub, TweenInfo.new(0.5), {TextTransparency = 1}):Play()
-	TweenService:Create(IntroFrame, TweenInfo.new(0.5), {BackgroundTransparency = 1}):Play()
-	task.wait(0.5)
-	pcall(function() IntroGui:Destroy() end)
+-- 1. BERSIHKAN INSTANCE LAMA DENGAN AMAN
+pcall(function()
+	for _, v in pairs(parentGui:GetChildren()) do
+		if v.Name == "MofenkUltraHubV35" or v.Name == "MofenkToggleGui" or v.Name == "MofenkNotifyGui" or v.Name == "MofenkIntroGui" then
+			v:Destroy()
+		end
+	end
 end)
 
--- 3. KONFIGURASI GLOBAL
+-- 2. KONFIGURASI GLOBAL
 _G.__ANIMEDICE = (_G.__ANIMEDICE or 0) + 1
 local generation = _G.__ANIMEDICE
 
@@ -122,7 +85,7 @@ _G.Mofenk = {
 	Disable3DRender     = false,
 }
 
--- 4. SISTEM CONFIG
+-- 3. SISTEM CONFIG
 local function GetConfigFileName(name)
 	return "MofenkConfig_" .. tostring(name or "DefaultConfig") .. ".json"
 end
@@ -157,7 +120,7 @@ if _G.Mofenk.AutoLoadConfig then
 	LoadConfig(_G.Mofenk.CurrentConfigName)
 end
 
--- 5. MAPPING REMOTE GAME & MODUL
+-- 4. MAPPING REMOTE GAME & MODUL
 local Framework, Network
 pcall(function() Framework = ReplicatedStorage:WaitForChild("Framework", 15) end)
 pcall(function() Network = ReplicatedStorage:WaitForChild("Network", 15) end)
@@ -203,7 +166,7 @@ local function data()
 	return ok and res or nil
 end
 
--- 6. TEMA VISUAL MODERN
+-- 5. TEMA VISUAL MODERN
 local Theme = {
 	Bg        = Color3.fromRGB(12, 10, 18),
 	Header    = Color3.fromRGB(20, 15, 28),
@@ -214,7 +177,7 @@ local Theme = {
 	TextSub   = Color3.fromRGB(185, 175, 205)
 }
 
--- 7. SISTEM NOTIFIKASI TOAST
+-- 6. SISTEM NOTIFIKASI TOAST
 local NotifyGui = Instance.new("ScreenGui")
 NotifyGui.Name = "MofenkNotifyGui"
 NotifyGui.Parent = parentGui
@@ -274,7 +237,7 @@ local function MofenkNotify(title, message, duration)
 	end)
 end
 
--- 8. UI UTAMA
+-- 7. UI UTAMA
 local MainGui = Instance.new("ScreenGui")
 MainGui.Name = "MofenkUltraHubV35"
 MainGui.Parent = parentGui
@@ -287,8 +250,8 @@ UIRescale.Parent = MainGui
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
 MainFrame.Parent = MainGui
-MainFrame.Size = UDim2.new(0, 840, 0, 550)
-MainFrame.Position = UDim2.new(0.5, -420, 0.5, -275)
+MainFrame.Size = UDim2.new(0, 820, 0, 520)
+MainFrame.Position = UDim2.new(0.5, -410, 0.5, -260)
 MainFrame.BackgroundColor3 = Theme.Bg
 MainFrame.BackgroundTransparency = 0.05
 MainFrame.Active = true
@@ -330,7 +293,6 @@ local LIC = Instance.new("UICorner")
 LIC.CornerRadius = UDim.new(0, 10)
 LIC.Parent = LogoIcon
 
--- Logo Teks 'F' di Topbar
 local LogoTextF = Instance.new("TextLabel")
 LogoTextF.Parent = LogoIcon
 LogoTextF.Size = UDim2.new(1, 0, 1, 0)
@@ -596,7 +558,9 @@ AvatarImg.Parent = ProfileWrapper
 AvatarImg.Position = UDim2.new(0, 12, 0, 12)
 AvatarImg.Size = UDim2.new(0, 64, 0, 64)
 AvatarImg.BackgroundColor3 = Theme.Header
-AvatarImg.Image = Players:GetUserThumbnailAsync(LocalPlayer.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size150x150)
+pcall(function()
+	AvatarImg.Image = Players:GetUserThumbnailAsync(LocalPlayer.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size150x150)
+end)
 local AIC = Instance.new("UICorner")
 AIC.CornerRadius = UDim.new(1, 0)
 AIC.Parent = AvatarImg
@@ -788,7 +752,7 @@ SDD_Btn.MouseButton1Click:Connect(function()
 	SingleDropList.Visible = not SingleDropList.Visible
 end)
 
--- KOTAK 2: AUTO MIX TOWER (RANDOM)
+-- KOTAK 2: AUTO MIX TOWER
 local MixTowerBox = Instance.new("Frame")
 MixTowerBox.Parent = Tab2
 MixTowerBox.Size = UDim2.new(1, 0, 0, 95)
@@ -1212,7 +1176,7 @@ AddConfigButton("Hapus Konfigurasi (Delete Config)", Color3.fromRGB(255, 75, 75)
 	end
 end)
 
--- 10. TOMBOL APUNG INTERAKTIF BERHURUF "F" (UKURAN BESAR & NYAMAN)
+-- 10. TOMBOL APUNG "F"
 local ToggleGui = Instance.new("ScreenGui")
 ToggleGui.Name = "MofenkToggleGui"
 ToggleGui.Parent = parentGui
@@ -1235,7 +1199,7 @@ TC.CornerRadius = UDim.new(0, 18)
 TC.Parent = ToggleBtn
 ToggleBtn.MouseButton1Click:Connect(function() MainFrame.Visible = not MainFrame.Visible end)
 
--- 11. THREAD UTAMA EKSEKUSI BACKEND
+-- 11. THREAD UTAMA EKSEKUSI BACKEND (AMAN DARI ERROR NIL)
 task.spawn(function()
 	task.spawn(function()
 		pcall(function()
@@ -1261,7 +1225,7 @@ task.spawn(function()
 		end)
 	end)
 
-	MofenkNotify("MOFENK HUB", "Sistem Modern Pro Suite Berhasil Dimuat!", 4)
+	MofenkNotify("MOFENK HUB", "Sistem Aman & Stabil Aktif!", 4)
 	while task.wait(1.5) do
 		if _G.__ANIMEDICE ~= generation then break end
 
@@ -1350,7 +1314,7 @@ task.spawn(function()
 				local d = data()
 				if d and d.Slots then
 					for key, slot in pairs(d.Slots) do
-						if slot.unitId and slot.level and slot.level < _G.Mofenk.LevelLimit then
+						if slot and slot.unitId and slot.level and slot.level < _G.Mofenk.LevelLimit then
 							R.LevelUpSlot:FireServer(tonumber(key))
 							task.wait(0.3)
 						end
