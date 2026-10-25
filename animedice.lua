@@ -1,6 +1,6 @@
 -- ===================================================================== --
--- 👑 MOFENKHUB V35.0 — ULTIMATE MODERN PRO EDITION
--- Game: Anime Dice | Intro Screen Animation, Multi-Tower Select, Fixed UI Bugs
+-- 👑 MOFENKHUB V35.0 — ULTIMATE MODERN PRO EDITION (FIXED LOGO 'F' & NIL ERROR)
+-- Game: Anime Dice | Intro Screen Animation, Multi-Tower Select, Floating 'F' Button
 -- ===================================================================== --
 
 task.wait(0.5)
@@ -95,7 +95,7 @@ _G.Mofenk = {
 	SellAllJunk         = false,
 	AutoLock            = false,
 	AutoFuse            = false,
-	-- Tower Manager (Single & Mix Multi-Select)
+	-- Tower Manager
 	AutoTower           = false,
 	AutoMixTower        = false,
 	SelectedTowerSingle = "Infinity Tower",
@@ -105,7 +105,7 @@ _G.Mofenk = {
 	TowerCurrentLevel   = 0,
 	GearSet             = "Luck Set",
 	LiveGearName        = "Luck Set",
-	-- Plot & Unit Level (Digabung dalam satu kotak)
+	-- Plot & Unit Level
 	AutoCollect         = false,
 	SmartPlace          = false,
 	AutoLevel           = false,
@@ -330,13 +330,23 @@ local LIC = Instance.new("UICorner")
 LIC.CornerRadius = UDim.new(0, 10)
 LIC.Parent = LogoIcon
 
+-- Logo Teks 'F' di Topbar
+local LogoTextF = Instance.new("TextLabel")
+LogoTextF.Parent = LogoIcon
+LogoTextF.Size = UDim2.new(1, 0, 1, 0)
+LogoTextF.BackgroundTransparency = 1
+LogoTextF.Text = "F"
+LogoTextF.TextColor3 = Theme.Text
+LogoTextF.TextSize = 18
+LogoTextF.Font = Enum.Font.GothamBold
+
 local Title = Instance.new("TextLabel")
 Title.Parent = TopBar
 Title.Position = UDim2.new(0, 60, 0, 0)
-Title.Size = UDim2.new(0, 550, 1, 0)
+Title.Size = UDim2.new(0, 520, 1, 0)
 Title.Text = "MOFENKHUB — ULTIMATE MODERN PRO SUITE"
 Title.TextColor3 = Theme.Text
-Title.TextSize = 12
+Title.TextSize = 11
 Title.Font = Enum.Font.GothamBold
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
@@ -481,6 +491,81 @@ local function AddToggle(parent, text, flag)
 	end)
 end
 
+local function AddScrollingDropdown(parent, title, options, currentVal, callback)
+	local F = Instance.new("Frame")
+	F.Parent = parent
+	F.Size = UDim2.new(1, 0, 0, 42)
+	F.BackgroundColor3 = Theme.Card
+	F.BackgroundTransparency = 0.15
+	local C = Instance.new("UICorner")
+	C.CornerRadius = UDim.new(0, 8)
+	C.Parent = F
+
+	local L = Instance.new("TextLabel")
+	L.Parent = F
+	L.Position = UDim2.new(0, 12, 0, 0)
+	L.Size = UDim2.new(0.4, 0, 1, 0)
+	L.Text = title
+	L.TextColor3 = Theme.Text
+	L.TextSize = 10
+	L.Font = Enum.Font.GothamMedium
+	L.TextXAlignment = Enum.TextXAlignment.Left
+	L.BackgroundTransparency = 1
+
+	local Btn = Instance.new("TextButton")
+	Btn.Parent = F
+	Btn.Position = UDim2.new(0.42, 0, 0.15, 0)
+	Btn.Size = UDim2.new(0.55, 0, 0.7, 0)
+	Btn.Text = tostring(currentVal)
+	Btn.TextColor3 = Theme.AccentSec
+	Btn.TextSize = 10
+	Btn.Font = Enum.Font.GothamBold
+	Btn.BackgroundColor3 = Theme.Header
+	Btn.BackgroundTransparency = 0.2
+	local BC = Instance.new("UICorner")
+	BC.CornerRadius = UDim.new(0, 6)
+	BC.Parent = Btn
+
+	local DropList = Instance.new("ScrollingFrame")
+	DropList.Parent = parent.Parent
+	DropList.Size = UDim2.new(0.55, 0, 0, 130)
+	DropList.Position = UDim2.new(0.42, 0, 0, 0)
+	DropList.BackgroundColor3 = Theme.Header
+	DropList.BorderSizePixel = 0
+	DropList.Visible = false
+	DropList.ZIndex = 10
+	DropList.CanvasSize = UDim2.new(0, 0, 0, #options * 30)
+	DropList.ScrollBarThickness = 4
+	local DLC = Instance.new("UICorner")
+	DLC.CornerRadius = UDim.new(0, 6)
+	DLC.Parent = DropList
+	local DLL = Instance.new("UIListLayout")
+	DLL.Parent = DropList
+
+	for _, opt in ipairs(options) do
+		local OptBtn = Instance.new("TextButton")
+		OptBtn.Parent = DropList
+		OptBtn.Size = UDim2.new(1, 0, 0, 28)
+		OptBtn.Text = "  " .. tostring(opt)
+		OptBtn.TextColor3 = Theme.Text
+		OptBtn.TextSize = 10
+		OptBtn.Font = Enum.Font.GothamMedium
+		OptBtn.TextXAlignment = Enum.TextXAlignment.Left
+		OptBtn.BackgroundTransparency = 1
+		OptBtn.ZIndex = 11
+
+		OptBtn.MouseButton1Click:Connect(function()
+			Btn.Text = tostring(opt)
+			DropList.Visible = false
+			if callback then callback(opt) end
+		end)
+	end
+
+	Btn.MouseButton1Click:Connect(function()
+		DropList.Visible = not DropList.Visible
+	end)
+end
+
 -- PEMBUATAN TAB KATEGORI
 local Tab1 = CreateTab("Dashboard", 1)
 local Tab2 = CreateTab("Tower Manager", 2)
@@ -606,7 +691,7 @@ task.spawn(function()
 	end
 end)
 
--- TAB 2: TOWER MANAGER (SINGLE & MIX MULTI-SELECT TERPISAH)
+-- TAB 2: TOWER MANAGER
 AddSection(Tab2, "PENGATURAN TOWER & GEAR")
 AddToggle(Tab2, "Auto Equip Best Unit Tower", "AutoEquipTower")
 
@@ -621,7 +706,7 @@ pcall(function()
 	end
 end)
 
--- KOTAK 1: AUTO TOWER SINGLE (FOKUS 1 PILIHAN)
+-- KOTAK 1: AUTO TOWER SINGLE
 local SingleTowerBox = Instance.new("Frame")
 SingleTowerBox.Parent = Tab2
 SingleTowerBox.Size = UDim2.new(1, 0, 0, 95)
@@ -703,7 +788,7 @@ SDD_Btn.MouseButton1Click:Connect(function()
 	SingleDropList.Visible = not SingleDropList.Visible
 end)
 
--- KOTAK 2: AUTO MIX TOWER (RANDOM MULTI-SELECT / ALL)
+-- KOTAK 2: AUTO MIX TOWER (RANDOM)
 local MixTowerBox = Instance.new("Frame")
 MixTowerBox.Parent = Tab2
 MixTowerBox.Size = UDim2.new(1, 0, 0, 95)
@@ -745,7 +830,6 @@ local MDD_BC = Instance.new("UICorner")
 MDD_BC.CornerRadius = UDim.new(0, 6)
 MDD_BC.Parent = MDD_Btn
 
--- Pilihan Gear Stat Set
 AddScrollingDropdown(Tab2, "Pilih Gear Stat Set (Avatar):", {"Luck Set", "Damage Set", "Money Set", "Balanced Set"}, _G.Mofenk.GearSet, function(val)
 	_G.Mofenk.GearSet = val
 	_G.Mofenk.LiveGearName = val
@@ -769,13 +853,12 @@ AddToggle(Tab4, "Auto Jual Semua (Sell All Junk)", "SellAllJunk")
 AddToggle(Tab4, "Auto Kunci Unit Langka (Auto Lock)", "AutoLock")
 AddToggle(Tab4, "Auto Fusion Unit Otomatis", "AutoFuse")
 
--- TAB 5: PLOT & UNIT (LEVEL UP & TARGET LEVEL DIGABUNG DALAM SATU KOTAK)
+-- TAB 5: PLOT & UNIT
 AddSection(Tab5, "PLOT, UPGRADE & LEVEL UNIT")
 AddToggle(Tab5, "Auto Ambil Saldo Plot (Collect Money)", "AutoCollect")
 AddToggle(Tab5, "Smart Placement Unit (Equip Best)", "SmartPlace")
 AddToggle(Tab5, "Auto Upgrade Pad", "AutoUpgrade")
 
--- Kotak Gabungan Level Up Unit + Batas Target Level
 local LevelBoxWrapper = Instance.new("Frame")
 LevelBoxWrapper.Parent = Tab5
 LevelBoxWrapper.Size = UDim2.new(1, 0, 0, 95)
@@ -1129,7 +1212,7 @@ AddConfigButton("Hapus Konfigurasi (Delete Config)", Color3.fromRGB(255, 75, 75)
 	end
 end)
 
--- 10. TOMBOL APUNG INTERAKTIF (DIACUHKAN LEBIH BESAR & NYAMAN)
+-- 10. TOMBOL APUNG INTERAKTIF BERHURUF "F" (UKURAN BESAR & NYAMAN)
 local ToggleGui = Instance.new("ScreenGui")
 ToggleGui.Name = "MofenkToggleGui"
 ToggleGui.Parent = parentGui
@@ -1140,15 +1223,15 @@ ToggleBtn.Parent = ToggleGui
 ToggleBtn.BackgroundColor3 = Theme.Header
 ToggleBtn.BackgroundTransparency = 0.1
 ToggleBtn.Position = UDim2.new(0.02, 0, 0.35, 0)
-ToggleBtn.Size = UDim2.new(0, 68, 0, 68) -- Diperbesar ukurannya
-ToggleBtn.Text = "HUB"
+ToggleBtn.Size = UDim2.new(0, 72, 0, 72)
+ToggleBtn.Text = "F"
 ToggleBtn.TextColor3 = Theme.AccentSec
-ToggleBtn.TextSize = 14
+ToggleBtn.TextSize = 24
 ToggleBtn.Font = Enum.Font.GothamBold
 ToggleBtn.Active = true
 ToggleBtn.Draggable = true
 local TC = Instance.new("UICorner")
-TC.CornerRadius = UDim.new(0, 16)
+TC.CornerRadius = UDim.new(0, 18)
 TC.Parent = ToggleBtn
 ToggleBtn.MouseButton1Click:Connect(function() MainFrame.Visible = not MainFrame.Visible end)
 
@@ -1261,7 +1344,7 @@ task.spawn(function()
 			end)
 		end
 
-		-- Logika Auto Level Up Unit Slot Berdasarkan Target Level
+		-- Logika Aman Auto Level Up Unit Slot
 		if _G.Mofenk.AutoLevel and R.LevelUpSlot then
 			pcall(function()
 				local d = data()
@@ -1280,7 +1363,7 @@ task.spawn(function()
 			pcall(function() R.BuyUpgrade:FireServer() end)
 		end
 
-		-- Logika Tower Terpisah (Single vs Mix) dengan Jeda Cooldown Aman
+		-- Logika Tower Aman
 		if _G.Mofenk.AutoTower and R.PlayTower then
 			pcall(function()
 				local target = _G.Mofenk.SelectedTowerSingle
