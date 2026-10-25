@@ -1,5 +1,5 @@
 -- ===================================================================== --
--- 👑 MOFENKHUB V89.0 — FULL FIXED MASTER SUITE (NO LUCKY SPINS & NO AUTO-SAVE)
+-- 👑 MOFENKHUB V89.0 — FULL FIXED MASTER SUITE (AUTO-SCALE & LOADING ANIM)
 -- ===================================================================== --
 
 --!nocheck
@@ -11,6 +11,7 @@ local HttpService       = game:GetService("HttpService")
 local TweenService      = game:GetService("TweenService")
 local UserInputService  = game:GetService("UserInputService")
 local TeleportService   = game:GetService("TeleportService")
+local RunService        = game:GetService("RunService")
 
 local LocalPlayer = Players.LocalPlayer
 local successGui, parentGui = pcall(function()
@@ -21,17 +22,17 @@ if not successGui or not parentGui then parentGui = LocalPlayer:WaitForChild("Pl
 pcall(function() for _, v in pairs(parentGui:GetChildren()) do if string.find(v.Name, "Mofenk") then v:Destroy() end end end)
 
 -- ===================================================================== --
--- 1. STATE & CONFIGURATION MANAGER (AUTO-SAVE & AUTO-LOAD OFF)
+-- 1. STATE & CONFIGURATION MANAGER (DENGAN AUTO-LOAD ON/OFF)
 -- ===================================================================== --
 _G.__ANIMEDICE = (_G.__ANIMEDICE or 0) + 1
 local generation = _G.__ANIMEDICE
 
 local F = {
-	themeIndex = 1, cfgName = "MofenkConfig1",
-	-- Farm & Roll (Auto Lucky Spin Dihapus)
+	themeIndex = 1, cfgName = "MofenkConfig1", autoLoadEnabled = false,
+	-- Farm & Roll
 	collect = false, levelup = false, maxLevel = 40, smartLevel = false,
 	rebirth = false, upgrades = false, buyDice = false, equipDice = true, autoRoll = false,
-	-- Inv & Sell (Auto Sell Tanpa Rarity Filter)
+	-- Inv & Sell
 	sellAuto = false, keepBest = 20, autoFuse = false,
 	-- Potion
 	potionAuto = false, potionBest = true, potionSpecific = {},
@@ -80,7 +81,6 @@ local function loadConfig(name)
 		pcall(function() local d = HttpService:JSONDecode(readfile(path)); for k,v in pairs(d) do F[k]=v end end)
 	end
 end
--- (Auto load config dimatikan sesuai permintaan)
 
 -- ===================================================================== --
 -- 2. FRAMEWORK & MODULE BINDINGS
@@ -142,7 +142,33 @@ local function isUnitEntry(e) return e and type(e)=="table" and e.name and G.Ent
 local function currencyAmount(name) local t = 0; for _, e in pairs(inventory()) do if type(e)=="table" and e.name==name then t += tonumber(e.amount) or 0 end end; return t end
 
 -- ===================================================================== --
--- 3. INTERACTIVE "M" LOGO TOGGLE
+-- 3. ANIMASI LOADING & LAYAR TRANSISI PEMBUKA
+-- ===================================================================== --
+local LoadGui = Instance.new("ScreenGui"); LoadGui.Name = "MofenkLoadingGui"; LoadGui.Parent = parentGui; LoadGui.ResetOnSpawn = false
+LoadGui.DisplayOrder = 100000
+
+local LoadFrame = Instance.new("Frame"); LoadFrame.Parent = LoadGui; LoadFrame.Size = UDim2.new(0, 320, 0, 110); LoadFrame.AnchorPoint = Vector2.new(0.5, 0.5); LoadFrame.Position = UDim2.new(0.5, 0, 0.5, 0); LoadFrame.BackgroundColor3 = THEMES[1].Card
+local LFCorner = Instance.new("UICorner"); LFCorner.CornerRadius = UDim.new(0, 14); LFCorner.Parent = LoadFrame
+local LFStroke = Instance.new("UIStroke"); LFStroke.Thickness = 2; LFStroke.Parent = LoadFrame; table.insert(ThemeElements.Acc1, LFStroke)
+
+local LoadTitle = Instance.new("TextLabel"); LoadTitle.Parent = LoadFrame; LoadTitle.Size = UDim2.new(1, 0, 0, 40); LoadTitle.Text = "👑 MOFENKHUB PRO"; LoadTitle.Font = Enum.Font.GothamBlack; LoadTitle.TextSize = 16; LoadTitle.TextColor3 = Color3.fromRGB(255, 255, 255); LoadTitle.BackgroundTransparency = 1
+
+local LoadBarBg = Instance.new("Frame"); LoadBarBg.Parent = LoadFrame; LoadBarBg.Size = UDim2.new(0.85, 0, 0, 12); LoadBarBg.AnchorPoint = Vector2.new(0.5, 0); LoadBarBg.Position = UDim2.new(0.5, 0, 0.55, 0); LoadBarBg.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+local LBBgC = Instance.new("UICorner"); LBBgC.CornerRadius = UDim.new(1, 0); LBBgC.Parent = LoadBarBg
+
+local LoadBarFill = Instance.new("Frame"); LoadBarFill.Parent = LoadBarBg; LoadBarFill.Size = UDim2.new(0, 0, 1, 0); LoadBarFill.BackgroundColor3 = THEMES[1].Acc1; table.insert(ThemeElements.Acc1, LoadBarFill)
+local LBFC = Instance.new("UICorner"); LBFC.CornerRadius = UDim.new(1, 0); LBFC.Parent = LoadBarFill
+
+local LoadStatus = Instance.new("TextLabel"); LoadStatus.Parent = LoadFrame; LoadStatus.Size = UDim2.new(1, 0, 0, 25); LoadStatus.Position = UDim2.new(0, 0, 0.75, 0); LoadStatus.Text = "Memuat modul game..."; LoadStatus.Font = Enum.Font.Medium; LoadStatus.TextSize = 10; LoadStatus.TextColor3 = Color3.fromRGB(180, 180, 180); LoadStatus.BackgroundTransparency = 1
+
+TweenService:Create(LoadBarFill, TweenInfo.new(1.2, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {Size = UDim2.new(1, 0, 1, 0)}):Play()
+task.wait(1.4)
+TweenService:Create(LoadFrame, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.In), {Size = UDim2.new(0, 0, 0, 0), BackgroundTransparency = 1}):Play()
+task.wait(0.4)
+LoadGui:Destroy()
+
+-- ===================================================================== --
+-- 4. INTERACTIVE "M" LOGO TOGGLE & AUTO-SCALE RESPONSIF
 -- ===================================================================== --
 local ToggleGui = Instance.new("ScreenGui"); ToggleGui.Name = "MofenkToggleFront"; ToggleGui.Parent = parentGui; ToggleGui.ResetOnSpawn = false
 ToggleGui.DisplayOrder = 99999
@@ -168,9 +194,21 @@ UserInputService.InputChanged:Connect(function(input)
 end)
 
 -- ===================================================================== --
--- 4. MAIN AESTHETIC UI SETUP
+-- 5. MAIN AESTHETIC UI SETUP & UISCALE (AUTO-SCALE MULTI-ACCOUNT)
 -- ===================================================================== --
-local MainGui = Instance.new("ScreenGui"); MainGui.Name = "MofenkUltraHub"; MainGui.Parent = parentGui
+local MainGui = Instance.new("ScreenGui"); MainGui.Name = "MofenkUltraHub"; MainGui.Parent = parentGui; MainGui.ResetOnSpawn = false
+
+-- Menambahkan Auto-Scale (UIScale) agar menyesuaikan ukuran jendela Roblox yang dikecilkan saat multi-akun AFK
+local ScreenScale = Instance.new("UIScale"); ScreenScale.Parent = MainGui
+local function UpdateScale()
+	local viewport = workspace.CurrentCamera.ViewportSize
+	-- Skalabilitas otomatis mendeteksi lebar layar, ideal untuk multi-instance berukuran kecil
+	local scaleFactor = math.clamp(viewport.X / 1280, 0.65, 1.1)
+	ScreenScale.Scale = scaleFactor
+end
+UpdateScale()
+workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(UpdateScale)
+
 local MainFrame = Instance.new("Frame"); MainFrame.Parent = MainGui; MainFrame.Size = UDim2.new(0, 900, 0, 580); MainFrame.Position = UDim2.new(0.5, -450, 0.5, -290)
 MainFrame.Active = true; MainFrame.Draggable = true; MainFrame.Visible = false; MainFrame.BackgroundTransparency = 0.15; table.insert(ThemeElements.Bg, MainFrame)
 local MainCorner = Instance.new("UICorner"); MainCorner.CornerRadius = UDim.new(0, 16); MainCorner.Parent = MainFrame
@@ -293,7 +331,7 @@ local function GetOpts(mode)
 end
 
 -- ===================================================================== --
--- 5. 8 TABS ASSEMBLY
+-- 6. 8 TABS ASSEMBLY
 -- ===================================================================== --
 local T_Dash = CreateTab("Dashboard", "📊")
 local T_Farm = CreateTab("Farming", "⛏️")
@@ -326,7 +364,7 @@ task.spawn(function()
 	end) end
 end)
 
--- 2. FARMING (Auto Lucky Spins Dihapus)
+-- 2. FARMING
 local G_Farm1 = AddGroup(T_Farm, "PLOT, ROLL & REBIRTH")
 AddToggle(G_Farm1, "Auto Collect Plot", "collect")
 AddToggle(G_Farm1, "Auto Roll Dadu (Otomatis)", "autoRoll")
@@ -337,7 +375,7 @@ AddToggle(G_Farm2, "Auto Level Up Unit", "levelup")
 AddInput(G_Farm2, "Max Level Batas:", "maxLevel", true)
 AddToggle(G_Farm2, "Auto Upgrade Skill Tree", "upgrades")
 
--- 3. INVENTORY (AUTO SELL TANPA RATIRY + KEEP BEST)
+-- 3. INVENTORY
 local G_Inv = AddGroup(T_Inv, "MANAGEMENT & AUTO SELL")
 AddToggle(G_Inv, "Auto Sell Unit (Tanpa Rarity Filter)", "sellAuto")
 AddInput(G_Inv, "Simpan Unit Terbaik (Keep Best):", "keepBest", true)
@@ -376,12 +414,13 @@ local G_TwrMon = AddGroup(T_Twr, "LIVE TOWER MONITORING & TRAIT")
 local TwrLbl = Instance.new("TextLabel"); TwrLbl.Parent = G_TwrMon; TwrLbl.Size = UDim2.new(1,0,0,70); TwrLbl.BackgroundTransparency = 1; TwrLbl.TextColor3 = Color3.fromRGB(255,255,255); TwrLbl.TextSize = 11; TwrLbl.Font = Enum.Font.GothamMedium; TwrLbl.TextXAlignment = Enum.TextXAlignment.Left; TwrLbl.TextYAlignment = Enum.TextYAlignment.Top
 task.spawn(function() while task.wait(0.5) do pcall(function() TwrLbl.Text = string.format("🎮 Status: %s\n🏢 Lantai: %d | 💎 Gems Didapat: %d\n🧬 Trait Didapat: %s", STATE.towerLive, STATE.towerFloor, STATE.towerDrops, tostring(STATE.towerTraitsGot)) end) end end)
 
--- 8. SETTINGS & CONFIG LIST MANAGER (AUTO-SAVE & AUTO-LOAD OFF)
+-- 8. SETTINGS & CONFIG LIST MANAGER (DENGAN AUTO-LOAD ON/OFF)
 local G_Set1 = AddGroup(T_Set, "TEMA & WARNA (NEON GLOW)")
 local BtnTheme = Instance.new("TextButton"); BtnTheme.Parent = G_Set1; BtnTheme.Size = UDim2.new(1, 0, 0, 34); BtnTheme.Text = "🎲 ACAK TEMA WARNA"; BtnTheme.Font = Enum.Font.GothamBlack; BtnTheme.TextSize = 11; table.insert(ThemeElements.Card, BtnTheme); table.insert(ThemeElements.TextAcc, BtnTheme); local BTC = Instance.new("UICorner"); BTC.CornerRadius = UDim.new(0,6); BTC.Parent = BtnTheme
 BtnTheme.MouseButton1Click:Connect(function() F.themeIndex = math.random(1, #THEMES); ApplyTheme(F.themeIndex) end)
 
 local G_SetConfig = AddGroup(T_Set, "CONFIG & FILE MANAGER")
+AddToggle(G_SetConfig, "Auto Load Config Saat Nyala", "autoLoadEnabled")
 AddInput(G_SetConfig, "Nama File Config:", "cfgName", false)
 
 local BtnSave = Instance.new("TextButton"); BtnSave.Parent = G_SetConfig; BtnSave.Size = UDim2.new(1, 0, 0, 32); BtnSave.Text = "💾 SAVE CONFIG SEKARANG"; BtnSave.Font = Enum.Font.GothamBold; BtnSave.TextSize = 11; table.insert(ThemeElements.Header, BtnSave); table.insert(ThemeElements.TextAcc, BtnSave); local BTS = Instance.new("UICorner"); BTS.CornerRadius = UDim.new(0,6); BTS.Parent = BtnSave
@@ -463,11 +502,16 @@ BtnHop.MouseButton1Click:Connect(function()
 end)
 
 -- ===================================================================== --
--- 6. FULL BACKEND THREADS (ANTI-RELOG AMAN & STABIL)
+-- 7. FULL BACKEND THREADS (ANTI-RELOG STABIL & AMAN)
 -- ===================================================================== --
 ApplyTheme(F.themeIndex)
 
--- Anti-AFK Aman & Stabil (Menggunakan simulasi input klik mouse ringan agar tidak terdeteksi idle 20 menit)
+-- Cek apakah Auto Load Config Diaktifkan
+if F.autoLoadEnabled then
+	pcall(function() loadConfig(F.cfgName); ApplyTheme(F.themeIndex) end)
+end
+
+-- Anti-AFK Aman & Stabil (Simulasi VirtualUser klik tombol mouse agar tidak keluar otomatis setiap 20 menit)
 LocalPlayer.Idled:Connect(function()
 	if F.afk then
 		pcall(function()
@@ -513,7 +557,7 @@ task.spawn(function()
 	end
 end)
 
--- Auto Sell Thread (Tanpa Rarity Filter - Otomatis Bersihkan Sisa Keep Best)
+-- Auto Sell Thread
 task.spawn(function()
 	while _G.__ANIMEDICE == generation do
 		if F.sellAuto and R.SellInventory then
