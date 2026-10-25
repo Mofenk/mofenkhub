@@ -1,6 +1,6 @@
 -- ===================================================================== --
--- 👑 MOFENKHUB V35.0 — ULTIMATE SPIDER-MAN & PRO TOWER LIVE SUITE
--- Game: Anime Dice | Live Tower HUD, Gear State, Remote Spy Tab, Pro Logic
+-- 👑 MOFENKHUB V35.0 — ULTIMATE PRO SUITE & CONSOLE LOG EDITION
+-- Game: Anime Dice | Integrated Console UI, Tower Gear Suite, Fixed Unit Level-Up
 -- ===================================================================== --
 
 task.wait(1.5)
@@ -46,16 +46,21 @@ _G.Mofenk = {
 	SellAllJunk         = false,
 	AutoLock            = false,
 	AutoFuse            = false,
-	-- Tower & Plot
+	-- Tower & Plot (Gear dipindah ke Tab Tower)
 	AutoTower           = false,
 	TowerName           = "Infinity Tower",
 	AutoMixTower        = false,
 	AutoEquipTower      = false,
 	TowerLiveStatus     = "Menunggu Pertarungan...",
 	TowerCurrentLevel   = 0,
-	-- Gear Manager
 	GearSet             = "Luck Set",
-	LiveGearName        = "Memuat Gear...",
+	LiveGearName        = "Luck Set",
+	-- Plot & Unit Level (Digabung dalam satu kotak)
+	AutoCollect         = false,
+	SmartPlace          = false,
+	AutoLevel           = false,
+	LevelLimit          = 50,
+	AutoUpgrade         = false,
 	-- Quirk, Traits & Potion
 	AutoQuirk           = false,
 	AutoTrait           = false,
@@ -122,9 +127,9 @@ local R = {
 	EquipDice       = Network and safeFind(Network, "DiceShopService.RE.EquipDice"),
 	CollectBalance  = Network and (safeFind(Network, "PlotService.RE.CollectBalance") or safeFind(Network, "PlotService.RF.CollectBalance")),
 	EquipBest       = Network and safeFind(Network, "PlotService.RE.EquipBest"),
-	LevelUpSlot     = Network and (safeFind(Network, "PlotService.RE.LevelUpSlot") or safeFind(Network, "PlotService.RF.LevelUpSlot")),
+	LevelUpSlot     = Network and (safeFind(Network, "PlotService.RE.LevelUpSlot") or safeFind(Network, "PlotService.RF.LevelUpSlot") or safeFind(Network, "RE.LevelUpSlot")),
 	Rebirth         = Network and (safeFind(Network, "RebirthService.RE.Rebirth") or safeFind(Network, "RebirthService.RF.Rebirth")),
-	BuyUpgrade      = Network and (safeFind(Network, "PlotService.RE.BuyUpgrade") or safeFind(Network, "RE.BuyUpgrade")),
+	BuyUpgrade      = Network and (safeFind(Network, "PlotService.RE.BuyUpgrade") or safeFind(Network, "RE.BuyUpgrade") or safeFind(Network, "PlotService.RE.BuyPadUpgrade")),
 	SellInventory   = Network and safeFind(Network, "SellService.RF.SellInventory"),
 	PlayTower       = Network and (safeFind(Network, "Towers.RF.PlayTower") or safeFind(Network, "Towers.RE.PlayTower")),
 	Fuse            = Network and safeFind(Network, "FusingService.RE.Fuse"),
@@ -148,7 +153,7 @@ local function data()
 	return ok and res or nil
 end
 
--- 5. TEMA GRADASI SPIDER-MAN AESTHETIC & GLOW LIGHT
+-- 5. TEMA VISUAL
 local Theme = {
 	Bg        = Color3.fromRGB(12, 10, 18),
 	Header    = Color3.fromRGB(22, 16, 30),
@@ -159,7 +164,18 @@ local Theme = {
 	TextSub   = Color3.fromRGB(195, 185, 210)
 }
 
--- 6. SISTEM NOTIFIKASI TOAST
+-- 6. SISTEM NOTIFIKASI TOAST & GLOBAL CONSOLE LOG
+local ConsoleLogsTable = {}
+
+local function LogToConsole(message)
+	local timestamp = os.date("%H:%M:%S")
+	local formatted = "[" .. timestamp .. "] " .. tostring(message)
+	table.insert(ConsoleLogsTable, formatted)
+	if #ConsoleLogsTable > 100 then
+		table.remove(ConsoleLogsTable, 1)
+	end
+end
+
 local NotifyGui = Instance.new("ScreenGui")
 NotifyGui.Name = "MofenkNotifyGui"
 NotifyGui.Parent = parentGui
@@ -177,6 +193,7 @@ NotifyLayout.Padding = UDim.new(0, 10)
 
 local function MofenkNotify(title, message, duration)
 	duration = duration or 3.5
+	LogToConsole(title .. ": " .. message)
 	local Card = Instance.new("Frame")
 	Card.Parent = NotifyContainer
 	Card.Size = UDim2.new(1, 0, 0, 52)
@@ -288,7 +305,7 @@ local Title = Instance.new("TextLabel")
 Title.Parent = TopBar
 Title.Position = UDim2.new(0, 60, 0, 0)
 Title.Size = UDim2.new(0, 550, 1, 0)
-Title.Text = "MOFENKHUB — PRO TOWER SUITE & LIVE MONITOR"
+Title.Text = "MOFENKHUB — PRO SUITE & CONSOLE LOG MONITOR"
 Title.TextColor3 = Theme.Text
 Title.TextSize = 12
 Title.Font = Enum.Font.GothamBold
@@ -511,7 +528,7 @@ local function AddScrollingDropdown(parent, title, options, currentVal, callback
 	end)
 end
 
--- PEMBUATAN TAB KATEGORI (DENGAN TAB KHUSUS REMOTE SPY)
+-- PEMBUATAN TAB KATEGORI
 local Tab1 = CreateTab("Dashboard", 1)
 local Tab2 = CreateTab("Tower Manager", 2)
 local Tab3 = CreateTab("Roll & Farm", 3)
@@ -519,8 +536,9 @@ local Tab4 = CreateTab("Inventaris", 4)
 local Tab5 = CreateTab("Plot & Unit", 5)
 local Tab6 = CreateTab("Quirk & Potion", 6)
 local Tab7 = CreateTab("Server & Client", 7)
-local Tab8 = CreateTab("Remote Spy", 8)      -- Tab Khusus Remote Scanner & Inspector
-local Tab9 = CreateTab("Config & Webhook", 9)
+local Tab8 = CreateTab("Console Log", 8)      -- Tab Khusus Console Log UI
+local Tab9 = CreateTab("Remote Spy", 9)
+local Tab10 = CreateTab("Config & Webhook", 10)
 
 TabFrames["Dashboard"].Visible = true
 
@@ -576,7 +594,6 @@ StatsProLbl.TextSize = 10
 StatsProLbl.Font = Enum.Font.GothamBold
 StatsProLbl.Text = "FPS: 60 | Ping: 0ms | Active Users: 1"
 
--- Live Panel Tambahan di Dashboard (Tower & Gear Status)
 AddSection(Tab1, "LIVE MONITORING TOWER & GEAR")
 
 local LiveMonitorCard = Instance.new("Frame")
@@ -622,7 +639,7 @@ task.spawn(function()
 				LocalPlayer.Name, tostring(d and d.Money or 0), tostring(d and d.Rebirth or 0)
 			)
 			
-			local activeGear = _G.Mofenk.LiveGearName or "Balanced Set"
+			local activeGear = _G.Mofenk.LiveGearName or "Luck Set"
 			local towerState = _G.Mofenk.TowerLiveStatus or "Idle"
 			local towerLvl = _G.Mofenk.TowerCurrentLevel or 0
 			
@@ -636,8 +653,8 @@ task.spawn(function()
 	end
 end)
 
--- TAB 2: TOWER MANAGER (DENGAN LIVE STATUS TAMPIL LANGSUNG)
-AddSection(Tab2, "PENGATURAN TOWER & LIVE STATUS")
+-- TAB 2: TOWER MANAGER (DENGAN GEAR STAT SET DI DALAMNYA)
+AddSection(Tab2, "MANAJEMEN TOWER & GEAR SET")
 AddToggle(Tab2, "Auto Jalankan Tower Runner", "AutoTower")
 AddToggle(Tab2, "Auto Mix / Rotasi Tower Otomatis", "AutoMixTower")
 AddToggle(Tab2, "Auto Equip Best Unit Tower", "AutoEquipTower")
@@ -658,6 +675,15 @@ AddScrollingDropdown(Tab2, "Pilih Target Tower:", towers, _G.Mofenk.TowerName, f
 	MofenkNotify("TOWER MGR", "Target tower diatur ke: " .. val, 2)
 end)
 
+AddScrollingDropdown(Tab2, "Pilih Gear Stat Set (Tower):", {"Luck Set", "Damage Set", "Money Set", "Balanced Set"}, _G.Mofenk.GearSet, function(val)
+	_G.Mofenk.GearSet = val
+	_G.Mofenk.LiveGearName = val
+	if R.EquipGear then
+		pcall(function() R.EquipGear:FireServer(val) end)
+	end
+	MofenkNotify("GEAR SET", "Prioritas gear tower diatur ke: " .. val, 2)
+end)
+
 -- TAB 3: ROLL & FARM
 AddSection(Tab3, "AUTOMATED ROLL & FARMING")
 AddToggle(Tab3, "Auto Roll Dadu (Cooldown Presisi)", "AutoRoll")
@@ -672,22 +698,92 @@ AddToggle(Tab4, "Auto Jual Semua (Sell All Junk)", "SellAllJunk")
 AddToggle(Tab4, "Auto Kunci Unit Langka (Auto Lock)", "AutoLock")
 AddToggle(Tab4, "Auto Fusion Unit Otomatis", "AutoFuse")
 
--- TAB 5: PLOT & UNIT
-AddSection(Tab5, "PLOT, LEVEL UP & GEAR STATS")
+-- TAB 5: PLOT & UNIT (LEVEL UP & TARGET LEVEL DIGABUNG DALAM SATU KOTAK)
+AddSection(Tab5, "PLOT, UPGRADE & LEVEL UNIT")
 AddToggle(Tab5, "Auto Ambil Saldo Plot (Collect Money)", "AutoCollect")
 AddToggle(Tab5, "Smart Placement Unit (Equip Best)", "SmartPlace")
-AddToggle(Tab5, "Auto Level Up Unit Slots", "AutoLevel")
 AddToggle(Tab5, "Auto Upgrade Pad", "AutoUpgrade")
 
-AddScrollingDropdown(Tab5, "Pilih Gear Stat Set:", {"Luck Set", "Damage Set", "Money Set", "Balanced Set"}, _G.Mofenk.GearSet, function(val)
-	_G.Mofenk.GearSet = val
-	_G.Mofenk.LiveGearName = val
-	MofenkNotify("GEAR STATS", "Prioritas stat gear diatur ke: " .. val, 2)
-end)
+-- Kotak Gabungan Level Up Unit + Batas Target Level
+local LevelBoxWrapper = Instance.new("Frame")
+LevelBoxWrapper.Parent = Tab5
+LevelBoxWrapper.Size = UDim2.new(1, 0, 0, 90)
+LevelBoxWrapper.BackgroundColor3 = Theme.Card
+LevelBoxWrapper.BackgroundTransparency = 0.15
+local LBWC = Instance.new("UICorner")
+LBWC.CornerRadius = UDim.new(0, 8)
+LBWC.Parent = LevelBoxWrapper
 
-AddScrollingDropdown(Tab5, "Batas Maksimal Level Unit:", {10, 25, 50, 100, 200, 500}, _G.Mofenk.LevelLimit, function(val)
-	_G.Mofenk.LevelLimit = val
-	MofenkNotify("LEVEL UNIT", "Batas level diatur ke: " .. val, 2)
+AddToggle(LevelBoxWrapper, "Auto Level Up Unit Slots (Base)", "AutoLevel")
+
+local DropdownInBox = Instance.new("Frame")
+DropdownInBox.Parent = LevelBoxWrapper
+DropdownInBox.Position = UDim2.new(0, 12, 0, 44)
+DropdownInBox.Size = UDim2.new(1, -24, 0, 36)
+DropdownInBox.BackgroundTransparency = 1
+
+local DIB_Lbl = Instance.new("TextLabel")
+DIB_Lbl.Parent = DropdownInBox
+DIB_Lbl.Size = UDim2.new(0.4, 0, 1, 0)
+DIB_Lbl.Text = "Batas Target Level:"
+DIB_Lbl.TextColor3 = Theme.Text
+DIB_Lbl.TextSize = 10
+DIB_Lbl.Font = Enum.Font.GothamMedium
+DIB_Lbl.TextXAlignment = Enum.TextXAlignment.Left
+DIB_Lbl.BackgroundTransparency = 1
+
+local DIB_Btn = Instance.new("TextButton")
+DIB_Btn.Parent = DropdownInBox
+DIB_Btn.Position = UDim2.new(0.42, 0, 0.1, 0)
+DIB_Btn.Size = UDim2.new(0.58, 0, 0.8, 0)
+DIB_Btn.Text = tostring(_G.Mofenk.LevelLimit)
+DIB_Btn.TextColor3 = Theme.AccentSec
+DIB_Btn.TextSize = 10
+DIB_Btn.Font = Enum.Font.GothamBold
+DIB_Btn.BackgroundColor3 = Theme.Header
+DIB_Btn.BackgroundTransparency = 0.2
+local DIBC = Instance.new("UICorner")
+DIBC.CornerRadius = UDim.new(0, 6)
+DIBC.Parent = DIB_Btn
+
+local LevelDropList = Instance.new("ScrollingFrame")
+LevelDropList.Parent = Tab5.Parent
+LevelDropList.Size = UDim2.new(0.35, 0, 0, 120)
+LevelDropList.Position = UDim2.new(0.55, 0, 0, 0)
+LevelDropList.BackgroundColor3 = Theme.Header
+LevelDropList.BorderSizePixel = 0
+LevelDropList.Visible = false
+LevelDropList.ZIndex = 15
+LevelDropList.CanvasSize = UDim2.new(0, 0, 0, 6 * 28)
+LevelDropList.ScrollBarThickness = 4
+local LDLC = Instance.new("UICorner")
+LDLC.CornerRadius = UDim.new(0, 6)
+LDLC.Parent = LevelDropList
+local LDLL = Instance.new("UIListLayout")
+LDLL.Parent = LevelDropList
+
+for _, lvlOpt in ipairs({10, 25, 50, 100, 200, 500}) do
+	local OptB = Instance.new("TextButton")
+	OptB.Parent = LevelDropList
+	OptB.Size = UDim2.new(1, 0, 0, 28)
+	OptB.Text = "  Level " .. tostring(lvlOpt)
+	OptB.TextColor3 = Theme.Text
+	OptB.TextSize = 10
+	OptB.Font = Enum.Font.GothamMedium
+	OptB.TextXAlignment = Enum.TextXAlignment.Left
+	OptB.BackgroundTransparency = 1
+	OptB.ZIndex = 16
+
+	OptB.MouseButton1Click:Connect(function()
+		_G.Mofenk.LevelLimit = lvlOpt
+		DIB_Btn.Text = tostring(lvlOpt)
+		LevelDropList.Visible = false
+		MofenkNotify("LEVEL UNIT", "Batas level slot diatur ke: " .. lvlOpt, 2)
+	end)
+end
+
+DIB_Btn.MouseButton1Click:Connect(function()
+	LevelDropList.Visible = not LevelDropList.Visible
 end)
 
 -- TAB 6: QUIRK & POTION
@@ -730,11 +826,48 @@ BtnHop.MouseButton1Click:Connect(function()
 	MofenkNotify("SERVER", "Server penuh atau tidak ditemukan.", 3)
 end)
 
--- TAB 8: REMOTE SPY / SCANNER (TAB KHUSUS INSPEKSI JALUR REMETE)
-AddSection(Tab8, "REMOTE SPY & PACKET INSPECTOR")
+-- TAB 8: CONSOLE LOG UI (TAMPILAN KONSOL TEKS DI DALAM HUB)
+AddSection(Tab8, "LIVE CONSOLE LOG & SYSTEM OUTPUT")
+
+local ConsoleScroll = Instance.new("ScrollingFrame")
+ConsoleScroll.Parent = Tab8
+ConsoleScroll.Size = UDim2.new(1, 0, 1, -45)
+ConsoleScroll.BackgroundColor3 = Theme.Card
+ConsoleScroll.BackgroundTransparency = 0.1
+ConsoleScroll.CanvasSize = UDim2.new(0, 0, 0, 500)
+ConsoleScroll.ScrollBarThickness = 4
+local CSC = Instance.new("UICorner")
+CSC.CornerRadius = UDim.new(0, 8)
+CSC.Parent = ConsoleScroll
+
+local ConsoleTextLbl = Instance.new("TextLabel")
+ConsoleTextLbl.Parent = ConsoleScroll
+ConsoleTextLbl.Size = UDim2.new(1, -12, 1, 0)
+ConsoleTextLbl.Position = UDim2.new(0, 6, 0, 6)
+ConsoleTextLbl.BackgroundTransparency = 1
+ConsoleTextLbl.TextColor3 = Color3.fromRGB(0, 255, 180)
+ConsoleTextLbl.TextSize = 9
+ConsoleTextLbl.Font = Enum.Font.Code
+ConsoleTextLbl.TextXAlignment = Enum.TextXAlignment.Left
+ConsoleTextLbl.TextYAlignment = Enum.TextYAlignment.Top
+ConsoleTextLbl.TextWrapped = true
+ConsoleTextLbl.Text = "[System] MofenkHub Console Log diinisialisasi sukses..."
+
+task.spawn(function()
+	while task.wait(1) do
+		pcall(function()
+			ConsoleTextLbl.Text = table.concat(ConsoleLogsTable, "\n")
+			ConsoleScroll.CanvasSize = UDim2.new(0, 0, 0, ConsoleTextLbl.TextBounds.Y + 20)
+			ConsoleScroll.CanvasPosition = Vector2.new(0, ConsoleScroll.AbsoluteCanvasSize.Y)
+		end)
+	end
+end)
+
+-- TAB 9: REMOTE SPY
+AddSection(Tab9, "REMOTE SPY & PACKET INSPECTOR")
 
 local SpyDesc = Instance.new("TextLabel")
-SpyDesc.Parent = Tab8
+SpyDesc.Parent = Tab9
 SpyDesc.Size = UDim2.new(1, 0, 0, 40)
 SpyDesc.BackgroundTransparency = 1
 SpyDesc.Text = "Gunakan fitur ini untuk memindai seluruh jalur RemoteEvent & RemoteFunction aktif di dalam game."
@@ -745,7 +878,7 @@ SpyDesc.TextXAlignment = Enum.TextXAlignment.Left
 SpyDesc.TextWrapped = true
 
 local BtnScan = Instance.new("TextButton")
-BtnScan.Parent = Tab8
+BtnScan.Parent = Tab9
 BtnScan.Size = UDim2.new(1, 0, 0, 38)
 BtnScan.Text = "Pindai & Deteksi Semua Remote Game"
 BtnScan.TextColor3 = Theme.AccentSec
@@ -770,13 +903,13 @@ BtnScan.MouseButton1Click:Connect(function()
 	MofenkNotify("REMOTE SPY", "Berhasil mendeteksi " .. tostring(count) + 5 .. " jalur remote aktif!", 4)
 end)
 
--- TAB 9: CONFIG & WEBHOOK
-AddSection(Tab9, "MANAJEMEN CONFIG & DISCORD WEBHOOK")
+-- TAB 10: CONFIG & WEBHOOK
+AddSection(Tab10, "MANAJEMEN CONFIG & DISCORD WEBHOOK")
 
-AddToggle(Tab9, "Auto-Load Config Terakhir (On/Off)", "AutoLoadConfig")
+AddToggle(Tab10, "Auto-Load Config Terakhir (On/Off)", "AutoLoadConfig")
 
 local WebhookContainer = Instance.new("Frame")
-WebhookContainer.Parent = Tab9
+WebhookContainer.Parent = Tab10
 WebhookContainer.Size = UDim2.new(1, 0, 0, 42)
 WebhookContainer.BackgroundColor3 = Theme.Card
 WebhookContainer.BackgroundTransparency = 0.15
@@ -816,7 +949,7 @@ WH_Box.FocusLost:Connect(function()
 end)
 
 local ConfigNameContainer = Instance.new("Frame")
-ConfigNameContainer.Parent = Tab9
+ConfigNameContainer.Parent = Tab10
 ConfigNameContainer.Size = UDim2.new(1, 0, 0, 42)
 ConfigNameContainer.BackgroundColor3 = Theme.Card
 ConfigNameContainer.BackgroundTransparency = 0.15
@@ -858,7 +991,7 @@ end)
 
 local function AddConfigButton(text, color, callback)
 	local Btn = Instance.new("TextButton")
-	Btn.Parent = Tab9
+	Btn.Parent = Tab10
 	Btn.Size = UDim2.new(1, 0, 0, 38)
 	Btn.Text = text
 	Btn.TextColor3 = color
@@ -940,7 +1073,7 @@ TC.CornerRadius = UDim.new(0, 14)
 TC.Parent = ToggleBtn
 ToggleBtn.MouseButton1Click:Connect(function() MainFrame.Visible = not MainFrame.Visible end)
 
--- 8. THREAD UTAMA EKSEKUSI BACKEND & LIVE MONITORING
+-- 8. THREAD UTAMA EKSEKUSI BACKEND & OTOMASI
 task.spawn(function()
 	task.spawn(function()
 		pcall(function()
@@ -966,7 +1099,7 @@ task.spawn(function()
 		end)
 	end)
 
-	MofenkNotify("MOFENK HUB", "Sistem Pro Tower Suite Berhasil Dimuat!", 4)
+	MofenkNotify("MOFENK HUB", "Sistem Pro Suite Berhasil Dimuat!", 4)
 	while task.wait(1.5) do
 		if _G.__ANIMEDICE ~= generation then break end
 
@@ -1049,6 +1182,7 @@ task.spawn(function()
 			end)
 		end
 
+		-- Perbaikan Logika Level Up Slot Unit Base/Plot Presisi
 		if _G.Mofenk.AutoLevel and R.LevelUpSlot then
 			pcall(function()
 				local d = data()
@@ -1056,6 +1190,7 @@ task.spawn(function()
 					for key, slot in pairs(d.Slots) do
 						if slot.unitId and slot.level and slot.level < _G.Mofenk.LevelLimit then
 							R.LevelUpSlot:FireServer(tonumber(key))
+							LogToConsole("Menaikkan level unit pada slot index: " .. tostring(key))
 							task.wait(0.3)
 						end
 					end
@@ -1067,7 +1202,6 @@ task.spawn(function()
 			pcall(function() R.BuyUpgrade:FireServer() end)
 		end
 
-		-- Tower Manager & Live State Update
 		if _G.Mofenk.AutoTower and R.PlayTower then
 			pcall(function()
 				local targetTower = _G.Mofenk.TowerName
@@ -1077,6 +1211,7 @@ task.spawn(function()
 				
 				_G.Mofenk.TowerLiveStatus = "Aktif (" .. targetTower .. ")"
 				_G.Mofenk.TowerCurrentLevel = _G.Mofenk.TowerCurrentLevel + 1
+				LogToConsole("Tower Runner aktif masuk ke: " .. targetTower)
 				
 				R.PlayTower:InvokeServer(targetTower)
 			end)
@@ -1093,6 +1228,7 @@ task.spawn(function()
 				local d = data()
 				if d and tonumber(d.Money) and d.Money >= _G.Mofenk.RebirthRequirement then
 					R.Rebirth:FireServer()
+					LogToConsole("Rebirth berhasil dieksekusi!")
 					task.wait(3)
 				end
 			end)
