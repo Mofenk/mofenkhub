@@ -1,5 +1,5 @@
 -- ===================================================================== --
--- 👑 MOFENKHUB V90.5 — MODERN GLOW + DEEP SPY SCANNER EDITION
+-- 👑 MOFENKHUB V91.0 — MODERN GLOW + DEEP CONSOLE SPY + CONFIG MANAGER
 -- ===================================================================== --
 
 --!nocheck
@@ -14,6 +14,10 @@ local TeleportService   = game:GetService("TeleportService")
 local RunService        = game:GetService("RunService")
 local GuiService        = game:GetService("GuiService")
 local StarterGui        = game:GetService("StarterGui")
+
+-- Folder Penyimpanan Config
+local CFG_FOLDER = "MofenkConfigs"
+if not isfolder(CFG_FOLDER) and makefolder then pcall(function() makefolder(CFG_FOLDER) end) end
 
 -- ===================================================================== --
 -- [AUTO-EXECUTE] QUEUE ON TELEPORT
@@ -107,8 +111,23 @@ local function SendNotification(title, text, duration, isError)
 end
 
 -- ===================================================================== --
--- [NEW CORE] DEEP RAW METATABLE SPY (REMOTE & FUNCTION TRACKER)
+-- [NEW CORE] DEEP RAW METATABLE SPY CONSOLE PRINTER (UPGRADED)
 -- ===================================================================== --
+local function dumpTable(t, indent)
+	if type(t) ~= "table" then return tostring(t) end
+	indent = indent or ""
+	local res = "{\n"
+	for k, v in pairs(t) do
+		local formatting = indent .. "  [" .. tostring(k) .. "] = "
+		if type(v) == "table" then
+			res = res .. formatting .. dumpTable(v, indent .. "  ") .. ",\n"
+		else
+			res = res .. formatting .. tostring(v) .. " (" .. type(v) .. "),\n"
+		end
+	end
+	return res .. indent .. "}"
+end
+
 pcall(function()
 	local mt = getrawmetatable(game)
 	local oldNamecall = mt.__namecall
@@ -116,10 +135,9 @@ pcall(function()
 
 	mt.__namecall = newcclosure(function(self, ...)
 		local method = getnamecallmethod()
-		-- Tangkap FireServer (RemoteEvent) dan InvokeServer (RemoteFunction)
 		if F.spyDataOn and not checkcaller() and (method == "FireServer" or method == "InvokeServer") then
 			print("\n=======================================================")
-			warn("🔥 [MOFENK SPY] REMOTE " .. string.upper(method) .. " TERDETEKSI!")
+			warn("🔥 [MOFENK CONSOLE SPY] REMOTE " .. string.upper(method) .. " TERDETEKSI! 🔥")
 			print("📍 Path Objek :", self:GetFullName())
 			print("🛠️ Tipe Data  :", self.ClassName)
 			print("📝 ARGUMEN YANG DIKIRIM (PAYLOAD):")
@@ -129,12 +147,10 @@ pcall(function()
 				print("   ▶ (Tidak ada argumen / Kosong)")
 			else
 				for i, v in ipairs(args) do
-					print(string.format("   ▶ Arg [%d]: %s (Tipe: %s)", i, tostring(v), typeof(v)))
-					-- Jika argumen berupa table, bongkar isinya!
 					if type(v) == "table" then
-						for k2, v2 in pairs(v) do
-							print(string.format("       -> [%s] = %s", tostring(k2), tostring(v2)))
-						end
+						print(string.format("   ▶ Arg [%d] (Table Detail): \n%s", i, dumpTable(v, "       ")))
+					else
+						print(string.format("   ▶ Arg [%d]: %s (Tipe: %s)", i, tostring(v), typeof(v)))
 					end
 				end
 			end
@@ -152,7 +168,7 @@ UserInputService.InputBegan:Connect(function(input, gpe)
 		local mouse = LocalPlayer:GetMouse()
 		local target = mouse.Target
 		if target then
-			warn("🖱️ [CLICK SPY] Kamu Mengklik Objek:")
+			warn("\n🖱️ [CLICK SPY] Kamu Mengklik Objek:")
 			print("📍 Path:", target:GetFullName())
 			print("🧱 Class:", target.ClassName, "| Transparancy:", target.Transparency)
 			if target:FindFirstChildWhichIsA("ClickDetector") or target:FindFirstChildWhichIsA("ProximityPrompt") then
@@ -262,7 +278,7 @@ UpdateScale(); workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):
 ToggleBtn.MouseButton1Click:Connect(function() MainFrame.Visible = not MainFrame.Visible; if MainFrame.Visible then SendNotification("Menu Dibuka", "MofenkHub siap digunakan!", 2, false) end end)
 
 local TopBar = Instance.new("Frame"); TopBar.Parent = MainFrame; TopBar.Size = UDim2.new(1, 0, 0, 55); TopBar.BackgroundTransparency = 0.3; table.insert(ThemeElements.Header, TopBar); local TopCorner = Instance.new("UICorner"); TopCorner.CornerRadius = UDim.new(0, 18); TopCorner.Parent = TopBar; local BottomHider = Instance.new("Frame"); BottomHider.Parent = TopBar; BottomHider.Size = UDim2.new(1, 0, 0, 10); BottomHider.Position = UDim2.new(0, 0, 1, -10); BottomHider.BorderSizePixel = 0; BottomHider.BackgroundTransparency = 0.3; table.insert(ThemeElements.Header, BottomHider)
-local Title = Instance.new("TextLabel"); Title.Parent = TopBar; Title.Position = UDim2.new(0, 25, 0, 0); Title.Size = UDim2.new(0, 600, 1, 0); Title.Text = "👑 MOFENKHUB V90.5  |  MODERN GLOW + SPY EDITION"; Title.TextSize = 16; Title.Font = Enum.Font.GothamBlack; Title.TextXAlignment = Enum.TextXAlignment.Left; Title.BackgroundTransparency = 1; table.insert(ThemeElements.TextAcc, Title)
+local Title = Instance.new("TextLabel"); Title.Parent = TopBar; Title.Position = UDim2.new(0, 25, 0, 0); Title.Size = UDim2.new(0, 600, 1, 0); Title.Text = "👑 MOFENKHUB V91.0  |  MODERN GLOW + SPY CONSOLE"; Title.TextSize = 16; Title.Font = Enum.Font.GothamBlack; Title.TextXAlignment = Enum.TextXAlignment.Left; Title.BackgroundTransparency = 1; table.insert(ThemeElements.TextAcc, Title)
 local CloseBtn = Instance.new("TextButton"); CloseBtn.Parent = TopBar; CloseBtn.Position = UDim2.new(1, -50, 0, 10); CloseBtn.Size = UDim2.new(0, 35, 0, 35); CloseBtn.Text = "✕"; CloseBtn.TextColor3 = Color3.fromRGB(255,255,255); CloseBtn.Font = Enum.Font.GothamBold; CloseBtn.TextSize = 18; CloseBtn.BackgroundTransparency = 0.3; table.insert(ThemeElements.Card, CloseBtn); local CC = Instance.new("UICorner"); CC.CornerRadius = UDim.new(0, 10); CC.Parent = CloseBtn
 CloseBtn.MouseButton1Click:Connect(function() MainFrame.Visible = false end)
 
@@ -531,6 +547,19 @@ BtnLoad.MouseButton1Click:Connect(function()
 	if success then SendNotification("Config Dimuat", "Config " .. tostring(F.cfgName) .. " di-load.", 3, false) else SendNotification("Gagal Load", tostring(err), 4, true) end
 end)
 
+local BtnDelete = Instance.new("TextButton"); BtnDelete.Parent = G_SetConfig; BtnDelete.Size = UDim2.new(1, 0, 0, 38); BtnDelete.Text = "🗑️ HAPUS CONFIG INI"; BtnDelete.Font = Enum.Font.GothamBold; BtnDelete.TextSize = 13; table.insert(ThemeElements.Header, BtnDelete); table.insert(ThemeElements.TextAcc, BtnDelete); local BTD = Instance.new("UICorner"); BTD.CornerRadius = UDim.new(0,8); BTD.Parent = BtnDelete
+BtnDelete.MouseButton1Click:Connect(function() 
+	local success, err = pcall(function() 
+		if delfile then delfile(CFG_FOLDER .. "/" .. F.cfgName .. ".json") end 
+	end) 
+	if success then 
+		SendNotification("Config Dihapus", "Config " .. tostring(F.cfgName) .. " berhasil dihapus.", 3, false)
+		RefreshConfigList()
+	else 
+		SendNotification("Gagal Hapus", tostring(err), 4, true) 
+	end
+end)
+
 local ListTitle = Instance.new("TextLabel"); ListTitle.Parent = G_SetConfig; ListTitle.Size = UDim2.new(1, 0, 0, 24); ListTitle.Text = "📁 PILIH CONFIG TERSEDIA:"; ListTitle.TextSize = 13; ListTitle.Font = Enum.Font.GothamBold; ListTitle.BackgroundTransparency = 1; table.insert(ThemeElements.TextAcc, ListTitle)
 local ConfigScroll = Instance.new("ScrollingFrame"); ConfigScroll.Parent = G_SetConfig; ConfigScroll.Size = UDim2.new(1, 0, 0, 110); ConfigScroll.BackgroundTransparency = 0.5; table.insert(ThemeElements.Header, ConfigScroll); ConfigScroll.ScrollBarThickness = 2; ConfigScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y; ConfigScroll.CanvasSize = UDim2.new(0,0,0,0); local CSC = Instance.new("UICorner"); CSC.CornerRadius = UDim.new(0, 8); CSC.Parent = ConfigScroll; local ConfigLayout = Instance.new("UIListLayout"); ConfigLayout.Parent = ConfigScroll; ConfigLayout.Padding = UDim.new(0, 5)
 
@@ -555,7 +584,7 @@ local G_Web = AddGroup(T_Set, "DISCORD WEBHOOK")
 AddToggle(G_Web, "Aktifkan Webhook Discord", "webhookEnabled")
 AddInput(G_Web, "Webhook URL (Tempel di sini):", "webhookUrl", false)
 local BtnTestWeb = Instance.new("TextButton"); BtnTestWeb.Parent = G_Web; BtnTestWeb.Size = UDim2.new(1, 0, 0, 38); BtnTestWeb.Text = "🔔 TEST KIRIM WEBHOOK"; BtnTestWeb.Font = Enum.Font.GothamBold; BtnTestWeb.TextSize = 13; table.insert(ThemeElements.Card, BtnTestWeb); table.insert(ThemeElements.TextAcc, BtnTestWeb); local BTWC = Instance.new("UICorner"); BTWC.CornerRadius = UDim.new(0,8); BTWC.Parent = BtnTestWeb
-BtnTestWeb.MouseButton1Click:Connect(function() SendWebhook("✅ Webhook Connected!", "MofenkHub V90.5 berhasil tersambung.", 3447003); SendNotification("Webhook", "Pesan Test Terkirim ke Discord!", 3, false) end)
+BtnTestWeb.MouseButton1Click:Connect(function() SendWebhook("✅ Webhook Connected!", "MofenkHub V91.0 berhasil tersambung.", 3447003); SendNotification("Webhook", "Pesan Test Terkirim ke Discord!", 3, false) end)
 
 local G_Set2 = AddGroup(T_Set, "OPTIMALISASI & TOOLS")
 AddToggle(G_Set2, "Anti-AFK (Cegah Disconnect)", "afk")
