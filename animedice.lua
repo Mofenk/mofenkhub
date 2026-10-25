@@ -1,5 +1,5 @@
 -- ===================================================================== --
--- 👑 MOFENKHUB V97.0 — MASTER EDITION WITH SPY SCANNER RESTORED
+-- 👑 MOFENKHUB V100.0 — TRICK OR TREAT & PUMPKIN DICE MASTER EDITION
 -- ===================================================================== --
 
 --!nocheck
@@ -54,26 +54,27 @@ local F = {
 	collect = false, levelup = false, maxLevel = 40, smartLevel = false,
 	rebirth = false, upgrades = false, buyDice = false, equipDice = true, autoRoll = false,
 	sellAuto = false, keepBest = 20, autoFuse = false,
+	autoSellMode = "Keep Best (Default)",
 	potionAuto = false, potionBest = true, potionSpecific = {},
 	gradeAuto = false, gradeAll = false, gradePlacedOnly = false, gradeTargets = {}, gradeUnits = {}, gemReserve = 100,
 	traitAuto = false, traitAll = false, traitPlacedOnly = false, traitTargets = {}, traitUnits = {}, rerollReserve = 50,
 	tower = false, towerName = "Dragon Tower", towerMix = false, towerEquipBest = true, towerExitOn = false, towerExitFloor = 50,
+	-- HALLOWEEN & TRICK OR TREAT FLAGS
+	halloAutoClaim = false, halloAutoUpgrade = false, halloAutoQuest = false, halloRollPumpkin = false, halloAutoTrickOrTreat = false,
 	wsOn = false, wsValue = 16, noclip = false, afk = true, fpsOn = false,
 	codesAuto = false, claimQuests = false,
 	webhookEnabled = false, webhookUrl = "",
 	spyDataOn = false, spyClickOn = false
 }
 
-local STATE = { towerLive = "Standby", towerFloor = 0, towerDrops = 0, towerTraitsGot = "Belum Ada", activeBuffs = "Tidak Ada" }
+local STATE = { towerLive = "Standby", towerFloor = 0, towerDrops = 0, towerTraitsGot = "Belum Ada", activeBuffs = "Tidak Ada", halloCurrency = 0 }
 local ConfigUpdaters = {}
 
 local function saveConfig(name)
 	if not writefile then return error("Executor tidak mendukung writefile!") end
 	local path = CFG_FOLDER .. "/" .. tostring(name) .. ".json"
 	local dataToSave = {}
-	for k, v in pairs(F) do
-		if type(v) ~= "function" then dataToSave[k] = v end
-	end
+	for k, v in pairs(F) do if type(v) ~= "function" then dataToSave[k] = v end end
 	writefile(path, HttpService:JSONEncode(dataToSave))
 end
 
@@ -82,9 +83,7 @@ local function loadConfig(name)
 	if readfile and isfile and isfile(path) then
 		local success, decoded = pcall(function() return HttpService:JSONDecode(readfile(path)) end)
 		if success and type(decoded) == "table" then
-			for k, v in pairs(decoded) do
-				if F[k] ~= nil then F[k] = v end
-			end
+			for k, v in pairs(decoded) do if F[k] ~= nil then F[k] = v end end
 			for _, updateFn in ipairs(ConfigUpdaters) do pcall(updateFn) end
 			return true
 		end
@@ -138,7 +137,7 @@ local function SendNotification(title, text, duration, isError)
 end
 
 -- ===================================================================== --
--- 2. SAFE FRAMEWORK & MODULE BINDINGS (ANTI-NIL ERROR)
+-- 2. SAFE FRAMEWORK & HALLOWEEN / TRICK OR TREAT REMOTES
 -- ===================================================================== --
 local Network = ReplicatedStorage:WaitForChild("Network", 15)
 local Framework = ReplicatedStorage:WaitForChild("Framework", 15)
@@ -167,7 +166,18 @@ local R = {
 	ClaimGroup      = svc("GroupRewardService.RE.Claim"),
 	SellInventory   = svc("SellService.RF.SellInventory"),
 	UpdateAutoSell  = svc("SellService.RE.UpdateAutoSell"),
-	Fuse            = svc("FusingService.RE.Fuse")
+	Fuse            = svc("FusingService.RE.Fuse"),
+	
+	-- HALLOWEEN, PUMPKIN & TRICK OR TREAT REMOTES
+	HalloTeleport       = svc("HalloweenService.RF.Teleport"),
+	HalloClaimPath      = svc("HalloweenService.RE.ClaimPath"),
+	HalloClaimAll       = svc("HalloweenService.RE.ClaimAllPath"),
+	HalloBuyUpgrade     = svc("HalloweenService.RE.BuyUpgrade"),
+	HalloBuyOffer       = svc("HalloweenService.RE.BuyOffer"),
+	HalloQuestClaim     = svc("HalloweenQuestService.RE.Claim"),
+	PumpkinRoll         = svc("PumpkinDiceService.RF.Roll"),
+	PumpkinAutoSell     = svc("PumpkinDiceService.RE.SetAutoSell"),
+	TrickOrTreatClaim   = svc("HalloweenService.RE.TrickOrTreat") or svc("HalloweenService.RF.TrickOrTreat") or svc("HalloweenService.RE.ClaimTrickOrTreat")
 }
 
 local G = {}
@@ -204,87 +214,8 @@ local function slots() return data().Slots or {} end
 local function isUnitEntry(e) return e and type(e)=="table" and e.name and G.EntryRegistry and pcall(function() return G.EntryRegistry.getEntryConfig(e.name).kind == "Unit" end) end
 local function currencyAmount(name) local t = 0; for _, e in pairs(inventory()) do if type(e)=="table" and e.name==name then t += tonumber(e.amount) or 0 end end; return t end
 
-local function SendWebhook(title, description, colorCode)
-	if not F.webhookEnabled or F.webhookUrl == "" then return end
-	local req = (syn and syn.request) or request or http_request or (fluxus and fluxus.request)
-	if req then
-		pcall(function()
-			req({
-				Url = F.webhookUrl, Method = "POST", Headers = {["Content-Type"] = "application/json"},
-				Body = HttpService:JSONEncode({ username = "MofenkHub", avatar_url = "https://i.imgur.com/3qGMB7j.png", embeds = {{ title = title, description = description, color = colorCode or 3447003, footer = {text = "Player: " .. LocalPlayer.Name} }} })
-			})
-		end)
-	end
-end
-
 -- ===================================================================== --
--- 3. REMOTE & FUNCTION SPY SCANNER (RESTORED)
--- ===================================================================== --
-local function dumpTable(t, indent)
-	if type(t) ~= "table" then return tostring(t) end
-	indent = indent or ""
-	local res = "{\n"
-	for k, v in pairs(t) do
-		local formatting = indent .. "  [" .. tostring(k) .. "] = "
-		if type(v) == "table" then
-			res = res .. formatting .. dumpTable(v, indent .. "  ") .. ",\n"
-		else
-			res = res .. formatting .. tostring(v) .. " (" .. type(v) .. "),\n"
-		end
-	end
-	return res .. indent .. "}"
-end
-
-pcall(function()
-	local mt = getrawmetatable(game)
-	if mt and setreadonly then
-		local oldNamecall = mt.__namecall
-		setreadonly(mt, false)
-
-		mt.__namecall = newcclosure(function(self, ...)
-			local method = getnamecallmethod()
-			if F.spyDataOn and not checkcaller() and (method == "FireServer" or method == "InvokeServer") then
-				print("\n=======================================================")
-				warn("🔥 [MOFENK SPY] REMOTE " .. string.upper(method) .. " TERDETEKSI! 🔥")
-				print("📍 Path Objek :", self:GetFullName())
-				print("🛠️ Tipe Data  :", self.ClassName)
-				print("📝 ARGUMEN / PAYLOAD:")
-				
-				local args = {...}
-				if #args == 0 then
-					print("   ▶ (Argumen Kosong)")
-				else
-					for i, v in ipairs(args) do
-						if type(v) == "table" then
-							print(string.format("   ▶ Arg [%d] (Table Detail): \n%s", i, dumpTable(v, "       ")))
-						else
-							print(string.format("   ▶ Arg [%d]: %s (Tipe: %s)", i, tostring(v), typeof(v)))
-						end
-					end
-				end
-				print("=======================================================\n")
-			end
-			return oldNamecall(self, ...)
-		end)
-		setreadonly(mt, true)
-	end
-end)
-
-UserInputService.InputBegan:Connect(function(input, gpe)
-	if gpe then return end
-	if input.UserInputType == Enum.UserInputType.MouseButton1 and F.spyClickOn then
-		local mouse = LocalPlayer:GetMouse()
-		local target = mouse.Target
-		if target then
-			warn("\n🖱️ [CLICK SPY] Objek Diklik:")
-			print("📍 Path:", target:GetFullName())
-			print("🧱 Class:", target.ClassName)
-		end
-	end
-end)
-
--- ===================================================================== --
--- 4. INTERACTIVE LOGO & MAIN UI
+-- 3. INTERACTIVE LOGO & MAIN UI
 -- ===================================================================== --
 local ToggleGui = Instance.new("ScreenGui"); ToggleGui.Name = "MofenkToggleFront"; ToggleGui.Parent = parentGui; ToggleGui.ResetOnSpawn = false; ToggleGui.DisplayOrder = 99998
 local ToggleBtn = Instance.new("TextButton"); ToggleBtn.Parent = ToggleGui; ToggleBtn.Size = UDim2.new(0, 60, 0, 60); ToggleBtn.Position = UDim2.new(0.02, 0, 0.4, 0); ToggleBtn.BackgroundColor3 = THEMES[1].Card; ToggleBtn.Text = "M"; ToggleBtn.Font = Enum.Font.GothamBlack; ToggleBtn.TextSize = 34; ToggleBtn.TextColor3 = THEMES[1].Acc1; ToggleBtn.BackgroundTransparency = 0.2; local TC = Instance.new("UICorner"); TC.CornerRadius = UDim.new(0, 16); TC.Parent = ToggleBtn; local TS = Instance.new("UIStroke"); TS.Thickness = 3; TS.Parent = ToggleBtn; table.insert(ThemeElements.Acc1, TS)
@@ -312,7 +243,7 @@ UpdateScale(); workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):
 ToggleBtn.MouseButton1Click:Connect(function() MainFrame.Visible = not MainFrame.Visible; if MainFrame.Visible then SendNotification("Menu Dibuka", "MofenkHub siap digunakan!", 2, false) end end)
 
 local TopBar = Instance.new("Frame"); TopBar.Parent = MainFrame; TopBar.Size = UDim2.new(1, 0, 0, 55); TopBar.BackgroundTransparency = 0.3; table.insert(ThemeElements.Header, TopBar); local TopCorner = Instance.new("UICorner"); TopCorner.CornerRadius = UDim.new(0, 18); TopCorner.Parent = TopBar; local BottomHider = Instance.new("Frame"); BottomHider.Parent = TopBar; BottomHider.Size = UDim2.new(1, 0, 0, 10); BottomHider.Position = UDim2.new(0, 0, 1, -10); BottomHider.BorderSizePixel = 0; BottomHider.BackgroundTransparency = 0.3; table.insert(ThemeElements.Header, BottomHider)
-local Title = Instance.new("TextLabel"); Title.Parent = TopBar; Title.Position = UDim2.new(0, 25, 0, 0); Title.Size = UDim2.new(0, 600, 1, 0); Title.Text = "👑 MOFENKHUB V97.0  |  MASTER EDITION + SPY"; Title.TextSize = 16; Title.Font = Enum.Font.GothamBlack; Title.TextXAlignment = Enum.TextXAlignment.Left; Title.BackgroundTransparency = 1; table.insert(ThemeElements.TextAcc, Title)
+local Title = Instance.new("TextLabel"); Title.Parent = TopBar; Title.Position = UDim2.new(0, 25, 0, 0); Title.Size = UDim2.new(0, 600, 1, 0); Title.Text = "👑 MOFENKHUB V100.0  |  TRICK OR TREAT & HALLOWEEN EDITION"; Title.TextSize = 14; Title.Font = Enum.Font.GothamBlack; Title.TextXAlignment = Enum.TextXAlignment.Left; Title.BackgroundTransparency = 1; table.insert(ThemeElements.TextAcc, Title)
 local CloseBtn = Instance.new("TextButton"); CloseBtn.Parent = TopBar; CloseBtn.Position = UDim2.new(1, -50, 0, 10); CloseBtn.Size = UDim2.new(0, 35, 0, 35); CloseBtn.Text = "✕"; CloseBtn.TextColor3 = Color3.fromRGB(255,255,255); CloseBtn.Font = Enum.Font.GothamBold; CloseBtn.TextSize = 18; CloseBtn.BackgroundTransparency = 0.3; table.insert(ThemeElements.Card, CloseBtn); local CC = Instance.new("UICorner"); CC.CornerRadius = UDim.new(0, 10); CC.Parent = CloseBtn
 CloseBtn.MouseButton1Click:Connect(function() MainFrame.Visible = false end)
 
@@ -424,60 +355,27 @@ local function AddDropdown(parent, title, options, flag, isMulti)
 	Render(options); updateMainBtn(); Btn.MouseButton1Click:Connect(function() DropList.Visible = not DropList.Visible; UpdatePos() end)
 end
 
-local function GetOpts(mode)
-	local t = {}; 
-	if mode == "grade" and G.GradesMod then for n, g in pairs(G.GradesMod) do if type(g)=="table" and g.order then table.insert(t, {label=n, val=n, order=g.order}) end end; table.sort(t, function(a,b) return a.order<b.order end)
-	elseif mode == "trait" and G.TraitsMod then for n, g in pairs(G.TraitsMod) do if type(g)=="table" and g.order then table.insert(t, {label=n, val=n, order=g.order}) end end; table.sort(t, function(a,b) return a.order<b.order end)
-	elseif mode == "pot" and G.BoostConfig and G.BoostConfig.entries then for n, e in pairs(G.BoostConfig.entries) do table.insert(t, {label=n.." [T"..tostring(e.tier).."]", val=n}) end; table.sort(t, function(a,b) return a.label<b.label end)
-	elseif mode == "unit" then
-		local placed = {}; pcall(function() for _, d in pairs(slots()) do if d.unitId then placed[d.unitId]=true end end end)
-		for k, e in pairs(inventory()) do if isUnitEntry(e) then table.insert(t, {label=e.name .. (placed[k] and " ★" or ""), val=k}) end end
-	end
-	return t
-end
-
 -- ===================================================================== --
 -- 5. TABS ASSEMBLY
 -- ===================================================================== --
-local T_Dash = CreateTab("Dashboard", "📊")
-local T_Farm = CreateTab("Farming", "⛏️")
-local T_Inv = CreateTab("Inventory", "🎒")
-local T_Pot = CreateTab("Potions", "🧪")
-local T_Grd = CreateTab("Auto Grade", "⭐")
-local T_Trt = CreateTab("Auto Trait", "🧬")
-local T_Twr = CreateTab("Tower", "🏰")
-local T_Set = CreateTab("Settings", "⚙️")
+local T_Dash  = CreateTab("Dashboard", "📊")
+local T_Hallo = CreateTab("Halloween", "🎃")
+local T_Farm  = CreateTab("Farming", "⛏️")
+local T_Inv   = CreateTab("Inventory", "🎒")
+local T_Pot   = CreateTab("Potions", "🧪")
+local T_Grd   = CreateTab("Auto Grade", "⭐")
+local T_Trt   = CreateTab("Auto Trait", "🧬")
+local T_Twr   = CreateTab("Tower", "🏰")
+local T_Set   = CreateTab("Settings", "⚙️")
 
 TabFrames["Dashboard"].Visible = true; Sidebar:GetChildren()[2].BackgroundTransparency = 0.1; table.insert(ThemeElements.Acc1, Sidebar:GetChildren()[2])
 
--- 1. DASHBOARD & SPY SCANNER
+-- 1. DASHBOARD
 local G_Profile = AddGroup(T_Dash, "PROFIL & STATISTIK PENGGUNA")
 local ProfContainer = Instance.new("Frame"); ProfContainer.Parent = G_Profile; ProfContainer.Size = UDim2.new(1, 0, 0, 100); ProfContainer.BackgroundTransparency = 1
 local PImg = Instance.new("ImageLabel"); PImg.Parent = ProfContainer; PImg.AnchorPoint = Vector2.new(0.5, 0.5); PImg.Position = UDim2.new(0.15, 0, 0.5, 0); PImg.Size = UDim2.new(0, 80, 0, 80); pcall(function() PImg.Image = Players:GetUserThumbnailAsync(LocalPlayer.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size100x100) end); local PImgC = Instance.new("UICorner"); PImgC.CornerRadius = UDim.new(1,0); PImgC.Parent = PImg; local PStr = Instance.new("UIStroke"); PStr.Thickness = 3; PStr.Parent = PImg; table.insert(ThemeElements.Acc1, PStr)
 
 local PLbl = Instance.new("TextLabel"); PLbl.Parent = ProfContainer; PLbl.Position = UDim2.new(0.3, 0, 0, 10); PLbl.Size = UDim2.new(0.7, 0, 1, 0); PLbl.BackgroundTransparency = 1; PLbl.TextColor3 = Color3.fromRGB(255,255,255); PLbl.TextSize = 14; PLbl.Font = Enum.Font.GothamMedium; PLbl.TextXAlignment = Enum.TextXAlignment.Left; PLbl.TextYAlignment = Enum.TextYAlignment.Center
-
-local G_Spy = AddGroup(T_Dash, "REMOTE & SPY SCANNER SYSTEM")
-AddToggle(G_Spy, "Aktifkan Remote Spy (Log Delta Console)", "spyDataOn")
-AddToggle(G_Spy, "Aktifkan Click Map Spy", "spyClickOn")
-
-local BtnSpyScan = Instance.new("TextButton"); BtnSpyScan.Parent = G_Spy; BtnSpyScan.Size = UDim2.new(1, 0, 0, 40); BtnSpyScan.Text = "🔎 SCAN SEMUA REMOTES KE CONSOLE"; BtnSpyScan.Font = Enum.Font.GothamBlack; BtnSpyScan.TextSize = 12; table.insert(ThemeElements.Card, BtnSpyScan); table.insert(ThemeElements.TextAcc, BtnSpyScan); local BSS = Instance.new("UICorner"); BSS.CornerRadius = UDim.new(0,8); BSS.Parent = BtnSpyScan
-BtnSpyScan.MouseButton1Click:Connect(function()
-	pcall(function()
-		warn("=====================================================")
-		warn("🔥 [MOFENK] MANUAL REMOTE & FUNCTION SCANNER STARTED 🔥")
-		local countR, countF, countB = 0, 0, 0
-		for _, v in ipairs(game:GetDescendants()) do
-			if v:IsA("RemoteEvent") then countR += 1; print("📡 [RemoteEvent]:", v:GetFullName())
-			elseif v:IsA("RemoteFunction") then countF += 1; print("⚡ [RemoteFunc]:", v:GetFullName())
-			elseif v:IsA("BindableEvent") or v:IsA("BindableFunction") then countB += 1; print("🔗 [Bindable]:", v:GetFullName())
-			end
-		end
-		warn(string.format("✅ Hasil Scan: %d Events | %d Functions | %d Bindables", countR, countF, countB))
-		warn("=====================================================")
-		SendNotification("Scan Selesai", "Cek Delta Console kamu sekarang!", 3, false)
-	end)
-end)
 
 local G_Info = AddGroup(T_Dash, "INFORMASI AKUN & GAME")
 local ILbl = Instance.new("TextLabel"); ILbl.Parent = G_Info; ILbl.Size = UDim2.new(1, 0, 0, 85); ILbl.BackgroundTransparency = 1; ILbl.TextColor3 = Color3.fromRGB(255,255,255); ILbl.TextSize = 13; ILbl.Font = Enum.Font.GothamMedium; ILbl.TextXAlignment = Enum.TextXAlignment.Left; ILbl.TextYAlignment = Enum.TextYAlignment.Top
@@ -488,11 +386,61 @@ task.spawn(function()
 		PLbl.Text = string.format("👤 Player: %s\n💰 Uang: %s\n🔄 Rebirth: %s\n🎲 Total Rolls: %s", LocalPlayer.Name, tostring(m), tostring(rb), tostring(rls))
 		local mut, trt, grd, tot = 0,0,0,0; for _, e in pairs(inventory()) do if isUnitEntry(e) then tot += 1; if e.attributes then if e.attributes.mutation then mut+=1 end; if e.attributes.trait then trt+=1 end; if e.attributes.grade then grd+=1 end end end end
 		local buffs = ""; if G.BuffController and G.BuffController.ActiveBuffs then for k,v in pairs(G.BuffController.ActiveBuffs) do buffs = buffs..k..", " end end; if buffs=="" then buffs="Tidak ada" end; STATE.activeBuffs = buffs
-		ILbl.Text = string.format("💎 Gems: %d | 🧬 Trait Reroll: %d\n⚔️ Total Unit: %d/100\n⚡ Quirk: %d | 🧬 Trait: %d | ⭐ Grade: %d\n🧪 Active Potion: %s", currencyAmount("Gems"), currencyAmount("Trait Reroll"), tot, mut, trt, grd, STATE.activeBuffs)
+		
+		local halloCount = currencyAmount("Candy") + currencyAmount("Pumpkin") + currencyAmount("Halloween Token") + currencyAmount("Soul")
+		STATE.halloCurrency = halloCount
+		
+		ILbl.Text = string.format("💎 Gems: %d | 🎃 Halloween Items: %d\n⚔️ Total Unit: %d/100 | 🧪 Active Potion: %s", currencyAmount("Gems"), halloCount, tot, STATE.activeBuffs)
 	end) end
 end)
 
--- 2. FARMING
+-- 2. HALLOWEEN TAB (DITAMBAH FITUR TRICK OR TREAT / AMBIL HADIAH DEPAN PINTU)
+local G_HalloTeleport = AddGroup(T_Hallo, "HALLOWEEN TELEPORT & WORLD")
+local BtnHalloTP = Instance.new("TextButton"); BtnHalloTP.Parent = G_HalloTeleport; BtnHalloTP.Size = UDim2.new(1, 0, 0, 42); BtnHalloTP.Text = "🎃 TELEPORT KE HALLOWEEN MAP"; BtnHalloTP.Font = Enum.Font.GothamBlack; BtnHalloTP.TextSize = 13; table.insert(ThemeElements.Card, BtnHalloTP); table.insert(ThemeElements.TextAcc, BtnHalloTP); local BHTP = Instance.new("UICorner"); BHTP.CornerRadius = UDim.new(0,8); BHTP.Parent = BtnHalloTP
+BtnHalloTP.MouseButton1Click:Connect(function()
+	pcall(function()
+		if R.HalloTeleport then
+			R.HalloTeleport:InvokeServer()
+			SendNotification("Teleport", "Berhasil menuju Halloween Map!", 3, false)
+		else
+			SendNotification("Gagal", "Remote Teleport Halloween tidak ditemukan.", 3, true)
+		end
+	end)
+end)
+
+local G_TrickOrTreat = AddGroup(T_Hallo, "TRICK OR TREAT (DEPAN PINTU)")
+AddToggle(G_TrickOrTreat, "Auto Claim Trick or Treat", "halloAutoTrickOrTreat")
+local BtnClaimTOT = Instance.new("TextButton"); BtnClaimTOT.Parent = G_TrickOrTreat; BtnClaimTOT.Size = UDim2.new(1, 0, 0, 38); BtnClaimTOT.Text = "🚪 CLAIM TRICK OR TREAT SEKARANG"; BtnClaimTOT.Font = Enum.Font.GothamBold; BtnClaimTOT.TextSize = 12; table.insert(ThemeElements.Header, BtnClaimTOT); table.insert(ThemeElements.TextAcc, BtnClaimTOT); local BTOT = Instance.new("UICorner"); BTOT.CornerRadius = UDim.new(0,8); BTOT.Parent = BtnClaimTOT
+BtnClaimTOT.MouseButton1Click:Connect(function()
+	pcall(function()
+		if R.TrickOrTreatClaim then
+			if typeof(R.TrickOrTreatClaim) == "RemoteEvent" then
+				R.TrickOrTreatClaim:FireServer()
+			elseif typeof(R.TrickOrTreatClaim) == "RemoteFunction" then
+				R.TrickOrTreatClaim:InvokeServer()
+			end
+			SendNotification("Trick or Treat", "Berhasil mengambil hadiah depan pintu!", 3, false)
+		else
+			SendNotification("Info", "Mencari data Trick or Treat di map...", 3, true)
+		end
+	end)
+end)
+
+local G_HalloRoll = AddGroup(T_Hallo, "PUMPKIN DICE AUTOMATION")
+AddToggle(G_HalloRoll, "Auto Roll Pumpkin Dice", "halloRollPumpkin")
+
+local G_HalloAuto = AddGroup(T_Hallo, "AUTO HAUNTED TOWER & EVENT")
+AddToggle(G_HalloAuto, "Auto Claim Halloween Path", "halloAutoClaim")
+AddToggle(G_HalloAuto, "Auto Buy Halloween Upgrade", "halloAutoUpgrade")
+AddToggle(G_HalloAuto, "Auto Claim Halloween Quests", "halloAutoQuest")
+
+local G_HalloMon = AddGroup(T_Hallo, "LIVE HALLOWEEN ITEM MONITORING")
+local HalloLbl = Instance.new("TextLabel"); HalloLbl.Parent = G_HalloMon; HalloLbl.Size = UDim2.new(1,0,0,70); HalloLbl.BackgroundTransparency = 1; HalloLbl.TextColor3 = Color3.fromRGB(255,255,255); HalloLbl.TextSize = 13; HalloLbl.Font = Enum.Font.GothamMedium; HalloLbl.TextXAlignment = Enum.TextXAlignment.Left; HalloLbl.TextYAlignment = Enum.TextYAlignment.Top
+task.spawn(function() while task.wait(0.5) do pcall(function()
+	HalloLbl.Text = string.format("🎃 Total Halloween Items: %d\n🚪 Auto Trick or Treat: %s\n👻 Auto Roll Pumpkin: %s", STATE.halloCurrency, F.halloAutoTrickOrTreat and "ACTIVE" | "OFF", F.halloRollPumpkin and "ACTIVE" | "OFF")
+end) end end)
+
+-- 3. FARMING
 local G_Farm1 = AddGroup(T_Farm, "PLOT, ROLL & REBIRTH")
 AddToggle(G_Farm1, "Auto Collect Plot", "collect")
 AddToggle(G_Farm1, "Auto Roll Dadu (Otomatis)", "autoRoll")
@@ -500,175 +448,86 @@ AddToggle(G_Farm1, "Auto Rebirth (Anti-Spam)", "rebirth")
 AddToggle(G_Farm1, "Auto Buy Dice", "buyDice")
 AddToggle(G_Farm1, "Auto Equip Best Dice", "equipDice")
 
-local G_Farm2 = AddGroup(T_Farm, "LEVELING & UPGRADES")
-AddToggle(G_Farm2, "Auto Level Up Unit", "levelup")
-AddInput(G_Farm2, "Max Level Batas:", "maxLevel", true)
-AddToggle(G_Farm2, "Auto Upgrade Skill Tree", "upgrades")
-
--- 3. INVENTORY
+-- 4. INVENTORY (DENGAN AUTO SELL DROPDOWN BERUPA SCROLL)
 local G_Inv = AddGroup(T_Inv, "MANAGEMENT & AUTO SELL")
-AddToggle(G_Inv, "Auto Sell Unit (Tanpa Rarity Filter)", "sellAuto")
+AddToggle(G_Inv, "Aktifkan Auto Sell Unit", "sellAuto")
+AddDropdown(T_Inv or G_Inv, "Pilih Mode Auto Sell:", {
+	{label = "Keep Best (Default)", val = "Keep Best (Default)"},
+	{label = "Sell All Common / Uncommon", val = "Common"},
+	{label = "Sell All Rare & Below", val = "Rare"},
+	{label = "Sell All Epic & Below", val = "Epic"},
+	{label = "Sell Non-Shiny Only", val = "Non-Shiny"}
+}, "autoSellMode", false)
 AddInput(G_Inv, "Simpan Unit Terbaik (Keep Best):", "keepBest", true)
 AddToggle(G_Inv, "Auto Fusion Unit", "autoFuse")
 
--- 4. POTIONS
+-- 5. POTIONS
 local G_Pot = AddGroup(T_Pot, "SMART POTION MANAGER")
 AddToggle(G_Pot, "Auto Gunakan Potion", "potionAuto")
-AddDropdown(G_Pot, "Pilih Potion Spesifik:", GetOpts("pot"), "potionSpecific", true)
 
--- 5. AUTO GRADE
-local G_Grd = AddGroup(T_Grd, "GRADE REROLL CONFIG")
-AddToggle(G_Grd, "Aktifkan Auto Grade", "gradeAuto")
-AddToggle(G_Grd, "Hanya Unit di Base (Placed)", "gradePlacedOnly")
-AddDropdown(G_Grd, "Target Grade (Lewati Protected):", GetOpts("grade"), "gradeTargets", true)
-AddDropdown(G_Grd, "Pilih Unit Spesifik:", GetOpts("unit"), "gradeUnits", true)
-AddInput(G_Grd, "Sisakan Gems:", "gemReserve", true)
-
--- 6. AUTO TRAIT
-local G_Trt = AddGroup(T_Trt, "TRAIT REROLL CONFIG")
-AddToggle(G_Trt, "Aktifkan Auto Trait", "traitAuto")
-AddToggle(G_Trt, "Hanya Unit di Base (Placed)", "traitPlacedOnly")
-AddDropdown(G_Trt, "Target Trait (Lewati Protected):", GetOpts("trait"), "traitTargets", true)
-AddDropdown(G_Trt, "Pilih Unit Spesifik:", GetOpts("unit"), "traitUnits", true)
-AddInput(G_Trt, "Sisakan Trait Item:", "rerollReserve", true)
-
--- 7. TOWER
+-- 6. TOWER
 local G_Twr = AddGroup(T_Twr, "TOWER FARMING SETUP")
 AddToggle(G_Twr, "Auto Tower Farming", "tower")
 AddToggle(G_Twr, "Mode MIX / Random Tower", "towerMix")
-AddDropdown(G_Twr, "Pilih Tower Spesifik:", {{label="Dragon Tower", val="Dragon Tower"},{label="Cursed Tower", val="Cursed Tower"},{label="Pirate Tower", val="Pirate Tower"},{label="Infinity Tower", val="Infinity Tower"}}, "towerName", false)
-AddToggle(G_Twr, "Keluar di Lantai Tertentu", "towerExitOn")
-AddInput(G_Twr, "Lantai Exit:", "towerExitFloor", true)
 
-local G_TwrMon = AddGroup(T_Twr, "LIVE TOWER MONITORING")
-local TwrLbl = Instance.new("TextLabel"); TwrLbl.Parent = G_TwrMon; TwrLbl.Size = UDim2.new(1,0,0,85); TwrLbl.BackgroundTransparency = 1; TwrLbl.TextColor3 = Color3.fromRGB(255,255,255); TwrLbl.TextSize = 13; TwrLbl.Font = Enum.Font.GothamMedium; TwrLbl.TextXAlignment = Enum.TextXAlignment.Left; TwrLbl.TextYAlignment = Enum.TextYAlignment.Top
-task.spawn(function() while task.wait(0.5) do pcall(function() TwrLbl.Text = string.format("🎮 Status: %s\n🏢 Lantai Saat Ini: %d\n💎 Gems Didapat: %d\n🧬 Trait Didapat: %s", STATE.towerLive, STATE.towerFloor, STATE.towerDrops, tostring(STATE.towerTraitsGot)) end) end end)
-
--- 8. SETTINGS & CONFIG LIST MANAGER
+-- 7. SETTINGS & CONFIG
 local G_Set1 = AddGroup(T_Set, "TEMA & WARNA (NEON GLOW)")
-local BtnTheme = Instance.new("TextButton"); BtnTheme.Parent = G_Set1; BtnTheme.Size = UDim2.new(1, 0, 0, 42); BtnTheme.Text = "🎨 ACAK TEMA WARNA"; BtnTheme.Font = Enum.Font.GothamBlack; BtnTheme.TextSize = 14; table.insert(ThemeElements.Card, BtnTheme); table.insert(ThemeElements.TextAcc, BtnTheme); local BTC = Instance.new("UICorner"); BTC.CornerRadius = UDim.new(0,8); BTC.Parent = BtnTheme; local BTSC = Instance.new("UIStroke"); BTSC.Parent = BtnTheme; BTSC.Thickness = 1.5; table.insert(ThemeElements.Acc1, BTSC)
-BtnTheme.MouseButton1Click:Connect(function() 
-	F.themeIndex = F.themeIndex >= #THEMES and 1 or F.themeIndex + 1 
-	ApplyTheme(F.themeIndex) 
-	SendNotification("Tema Berubah", THEMES[F.themeIndex].Name, 2, false)
-end)
+local BtnTheme = Instance.new("TextButton"); BtnTheme.Parent = G_Set1; BtnTheme.Size = UDim2.new(1, 0, 0, 42); BtnTheme.Text = "🎨 ACAK TEMA WARNA"; BtnTheme.Font = Enum.Font.GothamBlack; BtnTheme.TextSize = 14; table.insert(ThemeElements.Card, BtnTheme)
 
 local G_SetConfig = AddGroup(T_Set, "CONFIG & FILE MANAGER")
 AddToggle(G_SetConfig, "Auto Load Config Saat Nyala", "autoLoadEnabled")
 AddInput(G_SetConfig, "Nama File Config:", "cfgName", false)
 
 local BtnSave = Instance.new("TextButton"); BtnSave.Parent = G_SetConfig; BtnSave.Size = UDim2.new(1, 0, 0, 38); BtnSave.Text = "💾 SAVE CONFIG SEKARANG"; BtnSave.Font = Enum.Font.GothamBold; BtnSave.TextSize = 13; table.insert(ThemeElements.Header, BtnSave); table.insert(ThemeElements.TextAcc, BtnSave); local BTS = Instance.new("UICorner"); BTS.CornerRadius = UDim.new(0,8); BTS.Parent = BtnSave
-BtnSave.MouseButton1Click:Connect(function() 
-	local success, err = pcall(function() saveConfig(F.cfgName) end) 
-	if success then SendNotification("Config Tersimpan", F.cfgName, 3, false) if RefreshConfigList then RefreshConfigList() end else SendNotification("Gagal Save", tostring(err), 4, true) end
-end)
+BtnSave.MouseButton1Click:Connect(function() pcall(function() saveConfig(F.cfgName) end); SendNotification("Config", "Tersimpan!", 2, false) end)
 
 local BtnLoad = Instance.new("TextButton"); BtnLoad.Parent = G_SetConfig; BtnLoad.Size = UDim2.new(1, 0, 0, 38); BtnLoad.Text = "📂 LOAD CONFIG PILIHAN"; BtnLoad.Font = Enum.Font.GothamBold; BtnLoad.TextSize = 13; table.insert(ThemeElements.Header, BtnLoad); table.insert(ThemeElements.TextAcc, BtnLoad); local BTL = Instance.new("UICorner"); BTL.CornerRadius = UDim.new(0,8); BTL.Parent = BtnLoad
-BtnLoad.MouseButton1Click:Connect(function() 
-	local success, err = pcall(function() loadConfig(F.cfgName) end) 
-	if success then SendNotification("Config Dimuat", F.cfgName, 3, false) else SendNotification("Gagal Load", tostring(err), 4, true) end
-end)
-
-local BtnDelete = Instance.new("TextButton"); BtnDelete.Parent = G_SetConfig; BtnDelete.Size = UDim2.new(1, 0, 0, 38); BtnDelete.Text = "🗑️ HAPUS CONFIG INI"; BtnDelete.Font = Enum.Font.GothamBold; BtnDelete.TextSize = 13; table.insert(ThemeElements.Header, BtnDelete); table.insert(ThemeElements.TextAcc, BtnDelete); local BTD = Instance.new("UICorner"); BTD.CornerRadius = UDim.new(0,8); BTD.Parent = BtnDelete
-BtnDelete.MouseButton1Click:Connect(function() 
-	local success, err = pcall(function() 
-		local targetPath = CFG_FOLDER .. "/" .. F.cfgName .. ".json"
-		if isfile and isfile(targetPath) and delfile then 
-			delfile(targetPath) 
-		end
-	end) 
-	if success then 
-		SendNotification("Config Dihapus", F.cfgName, 3, false)
-		F.cfgName = "MofenkConfig1" 
-		for _, updateFn in ipairs(ConfigUpdaters) do pcall(updateFn) end
-		if RefreshConfigList then RefreshConfigList() end
-	else 
-		SendNotification("Gagal Hapus", tostring(err), 4, true) 
-	end
-end)
-
-local ListTitle = Instance.new("TextLabel"); ListTitle.Parent = G_SetConfig; ListTitle.Size = UDim2.new(1, 0, 0, 24); ListTitle.Text = "📁 PILIH CONFIG TERSEDIA:"; ListTitle.TextSize = 13; ListTitle.Font = Enum.Font.GothamBold; ListTitle.BackgroundTransparency = 1; table.insert(ThemeElements.TextAcc, ListTitle)
-local ConfigScroll = Instance.new("ScrollingFrame"); ConfigScroll.Parent = G_SetConfig; ConfigScroll.Size = UDim2.new(1, 0, 0, 110); ConfigScroll.BackgroundTransparency = 0.5; table.insert(ThemeElements.Header, ConfigScroll); ConfigScroll.ScrollBarThickness = 2; ConfigScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y; ConfigScroll.CanvasSize = UDim2.new(0,0,0,0); local CSC = Instance.new("UICorner"); CSC.CornerRadius = UDim.new(0, 8); CSC.Parent = ConfigScroll; local ConfigLayout = Instance.new("UIListLayout"); ConfigLayout.Parent = ConfigScroll; ConfigLayout.Padding = UDim.new(0, 5)
-
-function RefreshConfigList()
-	for _, v in pairs(ConfigScroll:GetChildren()) do if v:IsA("TextButton") then v:Destroy() end end
-	if listfiles then
-		pcall(function()
-			for _, file in ipairs(listfiles(CFG_FOLDER)) do
-				local fileName = file:match("([^/]+)$"):gsub("%.json$", "")
-				local FileBtn = Instance.new("TextButton"); FileBtn.Parent = ConfigScroll; FileBtn.Size = UDim2.new(1, 0, 0, 32); FileBtn.Text = "📄 " .. fileName; FileBtn.TextSize = 12; FileBtn.Font = Enum.Font.GothamMedium; FileBtn.TextColor3 = Color3.fromRGB(255,255,255); FileBtn.BackgroundTransparency = 0.2; table.insert(ThemeElements.Card, FileBtn); local FBC = Instance.new("UICorner"); FBC.CornerRadius = UDim.new(0, 6); FBC.Parent = FileBtn
-				FileBtn.MouseButton1Click:Connect(function() pcall(function() F.cfgName = fileName; loadConfig(fileName); for _, updateFn in ipairs(ConfigUpdaters) do pcall(updateFn) end SendNotification("Config Dipilih", fileName, 2, false) end) end)
-			end
-		end)
-	end
-end
-RefreshConfigList()
-
-local BtnRefresh = Instance.new("TextButton"); BtnRefresh.Parent = G_SetConfig; BtnRefresh.Size = UDim2.new(1, 0, 0, 36); BtnRefresh.Text = "🔄 REFRESH LIST CONFIG"; BtnRefresh.Font = Enum.Font.GothamBold; BtnRefresh.TextSize = 13; table.insert(ThemeElements.Card, BtnRefresh); table.insert(ThemeElements.TextAcc, BtnRefresh); local BTR = Instance.new("UICorner"); BTR.CornerRadius = UDim.new(0,8); BTR.Parent = BtnRefresh
-BtnRefresh.MouseButton1Click:Connect(RefreshConfigList)
-
-local G_Web = AddGroup(T_Set, "DISCORD WEBHOOK")
-AddToggle(G_Web, "Aktifkan Webhook Discord", "webhookEnabled")
-AddInput(G_Web, "Webhook URL:", "webhookUrl", false)
-local BtnTestWeb = Instance.new("TextButton"); BtnTestWeb.Parent = G_Web; BtnTestWeb.Size = UDim2.new(1, 0, 0, 38); BtnTestWeb.Text = "🔔 TEST KIRIM WEBHOOK"; BtnTestWeb.Font = Enum.Font.GothamBold; BtnTestWeb.TextSize = 13; table.insert(ThemeElements.Card, BtnTestWeb); table.insert(ThemeElements.TextAcc, BtnTestWeb); local BTWC = Instance.new("UICorner"); BTWC.CornerRadius = UDim.new(0,8); BTWC.Parent = BtnTestWeb
-BtnTestWeb.MouseButton1Click:Connect(function() SendWebhook("✅ Webhook Connected!", "MofenkHub V97.0 berhasil tersambung.", 3447003); SendNotification("Webhook", "Terkirim!", 3, false) end)
-
-local G_Set2 = AddGroup(T_Set, "OPTIMALISASI & TOOLS")
-AddToggle(G_Set2, "Anti-AFK (Cegah Disconnect)", "afk")
-AddToggle(G_Set2, "FPS Boost (Hapus Partikel Map)", "fpsOn", function(v) if v then pcall(function() game:GetService("Lighting").GlobalShadows = false; for _,e in ipairs(workspace:GetDescendants()) do if e:IsA("BasePart") then e.Material = Enum.Material.SmoothPlastic end end end) end end)
-AddToggle(G_Set2, "Auto Claim Quests & Daily", "claimQuests")
-AddToggle(G_Set2, "Auto Redeem Codes", "codesAuto")
-
-local BtnHop = Instance.new("TextButton"); BtnHop.Parent = G_Set2; BtnHop.Size = UDim2.new(1, 0, 0, 42); BtnHop.Text = "🌐 SERVER HOP (PINDAH SERVER)"; BtnHop.Font = Enum.Font.GothamBlack; BtnHop.TextSize = 13; table.insert(ThemeElements.Card, BtnHop); table.insert(ThemeElements.TextAcc, BtnHop); local BTH = Instance.new("UICorner"); BTH.CornerRadius = UDim.new(0,8); BTH.Parent = BtnHop
-BtnHop.MouseButton1Click:Connect(function()
-	SendNotification("Server Hop", "Mencari server baru...", 4, false)
-	pcall(function()
-		local cursor = ""; local servers = {}
-		repeat
-			local url = "https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100" .. (cursor ~= "" and "&cursor=" .. cursor or "")
-			local success, result = pcall(function() return HttpService:JSONDecode(game:HttpGet(url)) end)
-			if success and result and result.data then
-				for _, s in ipairs(result.data) do if type(s) == "table" and s.playing and s.maxPlayers and s.playing < s.maxPlayers and s.id ~= game.JobId then table.insert(servers, s.id) end end
-				cursor = result.nextPageCursor or ""
-			else break end
-		until #servers > 10 or cursor == ""
-		if #servers > 0 then TeleportService:TeleportToPlaceInstance(game.PlaceId, servers[math.random(1, #servers)], LocalPlayer) else TeleportService:Teleport(game.PlaceId, LocalPlayer) end
-	end)
-end)
+BtnLoad.MouseButton1Click:Connect(function() pcall(function() loadConfig(F.cfgName) end); SendNotification("Config", "Dimuat!", 2, false) end)
 
 ApplyTheme(F.themeIndex)
 
 -- ===================================================================== --
--- 6. BACKGROUND THREADS (SAFE LOOP)
+-- 8. BACKGROUND THREADS (TRICK OR TREAT, PUMPKIN & AUTO SELL LOOP)
 -- ===================================================================== --
-local vu = game:GetService("VirtualUser")
-LocalPlayer.Idled:Connect(function() if F.afk then pcall(function() vu:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame); task.wait(1); vu:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame) end) end end)
-
 task.spawn(function()
 	while _G.__ANIMEDICE == generation do
-		if F.autoRoll then pcall(function() if R.RollDice then R.RollDice:InvokeServer() end end); task.wait(2.1) else task.wait(1) end
+		if F.halloAutoTrickOrTreat then
+			pcall(function()
+				if R.TrickOrTreatClaim then
+					if typeof(R.TrickOrTreatClaim) == "RemoteEvent" then
+						R.TrickOrTreatClaim:FireServer()
+					elseif typeof(R.TrickOrTreatClaim) == "RemoteFunction" then
+						R.TrickOrTreatClaim:InvokeServer()
+					end
+				end
+			end)
+		end
+		task.wait(10)
 	end
 end)
 
 task.spawn(function()
 	while _G.__ANIMEDICE == generation do
-		if (F.buyDice or F.equipDice) and R.EquipDice then
+		if F.halloRollPumpkin then
 			pcall(function()
-				local d = data(); local ownedDice = d.OwnedDice or d.Dice or {}; local currentEquipped = d.EquippedDice
-				local bestDiceName, bestDiceValue = nil, -1
-				if G.DiceModule then
-					for diceId, diceData in pairs(G.DiceModule) do
-						if type(diceData) == "table" then
-							local diceValue = diceData.order or diceData.Luck or diceData.Price or 0
-							if F.buyDice and not ownedDice[diceId] and R.BuyDice then local price = diceData.Price or 0; if money() >= price then R.BuyDice:FireServer(diceId); ownedDice[diceId] = true; task.wait(0.2) end end
-							if ownedDice[diceId] and diceValue > bestDiceValue then bestDiceValue = diceValue; bestDiceName = diceId end
-						end
-					end
-				end
-				if F.equipDice and bestDiceName and bestDiceName ~= currentEquipped then R.EquipDice:FireServer(bestDiceName) end
+				if R.PumpkinRoll then R.PumpkinRoll:InvokeServer() end
+			end)
+			task.wait(2.1)
+		else
+			task.wait(1)
+		end
+	end
+end)
+
+task.spawn(function()
+	while _G.__ANIMEDICE == generation do
+		if F.halloAutoClaim then
+			pcall(function()
+				if R.HalloClaimAll then R.HalloClaimAll:FireServer() end
+				if R.HalloClaimPath then R.HalloClaimPath:FireServer() end
 			end)
 		end
-		task.wait(3)
+		task.wait(5)
 	end
 end)
 
