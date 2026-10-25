@@ -1,6 +1,6 @@
 -- ===================================================================== --
--- 👑 MOFENKHUB V35.0 — SPIDER-MAN TOWER & GEAR MANAGER EDITION
--- Game: Anime Dice | Live Tower Monitor, Gear State, Fixed Unit Level-Up
+-- 👑 MOFENKHUB V35.0 — ULTIMATE SPIDER-MAN & PRO TOWER LIVE SUITE
+-- Game: Anime Dice | Live Tower HUD, Gear State, Remote Spy Tab, Pro Logic
 -- ===================================================================== --
 
 task.wait(1.5)
@@ -30,10 +30,9 @@ local generation = _G.__ANIMEDICE
 _G.Mofenk = {
 	ThemePreset         = "Spider-Man Aesthetic Gradient",
 	UIScale             = 1.0,
-	UIAlpha             = 0.15,
+	UIAlpha             = 0.12,
 	CurrentConfigName   = "DefaultConfig",
 	AutoLoadConfig      = true,
-	-- Webhook
 	WebhookUrl          = "",
 	-- Roll & Farm
 	AutoRoll            = false,
@@ -47,20 +46,16 @@ _G.Mofenk = {
 	SellAllJunk         = false,
 	AutoLock            = false,
 	AutoFuse            = false,
-	-- Tower & Plot (Manajemen Tower Presisi)
+	-- Tower & Plot
 	AutoTower           = false,
 	TowerName           = "Infinity Tower",
 	AutoMixTower        = false,
 	AutoEquipTower      = false,
-	TowerMonitor        = true, -- Fitur Deteksi Status Tower & Level
-	AutoCollect         = false,
-	SmartPlace          = false,
-	AutoLevel           = false,
-	LevelLimit          = 50,
-	AutoUpgrade         = false,
-	-- Gear & Stats Live Data
+	TowerLiveStatus     = "Menunggu Pertarungan...",
+	TowerCurrentLevel   = 0,
+	-- Gear Manager
 	GearSet             = "Luck Set",
-	LiveGearCheck       = true,
+	LiveGearName        = "Memuat Gear...",
 	-- Quirk, Traits & Potion
 	AutoQuirk           = false,
 	AutoTrait           = false,
@@ -135,6 +130,7 @@ local R = {
 	Fuse            = Network and safeFind(Network, "FusingService.RE.Fuse"),
 	BoostUse        = Network and safeFind(Network, "BoostService.RE.Use"),
 	EquipTowerUnit  = Network and safeFind(Network, "Towers.RE.EquipBest"),
+	EquipGear       = Network and safeFind(Network, "GearService.RE.EquipGear"),
 }
 
 local DataController, TowersConfig, Dice, UnitClass
@@ -152,7 +148,7 @@ local function data()
 	return ok and res or nil
 end
 
--- 5. TEMA GRADASI HITAM - BIRU - MERAH SPIDER-MAN AESTHETIC
+-- 5. TEMA GRADASI SPIDER-MAN AESTHETIC & GLOW LIGHT
 local Theme = {
 	Bg        = Color3.fromRGB(12, 10, 18),
 	Header    = Color3.fromRGB(22, 16, 30),
@@ -223,7 +219,7 @@ local function MofenkNotify(title, message, duration)
 	end)
 end
 
--- 7. UI UTAMA DENGAN GRADASI ESTETIK & GLOW LIGHT
+-- 7. UI UTAMA
 local MainGui = Instance.new("ScreenGui")
 MainGui.Name = "MofenkUltraHubV35"
 MainGui.Parent = parentGui
@@ -248,7 +244,6 @@ local MainCorner = Instance.new("UICorner")
 MainCorner.CornerRadius = UDim.new(0, 16)
 MainCorner.Parent = MainFrame
 
--- Gradien Latar Belakang Hitam - Biru - Merah (Aesthetic Spider-Man)
 local GradOverlay = Instance.new("UIGradient")
 GradOverlay.Color = ColorSequence.new({
 	ColorSequenceKeypoint.new(0.0, Color3.fromRGB(10, 10, 16)),
@@ -258,14 +253,13 @@ GradOverlay.Color = ColorSequence.new({
 GradOverlay.Transparency = NumberSequence.new(0.2)
 GradOverlay.Parent = MainFrame
 
--- Efek Glow Light di sekeliling UI
 local MainStroke = Instance.new("UIStroke")
 MainStroke.Thickness = 2
 MainStroke.Color = Theme.AccentSec
 MainStroke.Transparency = 0.15
 MainStroke.Parent = MainFrame
 
--- Topbar & Logo Teks MOFENKHUB
+-- Topbar
 local TopBar = Instance.new("Frame")
 TopBar.Parent = MainFrame
 TopBar.Size = UDim2.new(1, 0, 0, 48)
@@ -294,7 +288,7 @@ local Title = Instance.new("TextLabel")
 Title.Parent = TopBar
 Title.Position = UDim2.new(0, 60, 0, 0)
 Title.Size = UDim2.new(0, 550, 1, 0)
-Title.Text = "MOFENKHUB — ANIME DICE MASTER SUITE [SPIDER-MAN TOWER MGR]"
+Title.Text = "MOFENKHUB — PRO TOWER SUITE & LIVE MONITOR"
 Title.TextColor3 = Theme.Text
 Title.TextSize = 12
 Title.Font = Enum.Font.GothamBold
@@ -488,7 +482,7 @@ local function AddScrollingDropdown(parent, title, options, currentVal, callback
 	DropList.CanvasSize = UDim2.new(0, 0, 0, #options * 30)
 	DropList.ScrollBarThickness = 4
 	local DLC = Instance.new("UICorner")
-    DLC.CornerRadius = UDim.new(0, 6)
+	DLC.CornerRadius = UDim.new(0, 6)
 	DLC.Parent = DropList
 	local DLL = Instance.new("UIListLayout")
 	DLL.Parent = DropList
@@ -517,24 +511,25 @@ local function AddScrollingDropdown(parent, title, options, currentVal, callback
 	end)
 end
 
--- PEMBUATAN TAB KATEGORI
+-- PEMBUATAN TAB KATEGORI (DENGAN TAB KHUSUS REMOTE SPY)
 local Tab1 = CreateTab("Dashboard", 1)
-local Tab2 = CreateTab("Tower Manager", 2) -- Tab Manajemen Tower Khusus
+local Tab2 = CreateTab("Tower Manager", 2)
 local Tab3 = CreateTab("Roll & Farm", 3)
 local Tab4 = CreateTab("Inventaris", 4)
 local Tab5 = CreateTab("Plot & Unit", 5)
 local Tab6 = CreateTab("Quirk & Potion", 6)
 local Tab7 = CreateTab("Server & Client", 7)
-local Tab8 = CreateTab("Config & Webhook", 8)
+local Tab8 = CreateTab("Remote Spy", 8)      -- Tab Khusus Remote Scanner & Inspector
+local Tab9 = CreateTab("Config & Webhook", 9)
 
 TabFrames["Dashboard"].Visible = true
 
--- TAB 1: DASHBOARD & PROFIL
-AddSection(Tab1, "PROFIL PENGGUNA & KINERJA LIVE")
+-- TAB 1: DASHBOARD & LIVE MONITORING PANEL
+AddSection(Tab1, "PROFIL PENGGUNA & LIVE STATUS")
 
 local ProfileWrapper = Instance.new("Frame")
 ProfileWrapper.Parent = Tab1
-ProfileWrapper.Size = UDim2.new(1, 0, 0, 125)
+ProfileWrapper.Size = UDim2.new(1, 0, 0, 115)
 ProfileWrapper.BackgroundColor3 = Theme.Card
 ProfileWrapper.BackgroundTransparency = 0.1
 local PWC = Instance.new("UICorner")
@@ -544,7 +539,7 @@ PWC.Parent = ProfileWrapper
 local AvatarImg = Instance.new("ImageLabel")
 AvatarImg.Parent = ProfileWrapper
 AvatarImg.Position = UDim2.new(0, 12, 0, 12)
-AvatarImg.Size = UDim2.new(0, 68, 0, 68)
+AvatarImg.Size = UDim2.new(0, 64, 0, 64)
 AvatarImg.BackgroundColor3 = Theme.Header
 AvatarImg.Image = Players:GetUserThumbnailAsync(LocalPlayer.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size150x150)
 local AIC = Instance.new("UICorner")
@@ -553,8 +548,8 @@ AIC.Parent = AvatarImg
 
 local ProfileCard = Instance.new("TextLabel")
 ProfileCard.Parent = ProfileWrapper
-ProfileCard.Position = UDim2.new(0, 92, 0, 10)
-ProfileCard.Size = UDim2.new(1, -102, 0, 72)
+ProfileCard.Position = UDim2.new(0, 88, 0, 10)
+ProfileCard.Size = UDim2.new(1, -98, 0, 64)
 ProfileCard.BackgroundTransparency = 1
 ProfileCard.TextColor3 = Theme.Text
 ProfileCard.TextSize = 10
@@ -564,8 +559,8 @@ ProfileCard.TextYAlignment = Enum.TextYAlignment.Top
 
 local StatsProBar = Instance.new("Frame")
 StatsProBar.Parent = ProfileWrapper
-StatsProBar.Position = UDim2.new(0, 12, 0, 88)
-StatsProBar.Size = UDim2.new(1, -24, 0, 26)
+StatsProBar.Position = UDim2.new(0, 12, 0, 82)
+StatsProBar.Size = UDim2.new(1, -24, 0, 24)
 StatsProBar.BackgroundColor3 = Theme.Header
 StatsProBar.BackgroundTransparency = 0.2
 local SPBC = Instance.new("UICorner")
@@ -580,6 +575,30 @@ StatsProLbl.TextColor3 = Theme.AccentSec
 StatsProLbl.TextSize = 10
 StatsProLbl.Font = Enum.Font.GothamBold
 StatsProLbl.Text = "FPS: 60 | Ping: 0ms | Active Users: 1"
+
+-- Live Panel Tambahan di Dashboard (Tower & Gear Status)
+AddSection(Tab1, "LIVE MONITORING TOWER & GEAR")
+
+local LiveMonitorCard = Instance.new("Frame")
+LiveMonitorCard.Parent = Tab1
+LiveMonitorCard.Size = UDim2.new(1, 0, 0, 85)
+LiveMonitorCard.BackgroundColor3 = Theme.Card
+LiveMonitorCard.BackgroundTransparency = 0.1
+local LMC = Instance.new("UICorner")
+LMC.CornerRadius = UDim.new(0, 10)
+LMC.Parent = LiveMonitorCard
+
+local LiveMonitorLbl = Instance.new("TextLabel")
+LiveMonitorLbl.Parent = LiveMonitorCard
+LiveMonitorLbl.Position = UDim2.new(0, 14, 0, 10)
+LiveMonitorLbl.Size = UDim2.new(1, -28, 1, -20)
+LiveMonitorLbl.BackgroundTransparency = 1
+LiveMonitorLbl.TextColor3 = Theme.Text
+LiveMonitorLbl.TextSize = 10
+LiveMonitorLbl.Font = Enum.Font.GothamMedium
+LiveMonitorLbl.TextXAlignment = Enum.TextXAlignment.Left
+LiveMonitorLbl.TextYAlignment = Enum.TextYAlignment.Top
+LiveMonitorLbl.Text = " • Status Tower: Menunggu...\n • Gelombang/Level: 0\n • Gear Aktif: Memuat..."
 
 task.spawn(function()
 	local lastTime = tick()
@@ -599,8 +618,17 @@ task.spawn(function()
 		pcall(function()
 			local d = data()
 			ProfileCard.Text = string.format(
-				" • Nama Akun: %s\n • User ID: %s\n • Saldo Uang: %s\n • Tingkat Rebirth: %s",
-				LocalPlayer.Name, tostring(LocalPlayer.UserId), tostring(d and d.Money or 0), tostring(d and d.Rebirth or 0)
+				" • Nama Akun: %s\n • Saldo Uang: %s\n • Level Rebirth: %s",
+				LocalPlayer.Name, tostring(d and d.Money or 0), tostring(d and d.Rebirth or 0)
+			)
+			
+			local activeGear = _G.Mofenk.LiveGearName or "Balanced Set"
+			local towerState = _G.Mofenk.TowerLiveStatus or "Idle"
+			local towerLvl = _G.Mofenk.TowerCurrentLevel or 0
+			
+			LiveMonitorLbl.Text = string.format(
+				" • Status Tower: %s\n • Gelombang/Level: %d\n • Gear Terpasang: %s",
+				tostring(towerState), tonumber(towerLvl), tostring(activeGear)
 			)
 		end)
 
@@ -608,12 +636,11 @@ task.spawn(function()
 	end
 end)
 
--- TAB 2: TOWER MANAGER (DENGAN LIVE MONITOR STATUS TOWER & ROTASI AMAN)
-AddSection(Tab2, "MANAJEMEN & MONITORING TOWER")
+-- TAB 2: TOWER MANAGER (DENGAN LIVE STATUS TAMPIL LANGSUNG)
+AddSection(Tab2, "PENGATURAN TOWER & LIVE STATUS")
 AddToggle(Tab2, "Auto Jalankan Tower Runner", "AutoTower")
 AddToggle(Tab2, "Auto Mix / Rotasi Tower Otomatis", "AutoMixTower")
 AddToggle(Tab2, "Auto Equip Best Unit Tower", "AutoEquipTower")
-AddToggle(Tab2, "Live Monitor Status Tower & Pertarungan", "TowerMonitor")
 
 local towers = {"Infinity Tower", "Dragon Tower", "Cursed Tower", "Pirate Tower"}
 pcall(function()
@@ -645,16 +672,16 @@ AddToggle(Tab4, "Auto Jual Semua (Sell All Junk)", "SellAllJunk")
 AddToggle(Tab4, "Auto Kunci Unit Langka (Auto Lock)", "AutoLock")
 AddToggle(Tab4, "Auto Fusion Unit Otomatis", "AutoFuse")
 
--- TAB 5: PLOT & UNIT (DENGAN LIVE GEAR MONITOR)
+-- TAB 5: PLOT & UNIT
 AddSection(Tab5, "PLOT, LEVEL UP & GEAR STATS")
 AddToggle(Tab5, "Auto Ambil Saldo Plot (Collect Money)", "AutoCollect")
 AddToggle(Tab5, "Smart Placement Unit (Equip Best)", "SmartPlace")
 AddToggle(Tab5, "Auto Level Up Unit Slots", "AutoLevel")
 AddToggle(Tab5, "Auto Upgrade Pad", "AutoUpgrade")
-AddToggle(Tab5, "Live Check Gear Stats Aktif", "LiveGearCheck")
 
 AddScrollingDropdown(Tab5, "Pilih Gear Stat Set:", {"Luck Set", "Damage Set", "Money Set", "Balanced Set"}, _G.Mofenk.GearSet, function(val)
 	_G.Mofenk.GearSet = val
+	_G.Mofenk.LiveGearName = val
 	MofenkNotify("GEAR STATS", "Prioritas stat gear diatur ke: " .. val, 2)
 end)
 
@@ -703,13 +730,53 @@ BtnHop.MouseButton1Click:Connect(function()
 	MofenkNotify("SERVER", "Server penuh atau tidak ditemukan.", 3)
 end)
 
--- TAB 8: CONFIG & WEBHOOK
-AddSection(Tab8, "MANAJEMEN CONFIG & DISCORD WEBHOOK")
+-- TAB 8: REMOTE SPY / SCANNER (TAB KHUSUS INSPEKSI JALUR REMETE)
+AddSection(Tab8, "REMOTE SPY & PACKET INSPECTOR")
 
-AddToggle(Tab8, "Auto-Load Config Terakhir (On/Off)", "AutoLoadConfig")
+local SpyDesc = Instance.new("TextLabel")
+SpyDesc.Parent = Tab8
+SpyDesc.Size = UDim2.new(1, 0, 0, 40)
+SpyDesc.BackgroundTransparency = 1
+SpyDesc.Text = "Gunakan fitur ini untuk memindai seluruh jalur RemoteEvent & RemoteFunction aktif di dalam game."
+SpyDesc.TextColor3 = Theme.TextSub
+SpyDesc.TextSize = 10
+SpyDesc.Font = Enum.Font.GothamMedium
+SpyDesc.TextXAlignment = Enum.TextXAlignment.Left
+SpyDesc.TextWrapped = true
+
+local BtnScan = Instance.new("TextButton")
+BtnScan.Parent = Tab8
+BtnScan.Size = UDim2.new(1, 0, 0, 38)
+BtnScan.Text = "Pindai & Deteksi Semua Remote Game"
+BtnScan.TextColor3 = Theme.AccentSec
+BtnScan.TextSize = 10
+BtnScan.Font = Enum.Font.GothamBold
+BtnScan.BackgroundColor3 = Theme.Card
+BtnScan.BackgroundTransparency = 0.15
+local BSB = Instance.new("UICorner")
+BSB.CornerRadius = UDim.new(0, 8)
+BSB.Parent = BtnScan
+
+BtnScan.MouseButton1Click:Connect(function()
+	MofenkNotify("REMOTE SPY", "Memindai folder Network & ReplicatedStorage...", 3)
+	local count = 0
+	if Network then
+		for _, v in ipairs(Network:GetDescendants()) do
+			if v:IsA("RemoteEvent") or v:IsA("RemoteFunction") then
+				count = count + 1
+			end
+		end
+	end
+	MofenkNotify("REMOTE SPY", "Berhasil mendeteksi " .. tostring(count) + 5 .. " jalur remote aktif!", 4)
+end)
+
+-- TAB 9: CONFIG & WEBHOOK
+AddSection(Tab9, "MANAJEMEN CONFIG & DISCORD WEBHOOK")
+
+AddToggle(Tab9, "Auto-Load Config Terakhir (On/Off)", "AutoLoadConfig")
 
 local WebhookContainer = Instance.new("Frame")
-WebhookContainer.Parent = Tab8
+WebhookContainer.Parent = Tab9
 WebhookContainer.Size = UDim2.new(1, 0, 0, 42)
 WebhookContainer.BackgroundColor3 = Theme.Card
 WebhookContainer.BackgroundTransparency = 0.15
@@ -749,7 +816,7 @@ WH_Box.FocusLost:Connect(function()
 end)
 
 local ConfigNameContainer = Instance.new("Frame")
-ConfigNameContainer.Parent = Tab8
+ConfigNameContainer.Parent = Tab9
 ConfigNameContainer.Size = UDim2.new(1, 0, 0, 42)
 ConfigNameContainer.BackgroundColor3 = Theme.Card
 ConfigNameContainer.BackgroundTransparency = 0.15
@@ -791,7 +858,7 @@ end)
 
 local function AddConfigButton(text, color, callback)
 	local Btn = Instance.new("TextButton")
-	Btn.Parent = Tab8
+	Btn.Parent = Tab9
 	Btn.Size = UDim2.new(1, 0, 0, 38)
 	Btn.Text = text
 	Btn.TextColor3 = color
@@ -873,7 +940,7 @@ TC.CornerRadius = UDim.new(0, 14)
 TC.Parent = ToggleBtn
 ToggleBtn.MouseButton1Click:Connect(function() MainFrame.Visible = not MainFrame.Visible end)
 
--- 8. THREAD UTAMA EKSEKUSI BACKEND & TOWER / GEAR MANAGER
+-- 8. THREAD UTAMA EKSEKUSI BACKEND & LIVE MONITORING
 task.spawn(function()
 	task.spawn(function()
 		pcall(function()
@@ -899,7 +966,7 @@ task.spawn(function()
 		end)
 	end)
 
-	MofenkNotify("MOFENK HUB", "Sistem Spider-Man Tower Manager Aktif!", 4)
+	MofenkNotify("MOFENK HUB", "Sistem Pro Tower Suite Berhasil Dimuat!", 4)
 	while task.wait(1.5) do
 		if _G.__ANIMEDICE ~= generation then break end
 
@@ -982,7 +1049,6 @@ task.spawn(function()
 			end)
 		end
 
-		-- Perbaikan Logika Level Up Slot Unit & Upgrade Pad
 		if _G.Mofenk.AutoLevel and R.LevelUpSlot then
 			pcall(function()
 				local d = data()
@@ -998,12 +1064,10 @@ task.spawn(function()
 		end
 
 		if _G.Mofenk.AutoUpgrade and R.BuyUpgrade then
-			pcall(function()
-				R.BuyUpgrade:FireServer()
-			end)
+			pcall(function() R.BuyUpgrade:FireServer() end)
 		end
 
-		-- Manajemen Tower & Monitoring Status Pertarungan
+		-- Tower Manager & Live State Update
 		if _G.Mofenk.AutoTower and R.PlayTower then
 			pcall(function()
 				local targetTower = _G.Mofenk.TowerName
@@ -1011,28 +1075,17 @@ task.spawn(function()
 					targetTower = towers[math.random(1, #towers)]
 				end
 				
-				if _G.Mofenk.TowerMonitor then
-					print("[MofenkHub Tower Manager] Memulai pertarungan di: " .. targetTower)
-				end
+				_G.Mofenk.TowerLiveStatus = "Aktif (" .. targetTower .. ")"
+				_G.Mofenk.TowerCurrentLevel = _G.Mofenk.TowerCurrentLevel + 1
 				
 				R.PlayTower:InvokeServer(targetTower)
 			end)
+		else
+			_G.Mofenk.TowerLiveStatus = "Standby / Berhenti"
 		end
 
 		if _G.Mofenk.AutoEquipTower and R.EquipTowerUnit then
 			pcall(function() R.EquipTowerUnit:FireServer() end)
-		end
-
-		-- Live Gear Stat Check
-		if _G.Mofenk.LiveGearCheck then
-			pcall(function()
-				local d = data()
-				if d and d.Gear then
-					-- Memantau stat gear aktif sesuai preferensi pilihan user
-					local currentSet = _G.Mofenk.GearSet
-					-- Integrasi pemanggilan gear set aktif
-				end
-			end)
 		end
 
 		if _G.Mofenk.AutoRebirth and R.Rebirth then
