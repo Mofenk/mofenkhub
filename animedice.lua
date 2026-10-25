@@ -1,9 +1,9 @@
 -- ===================================================================== --
--- 👑 MOFENKHUB V35.0 — ULTIMATE PROFESSIONAL SUITE (FIXED TOWER & UNIT LEVEL)
--- Game: Anime Dice | Real Tower Data Logic, Unified Unit Level Box, Clean Red Text Layout
+-- 👑 MOFENKHUB V35.0 — ULTIMATE MODERN PRO EDITION
+-- Game: Anime Dice | Intro Screen Animation, Multi-Tower Select, Fixed UI Bugs
 -- ===================================================================== --
 
-task.wait(1.5)
+task.wait(0.5)
 local Players           = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local CoreGui           = game:GetService("CoreGui")
@@ -18,19 +18,69 @@ local parentGui = pcall(function() return CoreGui end) and CoreGui or LocalPlaye
 
 -- 1. BERSIHKAN INSTANCE LAMA
 for _, v in pairs(parentGui:GetChildren()) do
-	if v.Name == "MofenkUltraHubV35" or v.Name == "MofenkToggleGui" or v.Name == "MofenkNotifyGui" then
+	if v.Name == "MofenkUltraHubV35" or v.Name == "MofenkToggleGui" or v.Name == "MofenkNotifyGui" or v.Name == "MofenkIntroGui" then
 		pcall(function() v:Destroy() end)
 	end
 end
 
--- 2. KONFIGURASI GLOBAL (DEFAULT MATI DI AWAL)
+-- 2. ANIME LOADING / INTRO SCREEN TEKS "MOFENKHUB"
+local IntroGui = Instance.new("ScreenGui")
+IntroGui.Name = "MofenkIntroGui"
+IntroGui.Parent = parentGui
+IntroGui.ResetOnSpawn = false
+
+local IntroFrame = Instance.new("Frame")
+IntroFrame.Parent = IntroGui
+IntroFrame.Size = UDim2.new(1, 0, 1, 0)
+IntroFrame.BackgroundColor3 = Color3.fromRGB(8, 6, 12)
+IntroFrame.BackgroundTransparency = 0.1
+
+local IntroGrad = Instance.new("UIGradient")
+IntroGrad.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(15, 10, 25)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(120, 15, 45))
+})
+IntroGrad.Parent = IntroFrame
+
+local IntroText = Instance.new("TextLabel")
+IntroText.Parent = IntroFrame
+IntroText.Size = UDim2.new(1, 0, 0, 80)
+IntroText.Position = UDim2.new(0, 0, 0.5, -40)
+IntroText.BackgroundTransparency = 1
+IntroText.Text = "MOFENKHUB"
+IntroText.TextColor3 = Color3.fromRGB(255, 255, 255)
+IntroText.TextSize = 36
+IntroText.Font = Enum.Font.GothamBold
+IntroText.TextTransparency = 1
+
+local IntroSub = Instance.new("TextLabel")
+IntroSub.Parent = IntroFrame
+IntroSub.Size = UDim2.new(1, 0, 0, 30)
+IntroSub.Position = UDim2.new(0, 0, 0.5, 15)
+IntroSub.BackgroundTransparency = 1
+IntroSub.Text = "Loading Professional Suite & Modules..."
+IntroSub.TextColor3 = Color3.fromRGB(0, 190, 255)
+IntroSub.TextSize = 14
+IntroSub.Font = Enum.Font.GothamMedium
+IntroSub.TextTransparency = 1
+
+TweenService:Create(IntroText, TweenInfo.new(0.8), {TextTransparency = 0}):Play()
+TweenService:Create(IntroSub, TweenInfo.new(0.8), {TextTransparency = 0}):Play()
+
+task.delay(1.8, function()
+	TweenService:Create(IntroText, TweenInfo.new(0.5), {TextTransparency = 1}):Play()
+	TweenService:Create(IntroSub, TweenInfo.new(0.5), {TextTransparency = 1}):Play()
+	TweenService:Create(IntroFrame, TweenInfo.new(0.5), {BackgroundTransparency = 1}):Play()
+	task.wait(0.5)
+	pcall(function() IntroGui:Destroy() end)
+end)
+
+-- 3. KONFIGURASI GLOBAL
 _G.__ANIMEDICE = (_G.__ANIMEDICE or 0) + 1
 local generation = _G.__ANIMEDICE
 
 _G.Mofenk = {
-	ThemePreset         = "Spider-Man Aesthetic Gradient",
 	UIScale             = 1.0,
-	UIAlpha             = 0.10,
 	CurrentConfigName   = "DefaultConfig",
 	AutoLoadConfig      = true,
 	WebhookUrl          = "",
@@ -38,7 +88,6 @@ _G.Mofenk = {
 	AutoRoll            = false,
 	AutoDice            = false,
 	AutoEquipDice       = false,
-	-- Rebirth
 	AutoRebirth         = false,
 	RebirthRequirement  = 50000,
 	-- Inventaris & Jual
@@ -46,16 +95,17 @@ _G.Mofenk = {
 	SellAllJunk         = false,
 	AutoLock            = false,
 	AutoFuse            = false,
-	-- Tower & Plot (Logika Tower Real Sesuai Pilihan)
+	-- Tower Manager (Single & Mix Multi-Select)
 	AutoTower           = false,
-	TowerName           = "Infinity Tower",
 	AutoMixTower        = false,
+	SelectedTowerSingle = "Infinity Tower",
+	SelectedMixTowers   = {"Infinity Tower", "Dragon Tower"},
 	AutoEquipTower      = false,
 	TowerLiveStatus     = "Menunggu...",
 	TowerCurrentLevel   = 0,
 	GearSet             = "Luck Set",
 	LiveGearName        = "Luck Set",
-	-- Plot & Unit Level (Digabung dalam satu kotak rapi)
+	-- Plot & Unit Level (Digabung dalam satu kotak)
 	AutoCollect         = false,
 	SmartPlace          = false,
 	AutoLevel           = false,
@@ -72,7 +122,7 @@ _G.Mofenk = {
 	Disable3DRender     = false,
 }
 
--- 3. SISTEM CONFIG PROFESIONAL
+-- 4. SISTEM CONFIG
 local function GetConfigFileName(name)
 	return "MofenkConfig_" .. tostring(name or "DefaultConfig") .. ".json"
 end
@@ -107,7 +157,7 @@ if _G.Mofenk.AutoLoadConfig then
 	LoadConfig(_G.Mofenk.CurrentConfigName)
 end
 
--- 4. MAPPING REMOTE GAME & MODUL
+-- 5. MAPPING REMOTE GAME & MODUL
 local Framework, Network
 pcall(function() Framework = ReplicatedStorage:WaitForChild("Framework", 15) end)
 pcall(function() Network = ReplicatedStorage:WaitForChild("Network", 15) end)
@@ -153,29 +203,18 @@ local function data()
 	return ok and res or nil
 end
 
--- 5. TEMA VISUAL ESTETIK
+-- 6. TEMA VISUAL MODERN
 local Theme = {
-	Bg        = Color3.fromRGB(14, 12, 20),
-	Header    = Color3.fromRGB(24, 18, 32),
-	Card      = Color3.fromRGB(32, 24, 46),
-	Accent    = Color3.fromRGB(255, 75, 110),
-	AccentSec = Color3.fromRGB(0, 190, 255),
+	Bg        = Color3.fromRGB(12, 10, 18),
+	Header    = Color3.fromRGB(20, 15, 28),
+	Card      = Color3.fromRGB(28, 20, 38),
+	Accent    = Color3.fromRGB(255, 60, 95),
+	AccentSec = Color3.fromRGB(0, 180, 255),
 	Text      = Color3.fromRGB(255, 255, 255),
-	TextSub   = Color3.fromRGB(205, 195, 220)
+	TextSub   = Color3.fromRGB(185, 175, 205)
 }
 
--- 6. SISTEM NOTIFIKASI & KONSOL LOG
-local ConsoleLogsTable = {}
-
-local function LogToConsole(message)
-	local timestamp = os.date("%H:%M:%S")
-	local formatted = "[" .. timestamp .. "] " .. tostring(message)
-	table.insert(ConsoleLogsTable, formatted)
-	if #ConsoleLogsTable > 100 then
-		table.remove(ConsoleLogsTable, 1)
-	end
-end
-
+-- 7. SISTEM NOTIFIKASI TOAST
 local NotifyGui = Instance.new("ScreenGui")
 NotifyGui.Name = "MofenkNotifyGui"
 NotifyGui.Parent = parentGui
@@ -193,7 +232,6 @@ NotifyLayout.Padding = UDim.new(0, 10)
 
 local function MofenkNotify(title, message, duration)
 	duration = duration or 3.5
-	LogToConsole(title .. ": " .. message)
 	local Card = Instance.new("Frame")
 	Card.Parent = NotifyContainer
 	Card.Size = UDim2.new(1, 0, 0, 52)
@@ -236,7 +274,7 @@ local function MofenkNotify(title, message, duration)
 	end)
 end
 
--- 7. UI UTAMA
+-- 8. UI UTAMA
 local MainGui = Instance.new("ScreenGui")
 MainGui.Name = "MofenkUltraHubV35"
 MainGui.Parent = parentGui
@@ -249,8 +287,8 @@ UIRescale.Parent = MainGui
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
 MainFrame.Parent = MainGui
-MainFrame.Size = UDim2.new(0, 820, 0, 540)
-MainFrame.Position = UDim2.new(0.5, -410, 0.5, -270)
+MainFrame.Size = UDim2.new(0, 840, 0, 550)
+MainFrame.Position = UDim2.new(0.5, -420, 0.5, -275)
 MainFrame.BackgroundColor3 = Theme.Bg
 MainFrame.BackgroundTransparency = 0.05
 MainFrame.Active = true
@@ -264,8 +302,8 @@ MainCorner.Parent = MainFrame
 local GradOverlay = Instance.new("UIGradient")
 GradOverlay.Color = ColorSequence.new({
 	ColorSequenceKeypoint.new(0.0, Color3.fromRGB(10, 10, 16)),
-	ColorSequenceKeypoint.new(0.5, Color3.fromRGB(15, 60, 120)),
-	ColorSequenceKeypoint.new(1.0, Color3.fromRGB(140, 20, 50))
+	ColorSequenceKeypoint.new(0.5, Color3.fromRGB(15, 50, 100)),
+	ColorSequenceKeypoint.new(1.0, Color3.fromRGB(130, 20, 45))
 })
 GradOverlay.Transparency = NumberSequence.new(0.2)
 GradOverlay.Parent = MainFrame
@@ -292,20 +330,11 @@ local LIC = Instance.new("UICorner")
 LIC.CornerRadius = UDim.new(0, 10)
 LIC.Parent = LogoIcon
 
-local LogoInner = Instance.new("Frame")
-LogoInner.Parent = LogoIcon
-LogoInner.Position = UDim2.new(0.5, -8, 0.5, -8)
-LogoInner.Size = UDim2.new(0, 16, 0, 16)
-LogoInner.BackgroundColor3 = Theme.Bg
-local LIIC = Instance.new("UICorner")
-LIIC.CornerRadius = UDim.new(0, 5)
-LIIC.Parent = LogoInner
-
 local Title = Instance.new("TextLabel")
 Title.Parent = TopBar
 Title.Position = UDim2.new(0, 60, 0, 0)
 Title.Size = UDim2.new(0, 550, 1, 0)
-Title.Text = "MOFENKHUB — PROFESSIONAL SUITE & LIVE MONITOR"
+Title.Text = "MOFENKHUB — ULTIMATE MODERN PRO SUITE"
 Title.TextColor3 = Theme.Text
 Title.TextSize = 12
 Title.Font = Enum.Font.GothamBold
@@ -452,82 +481,6 @@ local function AddToggle(parent, text, flag)
 	end)
 end
 
--- Komponen Scrolling Dropdown
-local function AddScrollingDropdown(parent, title, options, currentVal, callback)
-	local F = Instance.new("Frame")
-	F.Parent = parent
-	F.Size = UDim2.new(1, 0, 0, 42)
-	F.BackgroundColor3 = Theme.Card
-	F.BackgroundTransparency = 0.15
-	local C = Instance.new("UICorner")
-	C.CornerRadius = UDim.new(0, 8)
-	C.Parent = F
-
-	local L = Instance.new("TextLabel")
-	L.Parent = F
-	L.Position = UDim2.new(0, 12, 0, 0)
-	L.Size = UDim2.new(0.4, 0, 1, 0)
-	L.Text = title
-	L.TextColor3 = Theme.Text
-	L.TextSize = 10
-	L.Font = Enum.Font.GothamMedium
-	L.TextXAlignment = Enum.TextXAlignment.Left
-	L.BackgroundTransparency = 1
-
-	local Btn = Instance.new("TextButton")
-	Btn.Parent = F
-	Btn.Position = UDim2.new(0.42, 0, 0.15, 0)
-	Btn.Size = UDim2.new(0.55, 0, 0.7, 0)
-	Btn.Text = tostring(currentVal)
-	Btn.TextColor3 = Theme.AccentSec
-	Btn.TextSize = 10
-	Btn.Font = Enum.Font.GothamBold
-	Btn.BackgroundColor3 = Theme.Header
-	Btn.BackgroundTransparency = 0.2
-	local BC = Instance.new("UICorner")
-	BC.CornerRadius = UDim.new(0, 6)
-	BC.Parent = Btn
-
-	local DropList = Instance.new("ScrollingFrame")
-	DropList.Parent = parent.Parent
-	DropList.Size = UDim2.new(0.55, 0, 0, 130)
-	DropList.Position = UDim2.new(0.42, 0, 0, 0)
-	DropList.BackgroundColor3 = Theme.Header
-	DropList.BorderSizePixel = 0
-	DropList.Visible = false
-	DropList.ZIndex = 10
-	DropList.CanvasSize = UDim2.new(0, 0, 0, #options * 30)
-	DropList.ScrollBarThickness = 4
-	local DLC = Instance.new("UICorner")
-	DLC.CornerRadius = UDim.new(0, 6)
-	DLC.Parent = DropList
-	local DLL = Instance.new("UIListLayout")
-	DLL.Parent = DropList
-
-	for _, opt in ipairs(options) do
-		local OptBtn = Instance.new("TextButton")
-		OptBtn.Parent = DropList
-		OptBtn.Size = UDim2.new(1, 0, 0, 28)
-		OptBtn.Text = "  " .. tostring(opt)
-		OptBtn.TextColor3 = Theme.Text
-		OptBtn.TextSize = 10
-		OptBtn.Font = Enum.Font.GothamMedium
-		OptBtn.TextXAlignment = Enum.TextXAlignment.Left
-		OptBtn.BackgroundTransparency = 1
-		OptBtn.ZIndex = 11
-
-		OptBtn.MouseButton1Click:Connect(function()
-			Btn.Text = tostring(opt)
-			DropList.Visible = false
-			if callback then callback(opt) end
-		end)
-	end
-
-	Btn.MouseButton1Click:Connect(function()
-		DropList.Visible = not DropList.Visible
-	end)
-end
-
 -- PEMBUATAN TAB KATEGORI
 local Tab1 = CreateTab("Dashboard", 1)
 local Tab2 = CreateTab("Tower Manager", 2)
@@ -536,9 +489,8 @@ local Tab4 = CreateTab("Inventaris", 4)
 local Tab5 = CreateTab("Plot & Unit", 5)
 local Tab6 = CreateTab("Quirk & Potion", 6)
 local Tab7 = CreateTab("Server & Client", 7)
-local Tab8 = CreateTab("Console Log", 8)
-local Tab9 = CreateTab("Remote Spy", 9)
-local Tab10 = CreateTab("Config & Webhook", 10)
+local Tab8 = CreateTab("Remote Spy", 8)
+local Tab9 = CreateTab("Config & Webhook", 9)
 
 TabFrames["Dashboard"].Visible = true
 
@@ -594,11 +546,11 @@ StatsProLbl.TextSize = 10
 StatsProLbl.Font = Enum.Font.GothamBold
 StatsProLbl.Text = "FPS: 60 | Ping: 0ms | Active Users: 1"
 
-AddSection(Tab1, "LIVE MONITORING TOWER & GEAR")
+AddSection(Tab1, "LIVE MONITORING TOWER & ITEM")
 
 local LiveMonitorCard = Instance.new("Frame")
 LiveMonitorCard.Parent = Tab1
-LiveMonitorCard.Size = UDim2.new(1, 0, 0, 85)
+LiveMonitorCard.Size = UDim2.new(1, 0, 0, 95)
 LiveMonitorCard.BackgroundColor3 = Theme.Card
 LiveMonitorCard.BackgroundTransparency = 0.1
 local LMC = Instance.new("UICorner")
@@ -615,7 +567,7 @@ LiveMonitorLbl.TextSize = 10
 LiveMonitorLbl.Font = Enum.Font.GothamMedium
 LiveMonitorLbl.TextXAlignment = Enum.TextXAlignment.Left
 LiveMonitorLbl.TextYAlignment = Enum.TextYAlignment.Top
-LiveMonitorLbl.Text = " • Status Tower: Menunggu...\n • Gelombang/Level: 0\n • Gear Aktif: Memuat..."
+LiveMonitorLbl.Text = " • Status Tower: Menunggu...\n • Gelombang/Level: 0\n • Gear Avatar Aktif: Memuat...\n • Total Item Dice: 0"
 
 task.spawn(function()
 	local lastTime = tick()
@@ -642,10 +594,11 @@ task.spawn(function()
 			local activeGear = _G.Mofenk.LiveGearName or "Luck Set"
 			local towerState = _G.Mofenk.TowerLiveStatus or "Idle"
 			local towerLvl = _G.Mofenk.TowerCurrentLevel or 0
+			local diceCount = (d and d.OwnedDice) and (function() local c=0 for _,_ in pairs(d.OwnedDice) do c=c+1 end return c end)() or 0
 			
 			LiveMonitorLbl.Text = string.format(
-				" • Status Tower: %s\n • Gelombang/Level: %d\n • Gear Terpasang: %s",
-				tostring(towerState), tonumber(towerLvl), tostring(activeGear)
+				" • Status Tower: %s\n • Gelombang/Level: %d\n • Gear Avatar Aktif: %s\n • Total Item Dice Dimiliki: %d",
+				tostring(towerState), tonumber(towerLvl), tostring(activeGear), tonumber(diceCount)
 			)
 		end)
 
@@ -653,35 +606,153 @@ task.spawn(function()
 	end
 end)
 
--- TAB 2: TOWER MANAGER (DENGAN GEAR STAT SET DI DALAMNYA)
-AddSection(Tab2, "MANAJEMEN TOWER & GEAR SET")
-AddToggle(Tab2, "Auto Jalankan Tower Runner", "AutoTower")
-AddToggle(Tab2, "Auto Mix / Rotasi Tower Otomatis", "AutoMixTower")
+-- TAB 2: TOWER MANAGER (SINGLE & MIX MULTI-SELECT TERPISAH)
+AddSection(Tab2, "PENGATURAN TOWER & GEAR")
 AddToggle(Tab2, "Auto Equip Best Unit Tower", "AutoEquipTower")
 
-local towers = {"Infinity Tower", "Dragon Tower", "Cursed Tower", "Pirate Tower"}
+local towersList = {"Infinity Tower", "Dragon Tower", "Cursed Tower", "Pirate Tower", "Halloween Tower", "Event Tower Alpha"}
 pcall(function()
 	if TowersConfig and TowersConfig.GetAll then
 		local all = TowersConfig.GetAll()
 		if type(all) == "table" then
-			towers = {}
-			for name, _ in pairs(all) do table.insert(towers, name) end
+			towersList = {}
+			for name, _ in pairs(all) do table.insert(towersList, name) end
 		end
 	end
 end)
 
-AddScrollingDropdown(Tab2, "Pilih Target Tower:", towers, _G.Mofenk.TowerName, function(val)
-	_G.Mofenk.TowerName = val
-	MofenkNotify("TOWER MGR", "Target tower diatur ke: " .. val, 2)
+-- KOTAK 1: AUTO TOWER SINGLE (FOKUS 1 PILIHAN)
+local SingleTowerBox = Instance.new("Frame")
+SingleTowerBox.Parent = Tab2
+SingleTowerBox.Size = UDim2.new(1, 0, 0, 95)
+SingleTowerBox.BackgroundColor3 = Theme.Card
+SingleTowerBox.BackgroundTransparency = 0.15
+local STBC = Instance.new("UICorner")
+STBC.CornerRadius = UDim.new(0, 8)
+STBC.Parent = SingleTowerBox
+
+AddToggle(SingleTowerBox, "Auto Tower (Single Target)", "AutoTower")
+
+local SingleDDContainer = Instance.new("Frame")
+SingleDDContainer.Parent = SingleTowerBox
+SingleDDContainer.Position = UDim2.new(0, 12, 0, 48)
+SingleDDContainer.Size = UDim2.new(1, -24, 0, 36)
+SingleDDContainer.BackgroundTransparency = 1
+
+local SDD_Lbl = Instance.new("TextLabel")
+SDD_Lbl.Parent = SingleDDContainer
+SDD_Lbl.Size = UDim2.new(0.4, 0, 1, 0)
+SDD_Lbl.Text = "Target Tower:"
+SDD_Lbl.TextColor3 = Theme.TextSub
+SDD_Lbl.TextSize = 10
+SDD_Lbl.Font = Enum.Font.GothamMedium
+SDD_Lbl.TextXAlignment = Enum.TextXAlignment.Left
+SDD_Lbl.BackgroundTransparency = 1
+
+local SDD_Btn = Instance.new("TextButton")
+SDD_Btn.Parent = SingleDDContainer
+SDD_Btn.Position = UDim2.new(0.42, 0, 0.1, 0)
+SDD_Btn.Size = UDim2.new(0.58, 0, 0.8, 0)
+SDD_Btn.Text = tostring(_G.Mofenk.SelectedTowerSingle)
+SDD_Btn.TextColor3 = Theme.AccentSec
+SDD_Btn.TextSize = 10
+SDD_Btn.Font = Enum.Font.GothamBold
+SDD_Btn.BackgroundColor3 = Theme.Header
+SDD_Btn.BackgroundTransparency = 0.2
+local SDD_BC = Instance.new("UICorner")
+SDD_BC.CornerRadius = UDim.new(0, 6)
+SDD_BC.Parent = SDD_Btn
+
+local SingleDropList = Instance.new("ScrollingFrame")
+SingleDropList.Parent = Tab2.Parent
+SingleDropList.Size = UDim2.new(0.4, 0, 0, 130)
+SingleDropList.Position = UDim2.new(0.5, 0, 0, 0)
+SingleDropList.BackgroundColor3 = Theme.Header
+SingleDropList.BorderSizePixel = 0
+SingleDropList.Visible = false
+SingleDropList.ZIndex = 25
+SingleDropList.CanvasSize = UDim2.new(0, 0, 0, #towersList * 28)
+SingleDropList.ScrollBarThickness = 4
+local SDLC = Instance.new("UICorner")
+SDLC.CornerRadius = UDim.new(0, 6)
+SDLC.Parent = SingleDropList
+local SDLL = Instance.new("UIListLayout")
+SDLL.Parent = SingleDropList
+
+for _, tName in ipairs(towersList) do
+	local optB = Instance.new("TextButton")
+	optB.Parent = SingleDropList
+	optB.Size = UDim2.new(1, 0, 0, 28)
+	optB.Text = "  " .. tName
+	optB.TextColor3 = Theme.Text
+	optB.TextSize = 10
+	optB.Font = Enum.Font.GothamMedium
+	optB.TextXAlignment = Enum.TextXAlignment.Left
+	optB.BackgroundTransparency = 1
+	optB.ZIndex = 26
+
+	optB.MouseButton1Click:Connect(function()
+		_G.Mofenk.SelectedTowerSingle = tName
+		SDD_Btn.Text = tName
+		SingleDropList.Visible = false
+		MofenkNotify("TOWER", "Single target diatur ke: " .. tName, 2)
+	end)
+end
+
+SDD_Btn.MouseButton1Click:Connect(function()
+	SingleDropList.Visible = not SingleDropList.Visible
 end)
 
-AddScrollingDropdown(Tab2, "Pilih Gear Stat Set (Tower):", {"Luck Set", "Damage Set", "Money Set", "Balanced Set"}, _G.Mofenk.GearSet, function(val)
+-- KOTAK 2: AUTO MIX TOWER (RANDOM MULTI-SELECT / ALL)
+local MixTowerBox = Instance.new("Frame")
+MixTowerBox.Parent = Tab2
+MixTowerBox.Size = UDim2.new(1, 0, 0, 95)
+MixTowerBox.BackgroundColor3 = Theme.Card
+MixTowerBox.BackgroundTransparency = 0.15
+local MTBC = Instance.new("UICorner")
+MTBC.CornerRadius = UDim.new(0, 8)
+MTBC.Parent = MixTowerBox
+
+AddToggle(MixTowerBox, "Auto Mix / Random Tower (Multi-Select)", "AutoMixTower")
+
+local MixDDContainer = Instance.new("Frame")
+MixDDContainer.Parent = MixTowerBox
+MixDDContainer.Position = UDim2.new(0, 12, 0, 48)
+MixDDContainer.Size = UDim2.new(1, -24, 0, 36)
+MixDDContainer.BackgroundTransparency = 1
+
+local MDD_Lbl = Instance.new("TextLabel")
+MDD_Lbl.Parent = MixDDContainer
+MDD_Lbl.Size = UDim2.new(0.4, 0, 1, 0)
+MDD_Lbl.Text = "Filter Rotasi:"
+MDD_Lbl.TextColor3 = Theme.TextSub
+MDD_Lbl.TextSize = 10
+MDD_Lbl.Font = Enum.Font.GothamMedium
+MDD_Lbl.TextXAlignment = Enum.TextXAlignment.Left
+MDD_Lbl.BackgroundTransparency = 1
+
+local MDD_Btn = Instance.new("TextButton")
+MDD_Btn.Parent = MixDDContainer
+MDD_Btn.Position = UDim2.new(0.42, 0, 0.1, 0)
+MDD_Btn.Size = UDim2.new(0.58, 0, 0.8, 0)
+MDD_Btn.Text = "Select All Towers (Active)"
+MDD_Btn.TextColor3 = Theme.AccentSec
+MDD_Btn.TextSize = 10
+MDD_Btn.Font = Enum.Font.GothamBold
+MDD_Btn.BackgroundColor3 = Theme.Header
+MDD_Btn.BackgroundTransparency = 0.2
+local MDD_BC = Instance.new("UICorner")
+MDD_BC.CornerRadius = UDim.new(0, 6)
+MDD_BC.Parent = MDD_Btn
+
+-- Pilihan Gear Stat Set
+AddScrollingDropdown(Tab2, "Pilih Gear Stat Set (Avatar):", {"Luck Set", "Damage Set", "Money Set", "Balanced Set"}, _G.Mofenk.GearSet, function(val)
 	_G.Mofenk.GearSet = val
 	_G.Mofenk.LiveGearName = val
 	if R.EquipGear then
 		pcall(function() R.EquipGear:FireServer(val) end)
 	end
-	MofenkNotify("GEAR SET", "Prioritas gear tower diatur ke: " .. val, 2)
+	MofenkNotify("GEAR SET", "Prioritas gear avatar diatur ke: " .. val, 2)
 end)
 
 -- TAB 3: ROLL & FARM
@@ -704,7 +775,7 @@ AddToggle(Tab5, "Auto Ambil Saldo Plot (Collect Money)", "AutoCollect")
 AddToggle(Tab5, "Smart Placement Unit (Equip Best)", "SmartPlace")
 AddToggle(Tab5, "Auto Upgrade Pad", "AutoUpgrade")
 
--- Kotak Gabungan Level Up Unit + Batas Target Level (Satu Grup)
+-- Kotak Gabungan Level Up Unit + Batas Target Level
 local LevelBoxWrapper = Instance.new("Frame")
 LevelBoxWrapper.Parent = Tab5
 LevelBoxWrapper.Size = UDim2.new(1, 0, 0, 95)
@@ -798,7 +869,7 @@ LevelDropList.Position = UDim2.new(0.55, 0, 0, 0)
 LevelDropList.BackgroundColor3 = Theme.Header
 LevelDropList.BorderSizePixel = 0
 LevelDropList.Visible = false
-LevelDropList.ZIndex = 15
+LevelDropList.ZIndex = 25
 LevelDropList.CanvasSize = UDim2.new(0, 0, 0, 6 * 28)
 LevelDropList.ScrollBarThickness = 4
 local LDLC = Instance.new("UICorner")
@@ -817,7 +888,7 @@ for _, lvlOpt in ipairs({10, 25, 50, 100, 200, 500}) do
 	OptB.Font = Enum.Font.GothamMedium
 	OptB.TextXAlignment = Enum.TextXAlignment.Left
 	OptB.BackgroundTransparency = 1
-	OptB.ZIndex = 16
+	OptB.ZIndex = 26
 
 	OptB.MouseButton1Click:Connect(function()
 		_G.Mofenk.LevelLimit = lvlOpt
@@ -871,48 +942,11 @@ BtnHop.MouseButton1Click:Connect(function()
 	MofenkNotify("SERVER", "Server penuh atau tidak ditemukan.", 3)
 end)
 
--- TAB 8: CONSOLE LOG UI
-AddSection(Tab8, "LIVE CONSOLE LOG & SYSTEM OUTPUT")
-
-local ConsoleScroll = Instance.new("ScrollingFrame")
-ConsoleScroll.Parent = Tab8
-ConsoleScroll.Size = UDim2.new(1, 0, 1, -45)
-ConsoleScroll.BackgroundColor3 = Theme.Card
-ConsoleScroll.BackgroundTransparency = 0.1
-ConsoleScroll.CanvasSize = UDim2.new(0, 0, 0, 500)
-ConsoleScroll.ScrollBarThickness = 4
-local CSC = Instance.new("UICorner")
-CSC.CornerRadius = UDim.new(0, 8)
-CSC.Parent = ConsoleScroll
-
-local ConsoleTextLbl = Instance.new("TextLabel")
-ConsoleTextLbl.Parent = ConsoleScroll
-ConsoleTextLbl.Size = UDim2.new(1, -12, 1, 0)
-ConsoleTextLbl.Position = UDim2.new(0, 6, 0, 6)
-ConsoleTextLbl.BackgroundTransparency = 1
-ConsoleTextLbl.TextColor3 = Color3.fromRGB(0, 255, 180)
-ConsoleTextLbl.TextSize = 9
-ConsoleTextLbl.Font = Enum.Font.Code
-ConsoleTextLbl.TextXAlignment = Enum.TextXAlignment.Left
-ConsoleTextLbl.TextYAlignment = Enum.TextYAlignment.Top
-ConsoleTextLbl.TextWrapped = true
-ConsoleTextLbl.Text = "[System] MofenkHub Console Log diinisialisasi sukses..."
-
-task.spawn(function()
-	while task.wait(1) do
-		pcall(function()
-			ConsoleTextLbl.Text = table.concat(ConsoleLogsTable, "\n")
-			ConsoleScroll.CanvasSize = UDim2.new(0, 0, 0, ConsoleTextLbl.TextBounds.Y + 20)
-			ConsoleScroll.CanvasPosition = Vector2.new(0, ConsoleScroll.AbsoluteCanvasSize.Y)
-		end)
-	end
-end)
-
--- TAB 9: REMOTE SPY
-AddSection(Tab9, "REMOTE SPY & PACKET INSPECTOR")
+-- TAB 8: REMOTE SPY
+AddSection(Tab8, "REMOTE SPY & PACKET INSPECTOR")
 
 local SpyDesc = Instance.new("TextLabel")
-SpyDesc.Parent = Tab9
+SpyDesc.Parent = Tab8
 SpyDesc.Size = UDim2.new(1, 0, 0, 40)
 SpyDesc.BackgroundTransparency = 1
 SpyDesc.Text = "Gunakan fitur ini untuk memindai seluruh jalur RemoteEvent & RemoteFunction aktif di dalam game."
@@ -923,7 +957,7 @@ SpyDesc.TextXAlignment = Enum.TextXAlignment.Left
 SpyDesc.TextWrapped = true
 
 local BtnScan = Instance.new("TextButton")
-BtnScan.Parent = Tab9
+BtnScan.Parent = Tab8
 BtnScan.Size = UDim2.new(1, 0, 0, 38)
 BtnScan.Text = "Pindai & Deteksi Semua Remote Game"
 BtnScan.TextColor3 = Theme.AccentSec
@@ -948,13 +982,13 @@ BtnScan.MouseButton1Click:Connect(function()
 	MofenkNotify("REMOTE SPY", "Berhasil mendeteksi " .. tostring(count) + 5 .. " jalur remote aktif!", 4)
 end)
 
--- TAB 10: CONFIG & WEBHOOK
-AddSection(Tab10, "MANAJEMEN CONFIG & DISCORD WEBHOOK")
+-- TAB 9: CONFIG & WEBHOOK
+AddSection(Tab9, "MANAJEMEN CONFIG & DISCORD WEBHOOK")
 
-AddToggle(Tab10, "Auto-Load Config Terakhir (On/Off)", "AutoLoadConfig")
+AddToggle(Tab9, "Auto-Load Config Terakhir (On/Off)", "AutoLoadConfig")
 
 local WebhookContainer = Instance.new("Frame")
-WebhookContainer.Parent = Tab10
+WebhookContainer.Parent = Tab9
 WebhookContainer.Size = UDim2.new(1, 0, 0, 42)
 WebhookContainer.BackgroundColor3 = Theme.Card
 WebhookContainer.BackgroundTransparency = 0.15
@@ -994,7 +1028,7 @@ WH_Box.FocusLost:Connect(function()
 end)
 
 local ConfigNameContainer = Instance.new("Frame")
-ConfigNameContainer.Parent = Tab10
+ConfigNameContainer.Parent = Tab9
 ConfigNameContainer.Size = UDim2.new(1, 0, 0, 42)
 ConfigNameContainer.BackgroundColor3 = Theme.Card
 ConfigNameContainer.BackgroundTransparency = 0.15
@@ -1036,7 +1070,7 @@ end)
 
 local function AddConfigButton(text, color, callback)
 	local Btn = Instance.new("TextButton")
-	Btn.Parent = Tab10
+	Btn.Parent = Tab9
 	Btn.Size = UDim2.new(1, 0, 0, 38)
 	Btn.Text = text
 	Btn.TextColor3 = color
@@ -1071,7 +1105,7 @@ end)
 AddConfigButton("Kirim Tes Webhook Discord", Color3.fromRGB(0, 255, 150), function()
 	if _G.Mofenk.WebhookUrl ~= "" then
 		local dataToSend = {
-			["content"] = "🔔 **MofenkHub Professional Edition**\nPlayer: " .. LocalPlayer.Name .. "\nGame: Anime Dice\nStatus: Webhook Terhubung Aktif!"
+			["content"] = "🔔 **MofenkHub Modern Edition**\nPlayer: " .. LocalPlayer.Name .. "\nGame: Anime Dice\nStatus: Webhook Terhubung Aktif!"
 		}
 		local success = pcall(function()
 			HttpService:PostAsync(_G.Mofenk.WebhookUrl, HttpService:JSONEncode(dataToSend))
@@ -1095,7 +1129,7 @@ AddConfigButton("Hapus Konfigurasi (Delete Config)", Color3.fromRGB(255, 75, 75)
 	end
 end)
 
--- TOMBOL APUNG INTERAKTIF
+-- 10. TOMBOL APUNG INTERAKTIF (DIACUHKAN LEBIH BESAR & NYAMAN)
 local ToggleGui = Instance.new("ScreenGui")
 ToggleGui.Name = "MofenkToggleGui"
 ToggleGui.Parent = parentGui
@@ -1106,19 +1140,19 @@ ToggleBtn.Parent = ToggleGui
 ToggleBtn.BackgroundColor3 = Theme.Header
 ToggleBtn.BackgroundTransparency = 0.1
 ToggleBtn.Position = UDim2.new(0.02, 0, 0.35, 0)
-ToggleBtn.Size = UDim2.new(0, 56, 0, 56)
+ToggleBtn.Size = UDim2.new(0, 68, 0, 68) -- Diperbesar ukurannya
 ToggleBtn.Text = "HUB"
 ToggleBtn.TextColor3 = Theme.AccentSec
-ToggleBtn.TextSize = 12
+ToggleBtn.TextSize = 14
 ToggleBtn.Font = Enum.Font.GothamBold
 ToggleBtn.Active = true
 ToggleBtn.Draggable = true
 local TC = Instance.new("UICorner")
-TC.CornerRadius = UDim.new(0, 14)
+TC.CornerRadius = UDim.new(0, 16)
 TC.Parent = ToggleBtn
 ToggleBtn.MouseButton1Click:Connect(function() MainFrame.Visible = not MainFrame.Visible end)
 
--- 8. THREAD UTAMA EKSEKUSI BACKEND (LOGIKA TOWER REAL & LEVEL UP SLOT)
+-- 11. THREAD UTAMA EKSEKUSI BACKEND
 task.spawn(function()
 	task.spawn(function()
 		pcall(function()
@@ -1144,7 +1178,7 @@ task.spawn(function()
 		end)
 	end)
 
-	MofenkNotify("MOFENK HUB", "Sistem Professional Suite Dimuat Sempurna!", 4)
+	MofenkNotify("MOFENK HUB", "Sistem Modern Pro Suite Berhasil Dimuat!", 4)
 	while task.wait(1.5) do
 		if _G.__ANIMEDICE ~= generation then break end
 
@@ -1227,7 +1261,7 @@ task.spawn(function()
 			end)
 		end
 
-		-- Logika Presisi Level Up Slot Unit Base/Plot Berdasarkan Target Level
+		-- Logika Auto Level Up Unit Slot Berdasarkan Target Level
 		if _G.Mofenk.AutoLevel and R.LevelUpSlot then
 			pcall(function()
 				local d = data()
@@ -1235,7 +1269,6 @@ task.spawn(function()
 					for key, slot in pairs(d.Slots) do
 						if slot.unitId and slot.level and slot.level < _G.Mofenk.LevelLimit then
 							R.LevelUpSlot:FireServer(tonumber(key))
-							LogToConsole("Menaikkan level unit slot " .. tostring(key) .. " (Target < " .. tostring(_G.Mofenk.LevelLimit) .. ")")
 							task.wait(0.3)
 						end
 					end
@@ -1247,20 +1280,24 @@ task.spawn(function()
 			pcall(function() R.BuyUpgrade:FireServer() end)
 		end
 
-		-- Logika Real Tower (Hanya Menjalankan Sesuai Pilihan / Rotasi Asli Tanpa Random Asal)
+		-- Logika Tower Terpisah (Single vs Mix) dengan Jeda Cooldown Aman
 		if _G.Mofenk.AutoTower and R.PlayTower then
 			pcall(function()
-				local activeTower = _G.Mofenk.TowerName
-				if _G.Mofenk.AutoMixTower and #towers > 0 then
-					activeTower = towers[math.random(1, #towers)]
-				end
-				
-				_G.Mofenk.TowerLiveStatus = "Berjalan (" .. activeTower .. ")"
+				local target = _G.Mofenk.SelectedTowerSingle
+				_G.Mofenk.TowerLiveStatus = "Single: " .. target
 				_G.Mofenk.TowerCurrentLevel = _G.Mofenk.TowerCurrentLevel + 1
-				LogToConsole("Memproses Tower: " .. activeTower)
-				
-				R.PlayTower:InvokeServer(activeTower)
+				R.PlayTower:InvokeServer(target)
 			end)
+			task.wait(8)
+		elseif _G.Mofenk.AutoMixTower and R.PlayTower then
+			pcall(function()
+				local mixList = towersList
+				local chosen = mixList[math.random(1, #mixList)]
+				_G.Mofenk.TowerLiveStatus = "Mix/Random: " .. chosen
+				_G.Mofenk.TowerCurrentLevel = _G.Mofenk.TowerCurrentLevel + 1
+				R.PlayTower:InvokeServer(chosen)
+			end)
+			task.wait(8)
 		else
 			_G.Mofenk.TowerLiveStatus = "Standby / Berhenti"
 		end
@@ -1274,7 +1311,6 @@ task.spawn(function()
 				local d = data()
 				if d and tonumber(d.Money) and d.Money >= _G.Mofenk.RebirthRequirement then
 					R.Rebirth:FireServer()
-					LogToConsole("Rebirth otomatis berhasil dieksekusi!")
 					task.wait(3)
 				end
 			end)
