@@ -62,7 +62,7 @@ local F = {
 }
 
 local STATE = { towerLive = "Standby", towerFloor = 0, towerDrops = 0, towerTraitsGot = "Belum Ada", activeBuffs = "Tidak Ada" }
-local ConfigUpdaters = {} -- NEW: Untuk sinkronisasi UI saat Load Config
+local ConfigUpdaters = {}
 
 local THEMES = {
 	{ Name = "Cyberpunk", Bg = Color3.fromRGB(10, 5, 15), Card = Color3.fromRGB(20, 15, 30), Header = Color3.fromRGB(15, 10, 20), Acc1 = Color3.fromRGB(0, 255, 255), Acc2 = Color3.fromRGB(255, 0, 128) },
@@ -91,7 +91,6 @@ local function saveConfig(name)
 	if writefile then
 		pcall(function() 
 			writefile(getCfgPath(name), HttpService:JSONEncode(F)) 
-			-- Logika Pointer Auto-Load
 			local pointerPath = CFG_FOLDER .. "/autoload_pointer.txt"
 			if F.autoLoadEnabled then
 				writefile(pointerPath, name or F.cfgName or "DefaultConfig")
@@ -108,15 +107,12 @@ local function loadConfig(name)
 		pcall(function() 
 			local d = HttpService:JSONDecode(readfile(path))
 			for k,v in pairs(d) do F[k]=v end 
-			for _, updateUI in ipairs(ConfigUpdaters) do pcall(updateUI) end -- Sinkronisasi Visual UI
+			for _, updateUI in ipairs(ConfigUpdaters) do pcall(updateUI) end
 			ApplyTheme(F.themeIndex)
 		end)
 	end
 end
 
--- ===================================================================== --
--- [NEW] PRE-LOAD CONFIG (Dipanggil sebelum UI dibuat agar akurat)
--- ===================================================================== --
 pcall(function()
 	local pointerPath = CFG_FOLDER .. "/autoload_pointer.txt"
 	if readfile and isfile and isfile(pointerPath) then
@@ -134,7 +130,6 @@ end)
 -- 2. FRAMEWORK & MODULE BINDINGS
 -- ===================================================================== --
 local Network = ReplicatedStorage:WaitForChild("Network", 15); local Framework = ReplicatedStorage:WaitForChild("Framework", 15)
-
 local function svc(p) local n = Network; for x in string.gmatch(p, "[^%.]+") do n = n and n:FindFirstChild(x) end; return n end
 
 local R = {
@@ -234,7 +229,7 @@ end)
 local MainGui = Instance.new("ScreenGui"); MainGui.Name = "MofenkUltraHub"; MainGui.Parent = parentGui; MainGui.ResetOnSpawn = false
 
 local MainFrame = Instance.new("Frame"); MainFrame.Parent = MainGui
-MainFrame.AnchorPoint = Vector2.new(0.5, 0.5) -- Fix Positioning
+MainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
 MainFrame.Size = UDim2.new(0, 900, 0, 580); MainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
 MainFrame.Active = true; MainFrame.Draggable = true; MainFrame.Visible = false; MainFrame.BackgroundTransparency = 0.15; table.insert(ThemeElements.Bg, MainFrame)
 local MainCorner = Instance.new("UICorner"); MainCorner.CornerRadius = UDim.new(0, 16); MainCorner.Parent = MainFrame
@@ -245,7 +240,7 @@ local ScreenScale = Instance.new("UIScale"); ScreenScale.Parent = MainGui
 local function UpdateScale()
 	local viewport = workspace.CurrentCamera.ViewportSize
 	local scaleX = viewport.X / 1280; local scaleY = viewport.Y / 720
-	ScreenScale.Scale = math.clamp(math.min(scaleX, scaleY), 0.5, 1.1) -- Fix Scale Presisi
+	ScreenScale.Scale = math.clamp(math.min(scaleX, scaleY), 0.5, 1.1)
 end
 UpdateScale(); workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(UpdateScale)
 
@@ -299,7 +294,6 @@ local function AddToggle(parent, text, flag, callback)
 	local Sw = Instance.new("TextButton"); Sw.Parent = Frm; Sw.Position = UDim2.new(1, -44, 0.5, -11); Sw.Size = UDim2.new(0, 38, 0, 22); Sw.Text = ""; local SwC = Instance.new("UICorner"); SwC.CornerRadius = UDim.new(1, 0); SwC.Parent = Sw
 	local Knob = Instance.new("Frame"); Knob.Parent = Sw; Knob.Size = UDim2.new(0, 18, 0, 18); Knob.BackgroundColor3 = Color3.fromRGB(255, 255, 255); local KC = Instance.new("UICorner"); KC.CornerRadius = UDim.new(1, 0); KC.Parent = Knob
 	
-	-- Config Sync logic
 	local function updateVisuals()
 		Sw.BackgroundColor3 = F[flag] and THEMES[F.themeIndex].Acc1 or Color3.fromRGB(45,45,55)
 		TweenService:Create(Knob, TweenInfo.new(0.2), {Position = F[flag] and UDim2.new(1, -20, 0.5, -9) or UDim2.new(0, 2, 0.5, -9)}):Play()
@@ -317,7 +311,6 @@ local function AddInput(parent, text, flag, isNum)
 	local L = Instance.new("TextLabel"); L.Parent = Frm; L.Position = UDim2.new(0, 6, 0, 0); L.Size = UDim2.new(0.5, 0, 1, 0); L.Text = text; L.TextColor3 = Color3.fromRGB(255,255,255); L.TextSize = 11; L.Font = Enum.Font.GothamMedium; L.TextXAlignment = Enum.TextXAlignment.Left; L.BackgroundTransparency = 1
 	local Box = Instance.new("TextBox"); Box.Parent = Frm; Box.Position = UDim2.new(0.5, 0, 0.1, 0); Box.Size = UDim2.new(0.48, 0, 0.8, 0); table.insert(ThemeElements.TextAcc, Box); Box.TextSize = 11; Box.Font = Enum.Font.GothamBold; Box.BackgroundTransparency = 0.2; table.insert(ThemeElements.Header, Box); local BC = Instance.new("UICorner"); BC.CornerRadius = UDim.new(0, 6); BC.Parent = Box
 	
-	-- Config Sync logic
 	local function updateVisuals() Box.Text = tostring(F[flag] or "") end
 	table.insert(ConfigUpdaters, updateVisuals)
 
@@ -568,20 +561,50 @@ ApplyTheme(F.themeIndex) -- Jalankan tema
 -- 7. FULL BACKEND THREADS (ANTI-RELOG STABIL & AMAN)
 -- ===================================================================== --
 
--- [NEW] ROBUST ANTI-AFK & ANTI-RELOAD SYSTEM
-task.spawn(function()
-	local vu = game:GetService("VirtualUser")
-	local function preventAFK()
-		if not F.afk then return end
-		pcall(function() vu:CaptureController(); vu:ClickButton2(Vector2.new()) end)
+-- [NEW] ROBUST ANTI-AFK & AUTO-RECONNECT SYSTEM (DARI REFERENSI)
+local vu = game:GetService("VirtualUser")
+
+-- 1. Auto Reconnect via ErrorPrompt
+pcall(function()
+	local PromptOverlay = CoreGui:FindFirstChild("PromptOverlay", true) or LocalPlayer.PlayerGui:FindFirstChild("PromptOverlay", true)
+	if PromptOverlay then
+		PromptOverlay.ChildAdded:Connect(function(child)
+			if F.afk and (child.Name == "ErrorPrompt" or child.Name == "DisconnectPrompt") then
+				local qot = queue_on_teleport or queueonteleport or (syn and syn.queue_on_teleport) or fluxus and fluxus.queue_on_teleport
+				if qot then
+					qot([[
+						task.wait(3)
+						loadstring(game:HttpGet("https://raw.githubusercontent.com/Mofenk/mofenkhub/refs/heads/main/animedice.lua"))()
+					]])
+				end
+				task.wait(2)
+				pcall(function() TeleportService:Teleport(game.PlaceId, LocalPlayer) end)
+			end
+		end)
 	end
-	pcall(function()
-		if getconnections then
-			for _, conn in pairs(getconnections(LocalPlayer.Idled)) do conn:Disable() end
+end)
+
+-- 2. Dedicated Anti-AFK Listener
+LocalPlayer.Idled:Connect(function()
+	if F.afk then
+		pcall(function()
+			vu:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+			task.wait(1)
+			vu:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+		end)
+	end
+end)
+
+-- 3. Dedicated Anti-AFK Heartbeat Loop
+task.spawn(function()
+	while task.wait(30) do
+		if F.afk then
+			pcall(function()
+				vu:CaptureController()
+				vu:ClickButton2(Vector2.new(0,0))
+			end)
 		end
-	end)
-	LocalPlayer.Idled:Connect(preventAFK)
-	while task.wait(900) do preventAFK() end
+	end
 end)
 
 local function unlockedSlots() local arr={}; local rb = rebirthAmt(); pcall(function() for i=1, (G.PlotConfig.GetMaxSlots(rb) or 15) do if rb >= (G.PlotConfig.GetSlotRebirthRequirement(i) or 0) then table.insert(arr, i) end end end); return arr end
