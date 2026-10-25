@@ -1,6 +1,6 @@
 -- ===================================================================== --
--- 👑 MOFENKHUB V70.0 — THE ULTIMATE MASTER SUITE (RARITY SELL & UI FIXED)
--- Game: Anime Dice | Perfected UI, Auto Roll, Rarity Sell, Config Manager
+-- 👑 MOFENKHUB V80.0 — ULTIMATE FIXED (SELL ALL & SERVER HOP)
+-- Game: Anime Dice | Fixed Server Hop API & Inventory Sell Controller
 -- ===================================================================== --
 
 --!nocheck
@@ -33,7 +33,7 @@ local F = {
 	-- Farm & Roll
 	collect = false, levelup = false, maxLevel = 40, smartLevel = false,
 	rebirth = false, upgrades = false, buyDice = false, equipDice = true, autoRoll = false,
-	-- Inv & Sell by Rarity
+	-- Inv & Sell by Rarity / All
 	sellAuto = false, smartSell = false, sellRarityLimit = 2, autoFuse = false,
 	-- Potion
 	potionAuto = false, potionBest = true, potionSpecific = {},
@@ -67,13 +67,13 @@ local function ApplyTheme(idx)
 	for _, v in ipairs(ThemeElements.TextAcc) do v.TextColor3 = t.Acc1 end
 end
 
-local CFG_FILE = "MofenkHub_V70_Config.json"
+local CFG_FILE = "MofenkHub_V80_Config.json"
 local function saveConfig() if writefile then pcall(function() writefile(CFG_FILE, HttpService:JSONEncode(F)) end) end end
 local function loadConfig() if readfile and isfile and isfile(CFG_FILE) then pcall(function() local d = HttpService:JSONDecode(readfile(CFG_FILE)); for k,v in pairs(d) do F[k]=v end end) end end
 loadConfig()
 
 -- ===================================================================== --
--- 2. BACKEND & REMOTES
+-- 2. FRAMEWORK & MODULE BINDINGS
 -- ===================================================================== --
 local Network = ReplicatedStorage:WaitForChild("Network", 15); local Framework = ReplicatedStorage:WaitForChild("Framework", 15)
 local function svc(p) local n = Network; for x in string.gmatch(p, "[^%.]+") do n = n and n:FindFirstChild(x) end; return n end
@@ -116,6 +116,7 @@ pcall(function()
 	G.BuffController = require(Framework.Features.Buffs.BuffController)
 	G.RollController = require(Framework.Features.Rolling.RollController)
 	G.SellController = require(Framework.Features.Sell.SellController)
+	G.DiceModule = require(Framework.Features.Rolling.Dice)
 end)
 
 local function data() return G.DC and G.DC.___X or {} end
@@ -127,7 +128,7 @@ local function isUnitEntry(e) return e and type(e)=="table" and e.name and G.Ent
 local function currencyAmount(name) local t = 0; for _, e in pairs(inventory()) do if type(e)=="table" and e.name==name then t += tonumber(e.amount) or 0 end end; return t end
 
 -- ===================================================================== --
--- 3. INTERACTIVE "M" LOGO TOGGLE (ZINDEX 999 - SELALU DI DEPAN)
+-- 3. INTERACTIVE "M" LOGO TOGGLE
 -- ===================================================================== --
 local ToggleGui = Instance.new("ScreenGui"); ToggleGui.Name = "MofenkToggleFront"; ToggleGui.Parent = parentGui; ToggleGui.ResetOnSpawn = false
 ToggleGui.DisplayOrder = 99999
@@ -165,7 +166,7 @@ local StrokeGrad = Instance.new("UIGradient"); StrokeGrad.Parent = MainStroke; t
 ToggleBtn.MouseButton1Click:Connect(function() MainFrame.Visible = not MainFrame.Visible end)
 
 local TopBar = Instance.new("Frame"); TopBar.Parent = MainFrame; TopBar.Size = UDim2.new(1, 0, 0, 48); TopBar.BackgroundTransparency = 0.2; table.insert(ThemeElements.Header, TopBar)
-local Title = Instance.new("TextLabel"); Title.Parent = TopBar; Title.Position = UDim2.new(0, 20, 0, 0); Title.Size = UDim2.new(0, 500, 1, 0); Title.Text = "👑 MOFENKHUB V70.0  |  ANIME DICE PRO"; Title.TextSize = 14; Title.Font = Enum.Font.GothamBlack; Title.TextXAlignment = Enum.TextXAlignment.Left; Title.BackgroundTransparency = 1; table.insert(ThemeElements.TextAcc, Title)
+local Title = Instance.new("TextLabel"); Title.Parent = TopBar; Title.Position = UDim2.new(0, 20, 0, 0); Title.Size = UDim2.new(0, 500, 1, 0); Title.Text = "👑 MOFENKHUB V80.0  |  ANIME DICE PRO"; Title.TextSize = 14; Title.Font = Enum.Font.GothamBlack; Title.TextXAlignment = Enum.TextXAlignment.Left; Title.BackgroundTransparency = 1; table.insert(ThemeElements.TextAcc, Title)
 
 local CloseBtn = Instance.new("TextButton"); CloseBtn.Parent = TopBar; CloseBtn.Position = UDim2.new(1, -42, 0, 9); CloseBtn.Size = UDim2.new(0, 30, 0, 30); CloseBtn.Text = "✕"; CloseBtn.TextColor3 = Color3.fromRGB(255,255,255); CloseBtn.Font = Enum.Font.GothamBold; CloseBtn.BackgroundTransparency = 0.2; table.insert(ThemeElements.Card, CloseBtn)
 local CC = Instance.new("UICorner"); CC.CornerRadius = UDim.new(0, 8); CC.Parent = CloseBtn
@@ -311,7 +312,7 @@ task.spawn(function()
 	end) end
 end)
 
--- 2. FARMING (AUTO ROLL DIRECT CLICK & CONTROLLER)
+-- 2. FARMING
 local G_Farm1 = AddGroup(T_Farm, "PLOT, ROLL & REBIRTH")
 AddToggle(G_Farm1, "Auto Collect Plot", "collect")
 AddToggle(G_Farm1, "Auto Roll Dadu", "autoRoll")
@@ -322,7 +323,7 @@ AddToggle(G_Farm2, "Auto Level Up Unit", "levelup")
 AddInput(G_Farm2, "Max Level Batas:", "maxLevel", true)
 AddToggle(G_Farm2, "Auto Upgrade Skill Tree", "upgrades")
 
--- 3. INVENTORY (AUTO SELL BY RARITY)
+-- 3. INVENTORY (FIXED AUTO SELL & SELL ALL)
 local G_Inv = AddGroup(T_Inv, "MANAGEMENT & AUTO SELL")
 AddToggle(G_Inv, "Auto Sell Unit", "sellAuto")
 AddToggle(G_Inv, "Smart Sell (Batas Rarity)", "smartSell")
@@ -383,23 +384,39 @@ AddToggle(G_Set2, "Auto Claim Quests & Daily", "claimQuests")
 AddToggle(G_Set2, "Auto Redeem Codes", "codesAuto")
 
 local BtnHop = Instance.new("TextButton"); BtnHop.Parent = G_Set2; BtnHop.Size = UDim2.new(1, 0, 0, 34); BtnHop.Text = "🌐 SERVER HOP (PINDAH SERVER)"; BtnHop.Font = Enum.Font.GothamBlack; BtnHop.TextSize = 11; table.insert(ThemeElements.Card, BtnHop); table.insert(ThemeElements.TextAcc, BtnHop); local BTH = Instance.new("UICorner"); BTH.CornerRadius = UDim.new(0,6); BTH.Parent = BtnHop
+
+-- FIXED SERVER HOP LOGIC (ROBLOX API V1 SERVERS)
 BtnHop.MouseButton1Click:Connect(function()
 	pcall(function()
+		local cursor = ""
 		local servers = {}
-		local req = game:GetService("HttpService"):JSONDecode(game:HttpGet("https://games.roblox.com/v1/games/"..game.PlaceId.."/servers/Public?sortOrder=Asc&limit=100"))
-		for _, s in pairs(servers.data or {}) do
-			if type(s) == "table" and s.playing < s.maxPlayers and s.id ~= game.JobId then
-				table.insert(servers, s.id)
+		repeat
+			local url = "https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100" .. (cursor ~= "" and "&cursor=" .. cursor or "")
+			local success, result = pcall(function()
+				return HttpService:JSONDecode(game:HttpGet(url))
+			end)
+			if success and result and result.data then
+				for _, s in ipairs(result.data) do
+					if type(s) == "table" and s.playing and s.maxPlayers and s.playing < s.maxPlayers and s.id ~= game.JobId then
+						table.insert(servers, s.id)
+					end
+				end
+				cursor = result.nextPageCursor or ""
+			else
+				break
 			end
-		end
+		until #servers > 10 or cursor == ""
+
 		if #servers > 0 then
 			TeleportService:TeleportToPlaceInstance(game.PlaceId, servers[math.random(1, #servers)], LocalPlayer)
+		else
+			TeleportService:Teleport(game.PlaceId, LocalPlayer)
 		end
 	end)
 end)
 
 -- ===================================================================== --
--- 6. FULL BACKEND THREADS (ROBUST AUTO ROLL & RARITY SELL)
+-- 6. FULL BACKEND THREADS (FIXED AUTO ROLL & FIXED AUTO SELL)
 -- ===================================================================== --
 ApplyTheme(F.themeIndex)
 
@@ -407,32 +424,33 @@ LocalPlayer.Idled:Connect(function() if F.afk then pcall(function() game:GetServ
 
 local function unlockedSlots() local arr={}; local rb = rebirthAmt(); pcall(function() for i=1, (G.PlotConfig.GetMaxSlots(rb) or 15) do if rb >= (G.PlotConfig.GetSlotRebirthRequirement(i) or 0) then table.insert(arr, i) end end end); return arr end
 
--- Robust Auto Roll Thread (UI Click & Remote)
+-- Auto Roll Thread
 task.spawn(function()
 	while _G.__ANIMEDICE == generation do
 		if F.autoRoll then
 			pcall(function()
-				local clicked = false
-				local playerGui = LocalPlayer:FindFirstChild("PlayerGui")
-				if playerGui then
-					for _, gui in ipairs(playerGui:GetDescendants()) do
-						if (gui:IsA("TextButton") or gui:IsA("ImageButton")) and (string.find(string.lower(gui.Name), "roll") or string.find(string.lower(gui.Name), "spin")) then
-							for _, c in ipairs(getconnections(gui.MouseButton1Click) or {}) do c:Fire(); clicked = true end
+				local executed = false
+				if G.DiceModule and type(G.DiceModule.Roll) == "function" then G.DiceModule.Roll(); executed = true end
+				if not executed and G.RollController and type(G.RollController.Roll) == "function" then G.RollController.Roll(); executed = true end
+				if not executed then
+					local playerGui = LocalPlayer:FindFirstChild("PlayerGui")
+					if playerGui then
+						for _, gui in ipairs(playerGui:GetDescendants()) do
+							if (gui:IsA("TextButton") or gui:IsA("ImageButton")) and (string.find(string.lower(gui.Name), "roll") or string.find(string.lower(gui.Name), "spin")) then
+								for _, c in ipairs(getconnections(gui.MouseButton1Click) or {}) do c:Fire() end
+							end
 						end
 					end
 				end
-				if not clicked and G.RollController and type(G.RollController.Roll) == "function" then
-					G.RollController.Roll()
-				end
 			end)
-			task.wait(0.25)
+			task.wait(0.2)
 		else
 			task.wait(1)
 		end
 	end
 end)
 
--- Robust Auto Sell by Rarity Thread
+-- FIXED AUTO SELL & SELL ALL THREAD
 task.spawn(function()
 	while _G.__ANIMEDICE == generation do
 		if F.sellAuto then
@@ -441,7 +459,7 @@ task.spawn(function()
 				for key, e in pairs(inventory()) do
 					if isUnitEntry(e) then
 						local rarity = tonumber(e.rarity) or tonumber(e.tier) or 1
-						if not e.attributes or not e.attributes.locked then -- Jangan jual unit yang dikunci
+						if not e.attributes or not e.attributes.locked then
 							if F.smartSell and rarity <= (F.sellRarityLimit or 2) then
 								table.insert(keysToSell, key)
 							elseif not F.smartSell then
