@@ -1,6 +1,6 @@
 -- ===================================================================== --
--- 👑 MOFENKHUB V85.0 — THE MASTER PIECE (CONFIG LIST, SAVE/LOAD, FIXED UI)
--- Game: Anime Dice | Fully Functional Config Manager & Fixed Remotes
+-- 👑 MOFENKHUB V80.0 — ULTIMATE FIXED (SELL ALL & SERVER HOP)
+-- Game: Anime Dice | Fixed Server Hop API & Inventory Sell Controller
 -- ===================================================================== --
 
 --!nocheck
@@ -23,7 +23,7 @@ if not successGui or not parentGui then parentGui = LocalPlayer:WaitForChild("Pl
 pcall(function() for _, v in pairs(parentGui:GetChildren()) do if string.find(v.Name, "Mofenk") then v:Destroy() end end end)
 
 -- ===================================================================== --
--- 1. STATE & CONFIGURATION MANAGER
+-- 1. STATE & CONFIGURATION
 -- ===================================================================== --
 _G.__ANIMEDICE = (_G.__ANIMEDICE or 0) + 1
 local generation = _G.__ANIMEDICE
@@ -33,7 +33,7 @@ local F = {
 	-- Farm & Roll
 	collect = false, levelup = false, maxLevel = 40, smartLevel = false,
 	rebirth = false, upgrades = false, buyDice = false, equipDice = true, autoRoll = false,
-	-- Inv & Sell
+	-- Inv & Sell by Rarity / All
 	sellAuto = false, smartSell = false, sellRarityLimit = 2, autoFuse = false,
 	-- Potion
 	potionAuto = false, potionBest = true, potionSpecific = {},
@@ -67,32 +67,10 @@ local function ApplyTheme(idx)
 	for _, v in ipairs(ThemeElements.TextAcc) do v.TextColor3 = t.Acc1 end
 end
 
--- Advanced Config System with List Files Support
-local CFG_FOLDER = "MofenkHub_Configs"
-if makefolder and not isfolder(CFG_FOLDER) then pcall(function() makefolder(CFG_FOLDER) end) end
-
-local function getCfgPath(name)
-	return CFG_FOLDER .. "/" .. (name or "DefaultConfig") .. ".json"
-end
-
-local function saveConfig(name)
-	if writefile then
-		pcall(function()
-			writefile(getCfgPath(name or "DefaultConfig"), HttpService:JSONEncode(F))
-		end)
-	end
-end
-
-local function loadConfig(name)
-	local path = getCfgPath(name or "DefaultConfig")
-	if readfile and isfile and isfile(path) then
-		pcall(function()
-			local d = HttpService:JSONDecode(readfile(path))
-			for k, v in pairs(d) do F[k] = v end
-		end)
-	end
-end
-loadConfig("DefaultConfig")
+local CFG_FILE = "MofenkHub_V80_Config.json"
+local function saveConfig() if writefile then pcall(function() writefile(CFG_FILE, HttpService:JSONEncode(F)) end) end end
+local function loadConfig() if readfile and isfile and isfile(CFG_FILE) then pcall(function() local d = HttpService:JSONDecode(readfile(CFG_FILE)); for k,v in pairs(d) do F[k]=v end end) end end
+loadConfig()
 
 -- ===================================================================== --
 -- 2. FRAMEWORK & MODULE BINDINGS
@@ -150,7 +128,7 @@ local function isUnitEntry(e) return e and type(e)=="table" and e.name and G.Ent
 local function currencyAmount(name) local t = 0; for _, e in pairs(inventory()) do if type(e)=="table" and e.name==name then t += tonumber(e.amount) or 0 end end; return t end
 
 -- ===================================================================== --
--- 3. INTERACTIVE "M" LOGO TOGGLE (TOP LAYER)
+-- 3. INTERACTIVE "M" LOGO TOGGLE
 -- ===================================================================== --
 local ToggleGui = Instance.new("ScreenGui"); ToggleGui.Name = "MofenkToggleFront"; ToggleGui.Parent = parentGui; ToggleGui.ResetOnSpawn = false
 ToggleGui.DisplayOrder = 99999
@@ -188,7 +166,7 @@ local StrokeGrad = Instance.new("UIGradient"); StrokeGrad.Parent = MainStroke; t
 ToggleBtn.MouseButton1Click:Connect(function() MainFrame.Visible = not MainFrame.Visible end)
 
 local TopBar = Instance.new("Frame"); TopBar.Parent = MainFrame; TopBar.Size = UDim2.new(1, 0, 0, 48); TopBar.BackgroundTransparency = 0.2; table.insert(ThemeElements.Header, TopBar)
-local Title = Instance.new("TextLabel"); Title.Parent = TopBar; Title.Position = UDim2.new(0, 20, 0, 0); Title.Size = UDim2.new(0, 500, 1, 0); Title.Text = "👑 MOFENKHUB V85.0  |  ANIME DICE PRO"; Title.TextSize = 14; Title.Font = Enum.Font.GothamBlack; Title.TextXAlignment = Enum.TextXAlignment.Left; Title.BackgroundTransparency = 1; table.insert(ThemeElements.TextAcc, Title)
+local Title = Instance.new("TextLabel"); Title.Parent = TopBar; Title.Position = UDim2.new(0, 20, 0, 0); Title.Size = UDim2.new(0, 500, 1, 0); Title.Text = "👑 MOFENKHUB V80.0  |  ANIME DICE PRO"; Title.TextSize = 14; Title.Font = Enum.Font.GothamBlack; Title.TextXAlignment = Enum.TextXAlignment.Left; Title.BackgroundTransparency = 1; table.insert(ThemeElements.TextAcc, Title)
 
 local CloseBtn = Instance.new("TextButton"); CloseBtn.Parent = TopBar; CloseBtn.Position = UDim2.new(1, -42, 0, 9); CloseBtn.Size = UDim2.new(0, 30, 0, 30); CloseBtn.Text = "✕"; CloseBtn.TextColor3 = Color3.fromRGB(255,255,255); CloseBtn.Font = Enum.Font.GothamBold; CloseBtn.BackgroundTransparency = 0.2; table.insert(ThemeElements.Card, CloseBtn)
 local CC = Instance.new("UICorner"); CC.CornerRadius = UDim.new(0, 8); CC.Parent = CloseBtn
@@ -236,7 +214,7 @@ local function AddToggle(parent, text, flag, callback)
 	local Knob = Instance.new("Frame"); Knob.Parent = Sw; Knob.Size = UDim2.new(0, 18, 0, 18); Knob.Position = F[flag] and UDim2.new(1, -20, 0.5, -9) or UDim2.new(0, 2, 0.5, -9); Knob.BackgroundColor3 = Color3.fromRGB(255, 255, 255); local KC = Instance.new("UICorner"); KC.CornerRadius = UDim.new(1, 0); KC.Parent = Knob
 	if F[flag] then table.insert(ThemeElements.Acc1, Sw) end
 	Sw.MouseButton1Click:Connect(function()
-		F[flag] = not F[flag]; if F.autoSave then pcall(function() saveConfig("DefaultConfig") end) end
+		F[flag] = not F[flag]; if F.autoSave then pcall(saveConfig) end
 		TweenService:Create(Knob, TweenInfo.new(0.2), {Position = F[flag] and UDim2.new(1, -20, 0.5, -9) or UDim2.new(0, 2, 0.5, -9)}):Play()
 		if F[flag] then table.insert(ThemeElements.Acc1, Sw); ApplyTheme(F.themeIndex) else for i,v in ipairs(ThemeElements.Acc1) do if v==Sw then table.remove(ThemeElements.Acc1,i) end end; Sw.BackgroundColor3 = Color3.fromRGB(45,45,55) end
 		if callback then pcall(callback, F[flag]) end
@@ -247,7 +225,7 @@ local function AddInput(parent, text, flag, isNum)
 	local Frm = Instance.new("Frame"); Frm.Parent = parent; Frm.Size = UDim2.new(1, 0, 0, 36); Frm.BackgroundTransparency = 1
 	local L = Instance.new("TextLabel"); L.Parent = Frm; L.Position = UDim2.new(0, 6, 0, 0); L.Size = UDim2.new(0.5, 0, 1, 0); L.Text = text; L.TextColor3 = Color3.fromRGB(255,255,255); L.TextSize = 11; L.Font = Enum.Font.GothamMedium; L.TextXAlignment = Enum.TextXAlignment.Left; L.BackgroundTransparency = 1
 	local Box = Instance.new("TextBox"); Box.Parent = Frm; Box.Position = UDim2.new(0.5, 0, 0.1, 0); Box.Size = UDim2.new(0.48, 0, 0.8, 0); Box.Text = tostring(F[flag] or ""); table.insert(ThemeElements.TextAcc, Box); Box.TextSize = 11; Box.Font = Enum.Font.GothamBold; Box.BackgroundTransparency = 0.2; table.insert(ThemeElements.Header, Box); local BC = Instance.new("UICorner"); BC.CornerRadius = UDim.new(0, 6); BC.Parent = Box
-	Box.FocusLost:Connect(function() F[flag] = isNum and (tonumber(Box.Text) or 0) or Box.Text; if F.autoSave then pcall(function() saveConfig("DefaultConfig") end) end end)
+	Box.FocusLost:Connect(function() F[flag] = isNum and (tonumber(Box.Text) or 0) or Box.Text; if F.autoSave then pcall(saveConfig) end end)
 end
 
 local function AddDropdown(parent, title, options, flag, isMulti)
@@ -280,7 +258,7 @@ local function AddDropdown(parent, title, options, flag, isMulti)
 					local found = false; for i,v in ipairs(F[flag]) do if v==opt.val then table.remove(F[flag],i); found=true break end end
 					if not found then table.insert(F[flag], opt.val) end; Btn.Text = #(F[flag]).." Terpilih"
 				else F[flag] = opt.val; Btn.Text = opt.label; DropList.Visible = false end
-				updateVisuals(); if F.autoSave then pcall(function() saveConfig("DefaultConfig") end) end
+				updateVisuals(); if F.autoSave then pcall(saveConfig) end
 			end)
 		end
 	end
@@ -345,7 +323,7 @@ AddToggle(G_Farm2, "Auto Level Up Unit", "levelup")
 AddInput(G_Farm2, "Max Level Batas:", "maxLevel", true)
 AddToggle(G_Farm2, "Auto Upgrade Skill Tree", "upgrades")
 
--- 3. INVENTORY (AUTO SELL & SELL ALL)
+-- 3. INVENTORY (FIXED AUTO SELL & SELL ALL)
 local G_Inv = AddGroup(T_Inv, "MANAGEMENT & AUTO SELL")
 AddToggle(G_Inv, "Auto Sell Unit", "sellAuto")
 AddToggle(G_Inv, "Smart Sell (Batas Rarity)", "smartSell")
@@ -385,23 +363,19 @@ local G_TwrMon = AddGroup(T_Twr, "LIVE TOWER MONITORING")
 local TwrLbl = Instance.new("TextLabel"); TwrLbl.Parent = G_TwrMon; TwrLbl.Size = UDim2.new(1,0,0,50); TwrLbl.BackgroundTransparency = 1; TwrLbl.TextColor3 = Color3.fromRGB(255,255,255); TwrLbl.TextSize = 11; TwrLbl.Font = Enum.Font.GothamMedium; TwrLbl.TextXAlignment = Enum.TextXAlignment.Left; TwrLbl.TextYAlignment = Enum.TextYAlignment.Top
 task.spawn(function() while task.wait(0.5) do pcall(function() TwrLbl.Text = string.format("🎮 Status: %s\n🏢 Lantai: %d | 💎 Gems Didapat: %d", STATE.towerLive, STATE.towerFloor, STATE.towerDrops) end) end end)
 
--- 8. SETTINGS & ADVANCED CONFIG LIST MANAGER
+-- 8. SETTINGS & CONFIG
 local G_Set1 = AddGroup(T_Set, "TEMA & WARNA (NEON GLOW)")
 local BtnTheme = Instance.new("TextButton"); BtnTheme.Parent = G_Set1; BtnTheme.Size = UDim2.new(1, 0, 0, 34); BtnTheme.Text = "🎲 ACAK TEMA WARNA"; BtnTheme.Font = Enum.Font.GothamBlack; BtnTheme.TextSize = 11; table.insert(ThemeElements.Card, BtnTheme); table.insert(ThemeElements.TextAcc, BtnTheme); local BTC = Instance.new("UICorner"); BTC.CornerRadius = UDim.new(0,6); BTC.Parent = BtnTheme
-BtnTheme.MouseButton1Click:Connect(function() F.themeIndex = math.random(1, #THEMES); ApplyTheme(F.themeIndex); if F.autoSave then pcall(function() saveConfig("DefaultConfig") end) end end)
+BtnTheme.MouseButton1Click:Connect(function() F.themeIndex = math.random(1, #THEMES); ApplyTheme(F.themeIndex); if F.autoSave then pcall(saveConfig) end end)
 
-local G_SetConfig = AddGroup(T_Set, "MANAJEMEN CONFIG & SAVE LOAD LIST")
-AddToggle(G_SetConfig, "Auto Save Config", "autoSave")
-
-local cfgNameInput = "MofenkConfig1"
-local BoxCfg = Instance.new("TextBox"); BoxCfg.Parent = G_SetConfig; BoxCfg.Size = UDim2.new(1, 0, 0, 32); BoxCfg.Text = cfgNameInput; BoxCfg.TextSize = 11; BoxCfg.Font = Enum.Font.GothamBold; BoxCfg.BackgroundTransparency = 0.2; table.insert(ThemeElements.Header, BoxCfg); table.insert(ThemeElements.TextAcc, BoxCfg); local BCC = Instance.new("UICorner"); BCC.CornerRadius = UDim.new(0,6); BCC.Parent = BoxCfg
-BoxCfg.FocusLost:Connect(function() if BoxCfg.Text ~= "" then cfgNameInput = BoxCfg.Text end end)
+local G_SetConfig = AddGroup(T_Set, "MANAJEMEN CONFIG & SAVE LOAD")
+AddToggle(G_SetConfig, "Auto Save & Auto Load Config", "autoSave")
 
 local BtnSave = Instance.new("TextButton"); BtnSave.Parent = G_SetConfig; BtnSave.Size = UDim2.new(1, 0, 0, 32); BtnSave.Text = "💾 SAVE CONFIG SEKARANG"; BtnSave.Font = Enum.Font.GothamBold; BtnSave.TextSize = 11; table.insert(ThemeElements.Header, BtnSave); table.insert(ThemeElements.TextAcc, BtnSave); local BTS = Instance.new("UICorner"); BTS.CornerRadius = UDim.new(0,6); BTS.Parent = BtnSave
-BtnSave.MouseButton1Click:Connect(function() pcall(function() saveConfig(cfgNameInput) end) end)
+BtnSave.MouseButton1Click:Connect(function() pcall(saveConfig) end)
 
-local BtnLoad = Instance.new("TextButton"); BtnLoad.Parent = G_SetConfig; BtnLoad.Size = UDim2.new(1, 0, 0, 32); BtnLoad.Text = "📂 LOAD CONFIG PILIHAN"; BtnLoad.Font = Enum.Font.GothamBold; BtnLoad.TextSize = 11; table.insert(ThemeElements.Header, BtnLoad); table.insert(ThemeElements.TextAcc, BtnLoad); local BTL = Instance.new("UICorner"); BTL.CornerRadius = UDim.new(0,6); BTL.Parent = BtnLoad
-BtnLoad.MouseButton1Click:Connect(function() pcall(function() loadConfig(cfgNameInput); ApplyTheme(F.themeIndex) end) end)
+local BtnLoad = Instance.new("TextButton"); BtnLoad.Parent = G_SetConfig; BtnLoad.Size = UDim2.new(1, 0, 0, 32); BtnLoad.Text = "📂 LOAD CONFIG"; BtnLoad.Font = Enum.Font.GothamBold; BtnLoad.TextSize = 11; table.insert(ThemeElements.Header, BtnLoad); table.insert(ThemeElements.TextAcc, BtnLoad); local BTL = Instance.new("UICorner"); BTL.CornerRadius = UDim.new(0,6); BTL.Parent = BtnLoad
+BtnLoad.MouseButton1Click:Connect(function() pcall(loadConfig); ApplyTheme(F.themeIndex) end)
 
 local G_Set2 = AddGroup(T_Set, "OPTIMALISASI & TOOLS")
 AddToggle(G_Set2, "Anti-AFK (Cegah Disconnect)", "afk")
@@ -411,6 +385,7 @@ AddToggle(G_Set2, "Auto Redeem Codes", "codesAuto")
 
 local BtnHop = Instance.new("TextButton"); BtnHop.Parent = G_Set2; BtnHop.Size = UDim2.new(1, 0, 0, 34); BtnHop.Text = "🌐 SERVER HOP (PINDAH SERVER)"; BtnHop.Font = Enum.Font.GothamBlack; BtnHop.TextSize = 11; table.insert(ThemeElements.Card, BtnHop); table.insert(ThemeElements.TextAcc, BtnHop); local BTH = Instance.new("UICorner"); BTH.CornerRadius = UDim.new(0,6); BTH.Parent = BtnHop
 
+-- FIXED SERVER HOP LOGIC (ROBLOX API V1 SERVERS)
 BtnHop.MouseButton1Click:Connect(function()
 	pcall(function()
 		local cursor = ""
@@ -475,7 +450,7 @@ task.spawn(function()
 	end
 end)
 
--- Auto Sell & Sell All Thread
+-- FIXED AUTO SELL & SELL ALL THREAD
 task.spawn(function()
 	while _G.__ANIMEDICE == generation do
 		if F.sellAuto then
