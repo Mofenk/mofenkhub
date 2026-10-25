@@ -1,5 +1,5 @@
 -- ===================================================================== --
--- 👑 MOFENKHUB V91.0 — MODERN GLOW + DEEP CONSOLE SPY + CONFIG MANAGER
+-- 👑 MOFENKHUB V94.0 — MOBILE IN-GAME CONSOLE SPY + CONFIG MASTER
 -- ===================================================================== --
 
 --!nocheck
@@ -15,9 +15,13 @@ local RunService        = game:GetService("RunService")
 local GuiService        = game:GetService("GuiService")
 local StarterGui        = game:GetService("StarterGui")
 
--- Folder Penyimpanan Config
+-- Folder Penyimpanan Config Aman
 local CFG_FOLDER = "MofenkConfigs"
-if not isfolder(CFG_FOLDER) and makefolder then pcall(function() makefolder(CFG_FOLDER) end) end
+if not isfolder and makefolder then
+	pcall(function() makefolder(CFG_FOLDER) end)
+elseif isfolder and not isfolder(CFG_FOLDER) then
+	pcall(function() makefolder(CFG_FOLDER) end)
+end
 
 -- ===================================================================== --
 -- [AUTO-EXECUTE] QUEUE ON TELEPORT
@@ -58,12 +62,37 @@ local F = {
 	wsOn = false, wsValue = 16, noclip = false, afk = true, fpsOn = false,
 	codesAuto = false, claimQuests = false,
 	webhookEnabled = false, webhookUrl = "",
-	-- [NEW SPY CONFIG]
 	spyDataOn = false, spyClickOn = false
 }
 
 local STATE = { towerLive = "Standby", towerFloor = 0, towerDrops = 0, towerTraitsGot = "Belum Ada", activeBuffs = "Tidak Ada" }
 local ConfigUpdaters = {}
+
+-- Fungsi Save & Load Config
+local function saveConfig(name)
+	if not writefile then return error("Executor tidak mendukung writefile!") end
+	local path = CFG_FOLDER .. "/" .. tostring(name) .. ".json"
+	local dataToSave = {}
+	for k, v in pairs(F) do
+		if type(v) ~= "function" then dataToSave[k] = v end
+	end
+	writefile(path, HttpService:JSONEncode(dataToSave))
+end
+
+local function loadConfig(name)
+	local path = CFG_FOLDER .. "/" .. tostring(name) .. ".json"
+	if readfile and isfile and isfile(path) then
+		local success, decoded = pcall(function() return HttpService:JSONDecode(readfile(path)) end)
+		if success and type(decoded) == "table" then
+			for k, v in pairs(decoded) do
+				if F[k] ~= nil then F[k] = v end
+			end
+			for _, updateFn in ipairs(ConfigUpdaters) do pcall(updateFn) end
+			return true
+		end
+	end
+	return false
+end
 
 local THEMES = {
 	{ Name = "Cyberpunk", Bg = Color3.fromRGB(15, 10, 25), Card = Color3.fromRGB(30, 20, 45), Header = Color3.fromRGB(20, 15, 30), Acc1 = Color3.fromRGB(0, 255, 255), Acc2 = Color3.fromRGB(255, 0, 128) },
@@ -84,7 +113,7 @@ local function ApplyTheme(idx)
 end
 
 -- ===================================================================== --
--- [NEW] SISTEM NOTIFIKASI MODERN (SUCCESS / ERROR)
+-- SISTEM NOTIFIKASI MODERN
 -- ===================================================================== --
 local NotifGui = Instance.new("ScreenGui"); NotifGui.Name = "MofenkNotifications"; NotifGui.Parent = parentGui; NotifGui.DisplayOrder = 999999
 local NotifFrame = Instance.new("Frame"); NotifFrame.Parent = NotifGui; NotifFrame.Size = UDim2.new(0, 300, 1, 0); NotifFrame.Position = UDim2.new(1, -320, 0, 0); NotifFrame.BackgroundTransparency = 1
@@ -108,145 +137,6 @@ local function SendNotification(title, text, duration, isError)
 		TweenService:Create(UIS, TweenInfo.new(0.5), {Transparency = 1}):Play(); TweenService:Create(T, TweenInfo.new(0.5), {TextTransparency = 1}):Play(); TweenService:Create(D, TweenInfo.new(0.5), {TextTransparency = 1}):Play()
 		fade:Play(); fade.Completed:Wait(); Box:Destroy()
 	end)
-end
-
--- ===================================================================== --
--- [NEW CORE] DEEP RAW METATABLE SPY CONSOLE PRINTER (UPGRADED)
--- ===================================================================== --
-local function dumpTable(t, indent)
-	if type(t) ~= "table" then return tostring(t) end
-	indent = indent or ""
-	local res = "{\n"
-	for k, v in pairs(t) do
-		local formatting = indent .. "  [" .. tostring(k) .. "] = "
-		if type(v) == "table" then
-			res = res .. formatting .. dumpTable(v, indent .. "  ") .. ",\n"
-		else
-			res = res .. formatting .. tostring(v) .. " (" .. type(v) .. "),\n"
-		end
-	end
-	return res .. indent .. "}"
-end
-
-pcall(function()
-	local mt = getrawmetatable(game)
-	local oldNamecall = mt.__namecall
-	setreadonly(mt, false)
-
-	mt.__namecall = newcclosure(function(self, ...)
-		local method = getnamecallmethod()
-		if F.spyDataOn and not checkcaller() and (method == "FireServer" or method == "InvokeServer") then
-			print("\n=======================================================")
-			warn("🔥 [MOFENK CONSOLE SPY] REMOTE " .. string.upper(method) .. " TERDETEKSI! 🔥")
-			print("📍 Path Objek :", self:GetFullName())
-			print("🛠️ Tipe Data  :", self.ClassName)
-			print("📝 ARGUMEN YANG DIKIRIM (PAYLOAD):")
-			
-			local args = {...}
-			if #args == 0 then
-				print("   ▶ (Tidak ada argumen / Kosong)")
-			else
-				for i, v in ipairs(args) do
-					if type(v) == "table" then
-						print(string.format("   ▶ Arg [%d] (Table Detail): \n%s", i, dumpTable(v, "       ")))
-					else
-						print(string.format("   ▶ Arg [%d]: %s (Tipe: %s)", i, tostring(v), typeof(v)))
-					end
-				end
-			end
-			print("=======================================================\n")
-		end
-		return oldNamecall(self, ...)
-	end)
-	setreadonly(mt, true)
-end)
-
--- [NEW CORE] IN-GAME CLICK SPY (Deteksi klik objek di Map)
-UserInputService.InputBegan:Connect(function(input, gpe)
-	if gpe then return end
-	if input.UserInputType == Enum.UserInputType.MouseButton1 and F.spyClickOn then
-		local mouse = LocalPlayer:GetMouse()
-		local target = mouse.Target
-		if target then
-			warn("\n🖱️ [CLICK SPY] Kamu Mengklik Objek:")
-			print("📍 Path:", target:GetFullName())
-			print("🧱 Class:", target.ClassName, "| Transparancy:", target.Transparency)
-			if target:FindFirstChildWhichIsA("ClickDetector") or target:FindFirstChildWhichIsA("ProximityPrompt") then
-				warn("⚡ OBJEK INI MEMILIKI INTERAKSI (ClickDetector/ProximityPrompt)!")
-			end
-		end
-	end
-end)
-
--- ===================================================================== --
--- 2. FRAMEWORK & MODULE BINDINGS
--- ===================================================================== --
-local Network = ReplicatedStorage:WaitForChild("Network", 15); local Framework = ReplicatedStorage:WaitForChild("Framework", 15)
-local function svc(p) local n = Network; for x in string.gmatch(p, "[^%.]+") do n = n and n:FindFirstChild(x) end; return n end
-
-local R = {
-	RollDice        = svc("RollService.RF.RollDice"),
-	SetAutoRoll     = svc("RollService.RE.SetAutoRoll"),
-	CollectBalance  = svc("PlotService.RE.CollectBalance"), 
-	LevelUpSlot     = svc("PlotService.RE.LevelUpSlot"),
-	BuyDice         = svc("DiceShopService.RE.BuyDice"), 
-	EquipDice       = svc("DiceShopService.RE.EquipDice"),
-	Rebirth         = svc("RebirthService.RE.Rebirth"), 
-	BuyUpgrade      = svc("RE.BuyUpgrade") or svc("PlotService.RE.BuyPadUpgrade"),
-	GradeRoll       = svc("GradeService.RE.Roll"), 
-	TraitRoll       = svc("TraitService.RE.Roll"), 
-	BoostUse        = svc("BoostService.RE.Use"),
-	PlayTower       = svc("Towers.RF.PlayTower") or svc("Towers.RE.PlayTower"), 
-	CompleteFloor   = svc("Towers.RF.CompleteTowerFloor"),
-	CancelTower     = svc("Towers.RF.CancelTower"), 
-	BestTowerTeam   = svc("Towers.RE.EquipBestTowerTeam"),
-	RedeemCode      = svc("CodesService.RE.RedeemCode") or svc("MonetizationService.RE.RedeemCode"),
-	QuestClaim      = svc("QuestService.RE.Claim"), 
-	ClaimDaily      = svc("DailyRewardService.RE.Claim"),
-	ClaimOffline    = svc("OfflineEarningsService.RE.Claim"), 
-	ClaimGroup      = svc("GroupRewardService.RE.Claim"),
-	SellInventory   = svc("SellService.RF.SellInventory"),
-	UpdateAutoSell  = svc("SellService.RE.UpdateAutoSell"),
-	Fuse            = svc("FusingService.RE.Fuse")
-}
-
-local G = {}
-pcall(function()
-	G.DC = require(Framework.Features.Data.DataController)
-	G.PlotConfig = require(Framework.Features.Plot.PlotConfig)
-	G.UnitUtil = require(Framework.Features.Inventory.Kinds.Unit.UnitUtil)
-	G.Upgrades = require(Framework.Features.Upgrades.Upgrades)
-	G.Rebirths = require(Framework.Features.Rebirth.Rebirths)
-	G.BoostConfig = require(Framework.Features.Inventory.Kinds.Boost.BoostConfig)
-	G.GradesMod = require(Framework.Features.Grades.Grades)
-	G.TraitsMod = require(Framework.Features.Traits.Traits)
-	G.QuestConfig = require(Framework.Features.Quests.QuestConfig)
-	G.EntryRegistry = require(Framework.Features.Inventory.EntryRegistry)
-	G.BuffController = require(Framework.Features.Buffs.BuffController)
-	G.RollController = require(Framework.Features.Rolling.RollController)
-	G.SellController = require(Framework.Features.Sell.SellController)
-	G.DiceModule = require(Framework.Features.Rolling.Dice)
-end)
-
-local function data() return G.DC and G.DC.___X or {} end
-local function money() pcall(function() return G.DC.Money() end); return data().Money or 0 end
-local function rebirthAmt() pcall(function() return G.DC.Rebirth() end); return data().Rebirth or 0 end
-local function inventory() return data().Inventory or {} end
-local function slots() return data().Slots or {} end
-local function isUnitEntry(e) return e and type(e)=="table" and e.name and G.EntryRegistry and pcall(function() return G.EntryRegistry.getEntryConfig(e.name).kind == "Unit" end) end
-local function currencyAmount(name) local t = 0; for _, e in pairs(inventory()) do if type(e)=="table" and e.name==name then t += tonumber(e.amount) or 0 end end; return t end
-
-local function SendWebhook(title, description, colorCode)
-	if not F.webhookEnabled or F.webhookUrl == "" then return end
-	local req = (syn and syn.request) or request or http_request or (fluxus and fluxus.request)
-	if req then
-		pcall(function()
-			req({
-				Url = F.webhookUrl, Method = "POST", Headers = {["Content-Type"] = "application/json"},
-				Body = HttpService:JSONEncode({ username = "MofenkHub", avatar_url = "https://i.imgur.com/3qGMB7j.png", embeds = {{ title = title, description = description, color = colorCode or 3447003, footer = {text = "Player: " .. LocalPlayer.Name} }} })
-			})
-		end)
-	end
 end
 
 -- ===================================================================== --
@@ -278,7 +168,7 @@ UpdateScale(); workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):
 ToggleBtn.MouseButton1Click:Connect(function() MainFrame.Visible = not MainFrame.Visible; if MainFrame.Visible then SendNotification("Menu Dibuka", "MofenkHub siap digunakan!", 2, false) end end)
 
 local TopBar = Instance.new("Frame"); TopBar.Parent = MainFrame; TopBar.Size = UDim2.new(1, 0, 0, 55); TopBar.BackgroundTransparency = 0.3; table.insert(ThemeElements.Header, TopBar); local TopCorner = Instance.new("UICorner"); TopCorner.CornerRadius = UDim.new(0, 18); TopCorner.Parent = TopBar; local BottomHider = Instance.new("Frame"); BottomHider.Parent = TopBar; BottomHider.Size = UDim2.new(1, 0, 0, 10); BottomHider.Position = UDim2.new(0, 0, 1, -10); BottomHider.BorderSizePixel = 0; BottomHider.BackgroundTransparency = 0.3; table.insert(ThemeElements.Header, BottomHider)
-local Title = Instance.new("TextLabel"); Title.Parent = TopBar; Title.Position = UDim2.new(0, 25, 0, 0); Title.Size = UDim2.new(0, 600, 1, 0); Title.Text = "👑 MOFENKHUB V91.0  |  MODERN GLOW + SPY CONSOLE"; Title.TextSize = 16; Title.Font = Enum.Font.GothamBlack; Title.TextXAlignment = Enum.TextXAlignment.Left; Title.BackgroundTransparency = 1; table.insert(ThemeElements.TextAcc, Title)
+local Title = Instance.new("TextLabel"); Title.Parent = TopBar; Title.Position = UDim2.new(0, 25, 0, 0); Title.Size = UDim2.new(0, 600, 1, 0); Title.Text = "👑 MOFENKHUB V94.0  |  MOBILE IN-GAME CONSOLE SPY"; Title.TextSize = 16; Title.Font = Enum.Font.GothamBlack; Title.TextXAlignment = Enum.TextXAlignment.Left; Title.BackgroundTransparency = 1; table.insert(ThemeElements.TextAcc, Title)
 local CloseBtn = Instance.new("TextButton"); CloseBtn.Parent = TopBar; CloseBtn.Position = UDim2.new(1, -50, 0, 10); CloseBtn.Size = UDim2.new(0, 35, 0, 35); CloseBtn.Text = "✕"; CloseBtn.TextColor3 = Color3.fromRGB(255,255,255); CloseBtn.Font = Enum.Font.GothamBold; CloseBtn.TextSize = 18; CloseBtn.BackgroundTransparency = 0.3; table.insert(ThemeElements.Card, CloseBtn); local CC = Instance.new("UICorner"); CC.CornerRadius = UDim.new(0, 10); CC.Parent = CloseBtn
 CloseBtn.MouseButton1Click:Connect(function() MainFrame.Visible = false end)
 
@@ -306,7 +196,6 @@ local function AddGroup(parent, title)
 	return GroupCard
 end
 
--- [UPGRADED] Toggle with SUCCESS/ERROR Detection
 local function AddToggle(parent, text, flag, callback)
 	local Frm = Instance.new("Frame"); Frm.Parent = parent; Frm.Size = UDim2.new(1, 0, 0, 40); Frm.BackgroundTransparency = 1
 	local L = Instance.new("TextLabel"); L.Parent = Frm; L.Position = UDim2.new(0, 8, 0, 0); L.Size = UDim2.new(0.7, 0, 1, 0); L.Text = text; L.TextColor3 = Color3.fromRGB(255,255,255); L.TextSize = 13; L.Font = Enum.Font.GothamMedium; L.TextXAlignment = Enum.TextXAlignment.Left; L.BackgroundTransparency = 1
@@ -408,6 +297,7 @@ end
 -- 5. TABS ASSEMBLY
 -- ===================================================================== --
 local T_Dash = CreateTab("Dashboard", "📊")
+local T_Log  = CreateTab("Console Log", "🖥️")  -- [NEW] TAB KHUSUS KONSOL HP
 local T_Farm = CreateTab("Farming", "⛏️")
 local T_Inv = CreateTab("Inventory", "🎒")
 local T_Pot = CreateTab("Potions", "🧪")
@@ -428,35 +318,103 @@ local PLbl = Instance.new("TextLabel"); PLbl.Parent = ProfContainer; PLbl.Positi
 local G_Spy = AddGroup(T_Dash, "INVENTORY & SPY SYSTEM (ADVANCED)")
 local SLbl = Instance.new("TextLabel"); SLbl.Parent = G_Spy; SLbl.Size = UDim2.new(1, 0, 0, 100); SLbl.BackgroundTransparency = 1; SLbl.TextColor3 = Color3.fromRGB(255,255,255); SLbl.TextSize = 13; SLbl.Font = Enum.Font.GothamMedium; SLbl.TextXAlignment = Enum.TextXAlignment.Left; SLbl.TextYAlignment = Enum.TextYAlignment.Top
 
--- [NEW] DEEP SPY & SCANNER UI
-AddToggle(G_Spy, "Aktifkan Remote Spy (F9 Log)", "spyDataOn")
+AddToggle(G_Spy, "Aktifkan Remote Spy (Tangkap Log)", "spyDataOn")
 AddToggle(G_Spy, "Aktifkan Click Map Spy", "spyClickOn")
 
-local BtnSpy = Instance.new("TextButton"); BtnSpy.Parent = G_Spy; BtnSpy.Size = UDim2.new(1, 0, 0, 42); BtnSpy.Text = "🔎 SCAN FULL SEMUA REMOTES (KLIK F9)"; BtnSpy.Font = Enum.Font.GothamBlack; BtnSpy.TextSize = 13; table.insert(ThemeElements.Card, BtnSpy); table.insert(ThemeElements.TextAcc, BtnSpy); local BSY = Instance.new("UICorner"); BSY.CornerRadius = UDim.new(0,8); BSY.Parent = BtnSpy; local BSS = Instance.new("UIStroke"); BSS.Parent = BtnSpy; BSS.Thickness = 1.5; table.insert(ThemeElements.Acc1, BSS)
-BtnSpy.MouseButton1Click:Connect(function()
-	local success, err = pcall(function()
-		warn("=====================================================")
-		warn("🔥 [MOFENKHUB] DEEP REMOTE & FUNCTION SCANNER STARTED 🔥")
-		warn("=====================================================")
-		local countR, countF, countB = 0, 0, 0
-		for _, v in ipairs(game:GetDescendants()) do
-			if v:IsA("RemoteEvent") then countR = countR + 1; print("📡 [RemoteEvent] Path:", v:GetFullName())
-			elseif v:IsA("RemoteFunction") then countF = countF + 1; print("⚡ [RemoteFunc] Path:", v:GetFullName())
-			elseif v:IsA("BindableEvent") or v:IsA("BindableFunction") then countB = countB + 1; print("🔗 [Bindable] Path:", v:GetFullName())
-			end
-		end
-		print("\n[MOFENKHUB SCANNER RESULT] ->")
-		print(string.format("✅ Ditemukan: %d RemoteEvents | %d RemoteFunctions | %d Bindables", countR, countF, countB))
-		if G.DC then print("✅ [CORE DATA] G.DC (Data Controller) berhasil di-hook. Money:", money()) end
-		warn("=====================================================")
-		warn("✅ [MOFENKHUB] SPY SCANNER SELESAI ✅")
-		warn("=====================================================")
-	end)
+-- ===================================================================== --
+-- [NEW] IN-GAME CONSOLE LOG BUILDER (UNTUK HP / DELTA)
+-- ===================================================================== --
+local G_LogGroup = AddGroup(T_Log, "LIVE REMOTE & EVENT CONSOLE (IN-GAME)")
+local LogScroll = Instance.new("ScrollingFrame"); LogScroll.Parent = G_LogGroup; LogScroll.Size = UDim2.new(1, 0, 0, 420); LogScroll.BackgroundTransparency = 0.2; table.insert(ThemeElements.Header, LogScroll); LogScroll.ScrollBarThickness = 6; LogScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y; LogScroll.CanvasSize = UDim2.new(0,0,0,0)
+local LogLayout = Instance.new("UIListLayout"); LogLayout.Parent = LogScroll; LogLayout.Padding = UDim.new(0, 5); LogLayout.SortOrder = Enum.SortOrder.LayoutOrder
+
+local function AppendMobileLog(txt, isWarn)
+	local LogLbl = Instance.new("TextLabel")
+	LogLbl.Parent = LogScroll
+	LogLbl.Size = UDim2.new(1, -10, 0, 0)
+	LogLbl.AutomaticSize = Enum.AutomaticSize.Y
+	LogLbl.BackgroundTransparency = 1
+	LogLbl.Text = txt
+	LogLbl.TextColor3 = isWarn and Color3.fromRGB(255, 100, 100) or Color3.fromRGB(200, 255, 200)
+	LogLbl.TextSize = 12
+	LogLbl.Font = Enum.Font.Code
+	LogLbl.TextXAlignment = Enum.TextXAlignment.Left
+	LogLbl.TextWrapped = true
 	
-	if success then
-		SendNotification("Scanner Berhasil", "Seluruh data Remotes, Function, dan Path berhasil diekstrak. Silakan cek F9 (Console)!", 5, false)
-	else
-		SendNotification("Scanner Error", "Gagal memindai data: " .. tostring(err), 5, true)
+	-- Auto scroll ke bawah
+	task.spawn(function()
+		task.wait(0.05)
+		LogScroll.CanvasPosition = Vector2.new(0, LogScroll.AbsoluteCanvasSize.Y)
+	end)
+end
+
+local BtnClearLog = Instance.new("TextButton"); BtnClearLog.Parent = G_LogGroup; BtnClearLog.Size = UDim2.new(1, 0, 0, 38); BtnClearLog.Text = "🗑️ BERSIHKAN KONSOL LOG"; BtnClearLog.Font = Enum.Font.GothamBold; BtnClearLog.TextSize = 13; table.insert(ThemeElements.Card, BtnClearLog); table.insert(ThemeElements.TextAcc, BtnClearLog); local BCL = Instance.new("UICorner"); BCL.CornerRadius = UDim.new(0,8); BCL.Parent = BtnClearLog
+BtnClearLog.MouseButton1Click:Connect(function()
+	for _, v in pairs(LogScroll:GetChildren()) do if v:IsA("TextLabel") then v:Destroy() end end
+	SendNotification("Konsol Dibersihkan", "Log kosong.", 2, false)
+end)
+
+-- ===================================================================== --
+-- AGGRESSIVE SPY HOOK & TABLE DUMPING
+-- ===================================================================== --
+local function dumpTable(t, indent)
+	if type(t) ~= "table" then return tostring(t) end
+	indent = indent or ""
+	local res = "{\n"
+	for k, v in pairs(t) do
+		local formatting = indent .. "  [" .. tostring(k) .. "] = "
+		if type(v) == "table" then
+			res = res .. formatting .. dumpTable(v, indent .. "  ") .. ",\n"
+		else
+			res = res .. formatting .. tostring(v) .. " (" .. type(v) .. "),\n"
+		end
+	end
+	return res .. indent .. "}"
+end
+
+pcall(function()
+	local mt = getrawmetatable(game)
+	if mt and setreadonly then
+		local oldNamecall = mt.__namecall
+		setreadonly(mt, false)
+
+		mt.__namecall = newcclosure(function(self, ...)
+			local method = getnamecallmethod()
+			if F and F.spyDataOn and not checkcaller() and (method == "FireServer" or method == "InvokeServer") then
+				local logHeader = string.format("[SPY %s] -> %s", string.upper(method), tostring(self:GetFullName()))
+				local details = "Payload Argumen:\n"
+				local args = {...}
+				if #args == 0 then
+					details = details .. "   (Kosong)"
+				else
+					for i, v in ipairs(args) do
+						if type(v) == "table" then
+							details = details .. string.format("   Arg [%d] (Table):\n%s\n", i, dumpTable(v, "      "))
+						else
+							details = details .. string.format("   Arg [%d]: %s (%s)\n", i, tostring(v), typeof(v))
+						end
+					end
+				end
+				
+				-- Kirim ke Konsol HP & F9 Console PC
+				AppendMobileLog(logHeader .. "\n" .. details, true)
+				print(logHeader .. "\n" .. details)
+			end
+			return oldNamecall(self, ...)
+		end)
+		setreadonly(mt, true)
+	end
+end)
+
+UserInputService.InputBegan:Connect(function(input, gpe)
+	if gpe then return end
+	if input.UserInputType == Enum.UserInputType.MouseButton1 and F.spyClickOn then
+		local mouse = LocalPlayer:GetMouse()
+		local target = mouse.Target
+		if target then
+			local msg = string.format("[CLICK] %s (Class: %s)", target:GetFullName(), target.ClassName)
+			AppendMobileLog(msg, false)
+		end
 	end
 end)
 
@@ -528,7 +486,7 @@ local BtnTheme = Instance.new("TextButton"); BtnTheme.Parent = G_Set1; BtnTheme.
 BtnTheme.MouseButton1Click:Connect(function() 
 	F.themeIndex = F.themeIndex >= #THEMES and 1 or F.themeIndex + 1 
 	ApplyTheme(F.themeIndex) 
-	SendNotification("Tema Berubah", "Tema saat ini: " .. THEMES[F.themeIndex].Name, 2, false)
+	SendNotification("Tema Berubah", THEMES[F.themeIndex].Name, 2, false)
 end)
 
 local G_SetConfig = AddGroup(T_Set, "CONFIG & FILE MANAGER")
@@ -538,23 +496,29 @@ AddInput(G_SetConfig, "Nama File Config:", "cfgName", false)
 local BtnSave = Instance.new("TextButton"); BtnSave.Parent = G_SetConfig; BtnSave.Size = UDim2.new(1, 0, 0, 38); BtnSave.Text = "💾 SAVE CONFIG SEKARANG"; BtnSave.Font = Enum.Font.GothamBold; BtnSave.TextSize = 13; table.insert(ThemeElements.Header, BtnSave); table.insert(ThemeElements.TextAcc, BtnSave); local BTS = Instance.new("UICorner"); BTS.CornerRadius = UDim.new(0,8); BTS.Parent = BtnSave
 BtnSave.MouseButton1Click:Connect(function() 
 	local success, err = pcall(function() saveConfig(F.cfgName) end) 
-	if success then SendNotification("Config Tersimpan", "Config " .. tostring(F.cfgName) .. " berhasil di-save.", 3, false) else SendNotification("Gagal Save", tostring(err), 4, true) end
+	if success then SendNotification("Config Tersimpan", F.cfgName, 3, false) if RefreshConfigList then RefreshConfigList() end else SendNotification("Gagal Save", tostring(err), 4, true) end
 end)
 
 local BtnLoad = Instance.new("TextButton"); BtnLoad.Parent = G_SetConfig; BtnLoad.Size = UDim2.new(1, 0, 0, 38); BtnLoad.Text = "📂 LOAD CONFIG PILIHAN"; BtnLoad.Font = Enum.Font.GothamBold; BtnLoad.TextSize = 13; table.insert(ThemeElements.Header, BtnLoad); table.insert(ThemeElements.TextAcc, BtnLoad); local BTL = Instance.new("UICorner"); BTL.CornerRadius = UDim.new(0,8); BTL.Parent = BtnLoad
 BtnLoad.MouseButton1Click:Connect(function() 
 	local success, err = pcall(function() loadConfig(F.cfgName) end) 
-	if success then SendNotification("Config Dimuat", "Config " .. tostring(F.cfgName) .. " di-load.", 3, false) else SendNotification("Gagal Load", tostring(err), 4, true) end
+	if success then SendNotification("Config Dimuat", F.cfgName, 3, false) else SendNotification("Gagal Load", tostring(err), 4, true) end
 end)
 
+-- Tombol Hapus Config (Delete) + Auto Reset Nama Config
 local BtnDelete = Instance.new("TextButton"); BtnDelete.Parent = G_SetConfig; BtnDelete.Size = UDim2.new(1, 0, 0, 38); BtnDelete.Text = "🗑️ HAPUS CONFIG INI"; BtnDelete.Font = Enum.Font.GothamBold; BtnDelete.TextSize = 13; table.insert(ThemeElements.Header, BtnDelete); table.insert(ThemeElements.TextAcc, BtnDelete); local BTD = Instance.new("UICorner"); BTD.CornerRadius = UDim.new(0,8); BTD.Parent = BtnDelete
 BtnDelete.MouseButton1Click:Connect(function() 
 	local success, err = pcall(function() 
-		if delfile then delfile(CFG_FOLDER .. "/" .. F.cfgName .. ".json") end 
+		local targetPath = CFG_FOLDER .. "/" .. F.cfgName .. ".json"
+		if isfile and isfile(targetPath) and delfile then 
+			delfile(targetPath) 
+		end
 	end) 
 	if success then 
-		SendNotification("Config Dihapus", "Config " .. tostring(F.cfgName) .. " berhasil dihapus.", 3, false)
-		RefreshConfigList()
+		SendNotification("Config Dihapus", F.cfgName, 3, false)
+		F.cfgName = "MofenkConfig1" 
+		for _, updateFn in ipairs(ConfigUpdaters) do pcall(updateFn) end
+		if RefreshConfigList then RefreshConfigList() end
 	else 
 		SendNotification("Gagal Hapus", tostring(err), 4, true) 
 	end
@@ -563,14 +527,14 @@ end)
 local ListTitle = Instance.new("TextLabel"); ListTitle.Parent = G_SetConfig; ListTitle.Size = UDim2.new(1, 0, 0, 24); ListTitle.Text = "📁 PILIH CONFIG TERSEDIA:"; ListTitle.TextSize = 13; ListTitle.Font = Enum.Font.GothamBold; ListTitle.BackgroundTransparency = 1; table.insert(ThemeElements.TextAcc, ListTitle)
 local ConfigScroll = Instance.new("ScrollingFrame"); ConfigScroll.Parent = G_SetConfig; ConfigScroll.Size = UDim2.new(1, 0, 0, 110); ConfigScroll.BackgroundTransparency = 0.5; table.insert(ThemeElements.Header, ConfigScroll); ConfigScroll.ScrollBarThickness = 2; ConfigScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y; ConfigScroll.CanvasSize = UDim2.new(0,0,0,0); local CSC = Instance.new("UICorner"); CSC.CornerRadius = UDim.new(0, 8); CSC.Parent = ConfigScroll; local ConfigLayout = Instance.new("UIListLayout"); ConfigLayout.Parent = ConfigScroll; ConfigLayout.Padding = UDim.new(0, 5)
 
-local function RefreshConfigList()
+function RefreshConfigList()
 	for _, v in pairs(ConfigScroll:GetChildren()) do if v:IsA("TextButton") then v:Destroy() end end
 	if listfiles then
 		pcall(function()
 			for _, file in ipairs(listfiles(CFG_FOLDER)) do
 				local fileName = file:match("([^/]+)$"):gsub("%.json$", "")
 				local FileBtn = Instance.new("TextButton"); FileBtn.Parent = ConfigScroll; FileBtn.Size = UDim2.new(1, 0, 0, 32); FileBtn.Text = "📄 " .. fileName; FileBtn.TextSize = 12; FileBtn.Font = Enum.Font.GothamMedium; FileBtn.TextColor3 = Color3.fromRGB(255,255,255); FileBtn.BackgroundTransparency = 0.2; table.insert(ThemeElements.Card, FileBtn); local FBC = Instance.new("UICorner"); FBC.CornerRadius = UDim.new(0, 6); FBC.Parent = FileBtn
-				FileBtn.MouseButton1Click:Connect(function() pcall(function() F.cfgName = fileName; loadConfig(fileName); SendNotification("Config Dipilih", fileName, 2, false) end) end)
+				FileBtn.MouseButton1Click:Connect(function() pcall(function() F.cfgName = fileName; loadConfig(fileName); for _, updateFn in ipairs(ConfigUpdaters) do pcall(updateFn) end SendNotification("Config Dipilih", fileName, 2, false) end) end)
 			end
 		end)
 	end
@@ -582,9 +546,9 @@ BtnRefresh.MouseButton1Click:Connect(RefreshConfigList)
 
 local G_Web = AddGroup(T_Set, "DISCORD WEBHOOK")
 AddToggle(G_Web, "Aktifkan Webhook Discord", "webhookEnabled")
-AddInput(G_Web, "Webhook URL (Tempel di sini):", "webhookUrl", false)
+AddInput(G_Web, "Webhook URL:", "webhookUrl", false)
 local BtnTestWeb = Instance.new("TextButton"); BtnTestWeb.Parent = G_Web; BtnTestWeb.Size = UDim2.new(1, 0, 0, 38); BtnTestWeb.Text = "🔔 TEST KIRIM WEBHOOK"; BtnTestWeb.Font = Enum.Font.GothamBold; BtnTestWeb.TextSize = 13; table.insert(ThemeElements.Card, BtnTestWeb); table.insert(ThemeElements.TextAcc, BtnTestWeb); local BTWC = Instance.new("UICorner"); BTWC.CornerRadius = UDim.new(0,8); BTWC.Parent = BtnTestWeb
-BtnTestWeb.MouseButton1Click:Connect(function() SendWebhook("✅ Webhook Connected!", "MofenkHub V91.0 berhasil tersambung.", 3447003); SendNotification("Webhook", "Pesan Test Terkirim ke Discord!", 3, false) end)
+BtnTestWeb.MouseButton1Click:Connect(function() SendWebhook("✅ Webhook Connected!", "MofenkHub V94.0 berhasil tersambung.", 3447003); SendNotification("Webhook", "Terkirim!", 3, false) end)
 
 local G_Set2 = AddGroup(T_Set, "OPTIMALISASI & TOOLS")
 AddToggle(G_Set2, "Anti-AFK (Cegah Disconnect)", "afk")
@@ -612,46 +576,14 @@ end)
 ApplyTheme(F.themeIndex)
 
 -- ===================================================================== --
--- 7. FULL BACKEND THREADS (UPGRADED ANTI-RELOG)
+-- 7. BACKGROUND THREADS
 -- ===================================================================== --
 local vu = game:GetService("VirtualUser")
-
-pcall(function()
-	local PromptOverlay = CoreGui:FindFirstChild("PromptOverlay", true) or LocalPlayer.PlayerGui:FindFirstChild("PromptOverlay", true)
-	if PromptOverlay then
-		PromptOverlay.ChildAdded:Connect(function(child)
-			if F.afk and (child.Name == "ErrorPrompt" or child.Name == "DisconnectPrompt") then
-				SendNotification("Terputus!", "Mencoba Reconnect otomatis...", 5, true)
-				local qot = queue_on_teleport or queueonteleport or (syn and syn.queue_on_teleport) or fluxus and fluxus.queue_on_teleport
-				if qot then qot([[task.wait(3) loadstring(game:HttpGet("https://raw.githubusercontent.com/Mofenk/mofenkhub/refs/heads/Mofenk-Update-Patch-1/animedice.lua"))()]]) end
-				task.wait(2); pcall(function() TeleportService:Teleport(game.PlaceId, LocalPlayer) end)
-			end
-		end)
-	end
-end)
-
-GuiService.ErrorMessageChanged:Connect(function(errCode, errType)
-	if F.afk and errType == Enum.ConnectionError.DisconnectErrors then
-		SendNotification("Disconnected", "Koneksi terputus! Merestart server.", 5, true)
-		local qot = queue_on_teleport or queueonteleport or (syn and syn.queue_on_teleport) or fluxus and fluxus.queue_on_teleport
-		if qot then qot([[task.wait(3) loadstring(game:HttpGet("https://raw.githubusercontent.com/Mofenk/mofenkhub/refs/heads/Mofenk-Update-Patch-1/animedice.lua"))()]]) end
-		task.wait(1.5); pcall(function() TeleportService:Teleport(game.PlaceId, LocalPlayer) end)
-	end
-end)
-
 LocalPlayer.Idled:Connect(function() if F.afk then pcall(function() vu:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame); task.wait(1); vu:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame) end) end end)
 
 task.spawn(function()
-	while task.wait(60) do
-		if F.afk then pcall(function() vu:CaptureController(); vu:ClickButton2(Vector2.new(0,0)); local char = LocalPlayer.Character; if char and char:FindFirstChild("HumanoidRootPart") then char.HumanoidRootPart.CFrame = char.HumanoidRootPart.CFrame * CFrame.Angles(0, math.rad(1), 0); task.wait(0.2); char.HumanoidRootPart.CFrame = char.HumanoidRootPart.CFrame * CFrame.Angles(0, math.rad(-1), 0) end end) end
-	end
-end)
-
-local function unlockedSlots() local arr={}; local rb = rebirthAmt(); pcall(function() for i=1, (G.PlotConfig.GetMaxSlots(rb) or 15) do if rb >= (G.PlotConfig.GetSlotRebirthRequirement(i) or 0) then table.insert(arr, i) end end end); return arr end
-
-task.spawn(function()
 	while _G.__ANIMEDICE == generation do
-		if F.autoRoll then pcall(function() if R.RollDice then local ok = pcall(function() return R.RollDice:InvokeServer() end); if ok then STATE.rolled = (STATE.rolled or 0) + 1 end end end); task.wait(2.1) else task.wait(1) end
+		if F.autoRoll then pcall(function() if R.RollDice then R.RollDice:InvokeServer() end end); task.wait(2.1) else task.wait(1) end
 	end
 end)
 
@@ -659,13 +591,13 @@ task.spawn(function()
 	while _G.__ANIMEDICE == generation do
 		if (F.buyDice or F.equipDice) and R.EquipDice then
 			pcall(function()
-				local d = data(); local ownedDice = d.OwnedDice or d.Dice or (G.DC.OwnedDice and G.DC.OwnedDice()) or {}; local currentEquipped = d.EquippedDice or (G.DC.EquippedDice and G.DC.EquippedDice())
+				local d = data(); local ownedDice = d.OwnedDice or d.Dice or {}; local currentEquipped = d.EquippedDice
 				local bestDiceName, bestDiceValue = nil, -1
 				if G.DiceModule then
 					for diceId, diceData in pairs(G.DiceModule) do
 						if type(diceData) == "table" then
-							local diceValue = diceData.order or diceData.Luck or diceData.Price or diceData.price or 0
-							if F.buyDice and not ownedDice[diceId] and R.BuyDice then local price = diceData.Price or diceData.price or 0; if money() >= price then R.BuyDice:FireServer(diceId); ownedDice[diceId] = true; task.wait(0.2) end end
+							local diceValue = diceData.order or diceData.Luck or diceData.Price or 0
+							if F.buyDice and not ownedDice[diceId] and R.BuyDice then local price = diceData.Price or 0; if money() >= price then R.BuyDice:FireServer(diceId); ownedDice[diceId] = true; task.wait(0.2) end end
 							if ownedDice[diceId] and diceValue > bestDiceValue then bestDiceValue = diceValue; bestDiceName = diceId end
 						end
 					end
@@ -681,13 +613,13 @@ task.spawn(function()
 	while _G.__ANIMEDICE == generation do
 		if F.sellAuto and R.SellInventory then
 			pcall(function()
-				local d = data(); local cap = 100; pcall(function() local buff = tonumber(select(2, pcall(G.BuffController.GetBuff, "Unit Storage"))); if buff and buff > 0 then cap = buff end end)
-				local placed = {}; for _, slot in pairs(d.Slots or {}) do if slot.unitId then placed[slot.unitId] = true end end; for _, id in pairs(d.TowerTeam or {}) do placed[id] = true end
+				local d = data(); local cap = 100
+				local placed = {}; for _, slot in pairs(d.Slots or {}) do if slot.unitId then placed[slot.unitId] = true end end
 				local units, owned = {}, 0
 				for id, u in pairs(d.Inventory or {}) do
-					local e = G.UnitConfig and G.UnitConfig.entries[u.name] or (G.EntryRegistry and pcall(function() return G.EntryRegistry.getEntryConfig(u.name) end))
+					local e = G.UnitConfig and G.UnitConfig.entries[u.name]
 					if e then owned = owned + 1 end
-					local isProt = false; if u.attributes and u.attributes.locked then isProt = true end; if type(e) == "table" and e.limited then isProt = true end
+					local isProt = false; if u.attributes and u.attributes.locked then isProt = true end
 					if not placed[id] and not isProt then table.insert(units, { id = id }) end
 				end
 				local pressured = owned >= cap - 3; local sellable = math.max(0, #units - (F.keepBest or 20)); local list = {}
@@ -696,121 +628,5 @@ task.spawn(function()
 			end)
 		end
 		task.wait(4)
-	end
-end)
-
-task.spawn(function()
-	local lastRebirth = 0
-	while _G.__ANIMEDICE == generation do
-		if F.collect and R.CollectBalance then pcall(function() for _, slot in ipairs(unlockedSlots()) do R.CollectBalance:FireServer(slot) end end) end
-		if F.levelup and R.LevelUpSlot then
-			pcall(function()
-				local s = slots(); local m = money()
-				for _, slot in ipairs(unlockedSlots()) do
-					local d = s[tostring(slot)]
-					if d and d.unitId then
-						local e = inventory()[d.unitId]
-						if e and e.attributes and (tonumber(e.attributes.level) or 1) < F.maxLevel then
-							local price = 0; pcall(function() price = G.UnitUtil.GetLevelPrice(e.name, e.attributes) end)
-							if m >= price then R.LevelUpSlot:FireServer(tonumber(slot)); m = m - price; task.wait(0.1) end
-						end
-					end
-				end
-			end)
-		end
-		if F.rebirth and R.Rebirth and (os.clock() - lastRebirth > 5) then pcall(function() local nr = G.Rebirths.GetNext(rebirthAmt()); if nr and money() >= (nr.cost or 9e9) then R.Rebirth:FireServer(); lastRebirth = os.clock() end end) end
-		if F.upgrades and R.BuyUpgrade and G.Upgrades then
-			pcall(function()
-				local owned = G.DC.Upgrades() or {}; local list = {}
-				for n, u in pairs(G.Upgrades) do if type(u)=="table" and u.price and not owned[n] then table.insert(list, {name=n, price=u.price}) end end
-				table.sort(list, function(a,b) return a.price < b.price end)
-				for _, u in ipairs(list) do if money() >= u.price then R.BuyUpgrade:FireServer(u.name); break end end
-			end)
-		end
-		task.wait(2)
-	end
-end)
-
-task.spawn(function()
-	while _G.__ANIMEDICE == generation do
-		if F.potionAuto and R.BoostUse then
-			pcall(function()
-				local active = G.BuffController and G.BuffController.ActiveBuffs or {}
-				for key, e in pairs(inventory()) do
-					if e.name and e.amount and e.amount > 0 and G.BoostConfig and G.BoostConfig.entries[e.name] then
-						local shouldUse = (#F.potionSpecific == 0)
-						for _, sn in ipairs(F.potionSpecific) do if e.name == sn then shouldUse = true break end end
-						if shouldUse and not active[e.name] then R.BoostUse:FireServer(key); task.wait(1) end
-					end
-				end
-			end)
-		end
-		task.wait(5)
-	end
-end)
-
-local towerList = {"Dragon Tower", "Cursed Tower", "Pirate Tower", "Infinity Tower"}
-task.spawn(function()
-	while _G.__ANIMEDICE == generation do
-		if F.tower and R.PlayTower and R.CompleteFloor then
-			if F.towerEquipBest and R.BestTowerTeam then pcall(function() R.BestTowerTeam:FireServer() end) end
-			task.wait(0.5)
-			local pickTower = F.towerMix and towerList[math.random(1, #towerList)] or F.towerName
-			STATE.towerLive = "Memulai: " .. pickTower; STATE.towerDrops = 0; STATE.towerTraitsGot = "Mencari..."
-			local okStart, started = pcall(function() return R.PlayTower:InvokeServer(pickTower) end)
-			if okStart and started then
-				local done, fails = false, 0
-				while F.tower and not done do
-					local okP, seq = pcall(function() return R.CompleteFloor:InvokeServer() end)
-					if okP and type(seq) == "table" and #seq > 0 then
-						fails = 0
-						for _, act in ipairs(seq) do
-							if act.action == "floorStarted" then 
-								STATE.towerFloor = tonumber(act.floor) or 1
-								if STATE.towerFloor > 0 and STATE.towerFloor % 10 == 0 then SendWebhook("🏰 Tower Milestone Reached!", "Berhasil mencapai **Lantai " .. STATE.towerFloor .. "** di " .. pickTower, 16753920) end
-							elseif act.action == "floorCompleted" then
-								if act.rewards and act.rewards.Gems then STATE.towerDrops += act.rewards.Gems end
-								if act.rewards and act.rewards.Trait or act.trait then STATE.towerTraitsGot = tostring(act.rewards.Trait or act.trait) end
-							elseif act.action == "ended" then done = true break end
-						end
-						if not done and F.towerExitOn and F.towerExitFloor > 0 and STATE.towerFloor >= F.towerExitFloor then done = true; pcall(function() R.CancelTower:InvokeServer() end) end
-					else fails += 1; if fails > 8 then done = true end; task.wait(1) end
-				end
-			end
-		else STATE.towerLive = "Standby"; STATE.towerTraitsGot = "Belum Ada"; task.wait(2) end
-	end
-end)
-
-task.spawn(function()
-	while _G.__ANIMEDICE == generation do
-		task.wait(1800)
-		if F.webhookEnabled then pcall(function() local desc = string.format("💰 **Uang:** %s\n🔄 **Rebirth:** %s\n💎 **Gems:** %s\n🏰 **Tower:** %s (Lt. %d)", tostring(money()), tostring(rebirthAmt()), tostring(currencyAmount("Gems")), STATE.towerLive, STATE.towerFloor); SendWebhook("📊 Auto-Status Update (30 Min)", desc, 5763719) end) end
-	end
-end)
-
-task.spawn(function()
-	while _G.__ANIMEDICE == generation do
-		if F.claimQuests then
-			pcall(function()
-				if R.ClaimDaily then R.ClaimDaily:FireServer() end; if R.ClaimOffline then R.ClaimOffline:FireServer() end; if R.ClaimGroup then R.ClaimGroup:FireServer() end
-				if R.QuestClaim and G.DC and G.DC.Quests and G.QuestConfig then
-					local now = workspace:GetServerTimeNow()
-					for _, p in ipairs({"Daily", "Weekly"}) do
-						local q = G.DC.Quests[p]()
-						if q and (tonumber(q.expiresAt) or 0) > math.floor(now) then
-							for _, def in ipairs(G.QuestConfig.Periods[p].quests) do if not (q.claimed and q.claimed[def.id]) and (tonumber(q.progress[def.id]) or 0) >= (tonumber(def.target) or 9e9) then R.QuestClaim:FireServer(p, def.id, q.expiresAt); task.wait(0.5) end end
-						end
-					end
-				end
-			end)
-		end
-		if F.codesAuto and R.RedeemCode then
-			pcall(function()
-				local defaultCodes = { "RELEASE", "UPDATE1", "UPDATE2", "UPDATE3", "UPDATE4", "1KCCU", "5KCCU", "10KCCU", "20KCCU", "30KCCU", "40KCCU", "100KLIKES" }
-				local redeemed = G.DC.RedeemedCodes() or {}
-				for _, c in ipairs(defaultCodes) do if not redeemed[c] then R.RedeemCode:FireServer(c); task.wait(0.5) end end
-			end)
-		end
-		task.wait(60)
 	end
 end)
