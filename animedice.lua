@@ -1,5 +1,5 @@
 -- ===================================================================== --
--- 👑 MOFENKHUB V85.0 — ULTIMATE MASTER SUITE (ANIME DICE PRO)
+-- 👑 MOFENKHUB V86.0 — FIXED AUTO ROLL & AUTO SELL MASTER SUITE
 -- ===================================================================== --
 
 --!nocheck
@@ -176,7 +176,7 @@ local StrokeGrad = Instance.new("UIGradient"); StrokeGrad.Parent = MainStroke; t
 ToggleBtn.MouseButton1Click:Connect(function() MainFrame.Visible = not MainFrame.Visible end)
 
 local TopBar = Instance.new("Frame"); TopBar.Parent = MainFrame; TopBar.Size = UDim2.new(1, 0, 0, 48); TopBar.BackgroundTransparency = 0.2; table.insert(ThemeElements.Header, TopBar)
-local Title = Instance.new("TextLabel"); Title.Parent = TopBar; Title.Position = UDim2.new(0, 20, 0, 0); Title.Size = UDim2.new(0, 500, 1, 0); Title.Text = "👑 MOFENKHUB V85.0  |  ANIME DICE PRO"; Title.TextSize = 14; Title.Font = Enum.Font.GothamBlack; Title.TextXAlignment = Enum.TextXAlignment.Left; Title.BackgroundTransparency = 1; table.insert(ThemeElements.TextAcc, Title)
+local Title = Instance.new("TextLabel"); Title.Parent = TopBar; Title.Position = UDim2.new(0, 20, 0, 0); Title.Size = UDim2.new(0, 500, 1, 0); Title.Text = "👑 MOFENKHUB V86.0  |  ANIME DICE PRO"; Title.TextSize = 14; Title.Font = Enum.Font.GothamBlack; Title.TextXAlignment = Enum.TextXAlignment.Left; Title.BackgroundTransparency = 1; table.insert(ThemeElements.TextAcc, Title)
 
 local CloseBtn = Instance.new("TextButton"); CloseBtn.Parent = TopBar; CloseBtn.Position = UDim2.new(1, -42, 0, 9); CloseBtn.Size = UDim2.new(0, 30, 0, 30); CloseBtn.Text = "✕"; CloseBtn.TextColor3 = Color3.fromRGB(255,255,255); CloseBtn.Font = Enum.Font.GothamBold; CloseBtn.BackgroundTransparency = 0.2; table.insert(ThemeElements.Card, CloseBtn)
 local CC = Instance.new("UICorner"); CC.CornerRadius = UDim.new(0, 8); CC.Parent = CloseBtn
@@ -458,7 +458,7 @@ ApplyTheme(F.themeIndex)
 
 if F.autoLoad then pcall(function() loadConfig(F.cfgName); ApplyTheme(F.themeIndex) end) end
 
--- Anti-AFK Ganda (Mencegah Kick/Reload 20 Menit)
+-- Anti-AFK Ganda (Mencegah Kick/Reload 20 Menit)[span_0](start_span)[span_0](end_span)
 LocalPlayer.Idled:Connect(function()
 	if F.afk then
 		pcall(function()
@@ -485,7 +485,7 @@ end)
 
 local function unlockedSlots() local arr={}; local rb = rebirthAmt(); pcall(function() for i=1, (G.PlotConfig.GetMaxSlots(rb) or 15) do if rb >= (G.PlotConfig.GetSlotRebirthRequirement(i) or 0) then table.insert(arr, i) end end end); return arr end
 
--- Auto Roll Thread (Otomatis & Stabil)
+-- Auto Roll Thread (Dioptimalkan Menembak Modul, Controller, Remote, & Tombol GUI)[span_1](start_span)[span_1](end_span)
 task.spawn(function()
 	while _G.__ANIMEDICE == generation do
 		if F.autoRoll then
@@ -493,10 +493,13 @@ task.spawn(function()
 				local executed = false
 				if G.DiceModule and type(G.DiceModule.Roll) == "function" then G.DiceModule.Roll(); executed = true end
 				if not executed and G.RollController and type(G.RollController.Roll) == "function" then G.RollController.Roll(); executed = true end
-				if not executed and R.Roll then
-					if typeof(R.Roll) == "RemoteEvent" then R.Roll:FireServer()
-					elseif typeof(R.Roll) == "RemoteFunction" then R.Roll:InvokeServer() end
-					executed = true
+				if not executed and Network then
+					local rollRE = Network:FindFirstChild("RollService", true) and Network.RollService:FindFirstChild("RE", true) and Network.RollService.RE:FindFirstChild("Roll") or Network:FindFirstChild("Roll", true)
+					if rollRE then
+						if typeof(rollRE) == "RemoteEvent" then rollRE:FireServer()
+						elseif typeof(rollRE) == "RemoteFunction" then rollRE:InvokeServer() end
+						executed = true
+					end
 				end
 				if not executed then
 					local playerGui = LocalPlayer:FindFirstChild("PlayerGui")
@@ -509,14 +512,14 @@ task.spawn(function()
 					end
 				end
 			end)
-			task.wait(0.2)
+			task.wait(0.15)
 		else
 			task.wait(1)
 		end
 	end
 end)
 
--- Auto Sell All Thread
+-- Auto Sell & Sell All Thread (Dioptimalkan lewat Controller & Remote Inventory)[span_2](start_span)[span_2](end_span)
 task.spawn(function()
 	while _G.__ANIMEDICE == generation do
 		if F.sellAuto then
