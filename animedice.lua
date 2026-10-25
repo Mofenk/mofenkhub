@@ -1,9 +1,9 @@
 -- ===================================================================== --
--- 👑 MOFENKHUB V89.0 — FULL FIXED MASTER SUITE (AUTO-SCALE & LOADING ANIM)
+-- 👑 MOFENKHUB V89.0 — FULL FIXED MASTER SUITE (TANPA LOADING & AUTO-SCALE)
 -- ===================================================================== --
 
 --!nocheck
-task.wait(0.5)
+task.wait(0.2)
 local Players           = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local CoreGui           = game:GetService("CoreGui")
@@ -22,7 +22,7 @@ if not successGui or not parentGui then parentGui = LocalPlayer:WaitForChild("Pl
 pcall(function() for _, v in pairs(parentGui:GetChildren()) do if string.find(v.Name, "Mofenk") then v:Destroy() end end end)
 
 -- ===================================================================== --
--- 1. STATE & CONFIGURATION MANAGER (DENGAN AUTO-LOAD ON/OFF)
+-- 1. STATE & CONFIGURATION MANAGER (AUTO-LOAD ON/OFF)
 -- ===================================================================== --
 _G.__ANIMEDICE = (_G.__ANIMEDICE or 0) + 1
 local generation = _G.__ANIMEDICE
@@ -142,33 +142,7 @@ local function isUnitEntry(e) return e and type(e)=="table" and e.name and G.Ent
 local function currencyAmount(name) local t = 0; for _, e in pairs(inventory()) do if type(e)=="table" and e.name==name then t += tonumber(e.amount) or 0 end end; return t end
 
 -- ===================================================================== --
--- 3. ANIMASI LOADING & LAYAR TRANSISI PEMBUKA
--- ===================================================================== --
-local LoadGui = Instance.new("ScreenGui"); LoadGui.Name = "MofenkLoadingGui"; LoadGui.Parent = parentGui; LoadGui.ResetOnSpawn = false
-LoadGui.DisplayOrder = 100000
-
-local LoadFrame = Instance.new("Frame"); LoadFrame.Parent = LoadGui; LoadFrame.Size = UDim2.new(0, 320, 0, 110); LoadFrame.AnchorPoint = Vector2.new(0.5, 0.5); LoadFrame.Position = UDim2.new(0.5, 0, 0.5, 0); LoadFrame.BackgroundColor3 = THEMES[1].Card
-local LFCorner = Instance.new("UICorner"); LFCorner.CornerRadius = UDim.new(0, 14); LFCorner.Parent = LoadFrame
-local LFStroke = Instance.new("UIStroke"); LFStroke.Thickness = 2; LFStroke.Parent = LoadFrame; table.insert(ThemeElements.Acc1, LFStroke)
-
-local LoadTitle = Instance.new("TextLabel"); LoadTitle.Parent = LoadFrame; LoadTitle.Size = UDim2.new(1, 0, 0, 40); LoadTitle.Text = "👑 MOFENKHUB PRO"; LoadTitle.Font = Enum.Font.GothamBlack; LoadTitle.TextSize = 16; LoadTitle.TextColor3 = Color3.fromRGB(255, 255, 255); LoadTitle.BackgroundTransparency = 1
-
-local LoadBarBg = Instance.new("Frame"); LoadBarBg.Parent = LoadFrame; LoadBarBg.Size = UDim2.new(0.85, 0, 0, 12); LoadBarBg.AnchorPoint = Vector2.new(0.5, 0); LoadBarBg.Position = UDim2.new(0.5, 0, 0.55, 0); LoadBarBg.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-local LBBgC = Instance.new("UICorner"); LBBgC.CornerRadius = UDim.new(1, 0); LBBgC.Parent = LoadBarBg
-
-local LoadBarFill = Instance.new("Frame"); LoadBarFill.Parent = LoadBarBg; LoadBarFill.Size = UDim2.new(0, 0, 1, 0); LoadBarFill.BackgroundColor3 = THEMES[1].Acc1; table.insert(ThemeElements.Acc1, LoadBarFill)
-local LBFC = Instance.new("UICorner"); LBFC.CornerRadius = UDim.new(1, 0); LBFC.Parent = LoadBarFill
-
-local LoadStatus = Instance.new("TextLabel"); LoadStatus.Parent = LoadFrame; LoadStatus.Size = UDim2.new(1, 0, 0, 25); LoadStatus.Position = UDim2.new(0, 0, 0.75, 0); LoadStatus.Text = "Memuat modul game..."; LoadStatus.Font = Enum.Font.Medium; LoadStatus.TextSize = 10; LoadStatus.TextColor3 = Color3.fromRGB(180, 180, 180); LoadStatus.BackgroundTransparency = 1
-
-TweenService:Create(LoadBarFill, TweenInfo.new(1.2, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {Size = UDim2.new(1, 0, 1, 0)}):Play()
-task.wait(1.4)
-TweenService:Create(LoadFrame, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.In), {Size = UDim2.new(0, 0, 0, 0), BackgroundTransparency = 1}):Play()
-task.wait(0.4)
-LoadGui:Destroy()
-
--- ===================================================================== --
--- 4. INTERACTIVE "M" LOGO TOGGLE & AUTO-SCALE RESPONSIF
+-- 3. INTERACTIVE "M" LOGO TOGGLE & AUTO-SCALE RESPONSIF
 -- ===================================================================== --
 local ToggleGui = Instance.new("ScreenGui"); ToggleGui.Name = "MofenkToggleFront"; ToggleGui.Parent = parentGui; ToggleGui.ResetOnSpawn = false
 ToggleGui.DisplayOrder = 99999
@@ -194,15 +168,13 @@ UserInputService.InputChanged:Connect(function(input)
 end)
 
 -- ===================================================================== --
--- 5. MAIN AESTHETIC UI SETUP & UISCALE (AUTO-SCALE MULTI-ACCOUNT)
+-- 4. MAIN AESTHETIC UI SETUP & UISCALE (AUTO-SCALE MULTI-ACCOUNT)
 -- ===================================================================== --
 local MainGui = Instance.new("ScreenGui"); MainGui.Name = "MofenkUltraHub"; MainGui.Parent = parentGui; MainGui.ResetOnSpawn = false
 
--- Menambahkan Auto-Scale (UIScale) agar menyesuaikan ukuran jendela Roblox yang dikecilkan saat multi-akun AFK
 local ScreenScale = Instance.new("UIScale"); ScreenScale.Parent = MainGui
 local function UpdateScale()
 	local viewport = workspace.CurrentCamera.ViewportSize
-	-- Skalabilitas otomatis mendeteksi lebar layar, ideal untuk multi-instance berukuran kecil
 	local scaleFactor = math.clamp(viewport.X / 1280, 0.65, 1.1)
 	ScreenScale.Scale = scaleFactor
 end
@@ -331,7 +303,7 @@ local function GetOpts(mode)
 end
 
 -- ===================================================================== --
--- 6. 8 TABS ASSEMBLY
+-- 5. 8 TABS ASSEMBLY
 -- ===================================================================== --
 local T_Dash = CreateTab("Dashboard", "📊")
 local T_Farm = CreateTab("Farming", "⛏️")
@@ -506,12 +478,10 @@ end)
 -- ===================================================================== --
 ApplyTheme(F.themeIndex)
 
--- Cek apakah Auto Load Config Diaktifkan
 if F.autoLoadEnabled then
 	pcall(function() loadConfig(F.cfgName); ApplyTheme(F.themeIndex) end)
 end
 
--- Anti-AFK Aman & Stabil (Simulasi VirtualUser klik tombol mouse agar tidak keluar otomatis setiap 20 menit)
 LocalPlayer.Idled:Connect(function()
 	if F.afk then
 		pcall(function()
