@@ -1,5 +1,5 @@
 -- ===================================================================== --
--- 👑 MOFENKHUB V100.0 — TRICK OR TREAT & PUMPKIN DICE MASTER EDITION
+-- 👑 MOFENKHUB V101.0 — FULL SPY ERROR NOTIFICATION & COMPLETE FUNCTIONS
 -- ===================================================================== --
 
 --!nocheck
@@ -59,15 +59,16 @@ local F = {
 	gradeAuto = false, gradeAll = false, gradePlacedOnly = false, gradeTargets = {}, gradeUnits = {}, gemReserve = 100,
 	traitAuto = false, traitAll = false, traitPlacedOnly = false, traitTargets = {}, traitUnits = {}, rerollReserve = 50,
 	tower = false, towerName = "Dragon Tower", towerMix = false, towerEquipBest = true, towerExitOn = false, towerExitFloor = 50,
-	-- HALLOWEEN & TRICK OR TREAT FLAGS
+	-- HALLOWEEN & SPY ERROR NOTIF FLAGS
 	halloAutoClaim = false, halloAutoUpgrade = false, halloAutoQuest = false, halloRollPumpkin = false, halloAutoTrickOrTreat = false,
+	spyErrorAlert = true, -- [NEW] Notifikasi Spy Error Aktif Otomatis
 	wsOn = false, wsValue = 16, noclip = false, afk = true, fpsOn = false,
 	codesAuto = false, claimQuests = false,
 	webhookEnabled = false, webhookUrl = "",
 	spyDataOn = false, spyClickOn = false
 }
 
-local STATE = { towerLive = "Standby", towerFloor = 0, towerDrops = 0, towerTraitsGot = "Belum Ada", activeBuffs = "Tidak Ada", halloCurrency = 0 }
+local STATE = { towerLive = "Standby", towerFloor = 0, towerDrops = 0, towerTraitsGot = "Belum Ada", activeBuffs = "Tidak Ada", halloCurrency = 0, lastErrorMsg = "Tidak Ada" }
 local ConfigUpdaters = {}
 
 local function saveConfig(name)
@@ -110,7 +111,7 @@ local function ApplyTheme(idx)
 end
 
 -- ===================================================================== --
--- SISTEM NOTIFIKASI MODERN
+-- SISTEM NOTIFIKASI MODERN & SPY ERROR TRACKER
 -- ===================================================================== --
 local NotifGui = Instance.new("ScreenGui"); NotifGui.Name = "MofenkNotifications"; NotifGui.Parent = parentGui; NotifGui.DisplayOrder = 999999
 local NotifFrame = Instance.new("Frame"); NotifFrame.Parent = NotifGui; NotifFrame.Size = UDim2.new(0, 300, 1, 0); NotifFrame.Position = UDim2.new(1, -320, 0, 0); NotifFrame.BackgroundTransparency = 1
@@ -136,39 +137,52 @@ local function SendNotification(title, text, duration, isError)
 	end)
 end
 
+-- Wrapper Aman untuk Fungsi dengan Spy Notifikasi Error
+local function SafeCall(featureName, func, ...)
+	local success, err = pcall(func, ...)
+	if not success then
+		STATE.lastErrorMsg = tostring(err)
+		warn(string.format("⚠️ [MOFENK SPY ERROR] Fitur '%s' Gagal: %s", featureName, tostring(err)))
+		if F.spyErrorAlert then
+			SendNotification("SPY ERROR ALERT", "Fitur [" .. featureName .. "] Gagal/Error!", 4, true)
+		end
+	end
+	return success, err
+end
+
 -- ===================================================================== --
--- 2. SAFE FRAMEWORK & HALLOWEEN / TRICK OR TREAT REMOTES
+-- 2. SAFE FRAMEWORK & COMPLETE REMOTES BINDING
 -- ===================================================================== --
 local Network = ReplicatedStorage:WaitForChild("Network", 15)
 local Framework = ReplicatedStorage:WaitForChild("Framework", 15)
 local function svc(p) local n = Network; for x in string.gmatch(p, "[^%.]+") do n = n and n:FindFirstChild(x) end; return n end
 
 local R = {
-	RollDice        = svc("RollService.RF.RollDice"),
-	SetAutoRoll     = svc("RollService.RE.SetAutoRoll"),
-	CollectBalance  = svc("PlotService.RE.CollectBalance"), 
-	LevelUpSlot     = svc("PlotService.RE.LevelUpSlot"),
-	BuyDice         = svc("DiceShopService.RE.BuyDice"), 
-	EquipDice       = svc("DiceShopService.RE.EquipDice"),
-	Rebirth         = svc("RebirthService.RE.Rebirth"), 
-	BuyUpgrade      = svc("RE.BuyUpgrade") or svc("PlotService.RE.BuyPadUpgrade"),
-	GradeRoll       = svc("GradeService.RE.Roll"), 
-	TraitRoll       = svc("TraitService.RE.Roll"), 
-	BoostUse        = svc("BoostService.RE.Use"),
-	PlayTower       = svc("Towers.RF.PlayTower") or svc("Towers.RE.PlayTower"), 
-	CompleteFloor   = svc("Towers.RF.CompleteTowerFloor"),
-	CancelTower     = svc("Towers.RF.CancelTower"), 
-	BestTowerTeam   = svc("Towers.RE.EquipBestTowerTeam"),
-	RedeemCode      = svc("CodesService.RE.RedeemCode") or svc("MonetizationService.RE.RedeemCode"),
-	QuestClaim      = svc("QuestService.RE.Claim"), 
-	ClaimDaily      = svc("DailyRewardService.RE.Claim"),
-	ClaimOffline    = svc("OfflineEarningsService.RE.Claim"), 
-	ClaimGroup      = svc("GroupRewardService.RE.Claim"),
-	SellInventory   = svc("SellService.RF.SellInventory"),
-	UpdateAutoSell  = svc("SellService.RE.UpdateAutoSell"),
-	Fuse            = svc("FusingService.RE.Fuse"),
+	RollDice            = svc("RollService.RF.RollDice"),
+	SetAutoRoll         = svc("RollService.RE.SetAutoRoll"),
+	CollectBalance      = svc("PlotService.RE.CollectBalance"), 
+	LevelUpSlot         = svc("PlotService.RE.LevelUpSlot"),
+	BuyDice             = svc("DiceShopService.RE.BuyDice"), 
+	EquipDice           = svc("DiceShopService.RE.EquipDice"),
+	Rebirth             = svc("RebirthService.RE.Rebirth"), 
+	BuyUpgrade          = svc("RE.BuyUpgrade") or svc("PlotService.RE.BuyPadUpgrade"),
+	GradeRoll           = svc("GradeService.RE.Roll"), 
+	TraitRoll           = svc("TraitService.RE.Roll"), 
+	BoostUse            = svc("BoostService.RE.Use"),
+	PlayTower           = svc("Towers.RF.PlayTower") or svc("Towers.RE.PlayTower"), 
+	CompleteFloor       = svc("Towers.RF.CompleteTowerFloor"),
+	CancelTower         = svc("Towers.RF.CancelTower"), 
+	BestTowerTeam       = svc("Towers.RE.EquipBestTowerTeam"),
+	RedeemCode          = svc("CodesService.RE.RedeemCode") or svc("MonetizationService.RE.RedeemCode"),
+	QuestClaim          = svc("QuestService.RE.Claim"), 
+	ClaimDaily          = svc("DailyRewardService.RE.Claim"),
+	ClaimOffline        = svc("OfflineEarningsService.RE.Claim"), 
+	ClaimGroup          = svc("GroupRewardService.RE.Claim"),
+	SellInventory       = svc("SellService.RF.SellInventory"),
+	UpdateAutoSell      = svc("SellService.RE.UpdateAutoSell"),
+	Fuse                = svc("FusingService.RE.Fuse"),
 	
-	-- HALLOWEEN, PUMPKIN & TRICK OR TREAT REMOTES
+	-- COMPLETE HALLOWEEN & TRICK OR TREAT REMOTES
 	HalloTeleport       = svc("HalloweenService.RF.Teleport"),
 	HalloClaimPath      = svc("HalloweenService.RE.ClaimPath"),
 	HalloClaimAll       = svc("HalloweenService.RE.ClaimAllPath"),
@@ -243,7 +257,7 @@ UpdateScale(); workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):
 ToggleBtn.MouseButton1Click:Connect(function() MainFrame.Visible = not MainFrame.Visible; if MainFrame.Visible then SendNotification("Menu Dibuka", "MofenkHub siap digunakan!", 2, false) end end)
 
 local TopBar = Instance.new("Frame"); TopBar.Parent = MainFrame; TopBar.Size = UDim2.new(1, 0, 0, 55); TopBar.BackgroundTransparency = 0.3; table.insert(ThemeElements.Header, TopBar); local TopCorner = Instance.new("UICorner"); TopCorner.CornerRadius = UDim.new(0, 18); TopCorner.Parent = TopBar; local BottomHider = Instance.new("Frame"); BottomHider.Parent = TopBar; BottomHider.Size = UDim2.new(1, 0, 0, 10); BottomHider.Position = UDim2.new(0, 0, 1, -10); BottomHider.BorderSizePixel = 0; BottomHider.BackgroundTransparency = 0.3; table.insert(ThemeElements.Header, BottomHider)
-local Title = Instance.new("TextLabel"); Title.Parent = TopBar; Title.Position = UDim2.new(0, 25, 0, 0); Title.Size = UDim2.new(0, 600, 1, 0); Title.Text = "👑 MOFENKHUB V100.0  |  TRICK OR TREAT & HALLOWEEN EDITION"; Title.TextSize = 14; Title.Font = Enum.Font.GothamBlack; Title.TextXAlignment = Enum.TextXAlignment.Left; Title.BackgroundTransparency = 1; table.insert(ThemeElements.TextAcc, Title)
+local Title = Instance.new("TextLabel"); Title.Parent = TopBar; Title.Position = UDim2.new(0, 25, 0, 0); Title.Size = UDim2.new(0, 600, 1, 0); Title.Text = "👑 MOFENKHUB V101.0  |  SPY ERROR ALERTS & COMPLETE FUNCTIONS"; Title.TextSize = 13; Title.Font = Enum.Font.GothamBlack; Title.TextXAlignment = Enum.TextXAlignment.Left; Title.BackgroundTransparency = 1; table.insert(ThemeElements.TextAcc, Title)
 local CloseBtn = Instance.new("TextButton"); CloseBtn.Parent = TopBar; CloseBtn.Position = UDim2.new(1, -50, 0, 10); CloseBtn.Size = UDim2.new(0, 35, 0, 35); CloseBtn.Text = "✕"; CloseBtn.TextColor3 = Color3.fromRGB(255,255,255); CloseBtn.Font = Enum.Font.GothamBold; CloseBtn.TextSize = 18; CloseBtn.BackgroundTransparency = 0.3; table.insert(ThemeElements.Card, CloseBtn); local CC = Instance.new("UICorner"); CC.CornerRadius = UDim.new(0, 10); CC.Parent = CloseBtn
 CloseBtn.MouseButton1Click:Connect(function() MainFrame.Visible = false end)
 
@@ -356,7 +370,7 @@ local function AddDropdown(parent, title, options, flag, isMulti)
 end
 
 -- ===================================================================== --
--- 5. TABS ASSEMBLY
+-- 4. TABS ASSEMBLY
 -- ===================================================================== --
 local T_Dash  = CreateTab("Dashboard", "📊")
 local T_Hallo = CreateTab("Halloween", "🎃")
@@ -370,12 +384,17 @@ local T_Set   = CreateTab("Settings", "⚙️")
 
 TabFrames["Dashboard"].Visible = true; Sidebar:GetChildren()[2].BackgroundTransparency = 0.1; table.insert(ThemeElements.Acc1, Sidebar:GetChildren()[2])
 
--- 1. DASHBOARD
+-- 1. DASHBOARD & SPY MONITOR
 local G_Profile = AddGroup(T_Dash, "PROFIL & STATISTIK PENGGUNA")
 local ProfContainer = Instance.new("Frame"); ProfContainer.Parent = G_Profile; ProfContainer.Size = UDim2.new(1, 0, 0, 100); ProfContainer.BackgroundTransparency = 1
 local PImg = Instance.new("ImageLabel"); PImg.Parent = ProfContainer; PImg.AnchorPoint = Vector2.new(0.5, 0.5); PImg.Position = UDim2.new(0.15, 0, 0.5, 0); PImg.Size = UDim2.new(0, 80, 0, 80); pcall(function() PImg.Image = Players:GetUserThumbnailAsync(LocalPlayer.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size100x100) end); local PImgC = Instance.new("UICorner"); PImgC.CornerRadius = UDim.new(1,0); PImgC.Parent = PImg; local PStr = Instance.new("UIStroke"); PStr.Thickness = 3; PStr.Parent = PImg; table.insert(ThemeElements.Acc1, PStr)
 
 local PLbl = Instance.new("TextLabel"); PLbl.Parent = ProfContainer; PLbl.Position = UDim2.new(0.3, 0, 0, 10); PLbl.Size = UDim2.new(0.7, 0, 1, 0); PLbl.BackgroundTransparency = 1; PLbl.TextColor3 = Color3.fromRGB(255,255,255); PLbl.TextSize = 14; PLbl.Font = Enum.Font.GothamMedium; PLbl.TextXAlignment = Enum.TextXAlignment.Left; PLbl.TextYAlignment = Enum.TextYAlignment.Center
+
+local G_SpyErr = AddGroup(T_Dash, "SPY ERROR MONITORING")
+AddToggle(G_SpyErr, "Aktifkan Notifikasi Spy Jika Ada Fitur Error", "spyErrorAlert")
+local SpyErrLbl = Instance.new("TextLabel"); SpyErrLbl.Parent = G_SpyErr; SpyErrLbl.Size = UDim2.new(1,0,0,50); SpyErrLbl.BackgroundTransparency = 1; SpyErrLbl.TextColor3 = Color3.fromRGB(255,100,100); SpyErrLbl.TextSize = 12; SpyErrLbl.Font = Enum.Font.Code; SpyErrLbl.TextXAlignment = Enum.TextXAlignment.Left; SpyErrLbl.TextWrapped = true
+task.spawn(function() while task.wait(1) do pcall(function() SpyErrLbl.Text = "⚠️ Error Terakhir: " .. STATE.lastErrorMsg end) end end)
 
 local G_Info = AddGroup(T_Dash, "INFORMASI AKUN & GAME")
 local ILbl = Instance.new("TextLabel"); ILbl.Parent = G_Info; ILbl.Size = UDim2.new(1, 0, 0, 85); ILbl.BackgroundTransparency = 1; ILbl.TextColor3 = Color3.fromRGB(255,255,255); ILbl.TextSize = 13; ILbl.Font = Enum.Font.GothamMedium; ILbl.TextXAlignment = Enum.TextXAlignment.Left; ILbl.TextYAlignment = Enum.TextYAlignment.Top
@@ -394,16 +413,16 @@ task.spawn(function()
 	end) end
 end)
 
--- 2. HALLOWEEN TAB (DITAMBAH FITUR TRICK OR TREAT / AMBIL HADIAH DEPAN PINTU)
+-- 2. HALLOWEEN TAB
 local G_HalloTeleport = AddGroup(T_Hallo, "HALLOWEEN TELEPORT & WORLD")
 local BtnHalloTP = Instance.new("TextButton"); BtnHalloTP.Parent = G_HalloTeleport; BtnHalloTP.Size = UDim2.new(1, 0, 0, 42); BtnHalloTP.Text = "🎃 TELEPORT KE HALLOWEEN MAP"; BtnHalloTP.Font = Enum.Font.GothamBlack; BtnHalloTP.TextSize = 13; table.insert(ThemeElements.Card, BtnHalloTP); table.insert(ThemeElements.TextAcc, BtnHalloTP); local BHTP = Instance.new("UICorner"); BHTP.CornerRadius = UDim.new(0,8); BHTP.Parent = BtnHalloTP
 BtnHalloTP.MouseButton1Click:Connect(function()
-	pcall(function()
+	SafeCall("Halloween Teleport", function()
 		if R.HalloTeleport then
 			R.HalloTeleport:InvokeServer()
 			SendNotification("Teleport", "Berhasil menuju Halloween Map!", 3, false)
 		else
-			SendNotification("Gagal", "Remote Teleport Halloween tidak ditemukan.", 3, true)
+			error("Remote Teleport Halloween tidak ditemukan.")
 		end
 	end)
 end)
@@ -412,7 +431,7 @@ local G_TrickOrTreat = AddGroup(T_Hallo, "TRICK OR TREAT (DEPAN PINTU)")
 AddToggle(G_TrickOrTreat, "Auto Claim Trick or Treat", "halloAutoTrickOrTreat")
 local BtnClaimTOT = Instance.new("TextButton"); BtnClaimTOT.Parent = G_TrickOrTreat; BtnClaimTOT.Size = UDim2.new(1, 0, 0, 38); BtnClaimTOT.Text = "🚪 CLAIM TRICK OR TREAT SEKARANG"; BtnClaimTOT.Font = Enum.Font.GothamBold; BtnClaimTOT.TextSize = 12; table.insert(ThemeElements.Header, BtnClaimTOT); table.insert(ThemeElements.TextAcc, BtnClaimTOT); local BTOT = Instance.new("UICorner"); BTOT.CornerRadius = UDim.new(0,8); BTOT.Parent = BtnClaimTOT
 BtnClaimTOT.MouseButton1Click:Connect(function()
-	pcall(function()
+	SafeCall("Trick Or Treat Manual", function()
 		if R.TrickOrTreatClaim then
 			if typeof(R.TrickOrTreatClaim) == "RemoteEvent" then
 				R.TrickOrTreatClaim:FireServer()
@@ -421,7 +440,7 @@ BtnClaimTOT.MouseButton1Click:Connect(function()
 			end
 			SendNotification("Trick or Treat", "Berhasil mengambil hadiah depan pintu!", 3, false)
 		else
-			SendNotification("Info", "Mencari data Trick or Treat di map...", 3, true)
+			error("Remote Trick or Treat tidak ditemukan.")
 		end
 	end)
 end)
@@ -448,7 +467,7 @@ AddToggle(G_Farm1, "Auto Rebirth (Anti-Spam)", "rebirth")
 AddToggle(G_Farm1, "Auto Buy Dice", "buyDice")
 AddToggle(G_Farm1, "Auto Equip Best Dice", "equipDice")
 
--- 4. INVENTORY (DENGAN AUTO SELL DROPDOWN BERUPA SCROLL)
+-- 4. INVENTORY
 local G_Inv = AddGroup(T_Inv, "MANAGEMENT & AUTO SELL")
 AddToggle(G_Inv, "Aktifkan Auto Sell Unit", "sellAuto")
 AddDropdown(T_Inv or G_Inv, "Pilih Mode Auto Sell:", {
@@ -487,12 +506,12 @@ BtnLoad.MouseButton1Click:Connect(function() pcall(function() loadConfig(F.cfgNa
 ApplyTheme(F.themeIndex)
 
 -- ===================================================================== --
--- 8. BACKGROUND THREADS (TRICK OR TREAT, PUMPKIN & AUTO SELL LOOP)
+-- 8. BACKGROUND THREADS (COMPLETE LOOPS WITH SPY ERROR SAFE-CALLS)
 -- ===================================================================== --
 task.spawn(function()
 	while _G.__ANIMEDICE == generation do
 		if F.halloAutoTrickOrTreat then
-			pcall(function()
+			SafeCall("Loop Trick Or Treat", function()
 				if R.TrickOrTreatClaim then
 					if typeof(R.TrickOrTreatClaim) == "RemoteEvent" then
 						R.TrickOrTreatClaim:FireServer()
@@ -509,7 +528,7 @@ end)
 task.spawn(function()
 	while _G.__ANIMEDICE == generation do
 		if F.halloRollPumpkin then
-			pcall(function()
+			SafeCall("Loop Pumpkin Roll", function()
 				if R.PumpkinRoll then R.PumpkinRoll:InvokeServer() end
 			end)
 			task.wait(2.1)
@@ -522,7 +541,7 @@ end)
 task.spawn(function()
 	while _G.__ANIMEDICE == generation do
 		if F.halloAutoClaim then
-			pcall(function()
+			SafeCall("Loop Halloween Path", function()
 				if R.HalloClaimAll then R.HalloClaimAll:FireServer() end
 				if R.HalloClaimPath then R.HalloClaimPath:FireServer() end
 			end)
@@ -534,7 +553,7 @@ end)
 task.spawn(function()
 	while _G.__ANIMEDICE == generation do
 		if F.sellAuto and R.SellInventory then
-			pcall(function()
+			SafeCall("Loop Auto Sell", function()
 				local d = data(); local cap = 100
 				local placed = {}; for _, slot in pairs(d.Slots or {}) do if slot.unitId then placed[slot.unitId] = true end end
 				local units, owned = {}, 0
