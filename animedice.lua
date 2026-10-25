@@ -1,5 +1,5 @@
 -- ===================================================================== --
--- 👑 MOFENKHUB V90.0 — MODERN GLOW EDITION (FULL FIXED & UPGRADED)
+-- 👑 MOFENKHUB V90.5 — MODERN GLOW + DEEP SPY SCANNER EDITION
 -- ===================================================================== --
 
 --!nocheck
@@ -16,14 +16,14 @@ local GuiService        = game:GetService("GuiService")
 local StarterGui        = game:GetService("StarterGui")
 
 -- ===================================================================== --
--- [NEW] AUTO-EXECUTE (QUEUE ON TELEPORT) UNTUK REJOIN / SERVER HOP
+-- [AUTO-EXECUTE] QUEUE ON TELEPORT
 -- ===================================================================== --
 pcall(function()
 	local qot = queue_on_teleport or queueonteleport or (syn and syn.queue_on_teleport) or fluxus and fluxus.queue_on_teleport
 	if qot then
 		qot([[
 			task.wait(3)
-			loadstring(game:HttpGet("https://raw.githubusercontent.com/Mofenk/mofenkhub/refs/heads/main/animedice.lua"))()
+			loadstring(game:HttpGet("https://raw.githubusercontent.com/Mofenk/mofenkhub/refs/heads/Mofenk-Update-Patch-1/animedice.lua"))()
 		]])
 	end
 end)
@@ -53,7 +53,9 @@ local F = {
 	tower = false, towerName = "Dragon Tower", towerMix = false, towerEquipBest = true, towerExitOn = false, towerExitFloor = 50,
 	wsOn = false, wsValue = 16, noclip = false, afk = true, fpsOn = false,
 	codesAuto = false, claimQuests = false,
-	webhookEnabled = false, webhookUrl = ""
+	webhookEnabled = false, webhookUrl = "",
+	-- [NEW SPY CONFIG]
+	spyDataOn = false, spyClickOn = false
 }
 
 local STATE = { towerLive = "Standby", towerFloor = 0, towerDrops = 0, towerTraitsGot = "Belum Ada", activeBuffs = "Tidak Ada" }
@@ -77,66 +79,25 @@ local function ApplyTheme(idx)
 	for _, v in ipairs(ThemeElements.TextAcc) do v.TextColor3 = t.Acc1 end
 end
 
-local CFG_FOLDER = "MofenkHub_Configs"
-if makefolder and not isfolder(CFG_FOLDER) then pcall(function() makefolder(CFG_FOLDER) end) end
-
-local function getCfgPath(name) return CFG_FOLDER .. "/" .. (name or F.cfgName or "DefaultConfig") .. ".json" end
-
-local function saveConfig(name)
-	if writefile then
-		pcall(function() 
-			writefile(getCfgPath(name), HttpService:JSONEncode(F)) 
-			local pointerPath = CFG_FOLDER .. "/autoload_pointer.txt"
-			if F.autoLoadEnabled then writefile(pointerPath, name or F.cfgName or "DefaultConfig") else if isfile and isfile(pointerPath) then delfile(pointerPath) end end
-		end)
-	end
-end
-
-local function loadConfig(name)
-	local path = getCfgPath(name)
-	if readfile and isfile and isfile(path) then
-		pcall(function() 
-			local d = HttpService:JSONDecode(readfile(path))
-			for k,v in pairs(d) do F[k]=v end 
-			for _, updateUI in ipairs(ConfigUpdaters) do pcall(updateUI) end
-			ApplyTheme(F.themeIndex)
-		end)
-	end
-end
-
-pcall(function()
-	local pointerPath = CFG_FOLDER .. "/autoload_pointer.txt"
-	if readfile and isfile and isfile(pointerPath) then
-		local autoName = readfile(pointerPath)
-		if autoName and autoName ~= "" then 
-			F.cfgName = autoName
-			local d = HttpService:JSONDecode(readfile(getCfgPath(autoName)))
-			for k,v in pairs(d) do F[k]=v end 
-			F.autoLoadEnabled = true 
-		end
-	end
-end)
-
 -- ===================================================================== --
--- [NEW] SISTEM NOTIFIKASI MODERN & GLOW
+-- [NEW] SISTEM NOTIFIKASI MODERN (SUCCESS / ERROR)
 -- ===================================================================== --
 local NotifGui = Instance.new("ScreenGui"); NotifGui.Name = "MofenkNotifications"; NotifGui.Parent = parentGui; NotifGui.DisplayOrder = 999999
 local NotifFrame = Instance.new("Frame"); NotifFrame.Parent = NotifGui; NotifFrame.Size = UDim2.new(0, 300, 1, 0); NotifFrame.Position = UDim2.new(1, -320, 0, 0); NotifFrame.BackgroundTransparency = 1
 local NotifLayout = Instance.new("UIListLayout"); NotifLayout.Parent = NotifFrame; NotifLayout.SortOrder = Enum.SortOrder.LayoutOrder; NotifLayout.VerticalAlignment = Enum.VerticalAlignment.Bottom; NotifLayout.Padding = UDim.new(0, 10)
 local NotifPadding = Instance.new("UIPadding"); NotifPadding.Parent = NotifFrame; NotifPadding.PaddingBottom = UDim.new(0, 20); NotifPadding.PaddingRight = UDim.new(0, 20)
 
-local function SendNotification(title, text, duration)
+local function SendNotification(title, text, duration, isError)
 	duration = duration or 3
 	local Box = Instance.new("Frame"); Box.Size = UDim2.new(1, 0, 0, 60); Box.BackgroundColor3 = THEMES[F.themeIndex].Card; Box.BackgroundTransparency = 0.2; Box.Position = UDim2.new(1, 100, 0, 0)
 	local UIC = Instance.new("UICorner"); UIC.CornerRadius = UDim.new(0, 10); UIC.Parent = Box
-	local UIS = Instance.new("UIStroke"); UIS.Thickness = 2; UIS.Color = THEMES[F.themeIndex].Acc1; UIS.Parent = Box
+	local UIS = Instance.new("UIStroke"); UIS.Thickness = 2; UIS.Color = isError and Color3.fromRGB(255, 50, 50) or THEMES[F.themeIndex].Acc1; UIS.Parent = Box
 	
-	local T = Instance.new("TextLabel"); T.Parent = Box; T.Size = UDim2.new(1, -20, 0, 25); T.Position = UDim2.new(0, 10, 0, 5); T.BackgroundTransparency = 1; T.Text = "🔔 " .. title; T.TextColor3 = THEMES[F.themeIndex].Acc1; T.Font = Enum.Font.GothamBlack; T.TextSize = 14; T.TextXAlignment = Enum.TextXAlignment.Left
+	local T = Instance.new("TextLabel"); T.Parent = Box; T.Size = UDim2.new(1, -20, 0, 25); T.Position = UDim2.new(0, 10, 0, 5); T.BackgroundTransparency = 1; T.Text = (isError and "❌ " or "✅ ") .. title; T.TextColor3 = isError and Color3.fromRGB(255, 100, 100) or THEMES[F.themeIndex].Acc1; T.Font = Enum.Font.GothamBlack; T.TextSize = 14; T.TextXAlignment = Enum.TextXAlignment.Left
 	local D = Instance.new("TextLabel"); D.Parent = Box; D.Size = UDim2.new(1, -20, 0, 25); D.Position = UDim2.new(0, 10, 0, 30); D.BackgroundTransparency = 1; D.Text = text; D.TextColor3 = Color3.fromRGB(255, 255, 255); D.Font = Enum.Font.GothamMedium; D.TextSize = 12; D.TextXAlignment = Enum.TextXAlignment.Left; D.TextWrapped = true
 	
 	Box.Parent = NotifFrame
 	TweenService:Create(Box, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.new(0, 0, 0, 0)}):Play()
-	
 	task.spawn(function()
 		task.wait(duration)
 		local fade = TweenService:Create(Box, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Position = UDim2.new(1, 100, 0, 0), BackgroundTransparency = 1})
@@ -144,6 +105,62 @@ local function SendNotification(title, text, duration)
 		fade:Play(); fade.Completed:Wait(); Box:Destroy()
 	end)
 end
+
+-- ===================================================================== --
+-- [NEW CORE] DEEP RAW METATABLE SPY (REMOTE & FUNCTION TRACKER)
+-- ===================================================================== --
+pcall(function()
+	local mt = getrawmetatable(game)
+	local oldNamecall = mt.__namecall
+	setreadonly(mt, false)
+
+	mt.__namecall = newcclosure(function(self, ...)
+		local method = getnamecallmethod()
+		-- Tangkap FireServer (RemoteEvent) dan InvokeServer (RemoteFunction)
+		if F.spyDataOn and not checkcaller() and (method == "FireServer" or method == "InvokeServer") then
+			print("\n=======================================================")
+			warn("🔥 [MOFENK SPY] REMOTE " .. string.upper(method) .. " TERDETEKSI!")
+			print("📍 Path Objek :", self:GetFullName())
+			print("🛠️ Tipe Data  :", self.ClassName)
+			print("📝 ARGUMEN YANG DIKIRIM (PAYLOAD):")
+			
+			local args = {...}
+			if #args == 0 then
+				print("   ▶ (Tidak ada argumen / Kosong)")
+			else
+				for i, v in ipairs(args) do
+					print(string.format("   ▶ Arg [%d]: %s (Tipe: %s)", i, tostring(v), typeof(v)))
+					-- Jika argumen berupa table, bongkar isinya!
+					if type(v) == "table" then
+						for k2, v2 in pairs(v) do
+							print(string.format("       -> [%s] = %s", tostring(k2), tostring(v2)))
+						end
+					end
+				end
+			end
+			print("=======================================================\n")
+		end
+		return oldNamecall(self, ...)
+	end)
+	setreadonly(mt, true)
+end)
+
+-- [NEW CORE] IN-GAME CLICK SPY (Deteksi klik objek di Map)
+UserInputService.InputBegan:Connect(function(input, gpe)
+	if gpe then return end
+	if input.UserInputType == Enum.UserInputType.MouseButton1 and F.spyClickOn then
+		local mouse = LocalPlayer:GetMouse()
+		local target = mouse.Target
+		if target then
+			warn("🖱️ [CLICK SPY] Kamu Mengklik Objek:")
+			print("📍 Path:", target:GetFullName())
+			print("🧱 Class:", target.ClassName, "| Transparancy:", target.Transparency)
+			if target:FindFirstChildWhichIsA("ClickDetector") or target:FindFirstChildWhichIsA("ProximityPrompt") then
+				warn("⚡ OBJEK INI MEMILIKI INTERAKSI (ClickDetector/ProximityPrompt)!")
+			end
+		end
+	end
+end)
 
 -- ===================================================================== --
 -- 2. FRAMEWORK & MODULE BINDINGS
@@ -217,16 +234,10 @@ local function SendWebhook(title, description, colorCode)
 end
 
 -- ===================================================================== --
--- 3. INTERACTIVE "M" LOGO TOGGLE
+-- 3. INTERACTIVE LOGO & MAIN UI
 -- ===================================================================== --
-local ToggleGui = Instance.new("ScreenGui"); ToggleGui.Name = "MofenkToggleFront"; ToggleGui.Parent = parentGui; ToggleGui.ResetOnSpawn = false
-ToggleGui.DisplayOrder = 99998
-
-local ToggleBtn = Instance.new("TextButton"); ToggleBtn.Parent = ToggleGui; ToggleBtn.Size = UDim2.new(0, 60, 0, 60); ToggleBtn.Position = UDim2.new(0.02, 0, 0.4, 0)
-ToggleBtn.BackgroundColor3 = THEMES[1].Card; ToggleBtn.Text = "M"; ToggleBtn.Font = Enum.Font.GothamBlack; ToggleBtn.TextSize = 34; ToggleBtn.TextColor3 = THEMES[1].Acc1; ToggleBtn.ZIndex = 99998
-ToggleBtn.BackgroundTransparency = 0.2
-local TC = Instance.new("UICorner"); TC.CornerRadius = UDim.new(0, 16); TC.Parent = ToggleBtn
-local TS = Instance.new("UIStroke"); TS.Thickness = 3; TS.Parent = ToggleBtn; table.insert(ThemeElements.Acc1, TS)
+local ToggleGui = Instance.new("ScreenGui"); ToggleGui.Name = "MofenkToggleFront"; ToggleGui.Parent = parentGui; ToggleGui.ResetOnSpawn = false; ToggleGui.DisplayOrder = 99998
+local ToggleBtn = Instance.new("TextButton"); ToggleBtn.Parent = ToggleGui; ToggleBtn.Size = UDim2.new(0, 60, 0, 60); ToggleBtn.Position = UDim2.new(0.02, 0, 0.4, 0); ToggleBtn.BackgroundColor3 = THEMES[1].Card; ToggleBtn.Text = "M"; ToggleBtn.Font = Enum.Font.GothamBlack; ToggleBtn.TextSize = 34; ToggleBtn.TextColor3 = THEMES[1].Acc1; ToggleBtn.BackgroundTransparency = 0.2; local TC = Instance.new("UICorner"); TC.CornerRadius = UDim.new(0, 16); TC.Parent = ToggleBtn; local TS = Instance.new("UIStroke"); TS.Thickness = 3; TS.Parent = ToggleBtn; table.insert(ThemeElements.Acc1, TS)
 
 local dragging, dragInput, dragStart, startPos
 ToggleBtn.InputBegan:Connect(function(input)
@@ -236,66 +247,33 @@ ToggleBtn.InputBegan:Connect(function(input)
 	end
 end)
 ToggleBtn.InputChanged:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then dragInput = input end end)
-UserInputService.InputChanged:Connect(function(input)
-	if input == dragInput and dragging then
-		local delta = input.Position - dragStart; local viewport = workspace.CurrentCamera.ViewportSize
-		ToggleBtn.Position = UDim2.new(0, math.clamp(startPos.X.Offset + delta.X, 10, viewport.X - 70), 0, math.clamp(startPos.Y.Offset + delta.Y, 10, viewport.Y - 70))
-	end
-end)
+UserInputService.InputChanged:Connect(function(input) if input == dragInput and dragging then local delta = input.Position - dragStart; local viewport = workspace.CurrentCamera.ViewportSize; ToggleBtn.Position = UDim2.new(0, math.clamp(startPos.X.Offset + delta.X, 10, viewport.X - 70), 0, math.clamp(startPos.Y.Offset + delta.Y, 10, viewport.Y - 70)) end end)
 
--- ===================================================================== --
--- 4. MAIN AESTHETIC UI SETUP & UISCALE (TRANSPARAN & GLOW)
--- ===================================================================== --
 local MainGui = Instance.new("ScreenGui"); MainGui.Name = "MofenkUltraHub"; MainGui.Parent = parentGui; MainGui.ResetOnSpawn = false
+local MainFrame = Instance.new("Frame"); MainFrame.Parent = MainGui; MainFrame.AnchorPoint = Vector2.new(0.5, 0.5); MainFrame.Size = UDim2.new(0, 950, 0, 620); MainFrame.Position = UDim2.new(0.5, 0, 0.5, 0); MainFrame.Active = true; MainFrame.Draggable = true; MainFrame.Visible = false; MainFrame.BackgroundTransparency = 0.4; table.insert(ThemeElements.Bg, MainFrame)
+local MainCorner = Instance.new("UICorner"); MainCorner.CornerRadius = UDim.new(0, 18); MainCorner.Parent = MainFrame; local MainStroke = Instance.new("UIStroke"); MainStroke.Thickness = 4; MainStroke.Parent = MainFrame; local StrokeGrad = Instance.new("UIGradient"); StrokeGrad.Parent = MainStroke; table.insert(ThemeElements.Grad, StrokeGrad)
 
-local MainFrame = Instance.new("Frame"); MainFrame.Parent = MainGui
-MainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
-MainFrame.Size = UDim2.new(0, 950, 0, 620); MainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
-MainFrame.Active = true; MainFrame.Draggable = true; MainFrame.Visible = false; MainFrame.BackgroundTransparency = 0.4; table.insert(ThemeElements.Bg, MainFrame)
-local MainCorner = Instance.new("UICorner"); MainCorner.CornerRadius = UDim.new(0, 18); MainCorner.Parent = MainFrame
-local MainStroke = Instance.new("UIStroke"); MainStroke.Thickness = 4; MainStroke.Parent = MainFrame
-local StrokeGrad = Instance.new("UIGradient"); StrokeGrad.Parent = MainStroke; table.insert(ThemeElements.Grad, StrokeGrad)
-
--- Drop Shadow modern
 local DropShadow = Instance.new("ImageLabel"); DropShadow.Parent = MainFrame; DropShadow.AnchorPoint = Vector2.new(0.5, 0.5); DropShadow.Position = UDim2.new(0.5, 0, 0.5, 0); DropShadow.Size = UDim2.new(1, 40, 1, 40); DropShadow.BackgroundTransparency = 1; DropShadow.Image = "rbxassetid://6015897843"; DropShadow.ImageColor3 = Color3.fromRGB(0, 0, 0); DropShadow.ImageTransparency = 0.5; DropShadow.ZIndex = -1; DropShadow.ScaleType = Enum.ScaleType.Slice; DropShadow.SliceCenter = Rect.new(49, 49, 450, 450)
 
 local ScreenScale = Instance.new("UIScale"); ScreenScale.Parent = MainGui
-local function UpdateScale()
-	local viewport = workspace.CurrentCamera.ViewportSize
-	local scaleX = viewport.X / 1280; local scaleY = viewport.Y / 720
-	ScreenScale.Scale = math.clamp(math.min(scaleX, scaleY), 0.5, 1.1)
-end
+local function UpdateScale() local viewport = workspace.CurrentCamera.ViewportSize; local scaleX = viewport.X / 1280; local scaleY = viewport.Y / 720; ScreenScale.Scale = math.clamp(math.min(scaleX, scaleY), 0.5, 1.1) end
 UpdateScale(); workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(UpdateScale)
 
-ToggleBtn.MouseButton1Click:Connect(function() 
-	MainFrame.Visible = not MainFrame.Visible 
-	if MainFrame.Visible then SendNotification("Menu Dibuka", "MofenkHub siap digunakan!", 2) end
-end)
+ToggleBtn.MouseButton1Click:Connect(function() MainFrame.Visible = not MainFrame.Visible; if MainFrame.Visible then SendNotification("Menu Dibuka", "MofenkHub siap digunakan!", 2, false) end end)
 
-local TopBar = Instance.new("Frame"); TopBar.Parent = MainFrame; TopBar.Size = UDim2.new(1, 0, 0, 55); TopBar.BackgroundTransparency = 0.3; table.insert(ThemeElements.Header, TopBar)
-local TopCorner = Instance.new("UICorner"); TopCorner.CornerRadius = UDim.new(0, 18); TopCorner.Parent = TopBar
-local BottomHider = Instance.new("Frame"); BottomHider.Parent = TopBar; BottomHider.Size = UDim2.new(1, 0, 0, 10); BottomHider.Position = UDim2.new(0, 0, 1, -10); BottomHider.BorderSizePixel = 0; BottomHider.BackgroundTransparency = 0.3; table.insert(ThemeElements.Header, BottomHider)
-
-local Title = Instance.new("TextLabel"); Title.Parent = TopBar; Title.Position = UDim2.new(0, 25, 0, 0); Title.Size = UDim2.new(0, 600, 1, 0); Title.Text = "👑 MOFENKHUB V90.0  |  MODERN GLOW EDITION"; Title.TextSize = 16; Title.Font = Enum.Font.GothamBlack; Title.TextXAlignment = Enum.TextXAlignment.Left; Title.BackgroundTransparency = 1; table.insert(ThemeElements.TextAcc, Title)
-
-local CloseBtn = Instance.new("TextButton"); CloseBtn.Parent = TopBar; CloseBtn.Position = UDim2.new(1, -50, 0, 10); CloseBtn.Size = UDim2.new(0, 35, 0, 35); CloseBtn.Text = "✕"; CloseBtn.TextColor3 = Color3.fromRGB(255,255,255); CloseBtn.Font = Enum.Font.GothamBold; CloseBtn.TextSize = 18; CloseBtn.BackgroundTransparency = 0.3; table.insert(ThemeElements.Card, CloseBtn)
-local CC = Instance.new("UICorner"); CC.CornerRadius = UDim.new(0, 10); CC.Parent = CloseBtn
+local TopBar = Instance.new("Frame"); TopBar.Parent = MainFrame; TopBar.Size = UDim2.new(1, 0, 0, 55); TopBar.BackgroundTransparency = 0.3; table.insert(ThemeElements.Header, TopBar); local TopCorner = Instance.new("UICorner"); TopCorner.CornerRadius = UDim.new(0, 18); TopCorner.Parent = TopBar; local BottomHider = Instance.new("Frame"); BottomHider.Parent = TopBar; BottomHider.Size = UDim2.new(1, 0, 0, 10); BottomHider.Position = UDim2.new(0, 0, 1, -10); BottomHider.BorderSizePixel = 0; BottomHider.BackgroundTransparency = 0.3; table.insert(ThemeElements.Header, BottomHider)
+local Title = Instance.new("TextLabel"); Title.Parent = TopBar; Title.Position = UDim2.new(0, 25, 0, 0); Title.Size = UDim2.new(0, 600, 1, 0); Title.Text = "👑 MOFENKHUB V90.5  |  MODERN GLOW + SPY EDITION"; Title.TextSize = 16; Title.Font = Enum.Font.GothamBlack; Title.TextXAlignment = Enum.TextXAlignment.Left; Title.BackgroundTransparency = 1; table.insert(ThemeElements.TextAcc, Title)
+local CloseBtn = Instance.new("TextButton"); CloseBtn.Parent = TopBar; CloseBtn.Position = UDim2.new(1, -50, 0, 10); CloseBtn.Size = UDim2.new(0, 35, 0, 35); CloseBtn.Text = "✕"; CloseBtn.TextColor3 = Color3.fromRGB(255,255,255); CloseBtn.Font = Enum.Font.GothamBold; CloseBtn.TextSize = 18; CloseBtn.BackgroundTransparency = 0.3; table.insert(ThemeElements.Card, CloseBtn); local CC = Instance.new("UICorner"); CC.CornerRadius = UDim.new(0, 10); CC.Parent = CloseBtn
 CloseBtn.MouseButton1Click:Connect(function() MainFrame.Visible = false end)
 
-local Sidebar = Instance.new("ScrollingFrame"); Sidebar.Parent = MainFrame; Sidebar.Position = UDim2.new(0, 15, 0, 65); Sidebar.Size = UDim2.new(0, 200, 1, -80); Sidebar.BackgroundTransparency = 1; Sidebar.ScrollBarThickness = 0; Sidebar.AutomaticCanvasSize = Enum.AutomaticSize.Y; Sidebar.CanvasSize = UDim2.new(0,0,0,0)
-local SideLayout = Instance.new("UIListLayout"); SideLayout.Parent = Sidebar; Sidebar.ScrollingDirection = Enum.ScrollingDirection.Y; SideLayout.Padding = UDim.new(0, 8)
-
-local ContentArea = Instance.new("Frame"); ContentArea.Parent = MainFrame; ContentArea.Position = UDim2.new(0, 225, 0, 65); ContentArea.Size = UDim2.new(1, -240, 1, -80); ContentArea.BackgroundTransparency = 0.4; table.insert(ThemeElements.Header, ContentArea)
-local ContentCorner = Instance.new("UICorner"); ContentCorner.CornerRadius = UDim.new(0, 14); ContentCorner.Parent = ContentArea
+local Sidebar = Instance.new("ScrollingFrame"); Sidebar.Parent = MainFrame; Sidebar.Position = UDim2.new(0, 15, 0, 65); Sidebar.Size = UDim2.new(0, 200, 1, -80); Sidebar.BackgroundTransparency = 1; Sidebar.ScrollBarThickness = 0; Sidebar.AutomaticCanvasSize = Enum.AutomaticSize.Y; Sidebar.CanvasSize = UDim2.new(0,0,0,0); local SideLayout = Instance.new("UIListLayout"); SideLayout.Parent = Sidebar; Sidebar.ScrollingDirection = Enum.ScrollingDirection.Y; SideLayout.Padding = UDim.new(0, 8)
+local ContentArea = Instance.new("Frame"); ContentArea.Parent = MainFrame; ContentArea.Position = UDim2.new(0, 225, 0, 65); ContentArea.Size = UDim2.new(1, -240, 1, -80); ContentArea.BackgroundTransparency = 0.4; table.insert(ThemeElements.Header, ContentArea); local ContentCorner = Instance.new("UICorner"); ContentCorner.CornerRadius = UDim.new(0, 14); ContentCorner.Parent = ContentArea
 
 local TabFrames, TabButtons = {}, {}
 local function CreateTab(name, icon)
-	local Btn = Instance.new("TextButton"); Btn.Parent = Sidebar; Btn.Size = UDim2.new(1, -4, 0, 42); Btn.Text = "   " .. icon .. "  " .. name; Btn.TextColor3 = Color3.fromRGB(220,220,220); Btn.TextSize = 13; Btn.Font = Enum.Font.GothamBold; Btn.TextXAlignment = Enum.TextXAlignment.Left; Btn.BackgroundTransparency = 0.4; table.insert(ThemeElements.Card, Btn)
-	local Corner = Instance.new("UICorner"); Corner.CornerRadius = UDim.new(0, 10); Corner.Parent = Btn
-	local Scroll = Instance.new("ScrollingFrame"); Scroll.Parent = ContentArea; Scroll.Size = UDim2.new(1, -20, 1, -20); Scroll.Position = UDim2.new(0, 10, 0, 10); Scroll.BackgroundTransparency = 1; Scroll.ScrollBarThickness = 2; Scroll.ScrollBarImageColor3 = Color3.fromRGB(255, 255, 255); Scroll.Visible = false; Scroll.AutomaticCanvasSize = Enum.AutomaticSize.Y; Scroll.CanvasSize = UDim2.new(0,0,0,0)
-	local Lay = Instance.new("UIListLayout"); Lay.Parent = Scroll; Scroll.ScrollingDirection = Enum.ScrollingDirection.Y; Lay.Padding = UDim.new(0, 12)
+	local Btn = Instance.new("TextButton"); Btn.Parent = Sidebar; Btn.Size = UDim2.new(1, -4, 0, 42); Btn.Text = "   " .. icon .. "  " .. name; Btn.TextColor3 = Color3.fromRGB(220,220,220); Btn.TextSize = 13; Btn.Font = Enum.Font.GothamBold; Btn.TextXAlignment = Enum.TextXAlignment.Left; Btn.BackgroundTransparency = 0.4; table.insert(ThemeElements.Card, Btn); local Corner = Instance.new("UICorner"); Corner.CornerRadius = UDim.new(0, 10); Corner.Parent = Btn
+	local Scroll = Instance.new("ScrollingFrame"); Scroll.Parent = ContentArea; Scroll.Size = UDim2.new(1, -20, 1, -20); Scroll.Position = UDim2.new(0, 10, 0, 10); Scroll.BackgroundTransparency = 1; Scroll.ScrollBarThickness = 2; Scroll.ScrollBarImageColor3 = Color3.fromRGB(255, 255, 255); Scroll.Visible = false; Scroll.AutomaticCanvasSize = Enum.AutomaticSize.Y; Scroll.CanvasSize = UDim2.new(0,0,0,0); local Lay = Instance.new("UIListLayout"); Lay.Parent = Scroll; Scroll.ScrollingDirection = Enum.ScrollingDirection.Y; Lay.Padding = UDim.new(0, 12)
 	TabFrames[name] = Scroll; TabButtons[name] = Btn
-	
 	Btn.MouseButton1Click:Connect(function()
 		for n, f in pairs(TabFrames) do f.Visible = (n == name) end
 		for _, b in pairs(TabButtons) do b.BackgroundTransparency = 0.4; b.TextColor3 = Color3.fromRGB(220,220,220); for i,v in ipairs(ThemeElements.Acc1) do if v==b then table.remove(ThemeElements.Acc1, i) end end end
@@ -306,17 +284,13 @@ end
 
 local function AddGroup(parent, title)
 	local GroupCard = Instance.new("Frame"); GroupCard.Parent = parent; GroupCard.Size = UDim2.new(1, 0, 0, 0); GroupCard.AutomaticSize = Enum.AutomaticSize.Y; GroupCard.BackgroundTransparency = 0.3; table.insert(ThemeElements.Card, GroupCard)
-	local GC = Instance.new("UICorner"); GC.CornerRadius = UDim.new(0, 12); GC.Parent = GroupCard
-	local GS = Instance.new("UIStroke"); GS.Thickness = 2; GS.Transparency = 0.5; GS.Parent = GroupCard; table.insert(ThemeElements.Acc1, GS)
-	local GLayout = Instance.new("UIListLayout"); GLayout.Parent = GroupCard; GLayout.Padding = UDim.new(0, 8); GLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-	local GPadding = Instance.new("UIPadding"); GPadding.Parent = GroupCard; GPadding.PaddingTop = UDim.new(0, 12); GPadding.PaddingBottom = UDim.new(0, 12); GPadding.PaddingLeft = UDim.new(0, 12); GPadding.PaddingRight = UDim.new(0, 12)
-	
-	if title and title ~= "" then
-		local HeaderLbl = Instance.new("TextLabel"); HeaderLbl.Parent = GroupCard; HeaderLbl.Size = UDim2.new(1, 0, 0, 28); HeaderLbl.Text = title; HeaderLbl.TextSize = 14; HeaderLbl.Font = Enum.Font.GothamBlack; HeaderLbl.TextXAlignment = Enum.TextXAlignment.Left; HeaderLbl.BackgroundTransparency = 1; table.insert(ThemeElements.TextAcc, HeaderLbl)
-	end
+	local GC = Instance.new("UICorner"); GC.CornerRadius = UDim.new(0, 12); GC.Parent = GroupCard; local GS = Instance.new("UIStroke"); GS.Thickness = 2; GS.Transparency = 0.5; GS.Parent = GroupCard; table.insert(ThemeElements.Acc1, GS)
+	local GLayout = Instance.new("UIListLayout"); GLayout.Parent = GroupCard; GLayout.Padding = UDim.new(0, 8); GLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center; local GPadding = Instance.new("UIPadding"); GPadding.Parent = GroupCard; GPadding.PaddingTop = UDim.new(0, 12); GPadding.PaddingBottom = UDim.new(0, 12); GPadding.PaddingLeft = UDim.new(0, 12); GPadding.PaddingRight = UDim.new(0, 12)
+	if title and title ~= "" then local HeaderLbl = Instance.new("TextLabel"); HeaderLbl.Parent = GroupCard; HeaderLbl.Size = UDim2.new(1, 0, 0, 28); HeaderLbl.Text = title; HeaderLbl.TextSize = 14; HeaderLbl.Font = Enum.Font.GothamBlack; HeaderLbl.TextXAlignment = Enum.TextXAlignment.Left; HeaderLbl.BackgroundTransparency = 1; table.insert(ThemeElements.TextAcc, HeaderLbl) end
 	return GroupCard
 end
 
+-- [UPGRADED] Toggle with SUCCESS/ERROR Detection
 local function AddToggle(parent, text, flag, callback)
 	local Frm = Instance.new("Frame"); Frm.Parent = parent; Frm.Size = UDim2.new(1, 0, 0, 40); Frm.BackgroundTransparency = 1
 	local L = Instance.new("TextLabel"); L.Parent = Frm; L.Position = UDim2.new(0, 8, 0, 0); L.Size = UDim2.new(0.7, 0, 1, 0); L.Text = text; L.TextColor3 = Color3.fromRGB(255,255,255); L.TextSize = 13; L.Font = Enum.Font.GothamMedium; L.TextXAlignment = Enum.TextXAlignment.Left; L.BackgroundTransparency = 1
@@ -332,9 +306,16 @@ local function AddToggle(parent, text, flag, callback)
 	table.insert(ConfigUpdaters, updateVisuals)
 
 	Sw.MouseButton1Click:Connect(function() 
-		F[flag] = not F[flag]; updateVisuals()
-		SendNotification("Fitur " .. (F[flag] and "Aktif" or "Mati"), text .. " sekarang " .. (F[flag] and "menyala." or "dimatikan."), 2)
-		if callback then pcall(callback, F[flag]) end 
+		local success, err = pcall(function()
+			F[flag] = not F[flag]
+			updateVisuals()
+			if callback then callback(F[flag]) end 
+		end)
+		if success then
+			SendNotification("Berhasil", text .. " berhasil " .. (F[flag] and "diaktifkan." or "dimatikan."), 2, false)
+		else
+			SendNotification("Error System", "Gagal memproses fitur: " .. text .. "\nDetail: " .. tostring(err), 4, true)
+		end
 	end)
 	updateVisuals()
 end
@@ -342,31 +323,22 @@ end
 local function AddInput(parent, text, flag, isNum)
 	local Frm = Instance.new("Frame"); Frm.Parent = parent; Frm.Size = UDim2.new(1, 0, 0, 42); Frm.BackgroundTransparency = 1
 	local L = Instance.new("TextLabel"); L.Parent = Frm; L.Position = UDim2.new(0, 8, 0, 0); L.Size = UDim2.new(0.5, 0, 1, 0); L.Text = text; L.TextColor3 = Color3.fromRGB(255,255,255); L.TextSize = 13; L.Font = Enum.Font.GothamMedium; L.TextXAlignment = Enum.TextXAlignment.Left; L.BackgroundTransparency = 1
-	local Box = Instance.new("TextBox"); Box.Parent = Frm; Box.Position = UDim2.new(0.5, 0, 0.1, 0); Box.Size = UDim2.new(0.48, 0, 0.8, 0); table.insert(ThemeElements.TextAcc, Box); Box.TextSize = 13; Box.Font = Enum.Font.GothamBold; Box.BackgroundTransparency = 0.4; table.insert(ThemeElements.Header, Box); local BC = Instance.new("UICorner"); BC.CornerRadius = UDim.new(0, 8); BC.Parent = Box
-	local BS = Instance.new("UIStroke"); BS.Parent = Box; BS.Transparency = 0.5; table.insert(ThemeElements.Acc1, BS)
+	local Box = Instance.new("TextBox"); Box.Parent = Frm; Box.Position = UDim2.new(0.5, 0, 0.1, 0); Box.Size = UDim2.new(0.48, 0, 0.8, 0); table.insert(ThemeElements.TextAcc, Box); Box.TextSize = 13; Box.Font = Enum.Font.GothamBold; Box.BackgroundTransparency = 0.4; table.insert(ThemeElements.Header, Box); local BC = Instance.new("UICorner"); BC.CornerRadius = UDim.new(0, 8); BC.Parent = Box; local BS = Instance.new("UIStroke"); BS.Parent = Box; BS.Transparency = 0.5; table.insert(ThemeElements.Acc1, BS)
 	
 	local function updateVisuals() Box.Text = tostring(F[flag] or "") end
 	table.insert(ConfigUpdaters, updateVisuals)
-
-	Box.FocusLost:Connect(function() 
-		F[flag] = isNum and (tonumber(Box.Text) or 0) or Box.Text; updateVisuals() 
-		SendNotification("Input Disimpan", text .. " diubah menjadi: " .. tostring(F[flag]), 2)
-	end)
+	Box.FocusLost:Connect(function() F[flag] = isNum and (tonumber(Box.Text) or 0) or Box.Text; updateVisuals(); SendNotification("Input Berhasil", text .. " diubah ke: " .. tostring(F[flag]), 2, false) end)
 	updateVisuals()
 end
 
 local function AddDropdown(parent, title, options, flag, isMulti)
 	local Frm = Instance.new("Frame"); Frm.Parent = parent; Frm.Size = UDim2.new(1, 0, 0, 44); Frm.BackgroundTransparency = 1
 	local L = Instance.new("TextLabel"); L.Parent = Frm; L.Position = UDim2.new(0, 8, 0, 0); L.Size = UDim2.new(0.4, 0, 1, 0); L.Text = title; L.TextColor3 = Color3.fromRGB(255,255,255); L.TextSize = 13; L.Font = Enum.Font.GothamMedium; L.TextXAlignment = Enum.TextXAlignment.Left; L.BackgroundTransparency = 1
-	local Btn = Instance.new("TextButton"); Btn.Parent = Frm; Btn.Position = UDim2.new(0.42, 0, 0.1, 0); Btn.Size = UDim2.new(0.56, 0, 0.8, 0); table.insert(ThemeElements.TextAcc, Btn); Btn.TextSize = 12; Btn.Font = Enum.Font.GothamBold; Btn.BackgroundTransparency = 0.4; table.insert(ThemeElements.Header, Btn); local BC = Instance.new("UICorner"); BC.CornerRadius = UDim.new(0, 8); BC.Parent = Btn
-	local BS = Instance.new("UIStroke"); BS.Parent = Btn; BS.Transparency = 0.5; table.insert(ThemeElements.Acc1, BS)
+	local Btn = Instance.new("TextButton"); Btn.Parent = Frm; Btn.Position = UDim2.new(0.42, 0, 0.1, 0); Btn.Size = UDim2.new(0.56, 0, 0.8, 0); table.insert(ThemeElements.TextAcc, Btn); Btn.TextSize = 12; Btn.Font = Enum.Font.GothamBold; Btn.BackgroundTransparency = 0.4; table.insert(ThemeElements.Header, Btn); local BC = Instance.new("UICorner"); BC.CornerRadius = UDim.new(0, 8); BC.Parent = Btn; local BS = Instance.new("UIStroke"); BS.Parent = Btn; BS.Transparency = 0.5; table.insert(ThemeElements.Acc1, BS)
 	
-	local DropList = Instance.new("ScrollingFrame"); DropList.Parent = MainFrame; DropList.Size = UDim2.new(0, 250, 0, 180); table.insert(ThemeElements.Bg, DropList); DropList.BorderSizePixel = 1; DropList.Visible = false; DropList.ZIndex = 150; DropList.ScrollBarThickness = 4; DropList.AutomaticCanvasSize = Enum.AutomaticSize.Y; DropList.CanvasSize = UDim2.new(0,0,0,0)
-	local DLC = Instance.new("UICorner"); DLC.CornerRadius = UDim.new(0, 8); DLC.Parent = DropList; local DLL = Instance.new("UIListLayout"); DLL.Parent = DropList
+	local DropList = Instance.new("ScrollingFrame"); DropList.Parent = MainFrame; DropList.Size = UDim2.new(0, 250, 0, 180); table.insert(ThemeElements.Bg, DropList); DropList.BorderSizePixel = 1; DropList.Visible = false; DropList.ZIndex = 150; DropList.ScrollBarThickness = 4; DropList.AutomaticCanvasSize = Enum.AutomaticSize.Y; DropList.CanvasSize = UDim2.new(0,0,0,0); local DLC = Instance.new("UICorner"); DLC.CornerRadius = UDim.new(0, 8); DLC.Parent = DropList; local DLL = Instance.new("UIListLayout"); DLL.Parent = DropList
 	
-	local function UpdatePos()
-		if DropList.Visible then DropList.Position = UDim2.new(0, Btn.AbsolutePosition.X - MainFrame.AbsolutePosition.X, 0, (Btn.AbsolutePosition.Y - MainFrame.AbsolutePosition.Y) + Btn.AbsoluteSize.Y + 4) end
-	end
+	local function UpdatePos() if DropList.Visible then DropList.Position = UDim2.new(0, Btn.AbsolutePosition.X - MainFrame.AbsolutePosition.X, 0, (Btn.AbsolutePosition.Y - MainFrame.AbsolutePosition.Y) + Btn.AbsoluteSize.Y + 4) end end
 	Btn:GetPropertyChangedSignal("AbsolutePosition"):Connect(UpdatePos)
 
 	local updateCheckList = {}
@@ -389,18 +361,19 @@ local function AddDropdown(parent, title, options, flag, isMulti)
 			updateVisuals()
 
 			OptBtn.MouseButton1Click:Connect(function()
-				if isMulti then
-					if not F[flag] then F[flag] = {} end
-					local found = false; for i,v in ipairs(F[flag]) do if v==opt.val then table.remove(F[flag],i); found=true break end end
-					if not found then table.insert(F[flag], opt.val) end
-				else F[flag] = opt.val; DropList.Visible = false end
-				updateMainBtn()
-				for _, fn in ipairs(updateCheckList) do pcall(fn) end
+				pcall(function()
+					if isMulti then
+						if not F[flag] then F[flag] = {} end
+						local found = false; for i,v in ipairs(F[flag]) do if v==opt.val then table.remove(F[flag],i); found=true break end end
+						if not found then table.insert(F[flag], opt.val) end
+					else F[flag] = opt.val; DropList.Visible = false end
+					updateMainBtn(); for _, fn in ipairs(updateCheckList) do pcall(fn) end
+					SendNotification("Dipilih", tostring(opt.label) .. " berhasil dipilih.", 2, false)
+				end)
 			end)
 		end
 	end
-	Render(options); updateMainBtn()
-	Btn.MouseButton1Click:Connect(function() DropList.Visible = not DropList.Visible; UpdatePos() end)
+	Render(options); updateMainBtn(); Btn.MouseButton1Click:Connect(function() DropList.Visible = not DropList.Visible; UpdatePos() end)
 end
 
 local function GetOpts(mode)
@@ -416,7 +389,7 @@ local function GetOpts(mode)
 end
 
 -- ===================================================================== --
--- 5. 8 TABS ASSEMBLY
+-- 5. TABS ASSEMBLY
 -- ===================================================================== --
 local T_Dash = CreateTab("Dashboard", "📊")
 local T_Farm = CreateTab("Farming", "⛏️")
@@ -429,35 +402,46 @@ local T_Set = CreateTab("Settings", "⚙️")
 
 TabFrames["Dashboard"].Visible = true; Sidebar:GetChildren()[2].BackgroundTransparency = 0.1; table.insert(ThemeElements.Acc1, Sidebar:GetChildren()[2])
 
--- 1. DASHBOARD & SPY SCANNER
+-- 1. DASHBOARD & SPY SYSTEM
 local G_Profile = AddGroup(T_Dash, "PROFIL & STATISTIK PENGGUNA")
 local ProfContainer = Instance.new("Frame"); ProfContainer.Parent = G_Profile; ProfContainer.Size = UDim2.new(1, 0, 0, 100); ProfContainer.BackgroundTransparency = 1
 local PImg = Instance.new("ImageLabel"); PImg.Parent = ProfContainer; PImg.AnchorPoint = Vector2.new(0.5, 0.5); PImg.Position = UDim2.new(0.15, 0, 0.5, 0); PImg.Size = UDim2.new(0, 80, 0, 80); pcall(function() PImg.Image = Players:GetUserThumbnailAsync(LocalPlayer.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size100x100) end); local PImgC = Instance.new("UICorner"); PImgC.CornerRadius = UDim.new(1,0); PImgC.Parent = PImg; local PStr = Instance.new("UIStroke"); PStr.Thickness = 3; PStr.Parent = PImg; table.insert(ThemeElements.Acc1, PStr)
 
 local PLbl = Instance.new("TextLabel"); PLbl.Parent = ProfContainer; PLbl.Position = UDim2.new(0.3, 0, 0, 10); PLbl.Size = UDim2.new(0.7, 0, 1, 0); PLbl.BackgroundTransparency = 1; PLbl.TextColor3 = Color3.fromRGB(255,255,255); PLbl.TextSize = 14; PLbl.Font = Enum.Font.GothamMedium; PLbl.TextXAlignment = Enum.TextXAlignment.Left; PLbl.TextYAlignment = Enum.TextYAlignment.Center
 
-local G_Spy = AddGroup(T_Dash, "INVENTORY BUFFS & SPY SYSTEM")
+local G_Spy = AddGroup(T_Dash, "INVENTORY & SPY SYSTEM (ADVANCED)")
 local SLbl = Instance.new("TextLabel"); SLbl.Parent = G_Spy; SLbl.Size = UDim2.new(1, 0, 0, 100); SLbl.BackgroundTransparency = 1; SLbl.TextColor3 = Color3.fromRGB(255,255,255); SLbl.TextSize = 13; SLbl.Font = Enum.Font.GothamMedium; SLbl.TextXAlignment = Enum.TextXAlignment.Left; SLbl.TextYAlignment = Enum.TextYAlignment.Top
 
--- [NEW] FITUR SPY & SCANNER IN-GAME
-local BtnSpy = Instance.new("TextButton"); BtnSpy.Parent = G_Spy; BtnSpy.Size = UDim2.new(1, 0, 0, 42); BtnSpy.Text = "🔎 SCAN & SPY DATA REMOTES (KLIK F9)"; BtnSpy.Font = Enum.Font.GothamBlack; BtnSpy.TextSize = 13; table.insert(ThemeElements.Card, BtnSpy); table.insert(ThemeElements.TextAcc, BtnSpy); local BSY = Instance.new("UICorner"); BSY.CornerRadius = UDim.new(0,8); BSY.Parent = BtnSpy; local BSS = Instance.new("UIStroke"); BSS.Parent = BtnSpy; BSS.Thickness = 1.5; table.insert(ThemeElements.Acc1, BSS)
+-- [NEW] DEEP SPY & SCANNER UI
+AddToggle(G_Spy, "Aktifkan Remote Spy (F9 Log)", "spyDataOn")
+AddToggle(G_Spy, "Aktifkan Click Map Spy", "spyClickOn")
+
+local BtnSpy = Instance.new("TextButton"); BtnSpy.Parent = G_Spy; BtnSpy.Size = UDim2.new(1, 0, 0, 42); BtnSpy.Text = "🔎 SCAN FULL SEMUA REMOTES (KLIK F9)"; BtnSpy.Font = Enum.Font.GothamBlack; BtnSpy.TextSize = 13; table.insert(ThemeElements.Card, BtnSpy); table.insert(ThemeElements.TextAcc, BtnSpy); local BSY = Instance.new("UICorner"); BSY.CornerRadius = UDim.new(0,8); BSY.Parent = BtnSpy; local BSS = Instance.new("UIStroke"); BSS.Parent = BtnSpy; BSS.Thickness = 1.5; table.insert(ThemeElements.Acc1, BSS)
 BtnSpy.MouseButton1Click:Connect(function()
-	SendNotification("Spy Scanner Dimulai", "Mengekstrak data In-Game ke Console F9. Silakan cek F9!", 4)
-	warn("=====================================================")
-	warn("🔥 [MOFENKHUB] IN-GAME DATA SPY & SCANNER STARTED 🔥")
-	warn("=====================================================")
-	local count = 0
-	for _, v in ipairs(game:GetDescendants()) do
-		if v:IsA("RemoteEvent") or v:IsA("RemoteFunction") or v:IsA("BindableEvent") or v:IsA("BindableFunction") then
-			print("[SPY PATH] ->", v:GetFullName(), "| Type:", v.ClassName)
-			count = count + 1
+	local success, err = pcall(function()
+		warn("=====================================================")
+		warn("🔥 [MOFENKHUB] DEEP REMOTE & FUNCTION SCANNER STARTED 🔥")
+		warn("=====================================================")
+		local countR, countF, countB = 0, 0, 0
+		for _, v in ipairs(game:GetDescendants()) do
+			if v:IsA("RemoteEvent") then countR = countR + 1; print("📡 [RemoteEvent] Path:", v:GetFullName())
+			elseif v:IsA("RemoteFunction") then countF = countF + 1; print("⚡ [RemoteFunc] Path:", v:GetFullName())
+			elseif v:IsA("BindableEvent") or v:IsA("BindableFunction") then countB = countB + 1; print("🔗 [Bindable] Path:", v:GetFullName())
+			end
 		end
+		print("\n[MOFENKHUB SCANNER RESULT] ->")
+		print(string.format("✅ Ditemukan: %d RemoteEvents | %d RemoteFunctions | %d Bindables", countR, countF, countB))
+		if G.DC then print("✅ [CORE DATA] G.DC (Data Controller) berhasil di-hook. Money:", money()) end
+		warn("=====================================================")
+		warn("✅ [MOFENKHUB] SPY SCANNER SELESAI ✅")
+		warn("=====================================================")
+	end)
+	
+	if success then
+		SendNotification("Scanner Berhasil", "Seluruh data Remotes, Function, dan Path berhasil diekstrak. Silakan cek F9 (Console)!", 5, false)
+	else
+		SendNotification("Scanner Error", "Gagal memindai data: " .. tostring(err), 5, true)
 	end
-	print("\n[MOFENKHUB SPY] -> Total Paths Scanned:", count)
-	if G.DC then print("\n[SPY DATA] -> Core Data Controller Ditemukan. Money: ", money()) end
-	warn("=====================================================")
-	warn("✅ [MOFENKHUB] SPY SCANNER SELESAI ✅")
-	warn("=====================================================")
 end)
 
 task.spawn(function()
@@ -528,7 +512,7 @@ local BtnTheme = Instance.new("TextButton"); BtnTheme.Parent = G_Set1; BtnTheme.
 BtnTheme.MouseButton1Click:Connect(function() 
 	F.themeIndex = F.themeIndex >= #THEMES and 1 or F.themeIndex + 1 
 	ApplyTheme(F.themeIndex) 
-	SendNotification("Tema Berubah", "Tema saat ini: " .. THEMES[F.themeIndex].Name, 2)
+	SendNotification("Tema Berubah", "Tema saat ini: " .. THEMES[F.themeIndex].Name, 2, false)
 end)
 
 local G_SetConfig = AddGroup(T_Set, "CONFIG & FILE MANAGER")
@@ -536,16 +520,19 @@ AddToggle(G_SetConfig, "Auto Load Config Saat Nyala", "autoLoadEnabled")
 AddInput(G_SetConfig, "Nama File Config:", "cfgName", false)
 
 local BtnSave = Instance.new("TextButton"); BtnSave.Parent = G_SetConfig; BtnSave.Size = UDim2.new(1, 0, 0, 38); BtnSave.Text = "💾 SAVE CONFIG SEKARANG"; BtnSave.Font = Enum.Font.GothamBold; BtnSave.TextSize = 13; table.insert(ThemeElements.Header, BtnSave); table.insert(ThemeElements.TextAcc, BtnSave); local BTS = Instance.new("UICorner"); BTS.CornerRadius = UDim.new(0,8); BTS.Parent = BtnSave
-BtnSave.MouseButton1Click:Connect(function() pcall(function() saveConfig(F.cfgName) end); SendNotification("Config Tersimpan", "Config " .. tostring(F.cfgName) .. " berhasil di-save.", 3) end)
+BtnSave.MouseButton1Click:Connect(function() 
+	local success, err = pcall(function() saveConfig(F.cfgName) end) 
+	if success then SendNotification("Config Tersimpan", "Config " .. tostring(F.cfgName) .. " berhasil di-save.", 3, false) else SendNotification("Gagal Save", tostring(err), 4, true) end
+end)
 
 local BtnLoad = Instance.new("TextButton"); BtnLoad.Parent = G_SetConfig; BtnLoad.Size = UDim2.new(1, 0, 0, 38); BtnLoad.Text = "📂 LOAD CONFIG PILIHAN"; BtnLoad.Font = Enum.Font.GothamBold; BtnLoad.TextSize = 13; table.insert(ThemeElements.Header, BtnLoad); table.insert(ThemeElements.TextAcc, BtnLoad); local BTL = Instance.new("UICorner"); BTL.CornerRadius = UDim.new(0,8); BTL.Parent = BtnLoad
-BtnLoad.MouseButton1Click:Connect(function() pcall(function() loadConfig(F.cfgName) end); SendNotification("Config Dimuat", "Config " .. tostring(F.cfgName) .. " di-load.", 3) end)
+BtnLoad.MouseButton1Click:Connect(function() 
+	local success, err = pcall(function() loadConfig(F.cfgName) end) 
+	if success then SendNotification("Config Dimuat", "Config " .. tostring(F.cfgName) .. " di-load.", 3, false) else SendNotification("Gagal Load", tostring(err), 4, true) end
+end)
 
 local ListTitle = Instance.new("TextLabel"); ListTitle.Parent = G_SetConfig; ListTitle.Size = UDim2.new(1, 0, 0, 24); ListTitle.Text = "📁 PILIH CONFIG TERSEDIA:"; ListTitle.TextSize = 13; ListTitle.Font = Enum.Font.GothamBold; ListTitle.BackgroundTransparency = 1; table.insert(ThemeElements.TextAcc, ListTitle)
-
-local ConfigScroll = Instance.new("ScrollingFrame"); ConfigScroll.Parent = G_SetConfig; ConfigScroll.Size = UDim2.new(1, 0, 0, 110); ConfigScroll.BackgroundTransparency = 0.5; table.insert(ThemeElements.Header, ConfigScroll); ConfigScroll.ScrollBarThickness = 2; ConfigScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y; ConfigScroll.CanvasSize = UDim2.new(0,0,0,0)
-local CSC = Instance.new("UICorner"); CSC.CornerRadius = UDim.new(0, 8); CSC.Parent = ConfigScroll
-local ConfigLayout = Instance.new("UIListLayout"); ConfigLayout.Parent = ConfigScroll; ConfigLayout.Padding = UDim.new(0, 5)
+local ConfigScroll = Instance.new("ScrollingFrame"); ConfigScroll.Parent = G_SetConfig; ConfigScroll.Size = UDim2.new(1, 0, 0, 110); ConfigScroll.BackgroundTransparency = 0.5; table.insert(ThemeElements.Header, ConfigScroll); ConfigScroll.ScrollBarThickness = 2; ConfigScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y; ConfigScroll.CanvasSize = UDim2.new(0,0,0,0); local CSC = Instance.new("UICorner"); CSC.CornerRadius = UDim.new(0, 8); CSC.Parent = ConfigScroll; local ConfigLayout = Instance.new("UIListLayout"); ConfigLayout.Parent = ConfigScroll; ConfigLayout.Padding = UDim.new(0, 5)
 
 local function RefreshConfigList()
 	for _, v in pairs(ConfigScroll:GetChildren()) do if v:IsA("TextButton") then v:Destroy() end end
@@ -553,9 +540,8 @@ local function RefreshConfigList()
 		pcall(function()
 			for _, file in ipairs(listfiles(CFG_FOLDER)) do
 				local fileName = file:match("([^/]+)$"):gsub("%.json$", "")
-				local FileBtn = Instance.new("TextButton"); FileBtn.Parent = ConfigScroll; FileBtn.Size = UDim2.new(1, 0, 0, 32); FileBtn.Text = "📄 " .. fileName; FileBtn.TextSize = 12; FileBtn.Font = Enum.Font.GothamMedium; FileBtn.TextColor3 = Color3.fromRGB(255,255,255); FileBtn.BackgroundTransparency = 0.2; table.insert(ThemeElements.Card, FileBtn)
-				local FBC = Instance.new("UICorner"); FBC.CornerRadius = UDim.new(0, 6); FBC.Parent = FileBtn
-				FileBtn.MouseButton1Click:Connect(function() pcall(function() F.cfgName = fileName; loadConfig(fileName); SendNotification("Config Dipilih", fileName, 2) end) end)
+				local FileBtn = Instance.new("TextButton"); FileBtn.Parent = ConfigScroll; FileBtn.Size = UDim2.new(1, 0, 0, 32); FileBtn.Text = "📄 " .. fileName; FileBtn.TextSize = 12; FileBtn.Font = Enum.Font.GothamMedium; FileBtn.TextColor3 = Color3.fromRGB(255,255,255); FileBtn.BackgroundTransparency = 0.2; table.insert(ThemeElements.Card, FileBtn); local FBC = Instance.new("UICorner"); FBC.CornerRadius = UDim.new(0, 6); FBC.Parent = FileBtn
+				FileBtn.MouseButton1Click:Connect(function() pcall(function() F.cfgName = fileName; loadConfig(fileName); SendNotification("Config Dipilih", fileName, 2, false) end) end)
 			end
 		end)
 	end
@@ -569,7 +555,7 @@ local G_Web = AddGroup(T_Set, "DISCORD WEBHOOK")
 AddToggle(G_Web, "Aktifkan Webhook Discord", "webhookEnabled")
 AddInput(G_Web, "Webhook URL (Tempel di sini):", "webhookUrl", false)
 local BtnTestWeb = Instance.new("TextButton"); BtnTestWeb.Parent = G_Web; BtnTestWeb.Size = UDim2.new(1, 0, 0, 38); BtnTestWeb.Text = "🔔 TEST KIRIM WEBHOOK"; BtnTestWeb.Font = Enum.Font.GothamBold; BtnTestWeb.TextSize = 13; table.insert(ThemeElements.Card, BtnTestWeb); table.insert(ThemeElements.TextAcc, BtnTestWeb); local BTWC = Instance.new("UICorner"); BTWC.CornerRadius = UDim.new(0,8); BTWC.Parent = BtnTestWeb
-BtnTestWeb.MouseButton1Click:Connect(function() SendWebhook("✅ Webhook Connected!", "MofenkHub V90.0 berhasil tersambung.", 3447003); SendNotification("Webhook", "Pesan Test Terkirim ke Discord!", 3) end)
+BtnTestWeb.MouseButton1Click:Connect(function() SendWebhook("✅ Webhook Connected!", "MofenkHub V90.5 berhasil tersambung.", 3447003); SendNotification("Webhook", "Pesan Test Terkirim ke Discord!", 3, false) end)
 
 local G_Set2 = AddGroup(T_Set, "OPTIMALISASI & TOOLS")
 AddToggle(G_Set2, "Anti-AFK (Cegah Disconnect)", "afk")
@@ -578,9 +564,8 @@ AddToggle(G_Set2, "Auto Claim Quests & Daily", "claimQuests")
 AddToggle(G_Set2, "Auto Redeem Codes", "codesAuto")
 
 local BtnHop = Instance.new("TextButton"); BtnHop.Parent = G_Set2; BtnHop.Size = UDim2.new(1, 0, 0, 42); BtnHop.Text = "🌐 SERVER HOP (PINDAH SERVER)"; BtnHop.Font = Enum.Font.GothamBlack; BtnHop.TextSize = 13; table.insert(ThemeElements.Card, BtnHop); table.insert(ThemeElements.TextAcc, BtnHop); local BTH = Instance.new("UICorner"); BTH.CornerRadius = UDim.new(0,8); BTH.Parent = BtnHop
-
 BtnHop.MouseButton1Click:Connect(function()
-	SendNotification("Server Hop", "Mencari server baru...", 4)
+	SendNotification("Server Hop", "Mencari server baru...", 4, false)
 	pcall(function()
 		local cursor = ""; local servers = {}
 		repeat
@@ -591,110 +576,67 @@ BtnHop.MouseButton1Click:Connect(function()
 				cursor = result.nextPageCursor or ""
 			else break end
 		until #servers > 10 or cursor == ""
-
 		if #servers > 0 then TeleportService:TeleportToPlaceInstance(game.PlaceId, servers[math.random(1, #servers)], LocalPlayer) else TeleportService:Teleport(game.PlaceId, LocalPlayer) end
 	end)
 end)
 
-ApplyTheme(F.themeIndex) -- Jalankan tema
+ApplyTheme(F.themeIndex)
 
 -- ===================================================================== --
--- 7. FULL BACKEND THREADS (UPGRADED ANTI-RELOG STABIL & AMAN)
+-- 7. FULL BACKEND THREADS (UPGRADED ANTI-RELOG)
 -- ===================================================================== --
-
--- [UPGRADED] ROBUST ANTI-AFK & AUTO-RECONNECT SYSTEM
 local vu = game:GetService("VirtualUser")
 
--- 1. Deteksi Error via PromptOverlay 
 pcall(function()
 	local PromptOverlay = CoreGui:FindFirstChild("PromptOverlay", true) or LocalPlayer.PlayerGui:FindFirstChild("PromptOverlay", true)
 	if PromptOverlay then
 		PromptOverlay.ChildAdded:Connect(function(child)
 			if F.afk and (child.Name == "ErrorPrompt" or child.Name == "DisconnectPrompt") then
-				SendNotification("Terputus!", "Mencoba Reconnect otomatis...", 5)
+				SendNotification("Terputus!", "Mencoba Reconnect otomatis...", 5, true)
 				local qot = queue_on_teleport or queueonteleport or (syn and syn.queue_on_teleport) or fluxus and fluxus.queue_on_teleport
-				if qot then qot([[task.wait(3) loadstring(game:HttpGet("https://raw.githubusercontent.com/Mofenk/mofenkhub/refs/heads/main/animedice.lua"))()]]) end
+				if qot then qot([[task.wait(3) loadstring(game:HttpGet("https://raw.githubusercontent.com/Mofenk/mofenkhub/refs/heads/Mofenk-Update-Patch-1/animedice.lua"))()]]) end
 				task.wait(2); pcall(function() TeleportService:Teleport(game.PlaceId, LocalPlayer) end)
 			end
 		end)
 	end
 end)
 
--- 2. Deteksi Error via GuiService (Extra Pengaman jika Prompt telat render)
 GuiService.ErrorMessageChanged:Connect(function(errCode, errType)
 	if F.afk and errType == Enum.ConnectionError.DisconnectErrors then
-		SendNotification("Disconnected", "Koneksi terputus! Merestart server.", 5)
+		SendNotification("Disconnected", "Koneksi terputus! Merestart server.", 5, true)
 		local qot = queue_on_teleport or queueonteleport or (syn and syn.queue_on_teleport) or fluxus and fluxus.queue_on_teleport
-		if qot then qot([[task.wait(3) loadstring(game:HttpGet("https://raw.githubusercontent.com/Mofenk/mofenkhub/refs/heads/main/animedice.lua"))()]]) end
+		if qot then qot([[task.wait(3) loadstring(game:HttpGet("https://raw.githubusercontent.com/Mofenk/mofenkhub/refs/heads/Mofenk-Update-Patch-1/animedice.lua"))()]]) end
 		task.wait(1.5); pcall(function() TeleportService:Teleport(game.PlaceId, LocalPlayer) end)
 	end
 end)
 
--- 3. Soft Anti-AFK Idle Override
-LocalPlayer.Idled:Connect(function()
-	if F.afk then
-		pcall(function()
-			vu:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
-			task.wait(1)
-			vu:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
-		end)
-	end
-end)
+LocalPlayer.Idled:Connect(function() if F.afk then pcall(function() vu:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame); task.wait(1); vu:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame) end) end end)
 
--- 4. Deep Movement/Action Anti-AFK
 task.spawn(function()
 	while task.wait(60) do
-		if F.afk then
-			pcall(function()
-				vu:CaptureController()
-				vu:ClickButton2(Vector2.new(0,0))
-				-- Tambahan gerak halus karakter agar tidak dianggap macro freeze
-				local char = LocalPlayer.Character
-				if char and char:FindFirstChild("HumanoidRootPart") then
-					char.HumanoidRootPart.CFrame = char.HumanoidRootPart.CFrame * CFrame.Angles(0, math.rad(1), 0)
-					task.wait(0.2)
-					char.HumanoidRootPart.CFrame = char.HumanoidRootPart.CFrame * CFrame.Angles(0, math.rad(-1), 0)
-				end
-			end)
-		end
+		if F.afk then pcall(function() vu:CaptureController(); vu:ClickButton2(Vector2.new(0,0)); local char = LocalPlayer.Character; if char and char:FindFirstChild("HumanoidRootPart") then char.HumanoidRootPart.CFrame = char.HumanoidRootPart.CFrame * CFrame.Angles(0, math.rad(1), 0); task.wait(0.2); char.HumanoidRootPart.CFrame = char.HumanoidRootPart.CFrame * CFrame.Angles(0, math.rad(-1), 0) end end) end
 	end
 end)
 
 local function unlockedSlots() local arr={}; local rb = rebirthAmt(); pcall(function() for i=1, (G.PlotConfig.GetMaxSlots(rb) or 15) do if rb >= (G.PlotConfig.GetSlotRebirthRequirement(i) or 0) then table.insert(arr, i) end end end); return arr end
 
--- Auto Roll Thread
 task.spawn(function()
 	while _G.__ANIMEDICE == generation do
-		if F.autoRoll then
-			pcall(function()
-				if R.RollDice then
-					local ok = pcall(function() return R.RollDice:InvokeServer() end)
-					if ok then STATE.rolled = (STATE.rolled or 0) + 1 end
-				end
-			end)
-			task.wait(2.1)
-		else task.wait(1) end
+		if F.autoRoll then pcall(function() if R.RollDice then local ok = pcall(function() return R.RollDice:InvokeServer() end); if ok then STATE.rolled = (STATE.rolled or 0) + 1 end end end); task.wait(2.1) else task.wait(1) end
 	end
 end)
 
--- Auto Buy & Equip Best Dice Thread
 task.spawn(function()
 	while _G.__ANIMEDICE == generation do
 		if (F.buyDice or F.equipDice) and R.EquipDice then
 			pcall(function()
-				local d = data()
-				local ownedDice = d.OwnedDice or d.Dice or (G.DC.OwnedDice and G.DC.OwnedDice()) or {}
-				local currentEquipped = d.EquippedDice or (G.DC.EquippedDice and G.DC.EquippedDice())
+				local d = data(); local ownedDice = d.OwnedDice or d.Dice or (G.DC.OwnedDice and G.DC.OwnedDice()) or {}; local currentEquipped = d.EquippedDice or (G.DC.EquippedDice and G.DC.EquippedDice())
 				local bestDiceName, bestDiceValue = nil, -1
-
 				if G.DiceModule then
 					for diceId, diceData in pairs(G.DiceModule) do
 						if type(diceData) == "table" then
 							local diceValue = diceData.order or diceData.Luck or diceData.Price or diceData.price or 0
-							if F.buyDice and not ownedDice[diceId] and R.BuyDice then
-								local price = diceData.Price or diceData.price or 0
-								if money() >= price then R.BuyDice:FireServer(diceId); ownedDice[diceId] = true; task.wait(0.2) end
-							end
+							if F.buyDice and not ownedDice[diceId] and R.BuyDice then local price = diceData.Price or diceData.price or 0; if money() >= price then R.BuyDice:FireServer(diceId); ownedDice[diceId] = true; task.wait(0.2) end end
 							if ownedDice[diceId] and diceValue > bestDiceValue then bestDiceValue = diceValue; bestDiceName = diceId end
 						end
 					end
@@ -706,38 +648,21 @@ task.spawn(function()
 	end
 end)
 
--- Auto Sell Thread
 task.spawn(function()
 	while _G.__ANIMEDICE == generation do
 		if F.sellAuto and R.SellInventory then
 			pcall(function()
-				local d = data()
-				local cap = 100
-				pcall(function() local buff = tonumber(select(2, pcall(G.BuffController.GetBuff, "Unit Storage"))); if buff and buff > 0 then cap = buff end end)
-
-				local placed = {}
-				for _, slot in pairs(d.Slots or {}) do if slot.unitId then placed[slot.unitId] = true end end
-				for _, id in pairs(d.TowerTeam or {}) do placed[id] = true end
-
+				local d = data(); local cap = 100; pcall(function() local buff = tonumber(select(2, pcall(G.BuffController.GetBuff, "Unit Storage"))); if buff and buff > 0 then cap = buff end end)
+				local placed = {}; for _, slot in pairs(d.Slots or {}) do if slot.unitId then placed[slot.unitId] = true end end; for _, id in pairs(d.TowerTeam or {}) do placed[id] = true end
 				local units, owned = {}, 0
 				for id, u in pairs(d.Inventory or {}) do
 					local e = G.UnitConfig and G.UnitConfig.entries[u.name] or (G.EntryRegistry and pcall(function() return G.EntryRegistry.getEntryConfig(u.name) end))
 					if e then owned = owned + 1 end
-					local isProt = false
-					if u.attributes and u.attributes.locked then isProt = true end
-					if type(e) == "table" and e.limited then isProt = true end
+					local isProt = false; if u.attributes and u.attributes.locked then isProt = true end; if type(e) == "table" and e.limited then isProt = true end
 					if not placed[id] and not isProt then table.insert(units, { id = id }) end
 				end
-				
-				local pressured = owned >= cap - 3
-				local sellable = math.max(0, #units - (F.keepBest or 20))
-				local list = {}
-				for i, unit in ipairs(units) do
-					if pressured or i <= sellable then
-						list[#list + 1] = unit.id
-						if #list >= 300 then break end
-					end
-				end
+				local pressured = owned >= cap - 3; local sellable = math.max(0, #units - (F.keepBest or 20)); local list = {}
+				for i, unit in ipairs(units) do if pressured or i <= sellable then list[#list + 1] = unit.id; if #list >= 300 then break end end end
 				if #list > 0 then pcall(function() R.SellInventory:InvokeServer(list) end) end
 			end)
 		end
@@ -795,7 +720,6 @@ task.spawn(function()
 	end
 end)
 
--- Tower & Webhook Milestone
 local towerList = {"Dragon Tower", "Cursed Tower", "Pirate Tower", "Infinity Tower"}
 task.spawn(function()
 	while _G.__ANIMEDICE == generation do
@@ -828,16 +752,10 @@ task.spawn(function()
 	end
 end)
 
--- Webhook Auto-Status (Setiap 30 Menit)
 task.spawn(function()
 	while _G.__ANIMEDICE == generation do
-		task.wait(1800) -- 30 menit
-		if F.webhookEnabled then
-			pcall(function()
-				local desc = string.format("💰 **Uang:** %s\n🔄 **Rebirth:** %s\n💎 **Gems:** %s\n🏰 **Tower:** %s (Lt. %d)", tostring(money()), tostring(rebirthAmt()), tostring(currencyAmount("Gems")), STATE.towerLive, STATE.towerFloor)
-				SendWebhook("📊 Auto-Status Update (30 Min)", desc, 5763719)
-			end)
-		end
+		task.wait(1800)
+		if F.webhookEnabled then pcall(function() local desc = string.format("💰 **Uang:** %s\n🔄 **Rebirth:** %s\n💎 **Gems:** %s\n🏰 **Tower:** %s (Lt. %d)", tostring(money()), tostring(rebirthAmt()), tostring(currencyAmount("Gems")), STATE.towerLive, STATE.towerFloor); SendWebhook("📊 Auto-Status Update (30 Min)", desc, 5763719) end) end
 	end
 end)
 
