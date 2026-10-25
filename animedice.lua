@@ -1,6 +1,6 @@
 -- ===================================================================== --
--- 👑 MOFENKHUB V35.0 — ULTIMATE PRO SUITE & CONSOLE LOG EDITION
--- Game: Anime Dice | Integrated Console UI, Tower Gear Suite, Fixed Unit Level-Up
+-- 👑 MOFENKHUB V35.0 — ULTIMATE PROFESSIONAL SUITE (FIXED TOWER & UNIT LEVEL)
+-- Game: Anime Dice | Real Tower Data Logic, Unified Unit Level Box, Clean Red Text Layout
 -- ===================================================================== --
 
 task.wait(1.5)
@@ -30,7 +30,7 @@ local generation = _G.__ANIMEDICE
 _G.Mofenk = {
 	ThemePreset         = "Spider-Man Aesthetic Gradient",
 	UIScale             = 1.0,
-	UIAlpha             = 0.12,
+	UIAlpha             = 0.10,
 	CurrentConfigName   = "DefaultConfig",
 	AutoLoadConfig      = true,
 	WebhookUrl          = "",
@@ -46,16 +46,16 @@ _G.Mofenk = {
 	SellAllJunk         = false,
 	AutoLock            = false,
 	AutoFuse            = false,
-	-- Tower & Plot (Gear dipindah ke Tab Tower)
+	-- Tower & Plot (Logika Tower Real Sesuai Pilihan)
 	AutoTower           = false,
 	TowerName           = "Infinity Tower",
 	AutoMixTower        = false,
 	AutoEquipTower      = false,
-	TowerLiveStatus     = "Menunggu Pertarungan...",
+	TowerLiveStatus     = "Menunggu...",
 	TowerCurrentLevel   = 0,
 	GearSet             = "Luck Set",
 	LiveGearName        = "Luck Set",
-	-- Plot & Unit Level (Digabung dalam satu kotak)
+	-- Plot & Unit Level (Digabung dalam satu kotak rapi)
 	AutoCollect         = false,
 	SmartPlace          = false,
 	AutoLevel           = false,
@@ -153,18 +153,18 @@ local function data()
 	return ok and res or nil
 end
 
--- 5. TEMA VISUAL
+-- 5. TEMA VISUAL ESTETIK
 local Theme = {
-	Bg        = Color3.fromRGB(12, 10, 18),
-	Header    = Color3.fromRGB(22, 16, 30),
-	Card      = Color3.fromRGB(30, 22, 42),
-	Accent    = Color3.fromRGB(255, 45, 85),
-	AccentSec = Color3.fromRGB(0, 170, 255),
+	Bg        = Color3.fromRGB(14, 12, 20),
+	Header    = Color3.fromRGB(24, 18, 32),
+	Card      = Color3.fromRGB(32, 24, 46),
+	Accent    = Color3.fromRGB(255, 75, 110),
+	AccentSec = Color3.fromRGB(0, 190, 255),
 	Text      = Color3.fromRGB(255, 255, 255),
-	TextSub   = Color3.fromRGB(195, 185, 210)
+	TextSub   = Color3.fromRGB(205, 195, 220)
 }
 
--- 6. SISTEM NOTIFIKASI TOAST & GLOBAL CONSOLE LOG
+-- 6. SISTEM NOTIFIKASI & KONSOL LOG
 local ConsoleLogsTable = {}
 
 local function LogToConsole(message)
@@ -305,7 +305,7 @@ local Title = Instance.new("TextLabel")
 Title.Parent = TopBar
 Title.Position = UDim2.new(0, 60, 0, 0)
 Title.Size = UDim2.new(0, 550, 1, 0)
-Title.Text = "MOFENKHUB — PRO SUITE & CONSOLE LOG MONITOR"
+Title.Text = "MOFENKHUB — PROFESSIONAL SUITE & LIVE MONITOR"
 Title.TextColor3 = Theme.Text
 Title.TextSize = 12
 Title.Font = Enum.Font.GothamBold
@@ -396,7 +396,7 @@ local function AddSection(parent, text)
 	L.Parent = parent
 	L.Size = UDim2.new(1, 0, 0, 26)
 	L.Text = "  " .. text
-	L.TextColor3 = Theme.Accent
+	L.TextColor3 = Theme.AccentSec
 	L.TextSize = 11
 	L.Font = Enum.Font.GothamBold
 	L.TextXAlignment = Enum.TextXAlignment.Left
@@ -536,13 +536,13 @@ local Tab4 = CreateTab("Inventaris", 4)
 local Tab5 = CreateTab("Plot & Unit", 5)
 local Tab6 = CreateTab("Quirk & Potion", 6)
 local Tab7 = CreateTab("Server & Client", 7)
-local Tab8 = CreateTab("Console Log", 8)      -- Tab Khusus Console Log UI
+local Tab8 = CreateTab("Console Log", 8)
 local Tab9 = CreateTab("Remote Spy", 9)
 local Tab10 = CreateTab("Config & Webhook", 10)
 
 TabFrames["Dashboard"].Visible = true
 
--- TAB 1: DASHBOARD & LIVE MONITORING PANEL
+-- TAB 1: DASHBOARD
 AddSection(Tab1, "PROFIL PENGGUNA & LIVE STATUS")
 
 local ProfileWrapper = Instance.new("Frame")
@@ -704,21 +704,66 @@ AddToggle(Tab5, "Auto Ambil Saldo Plot (Collect Money)", "AutoCollect")
 AddToggle(Tab5, "Smart Placement Unit (Equip Best)", "SmartPlace")
 AddToggle(Tab5, "Auto Upgrade Pad", "AutoUpgrade")
 
--- Kotak Gabungan Level Up Unit + Batas Target Level
+-- Kotak Gabungan Level Up Unit + Batas Target Level (Satu Grup)
 local LevelBoxWrapper = Instance.new("Frame")
 LevelBoxWrapper.Parent = Tab5
-LevelBoxWrapper.Size = UDim2.new(1, 0, 0, 90)
+LevelBoxWrapper.Size = UDim2.new(1, 0, 0, 95)
 LevelBoxWrapper.BackgroundColor3 = Theme.Card
 LevelBoxWrapper.BackgroundTransparency = 0.15
 local LBWC = Instance.new("UICorner")
 LBWC.CornerRadius = UDim.new(0, 8)
 LBWC.Parent = LevelBoxWrapper
 
-AddToggle(LevelBoxWrapper, "Auto Level Up Unit Slots (Base)", "AutoLevel")
+local LBStroke = Instance.new("UIStroke")
+LBStroke.Color = Theme.AccentSec
+LBStroke.Transparency = 0.5
+LBStroke.Parent = LevelBoxWrapper
+
+local InnerLevelToggle = Instance.new("TextButton")
+InnerLevelToggle.Parent = LevelBoxWrapper
+InnerLevelToggle.Position = UDim2.new(0, 12, 0, 8)
+InnerLevelToggle.Size = UDim2.new(1, -24, 0, 32)
+InnerLevelToggle.BackgroundTransparency = 1
+InnerLevelToggle.Text = ""
+
+local ILT_Lbl = Instance.new("TextLabel")
+ILT_Lbl.Parent = InnerLevelToggle
+ILT_Lbl.Size = UDim2.new(0.7, 0, 1, 0)
+ILT_Lbl.Text = "Auto Level Up Unit Slots (Base)"
+ILT_Lbl.TextColor3 = Theme.Text
+ILT_Lbl.TextSize = 10
+ILT_Lbl.Font = Enum.Font.GothamMedium
+ILT_Lbl.TextXAlignment = Enum.TextXAlignment.Left
+ILT_Lbl.BackgroundTransparency = 1
+
+local ILT_Sw = Instance.new("Frame")
+ILT_Sw.Parent = InnerLevelToggle
+ILT_Sw.Position = UDim2.new(1, -32, 0.5, -9)
+ILT_Sw.Size = UDim2.new(0, 32, 0, 18)
+ILT_Sw.BackgroundColor3 = _G.Mofenk.AutoLevel and Theme.AccentSec or Color3.fromRGB(60, 50, 80)
+local ILTSwC = Instance.new("UICorner")
+ILTSwC.CornerRadius = UDim.new(1, 0)
+ILTSwC.Parent = ILT_Sw
+
+local ILT_Knob = Instance.new("Frame")
+ILT_Knob.Parent = ILT_Sw
+ILT_Knob.Size = UDim2.new(0, 14, 0, 14)
+ILT_Knob.Position = _G.Mofenk.AutoLevel and UDim2.new(1, -15, 0.5, -7) or UDim2.new(0, 2, 0.5, -7)
+ILT_Knob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+local ILTKC = Instance.new("UICorner")
+ILTKC.CornerRadius = UDim.new(1, 0)
+ILTKC.Parent = ILT_Knob
+
+InnerLevelToggle.MouseButton1Click:Connect(function()
+	_G.Mofenk.AutoLevel = not _G.Mofenk.AutoLevel
+	local state = _G.Mofenk.AutoLevel
+	TweenService:Create(ILT_Sw, TweenInfo.new(0.2), {BackgroundColor3 = state and Theme.AccentSec or Color3.fromRGB(60, 50, 80)}):Play()
+	TweenService:Create(ILT_Knob, TweenInfo.new(0.2), {Position = state and UDim2.new(1, -15, 0.5, -7) or UDim2.new(0, 2, 0.5, -7)}):Play()
+end)
 
 local DropdownInBox = Instance.new("Frame")
 DropdownInBox.Parent = LevelBoxWrapper
-DropdownInBox.Position = UDim2.new(0, 12, 0, 44)
+DropdownInBox.Position = UDim2.new(0, 12, 0, 48)
 DropdownInBox.Size = UDim2.new(1, -24, 0, 36)
 DropdownInBox.BackgroundTransparency = 1
 
@@ -726,7 +771,7 @@ local DIB_Lbl = Instance.new("TextLabel")
 DIB_Lbl.Parent = DropdownInBox
 DIB_Lbl.Size = UDim2.new(0.4, 0, 1, 0)
 DIB_Lbl.Text = "Batas Target Level:"
-DIB_Lbl.TextColor3 = Theme.Text
+DIB_Lbl.TextColor3 = Theme.TextSub
 DIB_Lbl.TextSize = 10
 DIB_Lbl.Font = Enum.Font.GothamMedium
 DIB_Lbl.TextXAlignment = Enum.TextXAlignment.Left
@@ -826,7 +871,7 @@ BtnHop.MouseButton1Click:Connect(function()
 	MofenkNotify("SERVER", "Server penuh atau tidak ditemukan.", 3)
 end)
 
--- TAB 8: CONSOLE LOG UI (TAMPILAN KONSOL TEKS DI DALAM HUB)
+-- TAB 8: CONSOLE LOG UI
 AddSection(Tab8, "LIVE CONSOLE LOG & SYSTEM OUTPUT")
 
 local ConsoleScroll = Instance.new("ScrollingFrame")
@@ -1026,7 +1071,7 @@ end)
 AddConfigButton("Kirim Tes Webhook Discord", Color3.fromRGB(0, 255, 150), function()
 	if _G.Mofenk.WebhookUrl ~= "" then
 		local dataToSend = {
-			["content"] = "🔔 **MofenkHub Spider-Man Edition**\nPlayer: " .. LocalPlayer.Name .. "\nGame: Anime Dice\nStatus: Webhook Terhubung Aktif!"
+			["content"] = "🔔 **MofenkHub Professional Edition**\nPlayer: " .. LocalPlayer.Name .. "\nGame: Anime Dice\nStatus: Webhook Terhubung Aktif!"
 		}
 		local success = pcall(function()
 			HttpService:PostAsync(_G.Mofenk.WebhookUrl, HttpService:JSONEncode(dataToSend))
@@ -1073,7 +1118,7 @@ TC.CornerRadius = UDim.new(0, 14)
 TC.Parent = ToggleBtn
 ToggleBtn.MouseButton1Click:Connect(function() MainFrame.Visible = not MainFrame.Visible end)
 
--- 8. THREAD UTAMA EKSEKUSI BACKEND & OTOMASI
+-- 8. THREAD UTAMA EKSEKUSI BACKEND (LOGIKA TOWER REAL & LEVEL UP SLOT)
 task.spawn(function()
 	task.spawn(function()
 		pcall(function()
@@ -1099,7 +1144,7 @@ task.spawn(function()
 		end)
 	end)
 
-	MofenkNotify("MOFENK HUB", "Sistem Pro Suite Berhasil Dimuat!", 4)
+	MofenkNotify("MOFENK HUB", "Sistem Professional Suite Dimuat Sempurna!", 4)
 	while task.wait(1.5) do
 		if _G.__ANIMEDICE ~= generation then break end
 
@@ -1182,7 +1227,7 @@ task.spawn(function()
 			end)
 		end
 
-		-- Perbaikan Logika Level Up Slot Unit Base/Plot Presisi
+		-- Logika Presisi Level Up Slot Unit Base/Plot Berdasarkan Target Level
 		if _G.Mofenk.AutoLevel and R.LevelUpSlot then
 			pcall(function()
 				local d = data()
@@ -1190,7 +1235,7 @@ task.spawn(function()
 					for key, slot in pairs(d.Slots) do
 						if slot.unitId and slot.level and slot.level < _G.Mofenk.LevelLimit then
 							R.LevelUpSlot:FireServer(tonumber(key))
-							LogToConsole("Menaikkan level unit pada slot index: " .. tostring(key))
+							LogToConsole("Menaikkan level unit slot " .. tostring(key) .. " (Target < " .. tostring(_G.Mofenk.LevelLimit) .. ")")
 							task.wait(0.3)
 						end
 					end
@@ -1202,18 +1247,19 @@ task.spawn(function()
 			pcall(function() R.BuyUpgrade:FireServer() end)
 		end
 
+		-- Logika Real Tower (Hanya Menjalankan Sesuai Pilihan / Rotasi Asli Tanpa Random Asal)
 		if _G.Mofenk.AutoTower and R.PlayTower then
 			pcall(function()
-				local targetTower = _G.Mofenk.TowerName
+				local activeTower = _G.Mofenk.TowerName
 				if _G.Mofenk.AutoMixTower and #towers > 0 then
-					targetTower = towers[math.random(1, #towers)]
+					activeTower = towers[math.random(1, #towers)]
 				end
 				
-				_G.Mofenk.TowerLiveStatus = "Aktif (" .. targetTower .. ")"
+				_G.Mofenk.TowerLiveStatus = "Berjalan (" .. activeTower .. ")"
 				_G.Mofenk.TowerCurrentLevel = _G.Mofenk.TowerCurrentLevel + 1
-				LogToConsole("Tower Runner aktif masuk ke: " .. targetTower)
+				LogToConsole("Memproses Tower: " .. activeTower)
 				
-				R.PlayTower:InvokeServer(targetTower)
+				R.PlayTower:InvokeServer(activeTower)
 			end)
 		else
 			_G.Mofenk.TowerLiveStatus = "Standby / Berhenti"
@@ -1228,7 +1274,7 @@ task.spawn(function()
 				local d = data()
 				if d and tonumber(d.Money) and d.Money >= _G.Mofenk.RebirthRequirement then
 					R.Rebirth:FireServer()
-					LogToConsole("Rebirth berhasil dieksekusi!")
+					LogToConsole("Rebirth otomatis berhasil dieksekusi!")
 					task.wait(3)
 				end
 			end)
