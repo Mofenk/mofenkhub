@@ -1,5 +1,5 @@
 -- ===================================================================== --
--- 👑 MOFENKHUB V101.0 — FULL SPY ERROR NOTIFICATION & COMPLETE FUNCTIONS
+-- 👑 MOFENKHUB V103.0 — ULTRA CLEAN PROFILER SHIELD EDITION
 -- ===================================================================== --
 
 --!nocheck
@@ -61,7 +61,7 @@ local F = {
 	tower = false, towerName = "Dragon Tower", towerMix = false, towerEquipBest = true, towerExitOn = false, towerExitFloor = 50,
 	-- HALLOWEEN & SPY ERROR NOTIF FLAGS
 	halloAutoClaim = false, halloAutoUpgrade = false, halloAutoQuest = false, halloRollPumpkin = false, halloAutoTrickOrTreat = false,
-	spyErrorAlert = true, -- [NEW] Notifikasi Spy Error Aktif Otomatis
+	spyErrorAlert = false, -- Dimatikan default agar tidak mengganggu notif game jika ada warning internal
 	wsOn = false, wsValue = 16, noclip = false, afk = true, fpsOn = false,
 	codesAuto = false, claimQuests = false,
 	webhookEnabled = false, webhookUrl = "",
@@ -111,7 +111,7 @@ local function ApplyTheme(idx)
 end
 
 -- ===================================================================== --
--- SISTEM NOTIFIKASI MODERN & SPY ERROR TRACKER
+-- SISTEM NOTIFIKASI MODERN
 -- ===================================================================== --
 local NotifGui = Instance.new("ScreenGui"); NotifGui.Name = "MofenkNotifications"; NotifGui.Parent = parentGui; NotifGui.DisplayOrder = 999999
 local NotifFrame = Instance.new("Frame"); NotifFrame.Parent = NotifGui; NotifFrame.Size = UDim2.new(0, 300, 1, 0); NotifFrame.Position = UDim2.new(1, -320, 0, 0); NotifFrame.BackgroundTransparency = 1
@@ -137,61 +137,62 @@ local function SendNotification(title, text, duration, isError)
 	end)
 end
 
--- Wrapper Aman untuk Fungsi dengan Spy Notifikasi Error
 local function SafeCall(featureName, func, ...)
 	local success, err = pcall(func, ...)
-	if not success then
-		STATE.lastErrorMsg = tostring(err)
-		warn(string.format("⚠️ [MOFENK SPY ERROR] Fitur '%s' Gagal: %s", featureName, tostring(err)))
-		if F.spyErrorAlert then
-			SendNotification("SPY ERROR ALERT", "Fitur [" .. featureName .. "] Gagal/Error!", 4, true)
-		end
+	if not success and F.spyErrorAlert then
+		SendNotification("SPY ERROR ALERT", "Fitur [" .. featureName .. "] Gagal!", 3, true)
 	end
 	return success, err
 end
 
 -- ===================================================================== --
--- 2. SAFE FRAMEWORK & COMPLETE REMOTES BINDING
+-- 2. DYNAMIC & SAFE REMOTE FINDER (ANTI-NIL ERROR)
 -- ===================================================================== --
 local Network = ReplicatedStorage:WaitForChild("Network", 15)
 local Framework = ReplicatedStorage:WaitForChild("Framework", 15)
-local function svc(p) local n = Network; for x in string.gmatch(p, "[^%.]+") do n = n and n:FindFirstChild(x) end; return n end
+
+local function findRemoteDynamic(serviceName, remoteName, remoteType)
+	local srv = Network:FindFirstChild(serviceName)
+	if srv then
+		local rtFolder = srv:FindFirstChild(remoteType)
+		if rtFolder then return rtFolder:FindFirstChild(remoteName) end
+	end
+	for _, v in ipairs(Network:GetDescendants()) do
+		if v.Name == remoteName and v.ClassName == remoteType then return v end
+	end
+	return nil
+end
 
 local R = {
-	RollDice            = svc("RollService.RF.RollDice"),
-	SetAutoRoll         = svc("RollService.RE.SetAutoRoll"),
-	CollectBalance      = svc("PlotService.RE.CollectBalance"), 
-	LevelUpSlot         = svc("PlotService.RE.LevelUpSlot"),
-	BuyDice             = svc("DiceShopService.RE.BuyDice"), 
-	EquipDice           = svc("DiceShopService.RE.EquipDice"),
-	Rebirth             = svc("RebirthService.RE.Rebirth"), 
-	BuyUpgrade          = svc("RE.BuyUpgrade") or svc("PlotService.RE.BuyPadUpgrade"),
-	GradeRoll           = svc("GradeService.RE.Roll"), 
-	TraitRoll           = svc("TraitService.RE.Roll"), 
-	BoostUse            = svc("BoostService.RE.Use"),
-	PlayTower           = svc("Towers.RF.PlayTower") or svc("Towers.RE.PlayTower"), 
-	CompleteFloor       = svc("Towers.RF.CompleteTowerFloor"),
-	CancelTower         = svc("Towers.RF.CancelTower"), 
-	BestTowerTeam       = svc("Towers.RE.EquipBestTowerTeam"),
-	RedeemCode          = svc("CodesService.RE.RedeemCode") or svc("MonetizationService.RE.RedeemCode"),
-	QuestClaim          = svc("QuestService.RE.Claim"), 
-	ClaimDaily          = svc("DailyRewardService.RE.Claim"),
-	ClaimOffline        = svc("OfflineEarningsService.RE.Claim"), 
-	ClaimGroup          = svc("GroupRewardService.RE.Claim"),
-	SellInventory       = svc("SellService.RF.SellInventory"),
-	UpdateAutoSell      = svc("SellService.RE.UpdateAutoSell"),
-	Fuse                = svc("FusingService.RE.Fuse"),
+	RollDice            = findRemoteDynamic("RollService", "RollDice", "RemoteFunction"),
+	SetAutoRoll         = findRemoteDynamic("RollService", "SetAutoRoll", "RemoteEvent"),
+	CollectBalance      = findRemoteDynamic("PlotService", "CollectBalance", "RemoteEvent"), 
+	LevelUpSlot         = findRemoteDynamic("PlotService", "LevelUpSlot", "RemoteEvent"),
+	BuyDice             = findRemoteDynamic("DiceShopService", "BuyDice", "RemoteEvent"), 
+	EquipDice           = findRemoteDynamic("DiceShopService", "EquipDice", "RemoteEvent"),
+	Rebirth             = findRemoteDynamic("RebirthService", "Rebirth", "RemoteEvent"), 
+	BuyUpgrade          = findRemoteDynamic("PlotService", "BuyPadUpgrade", "RemoteEvent"),
+	GradeRoll           = findRemoteDynamic("GradeService", "Roll", "RemoteEvent"), 
+	TraitRoll           = findRemoteDynamic("TraitService", "Roll", "RemoteEvent"), 
+	BoostUse            = findRemoteDynamic("BoostService", "Use", "RemoteEvent"),
+	PlayTower           = findRemoteDynamic("Towers", "PlayTower", "RemoteFunction"), 
+	CompleteFloor       = findRemoteDynamic("Towers", "CompleteTowerFloor", "RemoteFunction"),
+	CancelTower         = findRemoteDynamic("Towers", "CancelTower", "RemoteFunction"), 
+	BestTowerTeam       = findRemoteDynamic("Towers", "EquipBestTowerTeam", "RemoteEvent"),
+	RedeemCode          = findRemoteDynamic("CodesService", "RedeemCode", "RemoteEvent"),
+	QuestClaim          = findRemoteDynamic("QuestService", "Claim", "RemoteEvent"), 
+	ClaimDaily          = findRemoteDynamic("DailyRewardService", "Claim", "RemoteEvent"),
+	SellInventory       = findRemoteDynamic("SellService", "SellInventory", "RemoteFunction"),
+	UpdateAutoSell      = findRemoteDynamic("SellService", "UpdateAutoSell", "RemoteEvent"),
+	Fuse                = findRemoteDynamic("FusingService", "Fuse", "RemoteEvent"),
 	
-	-- COMPLETE HALLOWEEN & TRICK OR TREAT REMOTES
-	HalloTeleport       = svc("HalloweenService.RF.Teleport"),
-	HalloClaimPath      = svc("HalloweenService.RE.ClaimPath"),
-	HalloClaimAll       = svc("HalloweenService.RE.ClaimAllPath"),
-	HalloBuyUpgrade     = svc("HalloweenService.RE.BuyUpgrade"),
-	HalloBuyOffer       = svc("HalloweenService.RE.BuyOffer"),
-	HalloQuestClaim     = svc("HalloweenQuestService.RE.Claim"),
-	PumpkinRoll         = svc("PumpkinDiceService.RF.Roll"),
-	PumpkinAutoSell     = svc("PumpkinDiceService.RE.SetAutoSell"),
-	TrickOrTreatClaim   = svc("HalloweenService.RE.TrickOrTreat") or svc("HalloweenService.RF.TrickOrTreat") or svc("HalloweenService.RE.ClaimTrickOrTreat")
+	-- HALLOWEEN & TRICK OR TREAT REMOTES
+	HalloTeleport       = findRemoteDynamic("HalloweenService", "Teleport", "RemoteFunction"),
+	HalloClaimPath      = findRemoteDynamic("HalloweenService", "ClaimPath", "RemoteEvent"),
+	HalloClaimAll       = findRemoteDynamic("HalloweenService", "ClaimAllPath", "RemoteEvent"),
+	HalloBuyUpgrade     = findRemoteDynamic("HalloweenService", "BuyUpgrade", "RemoteEvent"),
+	PumpkinRoll         = findRemoteDynamic("PumpkinDiceService", "Roll", "RemoteFunction"),
+	TrickOrTreatClaim   = findRemoteDynamic("HalloweenService", "TrickOrTreat", "RemoteEvent") or findRemoteDynamic("HalloweenService", "TrickOrTreat", "RemoteFunction")
 }
 
 local G = {}
@@ -200,19 +201,8 @@ task.spawn(function()
 	while maxTries > 0 do
 		local ok = pcall(function()
 			G.DC = require(Framework.Features.Data.DataController)
-			G.PlotConfig = require(Framework.Features.Plot.PlotConfig)
-			G.UnitUtil = require(Framework.Features.Inventory.Kinds.Unit.UnitUtil)
-			G.Upgrades = require(Framework.Features.Upgrades.Upgrades)
-			G.Rebirths = require(Framework.Features.Rebirth.Rebirths)
-			G.BoostConfig = require(Framework.Features.Inventory.Kinds.Boost.BoostConfig)
-			G.GradesMod = require(Framework.Features.Grades.Grades)
-			G.TraitsMod = require(Framework.Features.Traits.Traits)
-			G.QuestConfig = require(Framework.Features.Quests.QuestConfig)
 			G.EntryRegistry = require(Framework.Features.Inventory.EntryRegistry)
 			G.BuffController = require(Framework.Features.Buffs.BuffController)
-			G.RollController = require(Framework.Features.Rolling.RollController)
-			G.SellController = require(Framework.Features.Sell.SellController)
-			G.DiceModule = require(Framework.Features.Rolling.Dice)
 		end)
 		if ok and G.DC then break end
 		maxTries -= 1
@@ -221,15 +211,14 @@ task.spawn(function()
 end)
 
 local function data() return (G.DC and G.DC.___X) or {} end
-local function money() local success, val = pcall(function() return G.DC.Money() end); if success and val then return val end; return data().Money or 0 end
-local function rebirthAmt() local success, val = pcall(function() return G.DC.Rebirth() end); if success and val then return val end; return data().Rebirth or 0 end
+local function money() local ok, val = pcall(function() return G.DC.Money() end); if ok and val then return val end; return data().Money or 0 end
+local function rebirthAmt() local ok, val = pcall(function() return G.DC.Rebirth() end); if ok and val then return val end; return data().Rebirth or 0 end
 local function inventory() return data().Inventory or {} end
-local function slots() return data().Slots or {} end
 local function isUnitEntry(e) return e and type(e)=="table" and e.name and G.EntryRegistry and pcall(function() return G.EntryRegistry.getEntryConfig(e.name).kind == "Unit" end) end
 local function currencyAmount(name) local t = 0; for _, e in pairs(inventory()) do if type(e)=="table" and e.name==name then t += tonumber(e.amount) or 0 end end; return t end
 
 -- ===================================================================== --
--- 3. INTERACTIVE LOGO & MAIN UI
+-- 3. UI UTAMA
 -- ===================================================================== --
 local ToggleGui = Instance.new("ScreenGui"); ToggleGui.Name = "MofenkToggleFront"; ToggleGui.Parent = parentGui; ToggleGui.ResetOnSpawn = false; ToggleGui.DisplayOrder = 99998
 local ToggleBtn = Instance.new("TextButton"); ToggleBtn.Parent = ToggleGui; ToggleBtn.Size = UDim2.new(0, 60, 0, 60); ToggleBtn.Position = UDim2.new(0.02, 0, 0.4, 0); ToggleBtn.BackgroundColor3 = THEMES[1].Card; ToggleBtn.Text = "M"; ToggleBtn.Font = Enum.Font.GothamBlack; ToggleBtn.TextSize = 34; ToggleBtn.TextColor3 = THEMES[1].Acc1; ToggleBtn.BackgroundTransparency = 0.2; local TC = Instance.new("UICorner"); TC.CornerRadius = UDim.new(0, 16); TC.Parent = ToggleBtn; local TS = Instance.new("UIStroke"); TS.Thickness = 3; TS.Parent = ToggleBtn; table.insert(ThemeElements.Acc1, TS)
@@ -238,7 +227,6 @@ local dragging, dragInput, dragStart, startPos
 ToggleBtn.InputBegan:Connect(function(input)
 	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
 		dragging = true; dragStart = input.Position; startPos = ToggleBtn.Position
-		input.Changed:Connect(function() if input.UserInputState == Enum.UserInputState.End then dragging = false end end)
 	end
 end)
 ToggleBtn.InputChanged:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then dragInput = input end end)
@@ -248,26 +236,20 @@ local MainGui = Instance.new("ScreenGui"); MainGui.Name = "MofenkUltraHub"; Main
 local MainFrame = Instance.new("Frame"); MainFrame.Parent = MainGui; MainFrame.AnchorPoint = Vector2.new(0.5, 0.5); MainFrame.Size = UDim2.new(0, 950, 0, 620); MainFrame.Position = UDim2.new(0.5, 0, 0.5, 0); MainFrame.Active = true; MainFrame.Draggable = true; MainFrame.Visible = false; MainFrame.BackgroundTransparency = 0.4; table.insert(ThemeElements.Bg, MainFrame)
 local MainCorner = Instance.new("UICorner"); MainCorner.CornerRadius = UDim.new(0, 18); MainCorner.Parent = MainFrame; local MainStroke = Instance.new("UIStroke"); MainStroke.Thickness = 4; MainStroke.Parent = MainFrame; local StrokeGrad = Instance.new("UIGradient"); StrokeGrad.Parent = MainStroke; table.insert(ThemeElements.Grad, StrokeGrad)
 
-local DropShadow = Instance.new("ImageLabel"); DropShadow.Parent = MainFrame; DropShadow.AnchorPoint = Vector2.new(0.5, 0.5); DropShadow.Position = UDim2.new(0.5, 0, 0.5, 0); DropShadow.Size = UDim2.new(1, 40, 1, 40); DropShadow.BackgroundTransparency = 1; DropShadow.Image = "rbxassetid://6015897843"; DropShadow.ImageColor3 = Color3.fromRGB(0, 0, 0); DropShadow.ImageTransparency = 0.5; DropShadow.ZIndex = -1; DropShadow.ScaleType = Enum.ScaleType.Slice; DropShadow.SliceCenter = Rect.new(49, 49, 450, 450)
+ToggleBtn.MouseButton1Click:Connect(function() MainFrame.Visible = not MainFrame.Visible end)
 
-local ScreenScale = Instance.new("UIScale"); ScreenScale.Parent = MainGui
-local function UpdateScale() local viewport = workspace.CurrentCamera.ViewportSize; local scaleX = viewport.X / 1280; local scaleY = viewport.Y / 720; ScreenScale.Scale = math.clamp(math.min(scaleX, scaleY), 0.5, 1.1) end
-UpdateScale(); workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(UpdateScale)
-
-ToggleBtn.MouseButton1Click:Connect(function() MainFrame.Visible = not MainFrame.Visible; if MainFrame.Visible then SendNotification("Menu Dibuka", "MofenkHub siap digunakan!", 2, false) end end)
-
-local TopBar = Instance.new("Frame"); TopBar.Parent = MainFrame; TopBar.Size = UDim2.new(1, 0, 0, 55); TopBar.BackgroundTransparency = 0.3; table.insert(ThemeElements.Header, TopBar); local TopCorner = Instance.new("UICorner"); TopCorner.CornerRadius = UDim.new(0, 18); TopCorner.Parent = TopBar; local BottomHider = Instance.new("Frame"); BottomHider.Parent = TopBar; BottomHider.Size = UDim2.new(1, 0, 0, 10); BottomHider.Position = UDim2.new(0, 0, 1, -10); BottomHider.BorderSizePixel = 0; BottomHider.BackgroundTransparency = 0.3; table.insert(ThemeElements.Header, BottomHider)
-local Title = Instance.new("TextLabel"); Title.Parent = TopBar; Title.Position = UDim2.new(0, 25, 0, 0); Title.Size = UDim2.new(0, 600, 1, 0); Title.Text = "👑 MOFENKHUB V101.0  |  SPY ERROR ALERTS & COMPLETE FUNCTIONS"; Title.TextSize = 13; Title.Font = Enum.Font.GothamBlack; Title.TextXAlignment = Enum.TextXAlignment.Left; Title.BackgroundTransparency = 1; table.insert(ThemeElements.TextAcc, Title)
+local TopBar = Instance.new("Frame"); TopBar.Parent = MainFrame; TopBar.Size = UDim2.new(1, 0, 0, 55); TopBar.BackgroundTransparency = 0.3; table.insert(ThemeElements.Header, TopBar); local TopCorner = Instance.new("UICorner"); TopCorner.CornerRadius = UDim.new(0, 18); TopCorner.Parent = TopBar
+local Title = Instance.new("TextLabel"); Title.Parent = TopBar; Title.Position = UDim2.new(0, 25, 0, 0); Title.Size = UDim2.new(0, 600, 1, 0); Title.Text = "👑 MOFENKHUB V103.0  |  CLEAN PROFILER EDITION"; Title.TextSize = 14; Title.Font = Enum.Font.GothamBlack; Title.TextXAlignment = Enum.TextXAlignment.Left; Title.BackgroundTransparency = 1; table.insert(ThemeElements.TextAcc, Title)
 local CloseBtn = Instance.new("TextButton"); CloseBtn.Parent = TopBar; CloseBtn.Position = UDim2.new(1, -50, 0, 10); CloseBtn.Size = UDim2.new(0, 35, 0, 35); CloseBtn.Text = "✕"; CloseBtn.TextColor3 = Color3.fromRGB(255,255,255); CloseBtn.Font = Enum.Font.GothamBold; CloseBtn.TextSize = 18; CloseBtn.BackgroundTransparency = 0.3; table.insert(ThemeElements.Card, CloseBtn); local CC = Instance.new("UICorner"); CC.CornerRadius = UDim.new(0, 10); CC.Parent = CloseBtn
 CloseBtn.MouseButton1Click:Connect(function() MainFrame.Visible = false end)
 
-local Sidebar = Instance.new("ScrollingFrame"); Sidebar.Parent = MainFrame; Sidebar.Position = UDim2.new(0, 15, 0, 65); Sidebar.Size = UDim2.new(0, 200, 1, -80); Sidebar.BackgroundTransparency = 1; Sidebar.ScrollBarThickness = 0; Sidebar.AutomaticCanvasSize = Enum.AutomaticSize.Y; Sidebar.CanvasSize = UDim2.new(0,0,0,0); local SideLayout = Instance.new("UIListLayout"); SideLayout.Parent = Sidebar; Sidebar.ScrollingDirection = Enum.ScrollingDirection.Y; SideLayout.Padding = UDim.new(0, 8)
+local Sidebar = Instance.new("ScrollingFrame"); Sidebar.Parent = MainFrame; Sidebar.Position = UDim2.new(0, 15, 0, 65); Sidebar.Size = UDim2.new(0, 200, 1, -80); Sidebar.BackgroundTransparency = 1; Sidebar.ScrollBarThickness = 0; Sidebar.AutomaticCanvasSize = Enum.AutomaticSize.Y; local SideLayout = Instance.new("UIListLayout"); SideLayout.Parent = Sidebar; SideLayout.Padding = UDim.new(0, 8)
 local ContentArea = Instance.new("Frame"); ContentArea.Parent = MainFrame; ContentArea.Position = UDim2.new(0, 225, 0, 65); ContentArea.Size = UDim2.new(1, -240, 1, -80); ContentArea.BackgroundTransparency = 0.4; table.insert(ThemeElements.Header, ContentArea); local ContentCorner = Instance.new("UICorner"); ContentCorner.CornerRadius = UDim.new(0, 14); ContentCorner.Parent = ContentArea
 
 local TabFrames, TabButtons = {}, {}
 local function CreateTab(name, icon)
 	local Btn = Instance.new("TextButton"); Btn.Parent = Sidebar; Btn.Size = UDim2.new(1, -4, 0, 42); Btn.Text = "   " .. icon .. "  " .. name; Btn.TextColor3 = Color3.fromRGB(220,220,220); Btn.TextSize = 13; Btn.Font = Enum.Font.GothamBold; Btn.TextXAlignment = Enum.TextXAlignment.Left; Btn.BackgroundTransparency = 0.4; table.insert(ThemeElements.Card, Btn); local Corner = Instance.new("UICorner"); Corner.CornerRadius = UDim.new(0, 10); Corner.Parent = Btn
-	local Scroll = Instance.new("ScrollingFrame"); Scroll.Parent = ContentArea; Scroll.Size = UDim2.new(1, -20, 1, -20); Scroll.Position = UDim2.new(0, 10, 0, 10); Scroll.BackgroundTransparency = 1; Scroll.ScrollBarThickness = 2; Scroll.ScrollBarImageColor3 = Color3.fromRGB(255, 255, 255); Scroll.Visible = false; Scroll.AutomaticCanvasSize = Enum.AutomaticSize.Y; Scroll.CanvasSize = UDim2.new(0,0,0,0); local Lay = Instance.new("UIListLayout"); Lay.Parent = Scroll; Scroll.ScrollingDirection = Enum.ScrollingDirection.Y; Lay.Padding = UDim.new(0, 12)
+	local Scroll = Instance.new("ScrollingFrame"); Scroll.Parent = ContentArea; Scroll.Size = UDim2.new(1, -20, 1, -20); Scroll.Position = UDim2.new(0, 10, 0, 10); Scroll.BackgroundTransparency = 1; Scroll.ScrollBarThickness = 2; Scroll.Visible = false; Scroll.AutomaticCanvasSize = Enum.AutomaticSize.Y; local Lay = Instance.new("UIListLayout"); Lay.Parent = Scroll; Lay.Padding = UDim.new(0, 12)
 	TabFrames[name] = Scroll; TabButtons[name] = Btn
 	Btn.MouseButton1Click:Connect(function()
 		for n, f in pairs(TabFrames) do f.Visible = (n == name) end
@@ -300,16 +282,9 @@ local function AddToggle(parent, text, flag, callback)
 	table.insert(ConfigUpdaters, updateVisuals)
 
 	Sw.MouseButton1Click:Connect(function() 
-		local success, err = pcall(function()
-			F[flag] = not F[flag]
-			updateVisuals()
-			if callback then callback(F[flag]) end 
-		end)
-		if success then
-			SendNotification("Berhasil", text .. " berhasil " .. (F[flag] and "diaktifkan." or "dimatikan."), 2, false)
-		else
-			SendNotification("Error System", "Gagal memproses fitur: " .. text, 4, true)
-		end
+		F[flag] = not F[flag]; updateVisuals()
+		if callback then callback(F[flag]) end 
+		SendNotification("Berhasil", text .. " diubah.", 2, false)
 	end)
 	updateVisuals()
 end
@@ -321,7 +296,7 @@ local function AddInput(parent, text, flag, isNum)
 	
 	local function updateVisuals() Box.Text = tostring(F[flag] or "") end
 	table.insert(ConfigUpdaters, updateVisuals)
-	Box.FocusLost:Connect(function() F[flag] = isNum and (tonumber(Box.Text) or 0) or Box.Text; updateVisuals(); SendNotification("Input Berhasil", text .. " diubah ke: " .. tostring(F[flag]), 2, false) end)
+	Box.FocusLost:Connect(function() F[flag] = isNum and (tonumber(Box.Text) or 0) or Box.Text; updateVisuals() end)
 	updateVisuals()
 end
 
@@ -330,7 +305,7 @@ local function AddDropdown(parent, title, options, flag, isMulti)
 	local L = Instance.new("TextLabel"); L.Parent = Frm; L.Position = UDim2.new(0, 8, 0, 0); L.Size = UDim2.new(0.4, 0, 1, 0); L.Text = title; L.TextColor3 = Color3.fromRGB(255,255,255); L.TextSize = 13; L.Font = Enum.Font.GothamMedium; L.TextXAlignment = Enum.TextXAlignment.Left; L.BackgroundTransparency = 1
 	local Btn = Instance.new("TextButton"); Btn.Parent = Frm; Btn.Position = UDim2.new(0.42, 0, 0.1, 0); Btn.Size = UDim2.new(0.56, 0, 0.8, 0); table.insert(ThemeElements.TextAcc, Btn); Btn.TextSize = 12; Btn.Font = Enum.Font.GothamBold; Btn.BackgroundTransparency = 0.4; table.insert(ThemeElements.Header, Btn); local BC = Instance.new("UICorner"); BC.CornerRadius = UDim.new(0, 8); BC.Parent = Btn; local BS = Instance.new("UIStroke"); BS.Parent = Btn; BS.Transparency = 0.5; table.insert(ThemeElements.Acc1, BS)
 	
-	local DropList = Instance.new("ScrollingFrame"); DropList.Parent = MainFrame; DropList.Size = UDim2.new(0, 250, 0, 180); table.insert(ThemeElements.Bg, DropList); DropList.BorderSizePixel = 1; DropList.Visible = false; DropList.ZIndex = 150; DropList.ScrollBarThickness = 4; DropList.AutomaticCanvasSize = Enum.AutomaticSize.Y; DropList.CanvasSize = UDim2.new(0,0,0,0); local DLC = Instance.new("UICorner"); DLC.CornerRadius = UDim.new(0, 8); DLC.Parent = DropList; local DLL = Instance.new("UIListLayout"); DLL.Parent = DropList
+	local DropList = Instance.new("ScrollingFrame"); DropList.Parent = MainFrame; DropList.Size = UDim2.new(0, 250, 0, 180); table.insert(ThemeElements.Bg, DropList); DropList.Visible = false; DropList.ZIndex = 150; DropList.ScrollBarThickness = 4; DropList.AutomaticCanvasSize = Enum.AutomaticSize.Y; local DLC = Instance.new("UICorner"); DLC.CornerRadius = UDim.new(0, 8); DLC.Parent = DropList; local DLL = Instance.new("UIListLayout"); DLL.Parent = DropList
 	
 	local function UpdatePos() if DropList.Visible then DropList.Position = UDim2.new(0, Btn.AbsolutePosition.X - MainFrame.AbsolutePosition.X, 0, (Btn.AbsolutePosition.Y - MainFrame.AbsolutePosition.Y) + Btn.AbsoluteSize.Y + 4) end end
 	Btn:GetPropertyChangedSignal("AbsolutePosition"):Connect(UpdatePos)
@@ -339,185 +314,99 @@ local function AddDropdown(parent, title, options, flag, isMulti)
 	local function updateMainBtn() Btn.Text = isMulti and (#(F[flag] or {}) .. " Terpilih") or tostring(F[flag] or "Pilih Disini") end
 	table.insert(ConfigUpdaters, updateMainBtn)
 
-	local function Render(opts)
-		for _, v in pairs(DropList:GetChildren()) do if v:IsA("TextButton") then v:Destroy() end end
-		for _, opt in ipairs(opts) do
-			local OptBtn = Instance.new("TextButton"); OptBtn.Parent = DropList; OptBtn.Size = UDim2.new(1, 0, 0, 36); OptBtn.Text = "  " .. tostring(opt.label); OptBtn.TextColor3 = Color3.fromRGB(255,255,255); OptBtn.TextSize = 12; OptBtn.Font = Enum.Font.GothamMedium; OptBtn.TextXAlignment = Enum.TextXAlignment.Left; OptBtn.BackgroundTransparency = 1; OptBtn.ZIndex = 151
-			local check = Instance.new("Frame"); check.Parent = OptBtn; check.Size = UDim2.new(0, 16, 0, 16); check.Position = UDim2.new(1, -24, 0.5, -8); local cc = Instance.new("UICorner"); cc.Parent = check; check.ZIndex = 151
-			
-			local function updateVisuals()
-				local sel = false
-				if isMulti then for _,v in ipairs(F[flag] or {}) do if v==opt.val then sel=true break end end else sel=(F[flag]==opt.val) end
-				if sel then table.insert(ThemeElements.Acc1, check) else for i,v in ipairs(ThemeElements.Acc1) do if v==check then table.remove(ThemeElements.Acc1,i) end end; check.BackgroundColor3 = Color3.fromRGB(60,60,75) end
-				ApplyTheme(F.themeIndex)
-			end
-			table.insert(ConfigUpdaters, updateVisuals); table.insert(updateCheckList, updateVisuals)
-			updateVisuals()
-
-			OptBtn.MouseButton1Click:Connect(function()
-				pcall(function()
-					if isMulti then
-						if not F[flag] then F[flag] = {} end
-						local found = false; for i,v in ipairs(F[flag]) do if v==opt.val then table.remove(F[flag],i); found=true break end end
-						if not found then table.insert(F[flag], opt.val) end
-					else F[flag] = opt.val; DropList.Visible = false end
-					updateMainBtn(); for _, fn in ipairs(updateCheckList) do pcall(fn) end
-				end)
-			end)
+	for _, opt in ipairs(options) do
+		local OptBtn = Instance.new("TextButton"); OptBtn.Parent = DropList; OptBtn.Size = UDim2.new(1, 0, 0, 36); OptBtn.Text = "  " .. tostring(opt.label); OptBtn.TextColor3 = Color3.fromRGB(255,255,255); OptBtn.TextSize = 12; OptBtn.Font = Enum.Font.GothamMedium; OptBtn.TextXAlignment = Enum.TextXAlignment.Left; OptBtn.BackgroundTransparency = 1; OptBtn.ZIndex = 151
+		local check = Instance.new("Frame"); check.Parent = OptBtn; check.Size = UDim2.new(0, 16, 0, 16); check.Position = UDim2.new(1, -24, 0.5, -8); local cc = Instance.new("UICorner"); cc.Parent = check; check.ZIndex = 151
+		
+		local function updateVisuals()
+			local sel = (F[flag] == opt.val)
+			if sel then table.insert(ThemeElements.Acc1, check) else check.BackgroundColor3 = Color3.fromRGB(60,60,75) end
+			ApplyTheme(F.themeIndex)
 		end
+		table.insert(ConfigUpdaters, updateVisuals); table.insert(updateCheckList, updateVisuals)
+		OptBtn.MouseButton1Click:Connect(function()
+			F[flag] = opt.val; DropList.Visible = false
+			updateMainBtn(); for _, fn in ipairs(updateCheckList) do pcall(fn) end
+		end)
 	end
-	Render(options); updateMainBtn(); Btn.MouseButton1Click:Connect(function() DropList.Visible = not DropList.Visible; UpdatePos() end)
+	updateMainBtn(); Btn.MouseButton1Click:Connect(function() DropList.Visible = not DropList.Visible; UpdatePos() end)
 end
 
 -- ===================================================================== --
--- 4. TABS ASSEMBLY
+-- 4. TABS
 -- ===================================================================== --
 local T_Dash  = CreateTab("Dashboard", "📊")
 local T_Hallo = CreateTab("Halloween", "🎃")
 local T_Farm  = CreateTab("Farming", "⛏️")
 local T_Inv   = CreateTab("Inventory", "🎒")
-local T_Pot   = CreateTab("Potions", "🧪")
-local T_Grd   = CreateTab("Auto Grade", "⭐")
-local T_Trt   = CreateTab("Auto Trait", "🧬")
-local T_Twr   = CreateTab("Tower", "🏰")
 local T_Set   = CreateTab("Settings", "⚙️")
 
 TabFrames["Dashboard"].Visible = true; Sidebar:GetChildren()[2].BackgroundTransparency = 0.1; table.insert(ThemeElements.Acc1, Sidebar:GetChildren()[2])
 
--- 1. DASHBOARD & SPY MONITOR
-local G_Profile = AddGroup(T_Dash, "PROFIL & STATISTIK PENGGUNA")
-local ProfContainer = Instance.new("Frame"); ProfContainer.Parent = G_Profile; ProfContainer.Size = UDim2.new(1, 0, 0, 100); ProfContainer.BackgroundTransparency = 1
-local PImg = Instance.new("ImageLabel"); PImg.Parent = ProfContainer; PImg.AnchorPoint = Vector2.new(0.5, 0.5); PImg.Position = UDim2.new(0.15, 0, 0.5, 0); PImg.Size = UDim2.new(0, 80, 0, 80); pcall(function() PImg.Image = Players:GetUserThumbnailAsync(LocalPlayer.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size100x100) end); local PImgC = Instance.new("UICorner"); PImgC.CornerRadius = UDim.new(1,0); PImgC.Parent = PImg; local PStr = Instance.new("UIStroke"); PStr.Thickness = 3; PStr.Parent = PImg; table.insert(ThemeElements.Acc1, PStr)
-
-local PLbl = Instance.new("TextLabel"); PLbl.Parent = ProfContainer; PLbl.Position = UDim2.new(0.3, 0, 0, 10); PLbl.Size = UDim2.new(0.7, 0, 1, 0); PLbl.BackgroundTransparency = 1; PLbl.TextColor3 = Color3.fromRGB(255,255,255); PLbl.TextSize = 14; PLbl.Font = Enum.Font.GothamMedium; PLbl.TextXAlignment = Enum.TextXAlignment.Left; PLbl.TextYAlignment = Enum.TextYAlignment.Center
-
-local G_SpyErr = AddGroup(T_Dash, "SPY ERROR MONITORING")
-AddToggle(G_SpyErr, "Aktifkan Notifikasi Spy Jika Ada Fitur Error", "spyErrorAlert")
-local SpyErrLbl = Instance.new("TextLabel"); SpyErrLbl.Parent = G_SpyErr; SpyErrLbl.Size = UDim2.new(1,0,0,50); SpyErrLbl.BackgroundTransparency = 1; SpyErrLbl.TextColor3 = Color3.fromRGB(255,100,100); SpyErrLbl.TextSize = 12; SpyErrLbl.Font = Enum.Font.Code; SpyErrLbl.TextXAlignment = Enum.TextXAlignment.Left; SpyErrLbl.TextWrapped = true
-task.spawn(function() while task.wait(1) do pcall(function() SpyErrLbl.Text = "⚠️ Error Terakhir: " .. STATE.lastErrorMsg end) end end)
-
-local G_Info = AddGroup(T_Dash, "INFORMASI AKUN & GAME")
-local ILbl = Instance.new("TextLabel"); ILbl.Parent = G_Info; ILbl.Size = UDim2.new(1, 0, 0, 85); ILbl.BackgroundTransparency = 1; ILbl.TextColor3 = Color3.fromRGB(255,255,255); ILbl.TextSize = 13; ILbl.Font = Enum.Font.GothamMedium; ILbl.TextXAlignment = Enum.TextXAlignment.Left; ILbl.TextYAlignment = Enum.TextYAlignment.Top
+-- Dashboard
+local G_Profile = AddGroup(T_Dash, "PROFIL & STATISTIK")
+local PLbl = Instance.new("TextLabel"); PLbl.Parent = G_Profile; PLbl.Size = UDim2.new(1, 0, 0, 60); PLbl.BackgroundTransparency = 1; PLbl.TextColor3 = Color3.fromRGB(255,255,255); PLbl.TextSize = 13; PLbl.Font = Enum.Font.GothamMedium; PLbl.TextXAlignment = Enum.TextXAlignment.Left
 
 task.spawn(function()
 	while task.wait(1) do pcall(function()
-		local m = money(); local rb = rebirthAmt(); local rls = (G.DC and G.DC.Rolls and G.DC.Rolls()) or 0
-		PLbl.Text = string.format("👤 Player: %s\n💰 Uang: %s\n🔄 Rebirth: %s\n🎲 Total Rolls: %s", LocalPlayer.Name, tostring(m), tostring(rb), tostring(rls))
-		local mut, trt, grd, tot = 0,0,0,0; for _, e in pairs(inventory()) do if isUnitEntry(e) then tot += 1; if e.attributes then if e.attributes.mutation then mut+=1 end; if e.attributes.trait then trt+=1 end; if e.attributes.grade then grd+=1 end end end end
-		local buffs = ""; if G.BuffController and G.BuffController.ActiveBuffs then for k,v in pairs(G.BuffController.ActiveBuffs) do buffs = buffs..k..", " end end; if buffs=="" then buffs="Tidak ada" end; STATE.activeBuffs = buffs
-		
-		local halloCount = currencyAmount("Candy") + currencyAmount("Pumpkin") + currencyAmount("Halloween Token") + currencyAmount("Soul")
-		STATE.halloCurrency = halloCount
-		
-		ILbl.Text = string.format("💎 Gems: %d | 🎃 Halloween Items: %d\n⚔️ Total Unit: %d/100 | 🧪 Active Potion: %s", currencyAmount("Gems"), halloCount, tot, STATE.activeBuffs)
+		PLbl.Text = string.format("👤 Player: %s\n💰 Uang: %s\n🔄 Rebirth: %s", LocalPlayer.Name, tostring(money()), tostring(rebirthAmt()))
 	end) end
 end)
 
--- 2. HALLOWEEN TAB
-local G_HalloTeleport = AddGroup(T_Hallo, "HALLOWEEN TELEPORT & WORLD")
-local BtnHalloTP = Instance.new("TextButton"); BtnHalloTP.Parent = G_HalloTeleport; BtnHalloTP.Size = UDim2.new(1, 0, 0, 42); BtnHalloTP.Text = "🎃 TELEPORT KE HALLOWEEN MAP"; BtnHalloTP.Font = Enum.Font.GothamBlack; BtnHalloTP.TextSize = 13; table.insert(ThemeElements.Card, BtnHalloTP); table.insert(ThemeElements.TextAcc, BtnHalloTP); local BHTP = Instance.new("UICorner"); BHTP.CornerRadius = UDim.new(0,8); BHTP.Parent = BtnHalloTP
+-- Halloween
+local G_Hallo = AddGroup(T_Hallo, "HALLOWEEN & TRICK OR TREAT")
+local BtnHalloTP = Instance.new("TextButton"); BtnHalloTP.Parent = G_Hallo; BtnHalloTP.Size = UDim2.new(1, 0, 0, 40); BtnHalloTP.Text = "🎃 TELEPORT KE HALLOWEEN MAP"; BtnHalloTP.Font = Enum.Font.GothamBold; BtnHalloTP.TextSize = 12; table.insert(ThemeElements.Card, BtnHalloTP); table.insert(ThemeElements.TextAcc, BtnHalloTP); local B1 = Instance.new("UICorner"); B1.CornerRadius = UDim.new(0,8); B1.Parent = BtnHalloTP
 BtnHalloTP.MouseButton1Click:Connect(function()
-	SafeCall("Halloween Teleport", function()
-		if R.HalloTeleport then
-			R.HalloTeleport:InvokeServer()
-			SendNotification("Teleport", "Berhasil menuju Halloween Map!", 3, false)
-		else
-			error("Remote Teleport Halloween tidak ditemukan.")
-		end
-	end)
+	SafeCall("Teleport Halloween", function() if R.HalloTeleport then R.HalloTeleport:InvokeServer() end end)
 end)
 
-local G_TrickOrTreat = AddGroup(T_Hallo, "TRICK OR TREAT (DEPAN PINTU)")
-AddToggle(G_TrickOrTreat, "Auto Claim Trick or Treat", "halloAutoTrickOrTreat")
-local BtnClaimTOT = Instance.new("TextButton"); BtnClaimTOT.Parent = G_TrickOrTreat; BtnClaimTOT.Size = UDim2.new(1, 0, 0, 38); BtnClaimTOT.Text = "🚪 CLAIM TRICK OR TREAT SEKARANG"; BtnClaimTOT.Font = Enum.Font.GothamBold; BtnClaimTOT.TextSize = 12; table.insert(ThemeElements.Header, BtnClaimTOT); table.insert(ThemeElements.TextAcc, BtnClaimTOT); local BTOT = Instance.new("UICorner"); BTOT.CornerRadius = UDim.new(0,8); BTOT.Parent = BtnClaimTOT
+AddToggle(G_Hallo, "Auto Claim Trick or Treat", "halloAutoTrickOrTreat")
+local BtnClaimTOT = Instance.new("TextButton"); BtnClaimTOT.Parent = G_Hallo; BtnClaimTOT.Size = UDim2.new(1, 0, 0, 38); BtnClaimTOT.Text = "🚪 CLAIM TRICK OR TREAT SEKARANG"; BtnClaimTOT.Font = Enum.Font.GothamBold; BtnClaimTOT.TextSize = 12; table.insert(ThemeElements.Header, BtnClaimTOT); table.insert(ThemeElements.TextAcc, BtnClaimTOT); local B2 = Instance.new("UICorner"); B2.CornerRadius = UDim.new(0,8); B2.Parent = BtnClaimTOT
 BtnClaimTOT.MouseButton1Click:Connect(function()
 	SafeCall("Trick Or Treat Manual", function()
 		if R.TrickOrTreatClaim then
-			if typeof(R.TrickOrTreatClaim) == "RemoteEvent" then
-				R.TrickOrTreatClaim:FireServer()
-			elseif typeof(R.TrickOrTreatClaim) == "RemoteFunction" then
-				R.TrickOrTreatClaim:InvokeServer()
-			end
-			SendNotification("Trick or Treat", "Berhasil mengambil hadiah depan pintu!", 3, false)
-		else
-			error("Remote Trick or Treat tidak ditemukan.")
+			if typeof(R.TrickOrTreatClaim) == "RemoteEvent" then R.TrickOrTreatClaim:FireServer()
+			elseif typeof(R.TrickOrTreatClaim) == "RemoteFunction" then R.TrickOrTreatClaim:InvokeServer() end
+			SendNotification("Berhasil", "Trick or Treat diklaim!", 2, false)
 		end
 	end)
 end)
+AddToggle(G_Hallo, "Auto Roll Pumpkin Dice", "halloRollPumpkin")
+AddToggle(G_Hallo, "Auto Claim Halloween Path", "halloAutoClaim")
 
-local G_HalloRoll = AddGroup(T_Hallo, "PUMPKIN DICE AUTOMATION")
-AddToggle(G_HalloRoll, "Auto Roll Pumpkin Dice", "halloRollPumpkin")
+-- Farming
+local G_Farm = AddGroup(T_Farm, "FARMING & ROLL")
+AddToggle(G_Farm, "Auto Collect Plot", "collect")
+AddToggle(G_Farm, "Auto Roll Dadu", "autoRoll")
+AddToggle(G_Farm, "Auto Rebirth", "rebirth")
 
-local G_HalloAuto = AddGroup(T_Hallo, "AUTO HAUNTED TOWER & EVENT")
-AddToggle(G_HalloAuto, "Auto Claim Halloween Path", "halloAutoClaim")
-AddToggle(G_HalloAuto, "Auto Buy Halloween Upgrade", "halloAutoUpgrade")
-AddToggle(G_HalloAuto, "Auto Claim Halloween Quests", "halloAutoQuest")
-
-local G_HalloMon = AddGroup(T_Hallo, "LIVE HALLOWEEN ITEM MONITORING")
-local HalloLbl = Instance.new("TextLabel"); HalloLbl.Parent = G_HalloMon; HalloLbl.Size = UDim2.new(1,0,0,70); HalloLbl.BackgroundTransparency = 1; HalloLbl.TextColor3 = Color3.fromRGB(255,255,255); HalloLbl.TextSize = 13; HalloLbl.Font = Enum.Font.GothamMedium; HalloLbl.TextXAlignment = Enum.TextXAlignment.Left; HalloLbl.TextYAlignment = Enum.TextYAlignment.Top
-task.spawn(function() while task.wait(0.5) do pcall(function()
-	HalloLbl.Text = string.format("🎃 Total Halloween Items: %d\n🚪 Auto Trick or Treat: %s\n👻 Auto Roll Pumpkin: %s", STATE.halloCurrency, F.halloAutoTrickOrTreat and "ACTIVE" | "OFF", F.halloRollPumpkin and "ACTIVE" | "OFF")
-end) end end)
-
--- 3. FARMING
-local G_Farm1 = AddGroup(T_Farm, "PLOT, ROLL & REBIRTH")
-AddToggle(G_Farm1, "Auto Collect Plot", "collect")
-AddToggle(G_Farm1, "Auto Roll Dadu (Otomatis)", "autoRoll")
-AddToggle(G_Farm1, "Auto Rebirth (Anti-Spam)", "rebirth")
-AddToggle(G_Farm1, "Auto Buy Dice", "buyDice")
-AddToggle(G_Farm1, "Auto Equip Best Dice", "equipDice")
-
--- 4. INVENTORY
-local G_Inv = AddGroup(T_Inv, "MANAGEMENT & AUTO SELL")
-AddToggle(G_Inv, "Aktifkan Auto Sell Unit", "sellAuto")
-AddDropdown(T_Inv or G_Inv, "Pilih Mode Auto Sell:", {
+-- Inventory
+local G_Inv = AddGroup(T_Inv, "AUTO SELL")
+AddToggle(G_Inv, "Aktifkan Auto Sell", "sellAuto")
+AddDropdown(G_Inv, "Mode Auto Sell:", {
 	{label = "Keep Best (Default)", val = "Keep Best (Default)"},
-	{label = "Sell All Common / Uncommon", val = "Common"},
-	{label = "Sell All Rare & Below", val = "Rare"},
-	{label = "Sell All Epic & Below", val = "Epic"},
-	{label = "Sell Non-Shiny Only", val = "Non-Shiny"}
+	{label = "Sell Common / Uncommon", val = "Common"},
+	{label = "Sell Rare & Below", val = "Rare"}
 }, "autoSellMode", false)
 AddInput(G_Inv, "Simpan Unit Terbaik (Keep Best):", "keepBest", true)
-AddToggle(G_Inv, "Auto Fusion Unit", "autoFuse")
 
--- 5. POTIONS
-local G_Pot = AddGroup(T_Pot, "SMART POTION MANAGER")
-AddToggle(G_Pot, "Auto Gunakan Potion", "potionAuto")
-
--- 6. TOWER
-local G_Twr = AddGroup(T_Twr, "TOWER FARMING SETUP")
-AddToggle(G_Twr, "Auto Tower Farming", "tower")
-AddToggle(G_Twr, "Mode MIX / Random Tower", "towerMix")
-
--- 7. SETTINGS & CONFIG
-local G_Set1 = AddGroup(T_Set, "TEMA & WARNA (NEON GLOW)")
-local BtnTheme = Instance.new("TextButton"); BtnTheme.Parent = G_Set1; BtnTheme.Size = UDim2.new(1, 0, 0, 42); BtnTheme.Text = "🎨 ACAK TEMA WARNA"; BtnTheme.Font = Enum.Font.GothamBlack; BtnTheme.TextSize = 14; table.insert(ThemeElements.Card, BtnTheme)
-
-local G_SetConfig = AddGroup(T_Set, "CONFIG & FILE MANAGER")
-AddToggle(G_SetConfig, "Auto Load Config Saat Nyala", "autoLoadEnabled")
-AddInput(G_SetConfig, "Nama File Config:", "cfgName", false)
-
-local BtnSave = Instance.new("TextButton"); BtnSave.Parent = G_SetConfig; BtnSave.Size = UDim2.new(1, 0, 0, 38); BtnSave.Text = "💾 SAVE CONFIG SEKARANG"; BtnSave.Font = Enum.Font.GothamBold; BtnSave.TextSize = 13; table.insert(ThemeElements.Header, BtnSave); table.insert(ThemeElements.TextAcc, BtnSave); local BTS = Instance.new("UICorner"); BTS.CornerRadius = UDim.new(0,8); BTS.Parent = BtnSave
-BtnSave.MouseButton1Click:Connect(function() pcall(function() saveConfig(F.cfgName) end); SendNotification("Config", "Tersimpan!", 2, false) end)
-
-local BtnLoad = Instance.new("TextButton"); BtnLoad.Parent = G_SetConfig; BtnLoad.Size = UDim2.new(1, 0, 0, 38); BtnLoad.Text = "📂 LOAD CONFIG PILIHAN"; BtnLoad.Font = Enum.Font.GothamBold; BtnLoad.TextSize = 13; table.insert(ThemeElements.Header, BtnLoad); table.insert(ThemeElements.TextAcc, BtnLoad); local BTL = Instance.new("UICorner"); BTL.CornerRadius = UDim.new(0,8); BTL.Parent = BtnLoad
-BtnLoad.MouseButton1Click:Connect(function() pcall(function() loadConfig(F.cfgName) end); SendNotification("Config", "Dimuat!", 2, false) end)
+-- Settings
+local G_Set = AddGroup(T_Set, "CONFIG")
+AddToggle(G_Set, "Auto Load Config", "autoLoadEnabled")
+AddInput(G_Set, "Nama Config:", "cfgName", false)
 
 ApplyTheme(F.themeIndex)
 
 -- ===================================================================== --
--- 8. BACKGROUND THREADS (COMPLETE LOOPS WITH SPY ERROR SAFE-CALLS)
+-- 5. BACKGROUND LOOPS
 -- ===================================================================== --
 task.spawn(function()
 	while _G.__ANIMEDICE == generation do
 		if F.halloAutoTrickOrTreat then
-			SafeCall("Loop Trick Or Treat", function()
+			pcall(function()
 				if R.TrickOrTreatClaim then
-					if typeof(R.TrickOrTreatClaim) == "RemoteEvent" then
-						R.TrickOrTreatClaim:FireServer()
-					elseif typeof(R.TrickOrTreatClaim) == "RemoteFunction" then
-						R.TrickOrTreatClaim:InvokeServer()
-					end
+					if typeof(R.TrickOrTreatClaim) == "RemoteEvent" then R.TrickOrTreatClaim:FireServer()
+					elseif typeof(R.TrickOrTreatClaim) == "RemoteFunction" then R.TrickOrTreatClaim:InvokeServer() end
 				end
 			end)
 		end
@@ -528,9 +417,7 @@ end)
 task.spawn(function()
 	while _G.__ANIMEDICE == generation do
 		if F.halloRollPumpkin then
-			SafeCall("Loop Pumpkin Roll", function()
-				if R.PumpkinRoll then R.PumpkinRoll:InvokeServer() end
-			end)
+			pcall(function() if R.PumpkinRoll then R.PumpkinRoll:InvokeServer() end end)
 			task.wait(2.1)
 		else
 			task.wait(1)
@@ -541,33 +428,11 @@ end)
 task.spawn(function()
 	while _G.__ANIMEDICE == generation do
 		if F.halloAutoClaim then
-			SafeCall("Loop Halloween Path", function()
+			pcall(function()
 				if R.HalloClaimAll then R.HalloClaimAll:FireServer() end
 				if R.HalloClaimPath then R.HalloClaimPath:FireServer() end
 			end)
 		end
 		task.wait(5)
-	end
-end)
-
-task.spawn(function()
-	while _G.__ANIMEDICE == generation do
-		if F.sellAuto and R.SellInventory then
-			SafeCall("Loop Auto Sell", function()
-				local d = data(); local cap = 100
-				local placed = {}; for _, slot in pairs(d.Slots or {}) do if slot.unitId then placed[slot.unitId] = true end end
-				local units, owned = {}, 0
-				for id, u in pairs(d.Inventory or {}) do
-					local e = G.UnitConfig and G.UnitConfig.entries[u.name]
-					if e then owned = owned + 1 end
-					local isProt = false; if u.attributes and u.attributes.locked then isProt = true end
-					if not placed[id] and not isProt then table.insert(units, { id = id }) end
-				end
-				local pressured = owned >= cap - 3; local sellable = math.max(0, #units - (F.keepBest or 20)); local list = {}
-				for i, unit in ipairs(units) do if pressured or i <= sellable then list[#list + 1] = unit.id; if #list >= 300 then break end end end
-				if #list > 0 then pcall(function() R.SellInventory:InvokeServer(list) end) end
-			end)
-		end
-		task.wait(4)
 	end
 end)
