@@ -1,5 +1,5 @@
 -- ===================================================================== --
--- 👑 MOFENKHUB V92.0 — FULL HALLOWEEN EVENT & ISOLATED TOWER SUITE
+-- 👑 MOFENKHUB V93.0 — PROFESSIONAL MASTER SUITE (HALLOWEEN & AUTO SELL SPECIFIC)
 -- ===================================================================== --
 
 --!nocheck
@@ -45,8 +45,8 @@ local F = {
 	-- Farm & Roll
 	collect = false, levelup = false, maxLevel = 40, smartLevel = false,
 	rebirth = false, upgrades = false, buyDice = false, equipDice = true, autoRoll = false,
-	-- Inv & Sell
-	sellAuto = false, keepBest = 20, autoFuse = false,
+	-- Inv & Sell (Universal & Specific Unit Name Sell)
+	sellAuto = false, keepBest = 20, autoFuse = false, specificSellUnits = {},
 	-- Potion
 	potionAuto = false, potionBest = true, potionSpecific = {},
 	-- Reroll
@@ -160,7 +160,7 @@ local R = {
 	SellInventory   = svc("SellService.RF.SellInventory"),
 	UpdateAutoSell  = svc("SellService.RE.UpdateAutoSell"),
 	Fuse            = svc("FusingService.RE.Fuse"),
-	-- Halloween & Haunted Services (Sesuai Console Game)
+	-- Halloween & Haunted Services
 	HWTeleport      = svc("HalloweenService.RF.Teleport"),
 	HWSeenIntro     = svc("HalloweenService.RE.SeenIntro"),
 	HWQuestClaim    = svc("HalloweenQuestService.RE.Claim"),
@@ -260,7 +260,7 @@ UpdateScale(); workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):
 ToggleBtn.MouseButton1Click:Connect(function() MainFrame.Visible = not MainFrame.Visible end)
 
 local TopBar = Instance.new("Frame"); TopBar.Parent = MainFrame; TopBar.Size = UDim2.new(1, 0, 0, 48); TopBar.BackgroundTransparency = 0.2; table.insert(ThemeElements.Header, TopBar)
-local Title = Instance.new("TextLabel"); Title.Parent = TopBar; Title.Position = UDim2.new(0, 20, 0, 0); Title.Size = UDim2.new(0, 500, 1, 0); Title.Text = "👑 MOFENKHUB V92.0  |  ANIME DICE PRO"; Title.TextSize = 13; Title.Font = Enum.Font.GothamBlack; Title.TextXAlignment = Enum.TextXAlignment.Left; Title.BackgroundTransparency = 1; table.insert(ThemeElements.TextAcc, Title)
+local Title = Instance.new("TextLabel"); Title.Parent = TopBar; Title.Position = UDim2.new(0, 20, 0, 0); Title.Size = UDim2.new(0, 500, 1, 0); Title.Text = "👑 MOFENKHUB V93.0  |  ANIME DICE PRO"; Title.TextSize = 13; Title.Font = Enum.Font.GothamBlack; Title.TextXAlignment = Enum.TextXAlignment.Left; Title.BackgroundTransparency = 1; table.insert(ThemeElements.TextAcc, Title)
 
 local CloseBtn = Instance.new("TextButton"); CloseBtn.Parent = TopBar; CloseBtn.Position = UDim2.new(1, -42, 0, 9); CloseBtn.Size = UDim2.new(0, 30, 0, 30); CloseBtn.Text = "✕"; CloseBtn.TextColor3 = Color3.fromRGB(255,255,255); CloseBtn.Font = Enum.Font.GothamBold; CloseBtn.BackgroundTransparency = 0.2; table.insert(ThemeElements.Card, CloseBtn)
 local CC = Instance.new("UICorner"); CC.CornerRadius = UDim.new(0, 8); CC.Parent = CloseBtn
@@ -393,6 +393,16 @@ local function GetOpts(mode)
 	elseif mode == "unit" then
 		local placed = {}; pcall(function() for _, d in pairs(slots()) do if d.unitId then placed[d.unitId]=true end end end)
 		for k, e in pairs(inventory()) do if isUnitEntry(e) then table.insert(t, {label=e.name .. (placed[k] and " ★" or ""), val=k}) end end
+	elseif mode == "unit_name" then
+		-- Pilihan unik berdasarkan Nama Unit di inventory untuk Auto Sell pilihan spesifik
+		local addedNames = {}
+		for _, e in pairs(inventory()) do
+			if isUnitEntry(e) and e.name and not addedNames[e.name] then
+				addedNames[e.name] = true
+				table.insert(t, {label = e.name, val = e.name})
+			end
+		end
+		table.sort(t, function(a,b) return a.label < b.label end)
 	end
 	return t
 end
@@ -452,7 +462,8 @@ AddToggle(G_HlwTeleport, "Auto Teleport Ke Halloween World", "halloweenTeleport"
 local G_HlwRoll = AddGroup(T_Hlw, "PUMPKIN DICE & UNIT MANAGEMENT")
 AddDropdown(G_HlwRoll, "Pilih Kuantitas Pumpkin Roll:", {{label="Roll 1x", val=1}, {label="Roll 5x", val=5}}, "pumpkinRollQty", false)
 AddToggle(G_HlwRoll, "Auto Pumpkin Dice Roll", "pumpkinAutoRoll")
-AddToggle(G_HlwRoll, "Auto Sell Pumpkin Units (Proteksi Limited)", "pumpkinAutoSell")
+AddToggle(G_HlwRoll, "Auto Sell Pumpkin Units (Service Server)", "pumpkinAutoSell")
+AddDropdown(G_HlwRoll, "Pilih Nama Unit Spesifik Auto Sell:", GetOpts("unit_name"), "specificSellUnits", true)
 
 local G_HlwQuests = AddGroup(T_Hlw, "HALLOWEEN REWARDS & QUESTS")
 AddToggle(G_HlwQuests, "Auto Claim Halloween Quests", "halloweenQuest")
@@ -531,7 +542,7 @@ BtnSave.MouseButton1Click:Connect(function() pcall(function() saveConfig(F.cfgNa
 local BtnLoad = Instance.new("TextButton"); BtnLoad.Parent = G_SetConfig; BtnLoad.Size = UDim2.new(1, 0, 0, 34); BtnLoad.Text = "📂 LOAD CONFIG PILIHAN"; BtnLoad.Font = Enum.Font.GothamBold; BtnLoad.TextSize = 12; table.insert(ThemeElements.Header, BtnLoad); table.insert(ThemeElements.TextAcc, BtnLoad); local BTL = Instance.new("UICorner"); BTL.CornerRadius = UDim.new(0,6); BTL.Parent = BtnLoad
 BtnLoad.MouseButton1Click:Connect(function() pcall(function() loadConfig(F.cfgName) end) end)
 
-local BtnDelete = Instance.new("TextButton"); BtnDelete.Parent = G_SetConfig; BtnDelete.Size = UDim2.new(1, 0, 0, 34); BtnDelete.Text = "🗑️ DELETE CONFIG PILIHAN"; BtnDelete.Font = Enum.Font.GothamBold; BtnDelete.TextSize = 12; BtnDelete.TextColor3 = Color3.fromRGB(255, 60, 60); table.insert(ThemeElements.Header, BtnDelete); local BTD = Instance.new("UICorner"); BTD.CornerRadius = UDim.new(0,6); BTD.Parent = BtnDelete
+local BtnDelete = Instance.new("TextButton"); BtnDelete.Parent = G_SetConfig; BtnDelete.Size = UDim2.new(1, 0, 0, 34); BtnDelete.Text = "🗑️ DELETE CONFIG PILIHAN"; BtnDelete.Font = Enum.Font.GothamBold; BtnDelete.TextSize = 12; BtnDelete.TextColor3 = Color3.fromRGB(255, 60, 60); table.insert(ThemeElements.Header, BtnDelete); local BTD = Instance.new("UICorner"); BTD.CornerRadius = UDim.new(0,6); BTD.Parent = BTD
 BtnDelete.MouseButton1Click:Connect(function()
 	pcall(function()
 		local path = getCfgPath(F.cfgName)
@@ -572,7 +583,7 @@ local G_Web = AddGroup(T_Set, "DISCORD WEBHOOK")
 AddToggle(G_Web, "Aktifkan Webhook Discord", "webhookEnabled")
 AddInput(G_Web, "Webhook URL (Tempel di sini):", "webhookUrl", false)
 local BtnTestWeb = Instance.new("TextButton"); BtnTestWeb.Parent = G_Web; BtnTestWeb.Size = UDim2.new(1, 0, 0, 32); BtnTestWeb.Text = "🔔 TEST KIRIM WEBHOOK"; BtnTestWeb.Font = Enum.Font.GothamBold; BtnTestWeb.TextSize = 12; table.insert(ThemeElements.Card, BtnTestWeb); table.insert(ThemeElements.TextAcc, BtnTestWeb); local BTWC = Instance.new("UICorner"); BTWC.CornerRadius = UDim.new(0,6); BTWC.Parent = BtnTestWeb
-BtnTestWeb.MouseButton1Click:Connect(function() SendWebhook("✅ Webhook Connected!", "MofenkHub V92.0 berhasil tersambung ke Discord kamu.", 3447003) end)
+BtnTestWeb.MouseButton1Click:Connect(function() SendWebhook("✅ Webhook Connected!", "MofenkHub V93.0 berhasil tersambung ke Discord kamu.", 3447003) end)
 
 local G_Set2 = AddGroup(T_Set, "OPTIMALISASI & TOOLS")
 AddToggle(G_Set2, "Anti-AFK (Cegah Disconnect Profesional)", "afk")
@@ -609,7 +620,7 @@ end)
 ApplyTheme(F.themeIndex)
 
 -- ===================================================================== --
--- 6. FULL BACKEND THREADS (ANTI-DISCONNECT & HALLOWEEN / TOWER LOGIC)
+-- 6. FULL BACKEND THREADS (PROFESSIONAL AUTOMATION)
 -- ===================================================================== --
 
 local vu = game:GetService("VirtualUser")
@@ -657,7 +668,7 @@ task.spawn(function()
 	end
 end)
 
--- [NEW] Halloween Teleport & Event Automation Thread
+-- [NEW] Halloween Teleport & Event Automation Thread (Fixed & Stable)
 task.spawn(function()
 	while _G.__ANIMEDICE == generation do
 		if F.halloweenTeleport and R.HWTeleport then
@@ -678,11 +689,11 @@ task.spawn(function()
 		if F.trickOrTreat and R.TrickOrTreat then
 			pcall(function() R.TrickOrTreat:FireServer() end)
 		end
-		task.wait(4)
+		task.wait(5)
 	end
 end)
 
--- [NEW] Pumpkin Dice Automation Thread
+-- [NEW] Pumpkin Dice & Specific Unit Name Sell Thread
 task.spawn(function()
 	while _G.__ANIMEDICE == generation do
 		if F.pumpkinAutoRoll and R.PumpkinRoll then
@@ -702,7 +713,40 @@ task.spawn(function()
 		if R.PumpkinAutoSell then
 			pcall(function() R.PumpkinAutoSell:FireServer(F.pumpkinAutoSell) end)
 		end
-		task.wait(2.5)
+
+		-- Logika Auto Sell Berdasarkan Nama Unit Pilihan (Specific Sell Units)
+		if F.specificSellUnits and #F.specificSellUnits > 0 and R.SellInventory then
+			pcall(function()
+				local d = data()
+				local placed = {}
+				for _, slot in pairs(d.Slots or {}) do if slot.unitId then placed[slot.unitId] = true end end
+				for _, id in pairs(d.TowerTeam or {}) do placed[id] = true end
+
+				local sellList = {}
+				for id, u in pairs(d.Inventory or {}) do
+					if isUnitEntry(u) and u.name then
+						local isTarget = false
+						for _, targetName in ipairs(F.specificSellUnits) do
+							if u.name == targetName then isTarget = true break end
+						end
+						
+						local isProt = false
+						if u.attributes and u.attributes.locked then isProt = true end
+
+						if isTarget and not placed[id] and not isProt then
+							table.insert(sellList, id)
+							if #sellList >= 150 then break end
+						end
+					end
+				end
+
+				if #sellList > 0 then
+					R.SellInventory:InvokeServer(sellList)
+				end
+			end)
+		end
+
+		task.wait(3)
 	end
 end)
 
@@ -768,7 +812,7 @@ task.spawn(function()
 	end
 end)
 
--- Auto Sell Thread
+-- Universal Auto Sell Thread
 task.spawn(function()
 	while _G.__ANIMEDICE == generation do
 		if F.sellAuto and R.SellInventory then
@@ -907,7 +951,7 @@ task.spawn(function()
 	end
 end)
 
--- [NEW] Haunted Tower (Halloween Tower) Thread Terpisah
+-- Haunted Tower (Halloween Tower) Thread Terpisah
 task.spawn(function()
 	while _G.__ANIMEDICE == generation do
 		if F.hauntedTower and R.PlayTower and R.CompleteFloor then
