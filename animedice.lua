@@ -21,7 +21,7 @@ pcall(function()
 	if qot then
 		qot([[
 			task.wait(3)
-			loadstring(game:HttpGet("https://raw.githubusercontent.com/Mofenk/mofenkhub/refs/heads/main/animedice.lua"))()
+			loadstring(game:HttpGet("https://raw.githubusercontent.com/Mofenk/mofenkhub/refs/heads/Mofenk-Update-Patch-1/animedice.lua"))()
 		]])
 	end
 end)
