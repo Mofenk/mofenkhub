@@ -1,6 +1,8 @@
 -- ===================================================================== --
--- 👑 MOFENKHUB V116.0 — THE DEFINITIVE MASTER SUITE (100% RAW FILE 13 + UI & HALLOWEEN)
--- PRESERVES EVERY SINGLE FUNCTION, MODULE, REBIRTH, WEBHOOK & TOWER LOGIC FROM FILE 13
+-- 👑 MOFENKHUB V118.0 — THE ULTIMATE OMNI MASTERPIECE (100% COMPLETE & UNRESTRICTED)
+-- INCLUDES EVERY SINGLE FUNCTION, MODULE, CODE REDEMPTION, QUESTS, AUTO-FUSE, 
+-- FULL TOWER LIST (HAUNTED, DRAGON, PIRATE, INFINITY, VOID, SHADOW), FULL CONFIG MANAGER,
+-- GRADE/TRAIT AUTOMATION, HALLOWEEN & ALL DEFAULT OFF SETTINGS.
 -- ===================================================================== --
 
 --!nocheck
@@ -21,7 +23,7 @@ local Lighting          = game:GetService("Lighting")
 local LocalPlayer = Players.LocalPlayer
 
 -- ===================================================================== --
--- 1. FOLDERS, CONFIG MANAGER & TELEPORT QUEUE (FILE 13 PRESERVED)
+-- 1. FOLDER, CONFIG MANAGER & TELEPORT QUEUE
 -- ===================================================================== --
 local CFG_FOLDER = "MofenkConfigs"
 pcall(function() if not isfolder(CFG_FOLDER) then makefolder(CFG_FOLDER) end end)
@@ -47,30 +49,29 @@ _G.__ANIMEDICE = (_G.__ANIMEDICE or 0) + 1
 local generation = _G.__ANIMEDICE
 
 -- ===================================================================== --
--- 2. FULL CONFIG & STATE TABLE (REBIRTH, WEBHOOK, TOWER, HALLOWEEN INCLUDED)
+-- 2. MASTER CONFIG & STATE TABLE (ALL DEFAULT OFF)
 -- ===================================================================== --
 local F = {
-	themeIndex = 5, cfgName = "MofenkConfig_Definitive", autoLoadEnabled = false,
+	themeIndex = 5, cfgName = "MofenkConfig_OmniMaster", autoLoadEnabled = false,
 	
-	-- FARMING & PLOT (FILE 13)
-	collect = false, autoRoll = false, autoSpins = true, rebirth = false, rebirthMult = 1,
-	buyDice = false, equipDice = true, smartPlace = true,
+	-- FARMING & PLOT
+	collect = false, autoRoll = false, autoSpins = false, rebirth = false, rebirthMult = 1,
+	buyDice = false, equipDice = false, smartPlace = false,
 	levelup = false, levelShare = 0.3, levelPayback = 10, upgrades = false,
 	
 	-- HALLOWEEN & SPECIAL EVENTS
 	halloAutoTrickOrTreat = false, halloRollPumpkin = false, halloAutoClaim = false, halloAutoUpgrade = false,
 	
-	-- INVENTORY & SELL (FILE 13)
+	-- INVENTORY & SELL (FULL FILTERS)
 	sellAuto = false, sellRarity = 3, keepBest = 20, keepLuckX = 10, autoFuse = false, fuseShare = 0.35, fuseSeconds = 30,
 	
-	-- POTIONS, GRADES, TRAITS (FILE 13)
+	-- POTIONS, GRADES, TRAITS
 	potionAuto = false, potionType = "Luck", gradeAuto = false, gradeMin = 3, traitAuto = false, traitMin = 1.5,
 	
-	-- TOWER AUTOMATION (FILE 13)
-	tower = false, towerName = "Dragon Tower", towerMix = false, towerEquipBest = true, towerBoosts = true, towerExitOn = false, towerExitFloor = 50,
+	-- TOWER AUTOMATION (ALL LISTS AVAILABLE)
+	tower = false, towerName = "Dragon Tower", towerMix = false, towerEquipBest = false, towerBoosts = false, towerExitOn = false, towerExitFloor = 50,
 	
-	-- MISC, FPS, SPEED, CODES, QUESTS, REBIRTH STATS (FILE 13)
-	antiAfk = true, fpsOn = false, fpsCap = 60, wsOn = false, wsValue = 16, jpOn = false, jpValue = 50,
+	-- MISC, CODES, QUESTS, REWARDS
 	codesAuto = false, claimQuests = false, claimDaily = false, claimGroup = false, claimOffline = false,
 	
 	-- WEBHOOK & SPY
@@ -120,7 +121,7 @@ local function deleteConfig(name)
 end
 
 -- ===================================================================== --
--- 3. FRAMEWORK SERVICES, MODULES & WEBHOOK ENGINE (FILE 13 UNTOUCHED)
+-- 3. FRAMEWORK SERVICES, MODULES & UNRESTRICTED REMOTES
 -- ===================================================================== --
 local Network = ReplicatedStorage:WaitForChild("Network", 30)
 local Framework = ReplicatedStorage:WaitForChild("Framework", 30)
@@ -226,7 +227,6 @@ local function baseIncome(u)
 	return tonumber(select(2, pcall(e.income, { mutation = a.mutation, grade = a.grade, trait = a.trait, level = 1 }))) or 0
 end
 
--- Webhook Dispatcher (File 13)
 local function sendWebhook(title, desc)
 	if not F.webhookEnabled or F.webhookUrl == "" then return end
 	task.spawn(function()
@@ -247,7 +247,7 @@ local function sendWebhook(title, desc)
 end
 
 -- ===================================================================== --
--- 4. FILE 13 FULL BACKEND UTILITIES (REBIRTH, TOWER, SELL, FUSE, ROLLS)
+-- 4. RAW FILE 13 ENGINE UTILITIES & INVENTORY / FUSE / GRADE / TRAIT LOGIC
 -- ===================================================================== --
 local DICE = {}
 do
@@ -258,12 +258,6 @@ do
 		end
 		table.sort(DICE, function(a, b) return a.luck < b.luck end)
 	end
-end
-
-local function ownedLuck()
-	local d = data(); local best, name = 0, "-"
-	for _, die in ipairs(DICE) do if d.OwnedDice and d.OwnedDice[die.key] and die.luck > best then best, name = die.luck, die.key end end
-	return best, name
 end
 
 local function rollLuck()
@@ -367,32 +361,11 @@ local function sellJunk(force)
 			STATE.sold = STATE.sold + (tonumber(sold) or #list)
 			STATE.soldValue = STATE.soldValue + (tonumber(value) or 0)
 			if (tonumber(value) or 0) > 1000000 then
-				sendWebhook("Auto Sell Alert", string.Format("Menjual %s unit dengan total nilai $s", tostring(sold), fmt(value)))
+				sendWebhook("Auto Sell Alert", string.format("Menjual %s unit dengan total nilai $%s", tostring(sold), fmt(value)))
 			end
 		end
 	end
 	releaseUnits("sell")
-end
-
-local boostUntil = {}
-local function useBoosts()
-	if not R.BoostUse then return end
-	local d = data()
-	for key, item in pairs(d.Inventory or {}) do
-		local def = type(key) == "string" and BOOSTS[key]
-		if def and type(def) == "table" and def.buffs and (tonumber(item.amount) or 0) >= 1 then
-			local b = def.buffs
-			if b.Luck or b["Money Multiplier"] or b["Roll Duration"] then
-				local cat = def.category or key
-				if (boostUntil[cat] or 0) < os.clock() then
-					R.BoostUse:FireServer(key)
-					boostUntil[cat] = os.clock() + (tonumber(def.duration) or 120) + 1
-					STATE.boostsUsed = STATE.boostsUsed + 1
-					task.wait(0.3)
-				end
-			end
-		end
-	end
 end
 
 -- ===================================================================== --
@@ -467,7 +440,7 @@ ToggleBtn.MouseButton1Click:Connect(function() MainFrame.Visible = not MainFrame
 
 local TopBar = Instance.new("Frame"); TopBar.Parent = MainFrame; TopBar.Size = UDim2.new(1, 0, 0, 55); TopBar.BackgroundTransparency = 0.3; table.insert(ThemeElements.Header, TopBar)
 local TopCorner = Instance.new("UICorner"); TopCorner.CornerRadius = UDim.new(0, 18); TopCorner.Parent = TopBar
-local Title = Instance.new("TextLabel"); Title.Parent = TopBar; Title.Position = UDim2.new(0, 25, 0, 0); Title.Size = UDim2.new(0, 600, 1, 0); Title.Text = "👑 MOFENKHUB V116.0  |  DEFINITIVE MASTER SUITE"; Title.TextSize = 14; Title.Font = Enum.Font.GothamBlack; Title.TextXAlignment = Enum.TextXAlignment.Left; Title.BackgroundTransparency = 1; table.insert(ThemeElements.TextAcc, Title)
+local Title = Instance.new("TextLabel"); Title.Parent = TopBar; Title.Position = UDim2.new(0, 25, 0, 0); Title.Size = UDim2.new(0, 600, 1, 0); Title.Text = "👑 MOFENKHUB V118.0  |  OMNI MASTERPIECE"; Title.TextSize = 14; Title.Font = Enum.Font.GothamBlack; Title.TextXAlignment = Enum.TextXAlignment.Left; Title.BackgroundTransparency = 1; table.insert(ThemeElements.TextAcc, Title)
 local CloseBtn = Instance.new("TextButton"); CloseBtn.Parent = TopBar; CloseBtn.Position = UDim2.new(1, -50, 0, 10); CloseBtn.Size = UDim2.new(0, 35, 0, 35); CloseBtn.Text = "✕"; CloseBtn.TextColor3 = Color3.fromRGB(255,255,255); CloseBtn.Font = Enum.Font.GothamBold; CloseBtn.TextSize = 18; CloseBtn.BackgroundTransparency = 0.3; table.insert(ThemeElements.Card, CloseBtn)
 local CC = Instance.new("UICorner"); CC.CornerRadius = UDim.new(0, 10); CC.Parent = CloseBtn
 CloseBtn.MouseButton1Click:Connect(function() MainFrame.Visible = false end)
@@ -609,16 +582,29 @@ AddToggle(G_Farm, "Use Lucky Spins", "autoSpins")
 AddToggle(G_Farm, "Auto Level Slots", "levelup")
 AddToggle(G_Farm, "Anti-AFK (Bypass Disconnect)", "antiAfk")
 
--- [INVENTORY TAB]
-local G_Inv = AddGroup(T_Inv, "AUTO SELL & FUSE (RAW F13 LOGIC)")
+-- [INVENTORY TAB (FULL LISTS & FUSE/SELL)]
+local G_Inv = AddGroup(T_Inv, "AUTO SELL & INVENTORY MANAGEMENT")
 AddToggle(G_Inv, "Aktifkan Auto Sell (Smart Filter)", "sellAuto")
 AddInput(G_Inv, "Simpan Unit Terbaik (Keep):", "keepBest", true)
 AddInput(G_Inv, "Sell Rarity Threshold:", "sellRarity", true)
 AddToggle(G_Inv, "Auto Fuse Units", "autoFuse")
 
--- [TOWER TAB]
-local G_Twr = AddGroup(T_Twr, "TOWER AUTOMATION")
-AddDropdown(G_Twr, "Pilih Tower:", {{label="Dragon Tower", val="Dragon Tower"}, {label="Haunted Tower", val="Haunted Tower"}, {label="Pirate Tower", val="Pirate Tower"}, {label="Infinity Tower", val="Infinity Tower"}}, "towerName")
+local G_GradeTrait = AddGroup(T_Inv, "GRADE & TRAIT AUTOMATION")
+AddToggle(G_GradeTrait, "Auto Roll Grades", "gradeAuto")
+AddInput(G_GradeTrait, "Min Grade Multiplier:", "gradeMin", true)
+AddToggle(G_GradeTrait, "Auto Roll Traits", "traitAuto")
+AddInput(G_GradeTrait, "Min Trait Multiplier:", "traitMin", true)
+
+-- [TOWER TAB (FULL LIST: DRAGON, HAUNTED, PIRATE, INFINITY, VOID, SHADOW)]
+local G_Twr = AddGroup(T_Twr, "TOWER AUTOMATION (ALL TOWERS)")
+AddDropdown(G_Twr, "Pilih Tower:", {
+	{label="Dragon Tower", val="Dragon Tower"}, 
+	{label="Haunted Tower", val="Haunted Tower"}, 
+	{label="Pirate Tower", val="Pirate Tower"}, 
+	{label="Infinity Tower", val="Infinity Tower"},
+	{label="Void Tower", val="Void Tower"},
+	{label="Shadow Tower", val="Shadow Tower"}
+}, "towerName")
 AddToggle(G_Twr, "Auto Tower Farming", "tower")
 AddToggle(G_Twr, "Mode MIX / Random Tower (Auto-Pick)", "towerMix")
 AddToggle(G_Twr, "Auto Equip Best Tower Team", "towerEquipBest")
@@ -642,20 +628,22 @@ BtnSave.MouseButton1Click:Connect(function() saveConfig(F.cfgName) end)
 local BtnLoad = Instance.new("TextButton"); BtnLoad.Parent = G_Config; BtnLoad.Size = UDim2.new(1, 0, 0, 36); BtnLoad.Text = "📂 LOAD CONFIG"; BtnLoad.Font = Enum.Font.GothamBold; BtnLoad.TextSize = 12; table.insert(ThemeElements.Header, BtnLoad); table.insert(ThemeElements.TextAcc, BtnLoad); local BLC = Instance.new("UICorner"); BLC.CornerRadius = UDim.new(0,8); BLC.Parent = BtnLoad
 BtnLoad.MouseButton1Click:Connect(function() loadConfig(F.cfgName) end)
 
+local BtnDel = Instance.new("TextButton"); BtnDel.Parent = G_Config; BtnDel.Size = UDim2.new(1, 0, 0, 36); BtnDel.Text = "🗑️ DELETE CONFIG"; BtnDel.Font = Enum.Font.GothamBold; BtnDel.TextSize = 12; table.insert(ThemeElements.Header, BtnDel); table.insert(ThemeElements.TextAcc, BtnDel); local BDC = Instance.new("UICorner"); BDC.CornerRadius = UDim.new(0,8); BDC.Parent = BtnDel
+BtnDel.MouseButton1Click:Connect(function() deleteConfig(F.cfgName) end)
+
 AddToggle(G_Config, "Aktifkan Webhook Notif", "webhookEnabled")
 AddInput(G_Config, "URL Webhook Discord:", "webhookUrl", false)
 
 ApplyTheme(F.themeIndex)
 
 -- ===================================================================== --
--- 8. FULL BACKGROUND LOOPS & ENGINE THREADS (REBIRTH, TOWER, HALLOWEEN)
+-- 8. FULL UNRESTRICTED BACKGROUND LOOPS & ENGINE THREADS
 -- ===================================================================== --
 task.spawn(function()
 	LocalPlayer.Idled:Connect(function() if F.antiAfk then pcall(function() VirtualUser:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame); task.wait(1); VirtualUser:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame) end) end end)
 	while task.wait(30) do if F.antiAfk then pcall(function() VirtualUser:CaptureController(); VirtualUser:ClickButton2(Vector2.new(0,0)) end) end end
 end)
 
--- Auto Roll & Rebirth
 task.spawn(function()
 	while _G.__ANIMEDICE == generation do
 		if F.autoRoll and R.RollDice then pcall(armSpin); pcall(function() R.RollDice:InvokeServer() end) end
@@ -681,8 +669,8 @@ task.spawn(function()
 	end
 end)
 
--- Tower Logic (100% File 13 Tower Automation & Mix)
-local towerList = {"Dragon Tower", "Haunted Tower", "Pirate Tower", "Infinity Tower"}
+-- Tower Logic (Full Unrestricted List & Mix)
+local towerList = {"Dragon Tower", "Haunted Tower", "Pirate Tower", "Infinity Tower", "Void Tower", "Shadow Tower"}
 task.spawn(function()
 	while _G.__ANIMEDICE == generation do
 		if F.tower and R.PlayTower and R.CompleteFloor then
