@@ -1,5 +1,5 @@
 -- ===================================================================== --
--- 👑 MOFENKHUB V90.0 — FULL HALLOWEEN & STABLE MASTER SUITE
+-- 👑 MOFENKHUB V91.0 — FULL PUMPKIN DICE & HALLOWEEN MASTER SUITE
 -- ===================================================================== --
 
 --!nocheck
@@ -54,8 +54,9 @@ local F = {
 	traitAuto = false, traitAll = false, traitPlacedOnly = false, traitTargets = {}, traitUnits = {}, rerollReserve = 50,
 	-- Tower
 	tower = false, towerName = "Dragon Tower", towerMix = false, towerEquipBest = true, towerExitOn = false, towerExitFloor = 50,
-	-- Halloween Features
+	-- Halloween & Pumpkin Dice Features
 	halloweenQuest = false, halloweenPath = false, halloweenOffer = false, trickOrTreat = false,
+	pumpkinRollQty = 1, pumpkinAutoRoll = false, pumpkinAutoSell = false,
 	-- Client & Misc
 	wsOn = false, wsValue = 16, noclip = false, afk = true, fpsOn = false,
 	codesAuto = false, claimQuests = false,
@@ -71,7 +72,6 @@ local THEMES = {
 	{ Name = "Halloween Spooky", Bg = Color3.fromRGB(15, 8, 5), Card = Color3.fromRGB(30, 15, 10), Header = Color3.fromRGB(22, 10, 6), Acc1 = Color3.fromRGB(255, 140, 0), Acc2 = Color3.fromRGB(138, 43, 226) },
 	{ Name = "Toxic Glow", Bg = Color3.fromRGB(5, 10, 5), Card = Color3.fromRGB(15, 25, 15), Header = Color3.fromRGB(10, 15, 10), Acc1 = Color3.fromRGB(57, 255, 20), Acc2 = Color3.fromRGB(173, 255, 47) },
 	{ Name = "Crimson Hell", Bg = Color3.fromRGB(12, 0, 0), Card = Color3.fromRGB(25, 5, 5), Header = Color3.fromRGB(18, 2, 2), Acc1 = Color3.fromRGB(255, 20, 20), Acc2 = Color3.fromRGB(255, 100, 0) },
-	{ Name = "Gold Luxury", Bg = Color3.fromRGB(15, 12, 5), Card = Color3.fromRGB(30, 25, 15), Header = Color3.fromRGB(20, 18, 8), Acc1 = Color3.fromRGB(255, 215, 0), Acc2 = Color3.fromRGB(255, 165, 0) },
 }
 local ThemeElements = { Bg = {}, Card = {}, Header = {}, Acc1 = {}, Grad = {}, TextAcc = {} }
 
@@ -130,7 +130,7 @@ pcall(function()
 end)
 
 -- ===================================================================== --
--- 2. FRAMEWORK & MODULE BINDINGS (DENGAN HALLOWEEN SERVICE)
+-- 2. FRAMEWORK & MODULE BINDINGS
 -- ===================================================================== --
 local Network = ReplicatedStorage:WaitForChild("Network", 15); local Framework = ReplicatedStorage:WaitForChild("Framework", 15)
 local function svc(p) local n = Network; for x in string.gmatch(p, "[^%.]+") do n = n and n:FindFirstChild(x) end; return n end
@@ -159,11 +159,13 @@ local R = {
 	SellInventory   = svc("SellService.RF.SellInventory"),
 	UpdateAutoSell  = svc("SellService.RE.UpdateAutoSell"),
 	Fuse            = svc("FusingService.RE.Fuse"),
-	-- Halloween Remote Services (Sesuai Console Game)
+	-- Halloween & Pumpkin Dice Remote Services (Sesuai Console Game)
 	HWQuestClaim    = svc("HalloweenQuestService.RE.Claim"),
 	HWClaimPath     = svc("HalloweenService.RE.ClaimAllPath"),
 	HWBuyOffer      = svc("HalloweenService.RE.BuyOffer"),
-	TrickOrTreat    = svc("TrickOrTreatService.RE.Knocked")
+	TrickOrTreat    = svc("TrickOrTreatService.RE.Knocked"),
+	PumpkinRoll     = svc("PumpkinDiceService.RF.Roll") or svc("PumpkinDiceService.RE.Roll"),
+	PumpkinAutoSell = svc("PumpkinDiceService.RE.SetAutoSell")
 }
 
 local G = {}
@@ -255,7 +257,7 @@ UpdateScale(); workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):
 ToggleBtn.MouseButton1Click:Connect(function() MainFrame.Visible = not MainFrame.Visible end)
 
 local TopBar = Instance.new("Frame"); TopBar.Parent = MainFrame; TopBar.Size = UDim2.new(1, 0, 0, 48); TopBar.BackgroundTransparency = 0.2; table.insert(ThemeElements.Header, TopBar)
-local Title = Instance.new("TextLabel"); Title.Parent = TopBar; Title.Position = UDim2.new(0, 20, 0, 0); Title.Size = UDim2.new(0, 500, 1, 0); Title.Text = "👑 MOFENKHUB V90.0  |  ANIME DICE PRO"; Title.TextSize = 14; Title.Font = Enum.Font.GothamBlack; Title.TextXAlignment = Enum.TextXAlignment.Left; Title.BackgroundTransparency = 1; table.insert(ThemeElements.TextAcc, Title)
+local Title = Instance.new("TextLabel"); Title.Parent = TopBar; Title.Position = UDim2.new(0, 20, 0, 0); Title.Size = UDim2.new(0, 500, 1, 0); Title.Text = "👑 MOFENKHUB V91.0  |  ANIME DICE PRO"; Title.TextSize = 14; Title.Font = Enum.Font.GothamBlack; Title.TextXAlignment = Enum.TextXAlignment.Left; Title.BackgroundTransparency = 1; table.insert(ThemeElements.TextAcc, Title)
 
 local CloseBtn = Instance.new("TextButton"); CloseBtn.Parent = TopBar; CloseBtn.Position = UDim2.new(1, -42, 0, 9); CloseBtn.Size = UDim2.new(0, 30, 0, 30); CloseBtn.Text = "✕"; CloseBtn.TextColor3 = Color3.fromRGB(255,255,255); CloseBtn.Font = Enum.Font.GothamBold; CloseBtn.BackgroundTransparency = 0.2; table.insert(ThemeElements.Card, CloseBtn)
 local CC = Instance.new("UICorner"); CC.CornerRadius = UDim.new(0, 8); CC.Parent = CloseBtn
@@ -377,7 +379,7 @@ local function GetOpts(mode)
 	local t = {}; 
 	if mode == "grade" and G.GradesMod then for n, g in pairs(G.GradesMod) do if type(g)=="table" and g.order then table.insert(t, {label=n, val=n, order=g.order}) end end; table.sort(t, function(a,b) return a.order<b.order end)
 	elseif mode == "trait" and G.TraitsMod then for n, g in pairs(G.TraitsMod) do if type(g)=="table" and g.order then table.insert(t, {label=n, val=n, order=g.order}) end end; table.sort(t, function(a,b) return a.order<b.order end)
-	elseif mode == "pot" and G.BoostConfig then for n, e in pairs(G.BoostConfig.entries or {}) do table.insert(t, {label=n.." [T"..tostring(e.tier)..']', val=n}) end; table.sort(t, function(a,b) return a.label<b.label end)
+	elseif mode == "pot" and G.BoostConfig then for n, e in pairs(G.BoostConfig.entries or {}) do table.insert(t, {label=n.." [T"..tostring(e.tier).."]", val=n}) end; table.sort(t, function(a,b) return a.label<b.label end)
 	elseif mode == "unit" then
 		local placed = {}; pcall(function() for _, d in pairs(slots()) do if d.unitId then placed[d.unitId]=true end end end)
 		for k, e in pairs(inventory()) do if isUnitEntry(e) then table.insert(t, {label=e.name .. (placed[k] and " ★" or ""), val=k}) end end
@@ -386,7 +388,7 @@ local function GetOpts(mode)
 end
 
 -- ===================================================================== --
--- 5. 9 TABS ASSEMBLY (DITAMBAH TAB HALLOWEEN)
+-- 5. 9 TABS ASSEMBLY
 -- ===================================================================== --
 local T_Dash = CreateTab("Dashboard", "📊")
 local T_Farm = CreateTab("Farming", "⛏️")
@@ -433,8 +435,11 @@ AddToggle(G_Farm2, "Auto Level Up Unit", "levelup")
 AddInput(G_Farm2, "Max Level Batas:", "maxLevel", true)
 AddToggle(G_Farm2, "Auto Upgrade Skill Tree", "upgrades")
 
--- 3. HALLOWEEN [NEW TAB]
-local G_Hlw = AddGroup(T_Hlw, "HALLOWEEN EVENT AUTOMATION")
+-- 3. HALLOWEEN [1 GROUP UTAMA PUMPKIN DICE & HALLOWEEN EVENT]
+local G_Hlw = AddGroup(T_Hlw, "PUMPKIN DICE & HALLOWEEN UNIT MANAGEMENT")
+AddDropdown(G_Hlw, "Pilih Kuantitas Pumpkin Roll:", {{label="Roll 1x", val=1}, {label="Roll 5x", val=5}}, "pumpkinRollQty", false)
+AddToggle(G_Hlw, "Auto Pumpkin Dice Roll (Tower/Trick)", "pumpkinAutoRoll")
+AddToggle(G_Hlw, "Auto Sell Pumpkin Units (Proteksi Limited)", "pumpkinAutoSell")
 AddToggle(G_Hlw, "Auto Claim Halloween Quests", "halloweenQuest")
 AddToggle(G_Hlw, "Auto Claim Halloween Path Rewards", "halloweenPath")
 AddToggle(G_Hlw, "Auto Buy Halloween Special Offers", "halloweenOffer")
@@ -535,7 +540,7 @@ local G_Web = AddGroup(T_Set, "DISCORD WEBHOOK")
 AddToggle(G_Web, "Aktifkan Webhook Discord", "webhookEnabled")
 AddInput(G_Web, "Webhook URL (Tempel di sini):", "webhookUrl", false)
 local BtnTestWeb = Instance.new("TextButton"); BtnTestWeb.Parent = G_Web; BtnTestWeb.Size = UDim2.new(1, 0, 0, 30); BtnTestWeb.Text = "🔔 TEST KIRIM WEBHOOK"; BtnTestWeb.Font = Enum.Font.GothamBold; BtnTestWeb.TextSize = 11; table.insert(ThemeElements.Card, BtnTestWeb); table.insert(ThemeElements.TextAcc, BtnTestWeb); local BTWC = Instance.new("UICorner"); BTWC.CornerRadius = UDim.new(0,6); BTWC.Parent = BtnTestWeb
-BtnTestWeb.MouseButton1Click:Connect(function() SendWebhook("✅ Webhook Connected!", "MofenkHub V90.0 berhasil tersambung ke Discord kamu.", 3447003) end)
+BtnTestWeb.MouseButton1Click:Connect(function() SendWebhook("✅ Webhook Connected!", "MofenkHub V91.0 berhasil tersambung ke Discord kamu.", 3447003) end)
 
 local G_Set2 = AddGroup(T_Set, "OPTIMALISASI & TOOLS")
 AddToggle(G_Set2, "Anti-AFK (Cegah Disconnect Profesional)", "afk")
@@ -572,7 +577,7 @@ end)
 ApplyTheme(F.themeIndex)
 
 -- ===================================================================== --
--- 6. FULL BACKEND THREADS (ANTI-DISCONNECT & HALLOWEEN AUTOMATION)
+-- 6. FULL BACKEND THREADS (ANTI-DISCONNECT & PUMPKIN DICE AUTOMATION)
 -- ===================================================================== --
 
 local vu = game:GetService("VirtualUser")
@@ -620,9 +625,32 @@ task.spawn(function()
 	end
 end)
 
--- [NEW] Halloween Automation Thread
+-- [NEW] Pumpkin Dice & Halloween Automation Thread
 task.spawn(function()
 	while _G.__ANIMEDICE == generation do
+		-- Pumpkin Dice Roll (1x / 5x)
+		if F.pumpkinAutoRoll and R.PumpkinRoll then
+			pcall(function()
+				local qty = tonumber(F.pumpkinRollQty) or 1
+				for i = 1, qty do
+					if not F.pumpkinAutoRoll then break end
+					if R.PumpkinRoll:IsA("RemoteFunction") then
+						R.PumpkinRoll:InvokeServer()
+					elseif R.PumpkinRoll:IsA("RemoteEvent") then
+						R.PumpkinRoll:FireServer()
+					end
+					task.wait(0.3)
+				end
+			end)
+		end
+
+		-- Pumpkin Auto Sell Setting Sync
+		if R.PumpkinAutoSell then
+			pcall(function()
+				R.PumpkinAutoSell:FireServer(F.pumpkinAutoSell)
+			end)
+		end
+
 		if F.halloweenQuest and R.HWQuestClaim then
 			pcall(function() R.HWQuestClaim:FireServer() end)
 		end
@@ -635,7 +663,7 @@ task.spawn(function()
 		if F.trickOrTreat and R.TrickOrTreat then
 			pcall(function() R.TrickOrTreat:FireServer() end)
 		end
-		task.wait(5)
+		task.wait(2.5)
 	end
 end)
 
@@ -701,7 +729,7 @@ task.spawn(function()
 	end
 end)
 
--- Auto Sell Thread
+-- Auto Sell Thread (Dengan Pelindungan Unit Limited/Protected)
 task.spawn(function()
 	while _G.__ANIMEDICE == generation do
 		if F.sellAuto and R.SellInventory then
