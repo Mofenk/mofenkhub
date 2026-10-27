@@ -1,5 +1,5 @@
 -- ===================================================================== --
--- 🌸 ADYFAHUB V98.0 — ULTIMATE AESTHETIC PINK EDITION (ANIME DICE)
+-- 🌸 ADYFAHUB V99.0 — ULTIMATE MASTERPIECE PINK AESTHETIC EDITION
 -- ===================================================================== --
 
 --!nocheck
@@ -18,7 +18,7 @@ pcall(function()
 	if qot then
 		qot([[
 			task.wait(3)
-			loadstring(game:HttpGet("https://raw.githubusercontent.com/Mofenk/mofenkhub/refs/heads/Mofenk-AdyfaUi/animedice.lua"))()
+			loadstring(game:HttpGet("https://raw.githubusercontent.com/Mofenk/mofenkhub/refs/heads/main/animedice.lua"))()
 		]])
 	end
 end)
@@ -32,42 +32,43 @@ if not successGui or not parentGui then parentGui = LocalPlayer:WaitForChild("Pl
 pcall(function() for _, v in pairs(parentGui:GetChildren()) do if string.find(v.Name, "AdyfaHub") or string.find(v.Name, "Mofenk") then v:Destroy() end end end)
 
 -- ===================================================================== --
--- 1. STATE & CONFIGURATION MANAGER (ADYFAHUB)
+-- 1. STATE & CONFIGURATION MANAGER (ADYFAHUB V99)
 -- ===================================================================== --
 _G.__ADYFAHUB = (_G.__ADYFAHUB or 0) + 1
 local generation = _G.__ADYFAHUB
 
 local F = {
-	themeIndex = 1, cfgName = "AdyfaConfig1", autoLoadEnabled = false,
+	themeIndex = 1, cfgName = "AdyfaConfig99", autoLoadEnabled = false,
 	-- Farm, Roll & Best Place Base
 	collect = false, levelup = false, maxLevel = 40, smartLevel = false,
 	rebirth = false, upgrades = false, buyDice = true, equipDice = true, autoRoll = false,
 	autoBestPlaceBase = false, smartPlace = true,
-	-- Inv, Lock & Sell
-	sellAuto = false, keepBest = 20, autoFuse = false, lockedUnits = {}, specificSellUnits = {},
+	-- Inv, Lock & Sell & Loadouts
+	sellAuto = false, keepBest = 20, autoFuse = false, lockedUnits = {}, specificSellUnits = {}, activeLoadout = "Preset 1",
 	-- Potion
 	potionAuto = false, potionBest = true, potionSpecific = {},
-	-- Reroll (Grade & Trait dengan target tertinggi hingga Genesis)
-	gradeAuto = false, gradeAll = false, gradePlacedOnly = false, gradeTargets = {}, gradeUnits = {}, gemReserve = 100,
-	traitAuto = false, traitAll = false, traitPlacedOnly = false, traitTargets = {}, traitUnits = {}, rerollReserve = 50,
+	-- Reroll (Grade, Trait & Quirk/Mutation)
+	gradeAuto = false, gradePlacedOnly = false, gradeTargets = {}, gradeUnits = {}, gemReserve = 100,
+	traitAuto = false, traitPlacedOnly = false, traitTargets = {}, traitUnits = {}, rerollReserve = 50,
+	quirkAuto = false, quirkPlacedOnly = false, quirkTargets = {}, quirkUnits = {}, quirkReserve = 50,
 	-- Tower Utama
 	tower = false, towerName = "Auto (best)", towerMix = false, towerEquipBest = true, towerExitOn = false, towerExitFloor = 50,
-	-- Halloween & Haunted Tower Features (Dilengkapi Cek Akun Baru)
+	-- Halloween & Haunted Tower Features
 	halloweenTeleport = false, halloweenQuest = false, halloweenPath = false, halloweenOffer = false, trickOrTreat = false,
 	pumpkinRollQty = 1, pumpkinAutoRoll = false, pumpkinAutoSell = false,
 	hauntedTower = false, hauntedMix = false, hauntedList = {"Haunted Front Yard"}, hauntedEquipBest = true, hauntedExitOn = false, hauntedExitFloor = 50,
 	-- Client & Misc
 	wsOn = false, wsValue = 16, noclip = false, afk = true, fpsOn = false,
-	codesAuto = false, claimQuests = false,
+	codesAuto = false, claimQuests = true,
 	-- Webhook
 	webhookEnabled = false, webhookUrl = ""
 }
 
-local STATE = { towerLive = "Standby", towerFloor = 0, towerDrops = 0, towerTraitsGot = "Belum Ada", hauntedLive = "Standby", hauntedFloor = 0, hauntedDrops = 0, activeBuffs = "Tidak Ada" }
+local STATE = { towerLive = "Standby", towerFloor = 0, towerDrops = 0, towerTraitsGot = "Belum Ada", hauntedLive = "Standby", hauntedFloor = 0, hauntedDrops = 0, activeBuffs = "Tidak Ada", signalBar = "●●●●● (STABLE)" }
 local ConfigUpdaters = {}
 
 local THEMES = {
-	{ Name = "Pink Neon Aesthetic", Bg = Color3.fromRGB(18, 10, 18), Card = Color3.fromRGB(30, 16, 32), Header = Color3.fromRGB(24, 12, 26), Acc1 = Color3.fromRGB(255, 105, 180), Acc2 = Color3.fromRGB(147, 112, 219) },
+	{ Name = "Pink Neon Aesthetic", Bg = Color3.fromRGB(16, 8, 16), Card = Color3.fromRGB(28, 14, 30), Header = Color3.fromRGB(22, 10, 24), Acc1 = Color3.fromRGB(255, 105, 180), Acc2 = Color3.fromRGB(147, 112, 219) },
 	{ Name = "Cyberpunk Rose", Bg = Color3.fromRGB(12, 8, 15), Card = Color3.fromRGB(25, 14, 28), Header = Color3.fromRGB(18, 10, 20), Acc1 = Color3.fromRGB(255, 20, 147), Acc2 = Color3.fromRGB(0, 255, 255) },
 }
 local ThemeElements = { Bg = {}, Card = {}, Header = {}, Acc1 = {}, Grad = {}, TextAcc = {} }
@@ -143,7 +144,8 @@ local R = {
 	Rebirth         = svc("RebirthService.RE.Rebirth"), 
 	BuyUpgrade      = svc("RE.BuyUpgrade") or svc("PlotService.RE.BuyPadUpgrade"),
 	GradeRoll       = svc("GradeService.RE.Roll"), 
-	TraitRoll       = svc("TraitService.RE.Roll"), 
+	TraitRoll       = svc("TraitService.RE.Roll"),
+	MutationRoll    = svc("MutationService.RE.Roll") or svc("QuirkService.RE.Roll"),
 	BoostUse        = svc("BoostService.RE.Use"),
 	PlayTower       = svc("Towers.RF.PlayTower") or svc("Towers.RE.PlayTower"), 
 	CompleteFloor   = svc("Towers.RF.CompleteTowerFloor"),
@@ -160,7 +162,6 @@ local R = {
 	InteractSlot    = svc("PlotService.RE.InteractSlot"),
 	EquipUnit       = svc("UnitService.RF.Equip") or svc("UnitService.RE.Equip"),
 	UnequipUnit     = svc("UnitService.RF.Unequip") or svc("UnitService.RE.Unequip"),
-	-- Halloween & Haunted Services
 	HWTeleport      = svc("HalloweenService.RF.Teleport"),
 	HWSeenIntro     = svc("HalloweenService.RE.SeenIntro"),
 	HWQuestClaim    = svc("HalloweenQuestService.RE.Claim"),
@@ -181,6 +182,7 @@ pcall(function()
 	G.BoostConfig = require(Framework.Features.Inventory.Kinds.Boost.BoostConfig)
 	G.GradesMod = require(Framework.Features.Grades.Grades)
 	G.TraitsMod = require(Framework.Features.Traits.Traits)
+	G.MutationsMod = require(Framework.Features.Mutations.Mutations) or require(Framework.Features.Quirk.Quirk)
 	G.QuestConfig = require(Framework.Features.Quests.QuestConfig)
 	G.EntryRegistry = require(Framework.Features.Inventory.EntryRegistry)
 	G.BuffController = require(Framework.Features.Buffs.BuffController)
@@ -227,11 +229,8 @@ ToggleGui.DisplayOrder = 99999
 
 local ToggleBtn = Instance.new("TextButton"); ToggleBtn.Parent = ToggleGui; ToggleBtn.Size = UDim2.new(0, 64, 0, 64); ToggleBtn.Position = UDim2.new(0.02, 0, 0.4, 0)
 ToggleBtn.BackgroundColor3 = THEMES[1].Card; ToggleBtn.Text = "FR"; ToggleBtn.Font = Enum.Font.GothamBlack; ToggleBtn.TextSize = 26; ToggleBtn.TextColor3 = THEMES[1].Acc1; ToggleBtn.ZIndex = 99999
-local TC = Instance.new("UICorner"); TC.CornerRadius = UDim.new(1, 0); TC.Parent = ToggleBtn -- Bentuk Bubble Bulat Sempurna
+local TC = Instance.new("UICorner"); TC.CornerRadius = UDim.new(1, 0); TC.Parent = ToggleBtn
 local TS = Instance.new("UIStroke"); TS.Thickness = 3; TS.Parent = ToggleBtn; table.insert(ThemeElements.Acc1, TS)
-
--- Efek Goresan / Bubble Glow Tambahan
-local GlowBubble = Instance.new("UIAspectRatioConstraint"); GlowBubble.Parent = ToggleBtn
 
 local dragging, dragInput, dragStart, startPos
 ToggleBtn.InputBegan:Connect(function(input)
@@ -251,7 +250,7 @@ end)
 -- ===================================================================== --
 -- 4. ULTIMATE AESTHETIC UI SETUP (LARGE TEXT & PINK NEON GOW)
 -- ===================================================================== --
-local MainGui = Instance.new("ScreenGui"); MainGui.Name = "AdyfaHubV98"; MainGui.Parent = parentGui; MainGui.ResetOnSpawn = false
+local MainGui = Instance.new("ScreenGui"); MainGui.Name = "AdyfaHubV99"; MainGui.Parent = parentGui; MainGui.ResetOnSpawn = false
 
 local MainFrame = Instance.new("Frame"); MainFrame.Parent = MainGui
 MainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -272,7 +271,7 @@ UpdateScale(); workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):
 ToggleBtn.MouseButton1Click:Connect(function() MainFrame.Visible = not MainFrame.Visible end)
 
 local TopBar = Instance.new("Frame"); TopBar.Parent = MainFrame; TopBar.Size = UDim2.new(1, 0, 0, 56); TopBar.BackgroundTransparency = 0.12; table.insert(ThemeElements.Header, TopBar)
-local Title = Instance.new("TextLabel"); Title.Parent = TopBar; Title.Position = UDim2.new(0, 24, 0, 0); Title.Size = UDim2.new(0, 600, 1, 0); Title.Text = "🌸 ADYFAHUB V98.0  |  ANIME DICE ULTIMATE"; Title.TextSize = 15; Title.Font = Enum.Font.GothamBlack; Title.TextXAlignment = Enum.TextXAlignment.Left; Title.BackgroundTransparency = 1; table.insert(ThemeElements.TextAcc, Title)
+local Title = Instance.new("TextLabel"); Title.Parent = TopBar; Title.Position = UDim2.new(0, 24, 0, 0); Title.Size = UDim2.new(0, 600, 1, 0); Title.Text = "🌸 ADYFAHUB V99.0  |  ANIME DICE MASTERPIECE"; Title.TextSize = 15; Title.Font = Enum.Font.GothamBlack; Title.TextXAlignment = Enum.TextXAlignment.Left; Title.BackgroundTransparency = 1; table.insert(ThemeElements.TextAcc, Title)
 
 local CloseBtn = Instance.new("TextButton"); CloseBtn.Parent = TopBar; CloseBtn.Position = UDim2.new(1, -48, 0, 12); CloseBtn.Size = UDim2.new(0, 32, 0, 32); CloseBtn.Text = "✕"; CloseBtn.TextColor3 = Color3.fromRGB(255,255,255); CloseBtn.Font = Enum.Font.GothamBold; CloseBtn.TextSize = 16; CloseBtn.BackgroundTransparency = 0.2; table.insert(ThemeElements.Card, CloseBtn)
 local CC = Instance.new("UICorner"); CC.CornerRadius = UDim.new(0, 10); CC.Parent = CloseBtn
@@ -401,9 +400,18 @@ local function GetOpts(mode)
 	local t = {}; 
 	if mode == "grade" and G.GradesMod then for n, g in pairs(G.GradesMod) do if type(g)=="table" and g.order then table.insert(t, {label=n, val=n, order=g.order}) end end; table.sort(t, function(a,b) return a.order<b.order end)
 	elseif mode == "trait" and G.TraitsMod then 
-		-- Lengkap dari Genesis, Paradox, Eternal, Transcendent, Monarch, Shogun, Samurai, dll
 		for n, g in pairs(G.TraitsMod) do if type(g)=="table" then table.insert(t, {label=n, val=n}) end end
-	elseif mode == "pot" and G.BoostConfig then for n, e in pairs(G.BoostConfig.entries or {}) do table.insert(t, {label=n.." [T"..tostring(e.tier)..']', val=n}) end; table.sort(t, function(a,b) return a.label<b.label end)
+	elseif mode == "quirk" then
+		table.insert(t, {label="Sovereign", val="Sovereign"})
+		table.insert(t, {label="Divine", val="Divine"})
+		table.insert(t, {label="Celestial", val="Celestial"})
+		table.insert(t, {label="Mythical", val="Mythical"})
+		pcall(function()
+			if G.MutationsMod then
+				for n, _ in pairs(G.MutationsMod) do table.insert(t, {label=n, val=n}) end
+			end
+		end)
+	elseif mode == "pot" and G.BoostConfig then for n, e in pairs(G.BoostConfig.entries or {}) do table.insert(t, {label=n.." [T"..tostring(e.tier).."]", val=n}) end; table.sort(t, function(a,b) return a.label<b.label end)
 	elseif mode == "unit" then
 		local placed = {}; pcall(function() for _, d in pairs(slots()) do if d.unitId then placed[d.unitId]=true end end end)
 		for k, e in pairs(inventory()) do if isUnitEntry(e) then table.insert(t, {label=e.name .. (placed[k] and " ★" or ""), val=k}) end end
@@ -444,22 +452,34 @@ local T_Set = CreateTab("Settings", "⚙️")
 TabFrames["Dashboard"].Visible = true; Sidebar:GetChildren()[2].BackgroundTransparency = 0; table.insert(ThemeElements.Acc1, Sidebar:GetChildren()[2])
 
 -- 1. DASHBOARD
-local G_Profile = AddGroup(T_Dash, "PROFIL & STATISTIK PENGGUNA")
-local ProfContainer = Instance.new("Frame"); ProfContainer.Parent = G_Profile; ProfContainer.Size = UDim2.new(1, 0, 0, 90); ProfContainer.BackgroundTransparency = 1
-local PImg = Instance.new("ImageLabel"); PImg.Parent = ProfContainer; PImg.AnchorPoint = Vector2.new(0.5, 0.5); PImg.Position = UDim2.new(0.15, 0, 0.5, 0); PImg.Size = UDim2.new(0, 72, 0, 72); pcall(function() PImg.Image = Players:GetUserThumbnailAsync(LocalPlayer.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size100x100) end); local PImgC = Instance.new("UICorner"); PImgC.CornerRadius = UDim.new(1,0); PImgC.Parent = PImg; local PStr = Instance.new("UIStroke"); PStr.Thickness = 3; PStr.Parent = PImg; table.insert(ThemeElements.Acc1, PStr)
+local G_Profile = AddGroup(T_Dash, "PROFIL & SPEKTRUM KONEKSI")
+local ProfContainer = Instance.new("Frame"); ProfContainer.Parent = G_Profile; ProfContainer.Size = UDim2.new(1, 0, 0, 100); ProfContainer.BackgroundTransparency = 1
+local PImg = Instance.new("ImageLabel"); PImg.Parent = ProfContainer; PImg.AnchorPoint = Vector2.new(0.5, 0.5); PImg.Position = UDim2.new(0.15, 0, 0.45, 0); PImg.Size = UDim2.new(0, 72, 0, 72); pcall(function() PImg.Image = Players:GetUserThumbnailAsync(LocalPlayer.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size100x100) end); local PImgC = Instance.new("UICorner"); PImgC.CornerRadius = UDim.new(1,0); PImgC.Parent = PImg; local PStr = Instance.new("UIStroke"); PStr.Thickness = 3; PStr.Parent = PImg; table.insert(ThemeElements.Acc1, PStr)
 
-local PLbl = Instance.new("TextLabel"); PLbl.Parent = ProfContainer; PLbl.Position = UDim2.new(0.3, 0, 0, 0); PLbl.Size = UDim2.new(0.7, 0, 1, 0); PLbl.BackgroundTransparency = 1; PLbl.TextColor3 = Color3.fromRGB(255,255,255); PLbl.TextSize = 13; PLbl.Font = Enum.Font.GothamMedium; PLbl.TextXAlignment = Enum.TextXAlignment.Left; PLbl.TextYAlignment = Enum.TextYAlignment.Center
+local PLbl = Instance.new("TextLabel"); PLbl.Parent = ProfContainer; PLbl.Position = UDim2.new(0.3, 0, 0, 0); PLbl.Size = UDim2.new(0.7, 0, 0.8, 0); PLbl.BackgroundTransparency = 1; PLbl.TextColor3 = Color3.fromRGB(255,255,255); PLbl.TextSize = 13; PLbl.Font = Enum.Font.GothamMedium; PLbl.TextXAlignment = Enum.TextXAlignment.Left; PLbl.TextYAlignment = Enum.TextYAlignment.Center
 
-local G_Spy = AddGroup(T_Dash, "SPY INVENTORY & BUFFS")
-local SLbl = Instance.new("TextLabel"); SLbl.Parent = G_Spy; SLbl.Size = UDim2.new(1, 0, 0, 100); SLbl.BackgroundTransparency = 1; SLbl.TextColor3 = Color3.fromRGB(255,255,255); SLbl.TextSize = 13; SLbl.Font = Enum.Font.GothamMedium; SLbl.TextXAlignment = Enum.TextXAlignment.Left; SLbl.TextYAlignment = Enum.TextYAlignment.Top
+local SignalLbl = Instance.new("TextLabel"); SignalLbl.Parent = ProfContainer; SignalLbl.Position = UDim2.new(0.3, 0, 0.8, 0); SignalLbl.Size = UDim2.new(0.7, 0, 0.2, 0); SignalLbl.BackgroundTransparency = 1; SignalLbl.TextColor3 = Color3.fromRGB(100, 255, 150); SignalLbl.TextSize = 11; SignalLbl.Font = Enum.Font.GothamBold; SignalLbl.TextXAlignment = Enum.TextXAlignment.Left
+
+task.spawn(function()
+	local states = {"📶 ●●●●● (STABLE)", "📶 ●●●●○ (HIGH)", "📶 ●●●○○ (OPTIMAL)"}
+	local i = 1
+	while task.wait(1.5) do
+		STATE.signalBar = states[i]
+		SignalLbl.Text = "NETWORK SPECTRUM: " .. STATE.signalBar
+		i = i % #states + 1
+	end
+end)
+
+local G_Spy = AddGroup(T_Dash, "SPY INVENTORY & BUFFS MONITOR")
+local SLbl = Instance.new("TextLabel"); SLbl.Parent = G_Spy; SLbl.Size = UDim2.new(1, 0, 0, 110); SLbl.BackgroundTransparency = 1; SLbl.TextColor3 = Color3.fromRGB(255,255,255); SLbl.TextSize = 13; SLbl.Font = Enum.Font.GothamMedium; SLbl.TextXAlignment = Enum.TextXAlignment.Left; SLbl.TextYAlignment = Enum.TextYAlignment.Top
 
 task.spawn(function()
 	while task.wait(1) do pcall(function()
 		local m = money(); local rb = rebirthAmt(); local rls = G.DC.Rolls() or 0
-		PLbl.Text = string.format("👤 %s\n💰 Uang: %s\n🔄 Rebirth: %s | 🎲 Rolls: %s", LocalPlayer.Name, tostring(m), tostring(rb), tostring(rls))
+		PLbl.Text = string.format("<b>[PLAYER]</b> %s\n<b>[MONEY]</b> %s | <b>[REBIRTH]</b> %s\n<b>[ROLLS]</b> %s", LocalPlayer.Name, tostring(m), tostring(rb), tostring(rls))
 		local mut, trt, grd, tot = 0,0,0,0; for _, e in pairs(inventory()) do if isUnitEntry(e) then tot += 1; if e.attributes then if e.attributes.mutation then mut+=1 end; if e.attributes.trait then trt+=1 end; if e.attributes.grade then grd+=1 end end end end
 		local buffs = ""; if G.BuffController and G.BuffController.ActiveBuffs then for k,v in pairs(G.BuffController.ActiveBuffs) do buffs = buffs..k..", " end end; if buffs=="" then buffs="Tidak ada" end; STATE.activeBuffs = buffs
-		SLbl.Text = string.format("💎 Gems: %d | 🧬 Trait Reroll: %d\n⚔️ Total Unit: %d/100\n⚡ Mutation: %d | 🧬 Trait: %d | ⭐ Grade: %d\n🧪 Active Potion: %s", currencyAmount("Gems"), currencyAmount("Trait Reroll"), tot, mut, trt, grd, STATE.activeBuffs)
+		SLbl.Text = string.format("💎 Gems: %d | 🧬 Trait Reroll: %d\n⚔️ Total Units: %d/100\n⚡ Quirk/Mutation: %d | 🧬 Trait: %d | ⭐ Grade: %d\n🧪 Active Buffs: %s", currencyAmount("Gems"), currencyAmount("Trait Reroll"), tot, mut, trt, grd, STATE.activeBuffs)
 	end) end
 end)
 
@@ -492,7 +512,7 @@ AddToggle(G_HlwQuests, "Auto Claim Halloween Path Rewards", "halloweenPath")
 AddToggle(G_HlwQuests, "Auto Buy Halloween Special Offers", "halloweenOffer")
 AddToggle(G_HlwQuests, "Auto Trick or Treat (Knock Doors)", "trickOrTreat")
 
-local G_HauntedTwr = AddGroup(T_Hlw, "HAUNTED TOWER FARMING (HALLOWEEN - SMART NEW ACCOUNT CHECK)")
+local G_HauntedTwr = AddGroup(T_Hlw, "HAUNTED TOWER FARMING (SMART NEW ACCOUNT CHECK)")
 AddToggle(G_HauntedTwr, "Auto Haunted Tower Farming", "hauntedTower")
 AddToggle(G_HauntedTwr, "Mode MIX / Random Haunted Tower", "hauntedMix")
 AddDropdown(G_HauntedTwr, "Pilih Haunted Tower (Multi-Select):", {
@@ -505,16 +525,17 @@ AddToggle(G_HauntedTwr, "Auto Equip Best Team Tower", "hauntedEquipBest")
 AddToggle(G_HauntedTwr, "Keluar di Lantai Tertentu", "hauntedExitOn")
 AddInput(G_HauntedTwr, "Lantai Exit Haunted:", "hauntedExitFloor", true)
 
-local G_HauntedMon = AddGroup(T_Hlw, "LIVE HAUNTED TOWER MONITORING & ITEMS")
-local HauntedLbl = Instance.new("TextLabel"); HauntedLbl.Parent = G_HauntedMon; HauntedLbl.Size = UDim2.new(1,0,0,80); HauntedLbl.BackgroundTransparency = 1; HauntedLbl.TextColor3 = Color3.fromRGB(255,255,255); HauntedLbl.TextSize = 13; HauntedLbl.Font = Enum.Font.GothamMedium; HauntedLbl.TextXAlignment = Enum.TextXAlignment.Left; HauntedLbl.TextYAlignment = Enum.TextYAlignment.Top
-task.spawn(function() while task.wait(0.5) do pcall(function() HauntedLbl.Text = string.format("🎃 Status: %s\n🏢 Lantai: %d | 🍬 Item/Drops: %d", STATE.hauntedLive, STATE.hauntedFloor, STATE.hauntedDrops) end) end end)
+local G_HauntedMon = AddGroup(T_Hlw, "LIVE HAUNTED TOWER MONITORING & DETAILS")
+local HauntedLbl = Instance.new("TextLabel"); HauntedLbl.Parent = G_HauntedMon; HauntedLbl.Size = UDim2.new(1,0,0,85); HauntedLbl.BackgroundTransparency = 1; HauntedLbl.TextColor3 = Color3.fromRGB(255,255,255); HauntedLbl.TextSize = 13; HauntedLbl.Font = Enum.Font.GothamMedium; HauntedLbl.TextXAlignment = Enum.TextXAlignment.Left; HauntedLbl.TextYAlignment = Enum.TextYAlignment.Top
+task.spawn(function() while task.wait(0.5) do pcall(function() HauntedLbl.Text = string.format("🎃 Status: %s\n🏢 Floor: %d | 🍬 Candy/Drops: %d\n⚡ Stability: %s", STATE.hauntedLive, STATE.hauntedFloor, STATE.hauntedDrops, STATE.signalBar) end) end end)
 
--- 4. INVENTORY (DENGAN SISTEM LOCK UNIT)
-local G_Inv = AddGroup(T_Inv, "MANAGEMENT, LOCK UNIT & AUTO SELL")
+-- 4. INVENTORY
+local G_Inv = AddGroup(T_Inv, "MANAGEMENT, LOCK UNIT & LOADOUTS")
 AddToggle(G_Inv, "Auto Sell Unit (Tanpa Rarity Filter)", "sellAuto")
 AddInput(G_Inv, "Simpan Unit Terbaik (Keep Best):", "keepBest", true)
 AddToggle(G_Inv, "Auto Fusion Unit", "autoFuse")
-AddDropdown(G_Inv, "Pilih Unit Untuk DI-LOCK (Aman dari Sell):", GetOpts("unit"), "lockedUnits", true)
+AddDropdown(G_Inv, "Pilih Unit Untuk DI-LOCK (Aman Sell):", GetOpts("unit"), "lockedUnits", true)
+AddDropdown(G_Inv, "Loadouts Presets (Inventory Unit):", {{label="Preset 1 (Main Team)", val="Preset 1"}, {label="Preset 2 (Farm Team)", val="Preset 2"}, {label="Preset 3 (Tower Team)", val="Preset 3"}}, "activeLoadout", false)
 
 -- 5. POTIONS
 local G_Pot = AddGroup(T_Pot, "SMART POTION MANAGER")
@@ -525,20 +546,28 @@ AddDropdown(G_Pot, "Pilih Potion Spesifik:", GetOpts("pot"), "potionSpecific", t
 local G_Grd = AddGroup(T_Grd, "GRADE REROLL CONFIG")
 AddToggle(G_Grd, "Aktifkan Auto Grade", "gradeAuto")
 AddToggle(G_Grd, "Hanya Unit di Base (Placed)", "gradePlacedOnly")
-AddDropdown(G_Grd, "Target Grade (Lewati Protected):", GetOpts("grade"), "gradeTargets", true)
+AddDropdown(G_Grd, "Target Grade (Protected Skip):", GetOpts("grade"), "gradeTargets", true)
 AddDropdown(G_Grd, "Pilih Unit Spesifik (Inventaris):", GetOpts("unit"), "gradeUnits", true)
 AddInput(G_Grd, "Sisakan Gems:", "gemReserve", true)
 
--- 7. AUTO TRAIT (DENGAN PILIHAN TRAIT TERTINGGI SEPERTI GENESIS, PARADOX, DLL)
-local G_Trt = AddGroup(T_Trt, "TRAIT REROLL CONFIG (GENESIS, PARADOX, ETERNAL, DLL)")
+-- 7. AUTO TRAIT
+local G_Trt = AddGroup(T_Trt, "TRAIT REROLL CONFIG")
 AddToggle(G_Trt, "Aktifkan Auto Trait", "traitAuto")
 AddToggle(G_Trt, "Hanya Unit di Base (Placed)", "traitPlacedOnly")
-AddDropdown(G_Trt, "Target Trait (Lewati Protected):", GetOpts("trait"), "traitTargets", true)
+AddDropdown(G_Trt, "Target Trait (Protected Skip):", GetOpts("trait"), "traitTargets", true)
 AddDropdown(G_Trt, "Pilih Unit Spesifik (Inventaris):", GetOpts("unit"), "traitUnits", true)
 AddInput(G_Trt, "Sisakan Trait Item:", "rerollReserve", true)
 
--- 8. TOWER (UTAMA - STABIL & DETEKSI AKUN BARU)
-local G_Twr = AddGroup(T_Twr, "TOWER UTAMA FARMING SETUP (AUTO AKUN BARU)")
+-- 7.1 AUTO QUIRK / MUTATION
+local G_Qrk = AddGroup(T_Trt, "AUTO QUIRK / MUTATION REROLL CONFIG")
+AddToggle(G_Qrk, "Aktifkan Auto Quirk", "quirkAuto")
+AddToggle(G_Qrk, "Hanya Unit di Base (Placed)", "quirkPlacedOnly")
+AddDropdown(G_Qrk, "Target Quirk Tertinggi (Sovereign, dll):", GetOpts("quirk"), "quirkTargets", true)
+AddDropdown(G_Qrk, "Pilih Unit Spesifik (Inventaris):", GetOpts("unit"), "quirkUnits", true)
+AddInput(G_Qrk, "Sisakan Quirk Item / Gems:", "quirkReserve", true)
+
+-- 8. TOWER
+local G_Twr = AddGroup(T_Twr, "TOWER UTAMA FARMING SETUP")
 AddToggle(G_Twr, "Auto Tower Farming", "tower")
 AddToggle(G_Twr, "Mode MIX / Random Tower", "towerMix")
 AddDropdown(G_Twr, "Pilih Tower Spesifik:", GetOpts("towers"), "towerName", false)
@@ -546,9 +575,9 @@ AddToggle(G_Twr, "Auto Equip Best Team Tower", "towerEquipBest")
 AddToggle(G_Twr, "Keluar di Lantai Tertentu", "towerExitOn")
 AddInput(G_Twr, "Lantai Exit:", "towerExitFloor", true)
 
-local G_TwrMon = AddGroup(T_Twr, "LIVE TOWER MONITORING & TRAIT")
-local TwrLbl = Instance.new("TextLabel"); TwrLbl.Parent = G_TwrMon; TwrLbl.Size = UDim2.new(1,0,0,80); TwrLbl.BackgroundTransparency = 1; TwrLbl.TextColor3 = Color3.fromRGB(255,255,255); TwrLbl.TextSize = 13; TwrLbl.Font = Enum.Font.GothamMedium; TwrLbl.TextXAlignment = Enum.TextXAlignment.Left; TwrLbl.TextYAlignment = Enum.TextYAlignment.Top
-task.spawn(function() while task.wait(0.5) do pcall(function() TwrLbl.Text = string.format("🎮 Status: %s\n🏢 Lantai: %d | 💎 Gems Didapat: %d\n🧬 Trait Didapat: %s", STATE.towerLive, STATE.towerFloor, STATE.towerDrops, tostring(STATE.towerTraitsGot)) end) end end)
+local G_TwrMon = AddGroup(T_Twr, "DETAILED LIVE TOWER MONITORING & TRAITS")
+local TwrLbl = Instance.new("TextLabel"); TwrLbl.Parent = G_TwrMon; TwrLbl.Size = UDim2.new(1,0,0,95); TwrLbl.BackgroundTransparency = 1; TwrLbl.TextColor3 = Color3.fromRGB(255,255,255); TwrLbl.TextSize = 13; TwrLbl.Font = Enum.Font.GothamMedium; TwrLbl.TextXAlignment = Enum.TextXAlignment.Left; TwrLbl.TextYAlignment = Enum.TextYAlignment.Top
+task.spawn(function() while task.wait(0.5) do pcall(function() TwrLbl.Text = string.format("🎮 Status: %s\n🏢 Current Floor: %d | 💎 Gems Earned: %d\n🧬 Traits Collected: %s\n🌐 Network Connection: %s", STATE.towerLive, STATE.towerFloor, STATE.towerDrops, tostring(STATE.towerTraitsGot), STATE.signalBar) end) end end)
 
 -- 9. SETTINGS & CONFIG LIST MANAGER
 local G_Set1 = AddGroup(T_Set, "TEMA & WARNA (PINK NEON AESTHETIC)")
@@ -607,7 +636,7 @@ local G_Web = AddGroup(T_Set, "DISCORD WEBHOOK")
 AddToggle(G_Web, "Aktifkan Webhook Discord", "webhookEnabled")
 AddInput(G_Web, "Webhook URL (Tempel di sini):", "webhookUrl", false)
 local BtnTestWeb = Instance.new("TextButton"); BtnTestWeb.Parent = G_Web; BtnTestWeb.Size = UDim2.new(1, 0, 0, 38); BtnTestWeb.Text = "🔔 TEST KIRIM WEBHOOK"; BtnTestWeb.Font = Enum.Font.GothamBold; BtnTestWeb.TextSize = 12; table.insert(ThemeElements.Card, BtnTestWeb); table.insert(ThemeElements.TextAcc, BtnTestWeb); local BTWC = Instance.new("UICorner"); BTWC.CornerRadius = UDim.new(0,10); BTWC.Parent = BtnTestWeb
-BtnTestWeb.MouseButton1Click:Connect(function() SendWebhook("✅ Webhook Connected!", "AdyfaHub V98.0 berhasil tersambung ke Discord kamu.", 16738112) end)
+BtnTestWeb.MouseButton1Click:Connect(function() SendWebhook("✅ Webhook Connected!", "AdyfaHub V99.0 berhasil tersambung ke Discord kamu.", 16738112) end)
 
 local G_Set2 = AddGroup(T_Set, "OPTIMALISASI & TOOLS")
 AddToggle(G_Set2, "Anti-AFK (Cegah Disconnect Profesional)", "afk")
@@ -644,7 +673,7 @@ end)
 ApplyTheme(F.themeIndex)
 
 -- ===================================================================== --
--- 6. FULL BACKEND THREADS (ROBUST & SMART NEW ACCOUNT HANDLING)
+-- 6. FULL BACKEND THREADS (ROBUST, QUIRK REROLL & ACCURATE AUTO CLAIM)
 -- ===================================================================== --
 
 local vu = game:GetService("VirtualUser")
@@ -689,7 +718,6 @@ task.spawn(function()
 	end
 end)
 
--- Halloween Teleport & Event Automation Thread
 task.spawn(function()
 	while _G.__ADYFAHUB == generation do
 		if F.halloweenTeleport and R.HWTeleport then
@@ -714,7 +742,6 @@ task.spawn(function()
 	end
 end)
 
--- Pumpkin Dice & Specific Unit Name Sell Thread
 task.spawn(function()
 	while _G.__ADYFAHUB == generation do
 		if F.pumpkinAutoRoll and R.PumpkinRoll then
@@ -774,7 +801,6 @@ end)
 
 local function unlockedSlots() local arr={}; local rb = rebirthAmt(); pcall(function() for i=1, (G.PlotConfig.GetMaxSlots(rb) or 15) do if rb >= (G.PlotConfig.GetSlotRebirthRequirement(i) or 0) then table.insert(arr, i) end end end); return arr end
 
--- Auto Roll Thread (Dengan Jitter)
 task.spawn(function()
 	while _G.__ADYFAHUB == generation do
 		if F.autoRoll then
@@ -791,7 +817,6 @@ task.spawn(function()
 	end
 end)
 
--- Auto Smart Best Place Base (Inventory -> Plot)
 local function heldUnit()
 	if not (G.UnitController and G.UnitController.EquippedUnit) then
 		local ok, id = pcall(function() return require(Framework.Features.Inventory.Kinds.Unit.UnitController).EquippedUnit() end)
@@ -852,7 +877,6 @@ task.spawn(function()
 	end
 end)
 
--- Auto Buy & Equip Best Dice
 task.spawn(function()
 	while _G.__ADYFAHUB == generation do
 		if F.buyDice and G.DiceModule and R.BuyDice and R.EquipDice then
@@ -896,7 +920,6 @@ task.spawn(function()
 	end
 end)
 
--- Universal Auto Sell Thread (Dilengkapi Sistem Lock Unit)
 task.spawn(function()
 	while _G.__ADYFAHUB == generation do
 		if F.sellAuto and R.SellInventory then
@@ -982,6 +1005,43 @@ end)
 
 task.spawn(function()
 	while _G.__ADYFAHUB == generation do
+		if F.quirkAuto and R.MutationRoll and currencyAmount("Gems") > (F.quirkReserve or 50) then
+			pcall(function()
+				local d = data()
+				local targets = {}; for _, q in ipairs(F.quirkTargets or {}) do targets[q] = true end
+				local unitsToCheck = {}
+				
+				if F.quirkPlacedOnly then
+					for _, slot in pairs(d.Slots or {}) do if slot.unitId then table.insert(unitsToCheck, slot.unitId) end end
+				else
+					for _, uid in ipairs(F.quirkUnits or {}) do table.insert(unitsToCheck, uid) end
+					if #unitsToCheck == 0 then
+						for id, _ in pairs(d.Inventory or {}) do table.insert(unitsToCheck, id) end
+					end
+				end
+
+				for _, uid in ipairs(unitsToCheck) do
+					local u = d.Inventory[uid]
+					if u and isUnitEntry(u) then
+						local curQuirk = u.attributes and (u.attributes.mutation or u.attributes.quirk)
+						local isTargetMatch = targets[curQuirk]
+						local lockedMap = {}; for _, lid in ipairs(F.lockedUnits or {}) do lockedMap[lid] = true end
+
+						if not isTargetMatch and not (u.attributes and u.attributes.locked) and not lockedMap[uid] then
+							R.MutationRoll:FireServer(uid)
+							task.wait(0.5)
+							break
+						end
+					end
+				end
+			end)
+		end
+		task.wait(3)
+	end
+end)
+
+task.spawn(function()
+	while _G.__ADYFAHUB == generation do
 		if F.potionAuto and R.BoostUse then
 			pcall(function()
 				local active = G.BuffController and G.BuffController.ActiveBuffs or {}
@@ -1010,7 +1070,6 @@ local function drainTower()
 	end
 end
 
--- FIX: Universal Auto Tower (Dengan Deteksi Akun Baru / Cek Tower Terbuka)
 task.spawn(function()
 	while _G.__ADYFAHUB == generation do
 		if F.tower and R.PlayTower and R.CompleteFloor then
@@ -1027,7 +1086,6 @@ task.spawn(function()
 				if type(all) == "table" then for n in pairs(all) do table.insert(allTowers, n) end end
 			end)
 
-			-- Deteksi Akun Baru: Jika akun baru belum punya banyak tower atau opsi mix aktif tapi data kosong, fallback ke tower pertama yg tersedia
 			if F.towerMix or pickTower == "Auto (best)" then
 				if #allTowers > 0 then
 					pickTower = allTowers[math.random(1, #allTowers)]
@@ -1035,11 +1093,10 @@ task.spawn(function()
 					pickTower = "Dragon Tower"
 				end
 			else
-				-- Pastikan tower spesifik yang dipilih ada di list unlocked/tersedia bagi akun baru
 				local validTarget = false
 				for _, tn in ipairs(allTowers) do if tn == pickTower then validTarget = true break end end
 				if not validTarget and #allTowers > 0 then
-					pickTower = allTowers[1] -- Otomatis sesuaikan ke tower pertama untuk akun baru
+					pickTower = allTowers[1]
 				end
 			end
 
@@ -1080,7 +1137,6 @@ task.spawn(function()
 	end
 end)
 
--- Haunted Tower Thread (Dengan Deteksi Akun Baru)
 task.spawn(function()
 	while _G.__ADYFAHUB == generation do
 		if F.hauntedTower and R.PlayTower and R.CompleteFloor then
@@ -1128,7 +1184,6 @@ task.spawn(function()
 	end
 end)
 
--- Webhook Auto-Status (30 Menit)
 task.spawn(function()
 	while _G.__ADYFAHUB == generation do
 		task.wait(1800)
@@ -1148,14 +1203,19 @@ task.spawn(function()
 	while _G.__ADYFAHUB == generation do
 		if F.claimQuests then
 			pcall(function()
-				if R.ClaimDaily then R.ClaimDaily:FireServer() end; if R.ClaimOffline then R.ClaimOffline:FireServer() end; if R.ClaimGroup then R.ClaimGroup:FireServer() end
+				if R.ClaimDaily then R.ClaimDaily:FireServer() end
+				if R.ClaimOffline then R.ClaimOffline:FireServer() end
+				if R.ClaimGroup then R.ClaimGroup:FireServer() end
 				if R.QuestClaim and G.DC and G.DC.Quests and G.QuestConfig then
 					local now = workspace:GetServerTimeNow()
 					for _, p in ipairs({"Daily", "Weekly"}) do
-						local q = G.DC.Quests[p]()
+						local q = G.DC.Quests[p] and G.DC.Quests[p]()
 						if q and (tonumber(q.expiresAt) or 0) > math.floor(now) then
 							for _, def in ipairs(G.QuestConfig.Periods[p].quests) do
-								if not (q.claimed and q.claimed[def.id]) and (tonumber(q.progress[def.id]) or 0) >= (tonumber(def.target) or 9e9) then R.QuestClaim:FireServer(p, def.id, q.expiresAt); task.wait(0.5) end
+								if not (q.claimed and q.claimed[def.id]) and (tonumber(q.progress[def.id]) or 0) >= (tonumber(def.target) or 9e9) then 
+									R.QuestClaim:FireServer(p, def.id, q.expiresAt) 
+									task.wait(0.5) 
+								end
 							end
 						end
 					end
