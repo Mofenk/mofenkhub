@@ -1,5 +1,5 @@
 -- ===================================================================== --
--- 👑 MOFENKHUB V99.0 — DARK BLUE GLASS EDITION (ULTIMATE FIXES)
+-- 👑 MOFENKHUB V100.0 — DARK BLUE GLASS EDITION (REALTIME DATA FIX)
 -- ===================================================================== --
 
 --!nocheck
@@ -72,7 +72,10 @@ local STATE = {
 	towerLive = "Standby", towerFloor = 0, towerDrops = 0, towerTraitsGot = "Belum Ada",
 	hauntedLive = "Standby", hauntedFloor = 0, hauntedDrops = 0, activeBuffs = "Tidak Ada",
 	pingMs = 0, fpsCurrent = 60,
-	rerollActiveUnit = "-", rerollQuirk = "-", rerollGrade = "-", rerollTrait = "-", rerollStatus = "Idle"
+	-- Realtime Reroll Monitor States
+	quirkActiveUnit = "-", quirkCurrentVal = "-", quirkStatus = "Idle",
+	gradeActiveUnit = "-", gradeCurrentVal = "-", gradeStatus = "Idle",
+	traitActiveUnit = "-", traitCurrentVal = "-", traitStatus = "Idle"
 }
 local ConfigUpdaters = {}
 
@@ -130,9 +133,19 @@ pcall(function()
 	end
 end)
 
--- SPY LOG DIRECT TO CONSOLE
+-- CONSOLE SPY LOGGER
 local function AddSpyLog(txt)
 	print("[MofenkHub-Spy] [" .. os.date("%X") .. "] " .. tostring(txt))
+end
+
+-- FORMAT NUMBERS
+local function FormatMoney(val)
+	val = tonumber(val) or 0
+	if val >= 1e12 then return string.format("%.2fT", val/1e12)
+	elseif val >= 1e9 then return string.format("%.2fB", val/1e9)
+	elseif val >= 1e6 then return string.format("%.2fM", val/1e6)
+	elseif val >= 1e3 then return string.format("%.2fK", val/1e3)
+	else return tostring(math.floor(val)) end
 end
 
 -- ===================================================================== --
@@ -155,10 +168,10 @@ local R = {
 	GradeRoll       = svc("GradeService.RE.Roll") or svc("Grades.RE.Roll"), 
 	TraitRoll       = svc("TraitService.RE.Roll") or svc("Traits.RE.Roll"), 
 	BoostUse        = svc("BoostService.RE.Use"),
-	PlayTower       = svc("Towers.RF.PlayTower") or svc("Towers.RE.PlayTower"), 
-	CompleteFloor   = svc("Towers.RF.CompleteTowerFloor"),
-	CancelTower     = svc("Towers.RF.CancelTower"), 
-	BestTowerTeam   = svc("Towers.RE.EquipBestTowerTeam"),
+	PlayTower       = svc("Towers.RF.PlayTower") or svc("Towers.RE.PlayTower") or svc("TowerService.RF.PlayTower"), 
+	CompleteFloor   = svc("Towers.RF.CompleteTowerFloor") or svc("TowerService.RF.CompleteTowerFloor"),
+	CancelTower     = svc("Towers.RF.CancelTower") or svc("TowerService.RF.CancelTower"), 
+	BestTowerTeam   = svc("Towers.RE.EquipBestTowerTeam") or svc("TowerService.RE.EquipBestTowerTeam"),
 	RedeemCode      = svc("CodesService.RE.RedeemCode") or svc("MonetizationService.RE.RedeemCode"),
 	QuestClaim      = svc("QuestService.RE.Claim"), 
 	ClaimDaily      = svc("DailyRewardService.RE.Claim"),
@@ -216,10 +229,18 @@ local function isUnitEntry(e) return e and type(e)=="table" and e.name and G.Ent
 local function currencyAmount(name) local t = 0; for _, e in pairs(inventory()) do if type(e)=="table" and e.name==name then t += tonumber(e.amount) or 0 end end; return t end
 
 local function baseIncome(u)
-	local e = u and G.UnitConfig and G.UnitConfig.entries[u.name]
+	if not u then return 0 end
+	local e = G.UnitConfig and G.UnitConfig.entries[u.name]
 	if not e then return 0 end
 	local a = u.attributes or {}
-	return tonumber(select(2, pcall(e.income, { mutation = a.mutation or a.quirk, grade = a.grade, trait = a.trait, level = 1 }))) or 0
+	local lvl = tonumber(a.level) or 1
+	local ok, inc = pcall(function()
+		if e.income then
+			return e.income({ mutation = a.mutation or a.quirk, grade = a.grade, trait = a.trait, level = lvl })
+		end
+		return 0
+	end)
+	return tonumber(inc) or 0
 end
 
 local function SendWebhook(title, description, colorCode)
@@ -288,9 +309,9 @@ local function Notify(title, msg, duration)
 end
 
 -- ===================================================================== --
--- 4. ULTIMATE UI SETUP (OPTIMIZED AUTO-SCALE & LARGE TEXT)
+-- 4. ULTIMATE UI SETUP (DARK BLUE GLASS STYLE)
 -- ===================================================================== --
-local MainGui = Instance.new("ScreenGui"); MainGui.Name = "MofenkUltraHubV99"; MainGui.Parent = parentGui; MainGui.ResetOnSpawn = false
+local MainGui = Instance.new("ScreenGui"); MainGui.Name = "MofenkUltraHubV100"; MainGui.Parent = parentGui; MainGui.ResetOnSpawn = false
 
 local MainFrame = Instance.new("Frame"); MainFrame.Parent = MainGui
 MainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -313,7 +334,7 @@ ToggleBtn.MouseButton1Click:Connect(function() MainFrame.Visible = not MainFrame
 local TopBar = Instance.new("Frame"); TopBar.Parent = MainFrame; TopBar.Size = UDim2.new(1, 0, 0, 54); TopBar.BackgroundColor3 = GLASS_THEME.Header; TopBar.BackgroundTransparency = 0.2
 local TopCorner = Instance.new("UICorner"); TopCorner.CornerRadius = UDim.new(0, 16); TopCorner.Parent = TopBar
 
-local Title = Instance.new("TextLabel"); Title.Parent = TopBar; Title.Position = UDim2.new(0, 20, 0, 0); Title.Size = UDim2.new(0, 580, 1, 0); Title.Text = "👑 MOFENKHUB V99.0  |  DARK BLUE GLASS MASTER"; Title.TextColor3 = GLASS_THEME.Acc1; Title.TextSize = 15; Title.Font = Enum.Font.GothamBlack; Title.TextXAlignment = Enum.TextXAlignment.Left; Title.BackgroundTransparency = 1
+local Title = Instance.new("TextLabel"); Title.Parent = TopBar; Title.Position = UDim2.new(0, 20, 0, 0); Title.Size = UDim2.new(0, 580, 1, 0); Title.Text = "👑 MOFENKHUB V100.0  |  DARK BLUE GLASS MASTER"; Title.TextColor3 = GLASS_THEME.Acc1; Title.TextSize = 15; Title.Font = Enum.Font.GothamBlack; Title.TextXAlignment = Enum.TextXAlignment.Left; Title.BackgroundTransparency = 1
 
 local CloseBtn = Instance.new("TextButton"); CloseBtn.Parent = TopBar; CloseBtn.Position = UDim2.new(1, -48, 0, 11); CloseBtn.Size = UDim2.new(0, 34, 0, 34); CloseBtn.Text = "✕"; CloseBtn.TextColor3 = GLASS_THEME.Text; CloseBtn.Font = Enum.Font.GothamBold; CloseBtn.TextSize = 16; CloseBtn.BackgroundColor3 = GLASS_THEME.Card; CloseBtn.BackgroundTransparency = 0.3
 local CC = Instance.new("UICorner"); CC.CornerRadius = UDim.new(0, 10); CC.Parent = CloseBtn
@@ -391,23 +412,20 @@ local function AddInput(parent, text, flag, isNum)
 	updateVisuals()
 end
 
--- FIXED DROPDOWN WITH PROPER ZINDEX & SCROLLING
+-- DROPDOWN WITH REALTIME UNIT INCOME DATA
 local function AddDropdown(parent, title, options, flag, isMulti)
 	local Frm = Instance.new("Frame"); Frm.Parent = parent; Frm.Size = UDim2.new(1, 0, 0, 46); Frm.BackgroundTransparency = 1
 	local L = Instance.new("TextLabel"); L.Parent = Frm; L.Position = UDim2.new(0, 6, 0, 0); L.Size = UDim2.new(0.4, 0, 1, 0); L.Text = title; L.TextColor3 = GLASS_THEME.Text; L.TextSize = 13; L.Font = Enum.Font.GothamMedium; L.TextXAlignment = Enum.TextXAlignment.Left; L.BackgroundTransparency = 1
-	local Btn = Instance.new("TextButton"); Btn.Parent = Frm; Btn.Position = UDim2.new(0.42, 0, 0.1, 0); Btn.Size = UDim2.new(0.58, 0, 0.8, 0); Btn.TextColor3 = GLASS_THEME.Acc1; Btn.TextSize = 13; Btn.Font = Enum.Font.GothamBold; Btn.BackgroundColor3 = GLASS_THEME.Header; Btn.BackgroundTransparency = 0.25; local BC = Instance.new("UICorner"); BC.CornerRadius = UDim.new(0, 8); BC.Parent = Btn
+	local Btn = Instance.new("TextButton"); Btn.Parent = Frm; Btn.Position = UDim2.new(0.42, 0, 0.1, 0); Btn.Size = UDim2.new(0.58, 0, 0.8, 0); Btn.TextColor3 = GLASS_THEME.Acc1; Btn.TextSize = 12; Btn.Font = Enum.Font.GothamBold; Btn.BackgroundColor3 = GLASS_THEME.Header; Btn.BackgroundTransparency = 0.25; local BC = Instance.new("UICorner"); BC.CornerRadius = UDim.new(0, 8); BC.Parent = Btn
 	local BS = Instance.new("UIStroke"); BS.Thickness = 1; BS.Color = GLASS_THEME.Acc1; BS.Transparency = 0.6; BS.Parent = Btn
 	
-	-- Dropdown Container Overlay
-	local DropList = Instance.new("Frame"); DropList.Parent = MainFrame; DropList.Size = UDim2.new(0, 290, 0, 240); DropList.BackgroundColor3 = GLASS_THEME.Bg; DropList.Visible = false; DropList.ZIndex = 300
+	local DropList = Instance.new("Frame"); DropList.Parent = MainFrame; DropList.Size = UDim2.new(0, 310, 0, 240); DropList.BackgroundColor3 = GLASS_THEME.Bg; DropList.Visible = false; DropList.ZIndex = 300
 	local DLC = Instance.new("UICorner"); DLC.CornerRadius = UDim.new(0, 10); DLC.Parent = DropList
 	local DLS = Instance.new("UIStroke"); DLS.Thickness = 1.5; DLS.Color = GLASS_THEME.Acc1; DLS.Parent = DropList
 	
-	-- Search Bar Top
 	local SearchBox = Instance.new("TextBox"); SearchBox.Parent = DropList; SearchBox.Size = UDim2.new(1, -16, 0, 32); SearchBox.Position = UDim2.new(0, 8, 0, 8); SearchBox.PlaceholderText = "🔍 Cari Pilihan..."; SearchBox.Text = ""; SearchBox.TextColor3 = GLASS_THEME.Text; SearchBox.PlaceholderColor3 = GLASS_THEME.SubText; SearchBox.TextSize = 12; SearchBox.Font = Enum.Font.GothamMedium; SearchBox.BackgroundColor3 = GLASS_THEME.Header; SearchBox.ZIndex = 301
 	local SC = Instance.new("UICorner"); SC.CornerRadius = UDim.new(0, 6); SC.Parent = SearchBox
 	
-	-- Multi-select Action Header
 	local ActionHeader = Instance.new("Frame"); ActionHeader.Parent = DropList; ActionHeader.Position = UDim2.new(0, 8, 0, 44); ActionHeader.Size = UDim2.new(1, -16, 0, 28); ActionHeader.BackgroundTransparency = 1; ActionHeader.ZIndex = 301
 	
 	local BtnSelAll = Instance.new("TextButton"); BtnSelAll.Parent = ActionHeader; BtnSelAll.Size = UDim2.new(0.48, 0, 1, 0); BtnSelAll.Position = UDim2.new(0, 0, 0, 0); BtnSelAll.Text = "✅ Select All"; BtnSelAll.TextColor3 = GLASS_THEME.Acc1; BtnSelAll.Font = Enum.Font.GothamBold; BtnSelAll.TextSize = 11; BtnSelAll.BackgroundColor3 = GLASS_THEME.Card; BtnSelAll.ZIndex = 301
@@ -443,7 +461,7 @@ local function AddDropdown(parent, title, options, flag, isMulti)
 		
 		for _, opt in ipairs(options) do
 			if filterText == "" or string.find(string.lower(opt.label), filterText) then
-				local OptBtn = Instance.new("TextButton"); OptBtn.Parent = ScrollOpts; OptBtn.Size = UDim2.new(1, 0, 0, 34); OptBtn.Text = "   " .. tostring(opt.label); OptBtn.TextColor3 = GLASS_THEME.Text; OptBtn.TextSize = 12; OptBtn.Font = Enum.Font.GothamMedium; OptBtn.TextXAlignment = Enum.TextXAlignment.Left; OptBtn.BackgroundColor3 = GLASS_THEME.Card; OptBtn.BackgroundTransparency = 0.5; OptBtn.ZIndex = 302
+				local OptBtn = Instance.new("TextButton"); OptBtn.Parent = ScrollOpts; OptBtn.Size = UDim2.new(1, 0, 0, 36); OptBtn.Text = "  " .. tostring(opt.label); OptBtn.TextColor3 = GLASS_THEME.Text; OptBtn.TextSize = 11; OptBtn.Font = Enum.Font.GothamMedium; OptBtn.TextXAlignment = Enum.TextXAlignment.Left; OptBtn.BackgroundColor3 = GLASS_THEME.Card; OptBtn.BackgroundTransparency = 0.5; OptBtn.ZIndex = 302
 				local OC = Instance.new("UICorner"); OC.CornerRadius = UDim.new(0, 6); OC.Parent = OptBtn
 				
 				local check = Instance.new("Frame"); check.Parent = OptBtn; check.Size = UDim2.new(0, 18, 0, 18); check.Position = UDim2.new(1, -26, 0.5, -9); local cc = Instance.new("UICorner"); cc.CornerRadius = UDim.new(0, 4); cc.Parent = check; check.ZIndex = 302
@@ -494,7 +512,7 @@ local function AddDropdown(parent, title, options, flag, isMulti)
 	Btn.MouseButton1Click:Connect(function() DropList.Visible = not DropList.Visible; UpdatePos() end)
 end
 
--- SCAN ALL TOWERS AUTOMATICALLY
+-- REALTIME UNIT OPTIONS WITH INCOME INFORMATION ($/s)
 local function GetOpts(mode)
 	local t = {}; 
 	if mode == "grade" and G.GradesMod then for n, g in pairs(G.GradesMod) do if type(g)=="table" and g.order then table.insert(t, {label=n, val=n, order=g.order}) end end; table.sort(t, function(a,b) return a.order<b.order end)
@@ -503,7 +521,15 @@ local function GetOpts(mode)
 	elseif mode == "pot" and G.BoostConfig then for n, e in pairs(G.BoostConfig.entries or {}) do table.insert(t, {label=n.." [T"..tostring(e.tier).."]", val=n}) end; table.sort(t, function(a,b) return a.label<b.label end)
 	elseif mode == "unit" then
 		local placed = {}; pcall(function() for _, d in pairs(slots()) do if d.unitId then placed[d.unitId]=true end end end)
-		for k, e in pairs(inventory()) do if isUnitEntry(e) then table.insert(t, {label=e.name .. (placed[k] and " ★" or ""), val=k}) end end
+		for k, e in pairs(inventory()) do
+			if isUnitEntry(e) then
+				local lvl = (e.attributes and tonumber(e.attributes.level)) or 1
+				local inc = FormatMoney(baseIncome(e))
+				local labelStr = string.format("%s [Lv.%d | 💰$%s/s]%s", tostring(e.name), lvl, inc, placed[k] and " ★" or "")
+				table.insert(t, {label=labelStr, val=k, inc=baseIncome(e)})
+			end
+		end
+		table.sort(t, function(a,b) return a.inc > b.inc end)
 	elseif mode == "unit_name" then
 		local addedNames = {}
 		for _, e in pairs(inventory()) do
@@ -536,16 +562,17 @@ local function GetOpts(mode)
 end
 
 -- ===================================================================== --
--- 5. 9 TABS ASSEMBLY
+-- 5. TABS ASSEMBLY (DASHBOARD, FARM, TOWER, SEPARATE MONITORING)
 -- ===================================================================== --
 local T_Dash = CreateTab("Dashboard", "📊")
 local T_Farm = CreateTab("Farming", "⛏️")
 local T_Hlw  = CreateTab("Halloween", "🎃")
 local T_Inv  = CreateTab("Inventory", "🎒")
 local T_Pot  = CreateTab("Potions", "🧪")
-local T_Qrk  = CreateTab("Quirk & Reroll", "⚡")
-local T_Rrl  = CreateTab("Grade & Trait", "⭐")
-local T_Twr  = CreateTab("Tower", "🏰")
+local T_Qrk  = CreateTab("Quirk & Roll", "⚡")
+local T_Grd  = CreateTab("Grade & Roll", "⭐")
+local T_Trt  = CreateTab("Trait & Roll", "🧬")
+local T_Twr  = CreateTab("Tower Utama", "🏰")
 local T_Set  = CreateTab("Settings", "⚙️")
 
 TabFrames["Dashboard"].Visible = true; Sidebar:GetChildren()[2].BackgroundTransparency = 0.1; Sidebar:GetChildren()[2].TextColor3 = GLASS_THEME.Acc1
@@ -558,7 +585,7 @@ local PImg = Instance.new("ImageLabel"); PImg.Parent = ProfContainer; PImg.Ancho
 local PLbl = Instance.new("TextLabel"); PLbl.Parent = ProfContainer; PLbl.Position = UDim2.new(0, 98, 0, 0); PLbl.Size = UDim2.new(1, -108, 1, 0); PLbl.BackgroundTransparency = 1; PLbl.TextColor3 = GLASS_THEME.Text; PLbl.TextSize = 13; PLbl.Font = Enum.Font.GothamMedium; PLbl.TextXAlignment = Enum.TextXAlignment.Left; PLbl.TextYAlignment = Enum.TextYAlignment.Center
 
 local G_Stats = AddGroup(T_Dash, "INVENTORY SPY & SYSTEM PERFORMANCE")
-local SLbl = Instance.new("TextLabel"); SLbl.Parent = G_Stats; SLbl.Size = UDim2.new(1, 0, 0, 105); SLbl.BackgroundTransparency = 1; SLbl.TextColor3 = GLASS_THEME.Text; SLbl.TextSize = 13; SLbl.Font = Enum.Font.GothamMedium; SLbl.TextXAlignment = Enum.TextXAlignment.Left; SLbl.TextYAlignment = Enum.TextYAlignment.Top
+local SLbl = Instance.new("TextLabel"); SLbl.Parent = G_Stats; SLbl.Size = UDim2.new(1, 0, 0, 110); SLbl.BackgroundTransparency = 1; SLbl.TextColor3 = GLASS_THEME.Text; SLbl.TextSize = 13; SLbl.Font = Enum.Font.GothamMedium; SLbl.TextXAlignment = Enum.TextXAlignment.Left; SLbl.TextYAlignment = Enum.TextYAlignment.Top
 
 task.spawn(function()
 	local lastTime = os.clock()
@@ -577,7 +604,7 @@ task.spawn(function()
 		local ping = math.floor(Stats.Network.ServerStatsItem["Data Ping"]:GetValue() or 0)
 		STATE.pingMs = ping
 		local m = money(); local rb = rebirthAmt(); local rls = G.DC.Rolls() or 0
-		PLbl.Text = string.format("👤 Player: %s\n💰 Money: %s\n🔄 Rebirth: %s | 🎲 Rolls: %s\n⚡ Ping: %d ms | 🖥️ FPS: %d", LocalPlayer.Name, tostring(m), tostring(rb), tostring(rls), STATE.pingMs, STATE.fpsCurrent)
+		PLbl.Text = string.format("👤 Player: %s\n💰 Money: %s\n🔄 Rebirth: %s | 🎲 Rolls: %s\n⚡ Ping: %d ms | 🖥️ FPS: %d", LocalPlayer.Name, FormatMoney(m), tostring(rb), tostring(rls), STATE.pingMs, STATE.fpsCurrent)
 		
 		local qrk, trt, grd, tot = 0,0,0,0
 		for _, e in pairs(inventory()) do
@@ -592,7 +619,7 @@ task.spawn(function()
 		end
 		
 		local buffs = ""; if G.BuffController and G.BuffController.ActiveBuffs then for k,v in pairs(G.BuffController.ActiveBuffs) do buffs = buffs..k..", " end end; if buffs=="" then buffs="Tidak ada" end; STATE.activeBuffs = buffs
-		SLbl.Text = string.format("💎 Gems: %d | 🧬 Trait Rerolls: %d\n⚔️ Total Units: %d/100\n⚡ Quirk/Mutations: %d | 🧬 Traits: %d | ⭐ Grades: %d\n🧪 Active Buffs: %s", currencyAmount("Gems"), currencyAmount("Trait Reroll"), tot, qrk, trt, grd, STATE.activeBuffs)
+		SLbl.Text = string.format("💎 Gems: %s | 🧬 Trait Rerolls: %s\n⚔️ Total Units: %d/100\n⚡ Quirk/Mutations: %d | 🧬 Traits: %d | ⭐ Grades: %d\n🧪 Active Buffs: %s", FormatMoney(currencyAmount("Gems")), FormatMoney(currencyAmount("Trait Reroll")), tot, qrk, trt, grd, STATE.activeBuffs)
 	end) end
 end)
 
@@ -657,38 +684,54 @@ local G_Pot = AddGroup(T_Pot, "SMART POTION MANAGER")
 AddToggle(G_Pot, "Auto Gunakan Potion", "potionAuto")
 AddDropdown(G_Pot, "Pilih Potion Spesifik (Multi-Select):", GetOpts("pot"), "potionSpecific", true)
 
--- 6. QUIRK & REROLL MONITORING TAB
-local G_QrkCtrl = AddGroup(T_Qrk, "AUTO LOCK & QUIRK REROLL")
-AddToggle(G_QrkCtrl, "Auto Lock Unit jika Hasil Roll Cocok (Target)", "autoLockTarget")
+-- 6. QUIRK TAB (TERPISAH & DETAIL)
+local G_QrkCtrl = AddGroup(T_Qrk, "AUTO LOCK & QUIRK REROLL CONFIG")
+AddToggle(G_QrkCtrl, "Auto Lock Unit jika Quirk Target Didapat", "autoLockTarget")
 AddToggle(G_QrkCtrl, "Aktifkan Auto Quirk Reroll", "quirkAuto")
 AddDropdown(G_QrkCtrl, "Target Quirk (Multi-Select):", GetOpts("quirk"), "quirkTargets", true)
-AddDropdown(G_QrkCtrl, "Pilih Unit Reroll Quirk:", GetOpts("unit"), "quirkUnits", true)
+AddDropdown(G_QrkCtrl, "Pilih Unit Reroll Quirk (Realtime Income):", GetOpts("unit"), "quirkUnits", true)
 
-local G_RerollLive = AddGroup(T_Qrk, "⚡ MONITORING REROLL REAL-TIME")
-local RerollLbl = Instance.new("TextLabel"); RerollLbl.Parent = G_RerollLive; RerollLbl.Size = UDim2.new(1,0,0,100); RerollLbl.BackgroundTransparency = 1; RerollLbl.TextColor3 = GLASS_THEME.Text; RerollLbl.TextSize = 13; RerollLbl.Font = Enum.Font.GothamMedium; RerollLbl.TextXAlignment = Enum.TextXAlignment.Left; RerollLbl.TextYAlignment = Enum.TextYAlignment.Top
-
+local G_QrkMon = AddGroup(T_Qrk, "⚡ REALTIME MONITORING QUIRK / MUTATION")
+local QrkLbl = Instance.new("TextLabel"); QrkLbl.Parent = G_QrkMon; QrkLbl.Size = UDim2.new(1,0,0,80); QrkLbl.BackgroundTransparency = 1; QrkLbl.TextColor3 = GLASS_THEME.Text; QrkLbl.TextSize = 13; QrkLbl.Font = Enum.Font.GothamMedium; QrkLbl.TextXAlignment = Enum.TextXAlignment.Left; QrkLbl.TextYAlignment = Enum.TextYAlignment.Top
 task.spawn(function()
-	while task.wait(0.4) do pcall(function()
-		RerollLbl.Text = string.format("🔄 Status Roll: %s\n🎯 Unit Target: %s\n⚡ Current Quirk/Mut: %s\n⭐ Current Grade: %s\n🧬 Current Trait: %s", STATE.rerollStatus, STATE.rerollActiveUnit, STATE.rerollQuirk, STATE.rerollGrade, STATE.rerollTrait)
+	while task.wait(0.3) do pcall(function()
+		QrkLbl.Text = string.format("⚡ Status Quirk Roll: %s\n🎯 Unit Aktif: %s\n🔮 Quirk/Mutation Saat Ini: %s", STATE.quirkStatus, STATE.quirkActiveUnit, STATE.quirkCurrentVal)
 	end) end
 end)
 
--- 7. AUTO GRADE & TRAIT TAB
-local G_Grd = AddGroup(T_Rrl, "AUTO GRADE CONFIG")
-AddToggle(G_Grd, "Aktifkan Auto Grade Reroll", "gradeAuto")
-AddToggle(G_Grd, "Hanya Unit di Base (Placed)", "gradePlacedOnly")
-AddDropdown(G_Grd, "Target Grade (Multi-Select):", GetOpts("grade"), "gradeTargets", true)
-AddDropdown(G_Grd, "Pilih Unit Spesifik Grade:", GetOpts("unit"), "gradeUnits", true)
-AddInput(G_Grd, "Sisakan Gems Minimum:", "gemReserve", true)
+-- 7. GRADE TAB (TERPISAH & DETAIL)
+local G_GrdCtrl = AddGroup(T_Grd, "AUTO GRADE REROLL CONFIG")
+AddToggle(G_GrdCtrl, "Aktifkan Auto Grade Reroll", "gradeAuto")
+AddToggle(G_GrdCtrl, "Hanya Unit di Base (Placed)", "gradePlacedOnly")
+AddDropdown(G_GrdCtrl, "Target Grade (Multi-Select):", GetOpts("grade"), "gradeTargets", true)
+AddDropdown(G_GrdCtrl, "Pilih Unit Reroll Grade (Realtime Income):", GetOpts("unit"), "gradeUnits", true)
+AddInput(G_GrdCtrl, "Sisakan Gems Minimum:", "gemReserve", true)
 
-local G_Trt = AddGroup(T_Rrl, "AUTO TRAIT CONFIG")
-AddToggle(G_Trt, "Aktifkan Auto Trait Reroll", "traitAuto")
-AddToggle(G_Trt, "Hanya Unit di Base (Placed)", "traitPlacedOnly")
-AddDropdown(G_Trt, "Target Trait (Multi-Select):", GetOpts("trait"), "traitTargets", true)
-AddDropdown(G_Trt, "Pilih Unit Spesifik Trait:", GetOpts("unit"), "traitUnits", true)
-AddInput(G_Trt, "Sisakan Trait Reroll Minimum:", "rerollReserve", true)
+local G_GrdMon = AddGroup(T_Grd, "⭐ REALTIME MONITORING GRADE")
+local GrdLbl = Instance.new("TextLabel"); GrdLbl.Parent = G_GrdMon; GrdLbl.Size = UDim2.new(1,0,0,80); GrdLbl.BackgroundTransparency = 1; GrdLbl.TextColor3 = GLASS_THEME.Text; GrdLbl.TextSize = 13; GrdLbl.Font = Enum.Font.GothamMedium; GrdLbl.TextXAlignment = Enum.TextXAlignment.Left; GrdLbl.TextYAlignment = Enum.TextYAlignment.Top
+task.spawn(function()
+	while task.wait(0.3) do pcall(function()
+		GrdLbl.Text = string.format("⭐ Status Grade Roll: %s\n🎯 Unit Aktif: %s\n🌟 Grade Saat Ini: %s", STATE.gradeStatus, STATE.gradeActiveUnit, STATE.gradeCurrentVal)
+	end) end
+end)
 
--- 8. MAIN TOWER TAB
+-- 8. TRAIT TAB (TERPISAH & DETAIL)
+local G_TrtCtrl = AddGroup(T_Trt, "AUTO TRAIT REROLL CONFIG")
+AddToggle(G_TrtCtrl, "Aktifkan Auto Trait Reroll", "traitAuto")
+AddToggle(G_TrtCtrl, "Hanya Unit di Base (Placed)", "traitPlacedOnly")
+AddDropdown(G_TrtCtrl, "Target Trait (Multi-Select):", GetOpts("trait"), "traitTargets", true)
+AddDropdown(G_TrtCtrl, "Pilih Unit Reroll Trait (Realtime Income):", GetOpts("unit"), "traitUnits", true)
+AddInput(G_TrtCtrl, "Sisakan Trait Reroll Minimum:", "rerollReserve", true)
+
+local G_TrtMon = AddGroup(T_Trt, "🧬 REALTIME MONITORING TRAIT")
+local TrtLbl = Instance.new("TextLabel"); TrtLbl.Parent = G_TrtMon; TrtLbl.Size = UDim2.new(1,0,0,80); TrtLbl.BackgroundTransparency = 1; TrtLbl.TextColor3 = GLASS_THEME.Text; TrtLbl.TextSize = 13; TrtLbl.Font = Enum.Font.GothamMedium; TrtLbl.TextXAlignment = Enum.TextXAlignment.Left; TrtLbl.TextYAlignment = Enum.TextYAlignment.Top
+task.spawn(function()
+	while task.wait(0.3) do pcall(function()
+		TrtLbl.Text = string.format("🧬 Status Trait Roll: %s\n🎯 Unit Aktif: %s\n🧬 Trait Saat Ini: %s", STATE.traitStatus, STATE.traitActiveUnit, STATE.traitCurrentVal)
+	end) end
+end)
+
+-- 9. MAIN TOWER TAB (FIXED STUCK & REMOTE DISCOVERY)
 local G_Twr = AddGroup(T_Twr, "MAIN TOWER FARMING SETUP")
 AddToggle(G_Twr, "Auto Main Tower Farming", "tower")
 AddToggle(G_Twr, "Mode MIX / Random Tower (Acak Terpilih)", "towerMix")
@@ -701,7 +744,7 @@ local G_TwrMon = AddGroup(T_Twr, "LIVE TOWER MONITORING & TRAIT DROPS")
 local TwrLbl = Instance.new("TextLabel"); TwrLbl.Parent = G_TwrMon; TwrLbl.Size = UDim2.new(1,0,0,70); TwrLbl.BackgroundTransparency = 1; TwrLbl.TextColor3 = GLASS_THEME.Text; TwrLbl.TextSize = 13; TwrLbl.Font = Enum.Font.GothamMedium; TwrLbl.TextXAlignment = Enum.TextXAlignment.Left; TwrLbl.TextYAlignment = Enum.TextYAlignment.Top
 task.spawn(function() while task.wait(0.5) do pcall(function() TwrLbl.Text = string.format("🎮 Status: %s\n🏢 Lantai: %d | 💎 Gems Didapat: %d\n🧬 Trait Drops: %s", STATE.towerLive, STATE.towerFloor, STATE.towerDrops, tostring(STATE.towerTraitsGot)) end) end end)
 
--- 9. SETTINGS & FILE CONFIG MANAGER TAB
+-- 10. SETTINGS & FILE CONFIG MANAGER TAB
 local G_SetConfig = AddGroup(T_Set, "FILE CONFIG MANAGEMENT")
 AddToggle(G_SetConfig, "Auto Load Config Saat Nyala", "autoLoadEnabled")
 AddInput(G_SetConfig, "Nama File Config:", "cfgName", false)
@@ -759,7 +802,7 @@ local G_Web = AddGroup(T_Set, "DISCORD WEBHOOK NOTIFIER")
 AddToggle(G_Web, "Aktifkan Webhook Discord", "webhookEnabled")
 AddInput(G_Web, "Webhook URL:", "webhookUrl", false)
 local BtnTestWeb = Instance.new("TextButton"); BtnTestWeb.Parent = G_Web; BtnTestWeb.Size = UDim2.new(1, 0, 0, 34); BtnTestWeb.Text = "🔔 TEST KIRIM WEBHOOK"; BtnTestWeb.Font = Enum.Font.GothamBold; BtnTestWeb.TextSize = 12; BtnTestWeb.TextColor3 = GLASS_THEME.Acc1; BtnTestWeb.BackgroundColor3 = GLASS_THEME.Header; local BTWC = Instance.new("UICorner"); BTWC.CornerRadius = UDim.new(0,8); BTWC.Parent = BtnTestWeb
-BtnTestWeb.MouseButton1Click:Connect(function() SendWebhook("✅ Webhook Connected!", "MofenkHub V99.0 tersambung sukses.", 3447003); Notify("Webhook", "Test webhook dikirim.") end)
+BtnTestWeb.MouseButton1Click:Connect(function() SendWebhook("✅ Webhook Connected!", "MofenkHub V100.0 tersambung sukses.", 3447003); Notify("Webhook", "Test webhook dikirim.") end)
 
 local G_Set2 = AddGroup(T_Set, "OPTIMALISASI & DISCONNECT PROTECTION")
 AddToggle(G_Set2, "Anti-AFK Protection (Prevent Disconnect)", "afk")
@@ -794,7 +837,7 @@ BtnHop.MouseButton1Click:Connect(function()
 end)
 
 -- ===================================================================== --
--- 6. BACKEND THREADS (REROLL MONITORING, TOWER & AUTO-LOCK)
+-- 6. BACKEND THREADS (REALTIME SEPARATE MONITORING, TOWER & AUTO LOCK)
 -- ===================================================================== --
 
 -- Anti-AFK & Reconnection
@@ -825,101 +868,119 @@ LocalPlayer.Idled:Connect(function()
 			vu:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
 			task.wait(1)
 			vu:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
-			AddSpyLog("Anti-AFK: Prevented idle disconnect")
 		end)
 	end
 end)
 
--- AUTO QUIRK / GRADE / TRAIT REROLL WITH REALTIME MONITOR & AUTO-LOCK
+-- REALTIME SEPARATE REROLL THREADS
+-- 1. Quirk Reroll
 task.spawn(function()
 	while _G.__ANIMEDICE == generation do
-		if (F.quirkAuto or F.gradeAuto or F.traitAuto) then
+		if F.quirkAuto and R.QuirkRoll and #F.quirkUnits > 0 then
 			pcall(function()
 				local inv = inventory()
-				-- Reroll Quirk
-				if F.quirkAuto and R.QuirkRoll and #F.quirkUnits > 0 then
-					for _, unitId in ipairs(F.quirkUnits) do
-						local u = inv[unitId]
-						if u and u.attributes then
-							STATE.rerollActiveUnit = tostring(u.name)
-							STATE.rerollQuirk = tostring(u.attributes.mutation or u.attributes.quirk or "None")
-							STATE.rerollGrade = tostring(u.attributes.grade or "None")
-							STATE.rerollTrait = tostring(u.attributes.trait or "None")
-							STATE.rerollStatus = "Rolling Quirk..."
+				for _, unitId in ipairs(F.quirkUnits) do
+					local u = inv[unitId]
+					if u and u.attributes then
+						STATE.quirkActiveUnit = string.format("%s (Lv.%d | 💰$%s/s)", tostring(u.name), tonumber(u.attributes.level) or 1, FormatMoney(baseIncome(u)))
+						local curQuirk = u.attributes.mutation or u.attributes.quirk or "None"
+						STATE.quirkCurrentVal = tostring(curQuirk)
+						
+						local isMatch = false
+						for _, target in ipairs(F.quirkTargets) do if curQuirk == target then isMatch = true break end end
 
-							local curQuirk = u.attributes.mutation or u.attributes.quirk
-							local isMatch = false
-							for _, target in ipairs(F.quirkTargets) do if curQuirk == target then isMatch = true break end end
-
-							if isMatch then
-								if F.autoLockTarget and R.LockUnit and not u.attributes.locked then
-									R.LockUnit:FireServer(unitId, true)
-									Notify("Auto Lock!", "Quirk target didapat: " .. tostring(curQuirk), 4)
-								end
-							else
-								R.QuirkRoll:FireServer(unitId)
-								task.wait(0.5)
+						if isMatch then
+							STATE.quirkStatus = "✅ MATCH TARGET FOUND!"
+							if F.autoLockTarget and R.LockUnit and not u.attributes.locked then
+								R.LockUnit:FireServer(unitId, true)
+								Notify("Auto Lock Unit!", "Quirk Target Didapat: " .. tostring(curQuirk), 4)
 							end
-						end
-					end
-				end
-
-				-- Reroll Grade
-				if F.gradeAuto and R.GradeRoll and #F.gradeUnits > 0 then
-					for _, unitId in ipairs(F.gradeUnits) do
-						local u = inv[unitId]
-						if u and u.attributes and currencyAmount("Gems") > (F.gemReserve or 100) then
-							STATE.rerollActiveUnit = tostring(u.name)
-							STATE.rerollGrade = tostring(u.attributes.grade or "None")
-							STATE.rerollStatus = "Rolling Grade..."
-
-							local curGrade = u.attributes.grade
-							local isMatch = false
-							for _, target in ipairs(F.gradeTargets) do if curGrade == target then isMatch = true break end end
-
-							if isMatch then
-								if F.autoLockTarget and R.LockUnit and not u.attributes.locked then
-									R.LockUnit:FireServer(unitId, true)
-									Notify("Auto Lock!", "Grade target didapat: " .. tostring(curGrade), 4)
-								end
-							else
-								R.GradeRoll:FireServer(unitId)
-								task.wait(0.5)
-							end
-						end
-					end
-				end
-
-				-- Reroll Trait
-				if F.traitAuto and R.TraitRoll and #F.traitUnits > 0 then
-					for _, unitId in ipairs(F.traitUnits) do
-						local u = inv[unitId]
-						if u and u.attributes and currencyAmount("Trait Reroll") > (F.rerollReserve or 50) then
-							STATE.rerollActiveUnit = tostring(u.name)
-							STATE.rerollTrait = tostring(u.attributes.trait or "None")
-							STATE.rerollStatus = "Rolling Trait..."
-
-							local curTrait = u.attributes.trait
-							local isMatch = false
-							for _, target in ipairs(F.traitTargets) do if curTrait == target then isMatch = true break end end
-
-							if isMatch then
-								if F.autoLockTarget and R.LockUnit and not u.attributes.locked then
-									R.LockUnit:FireServer(unitId, true)
-									Notify("Auto Lock!", "Trait target didapat: " .. tostring(curTrait), 4)
-								end
-							else
-								R.TraitRoll:FireServer(unitId)
-								task.wait(0.5)
-							end
+						else
+							STATE.quirkStatus = "⚡ Rolling Quirk..."
+							R.QuirkRoll:FireServer(unitId)
+							task.wait(0.5)
 						end
 					end
 				end
 			end)
 		else
-			STATE.rerollStatus = "Idle"
+			STATE.quirkStatus = "Idle"
 		end
-		task.wait(0.8)
+		task.wait(0.5)
+	end
+end)
+
+-- 2. Grade Reroll
+task.spawn(function()
+	while _G.__ANIMEDICE == generation do
+		if F.gradeAuto and R.GradeRoll and #F.gradeUnits > 0 then
+			pcall(function()
+				local inv = inventory()
+				for _, unitId in ipairs(F.gradeUnits) do
+					local u = inv[unitId]
+					if u and u.attributes and currencyAmount("Gems") > (F.gemReserve or 100) then
+						STATE.gradeActiveUnit = string.format("%s (Lv.%d | 💰$%s/s)", tostring(u.name), tonumber(u.attributes.level) or 1, FormatMoney(baseIncome(u)))
+						local curGrade = u.attributes.grade or "None"
+						STATE.gradeCurrentVal = tostring(curGrade)
+
+						local isMatch = false
+						for _, target in ipairs(F.gradeTargets) do if curGrade == target then isMatch = true break end end
+
+						if isMatch then
+							STATE.gradeStatus = "✅ MATCH TARGET FOUND!"
+							if F.autoLockTarget and R.LockUnit and not u.attributes.locked then
+								R.LockUnit:FireServer(unitId, true)
+								Notify("Auto Lock Unit!", "Grade Target Didapat: " .. tostring(curGrade), 4)
+							end
+						else
+							STATE.gradeStatus = "⭐ Rolling Grade..."
+							R.GradeRoll:FireServer(unitId)
+							task.wait(0.5)
+						end
+					end
+				end
+			end)
+		else
+			STATE.gradeStatus = "Idle"
+		end
+		task.wait(0.5)
+	end
+end)
+
+-- 3. Trait Reroll
+task.spawn(function()
+	while _G.__ANIMEDICE == generation do
+		if F.traitAuto and R.TraitRoll and #F.traitUnits > 0 then
+			pcall(function()
+				local inv = inventory()
+				for _, unitId in ipairs(F.traitUnits) do
+					local u = inv[unitId]
+					if u and u.attributes and currencyAmount("Trait Reroll") > (F.rerollReserve or 50) then
+						STATE.traitActiveUnit = string.format("%s (Lv.%d | 💰$%s/s)", tostring(u.name), tonumber(u.attributes.level) or 1, FormatMoney(baseIncome(u)))
+						local curTrait = u.attributes.trait or "None"
+						STATE.traitCurrentVal = tostring(curTrait)
+
+						local isMatch = false
+						for _, target in ipairs(F.traitTargets) do if curTrait == target then isMatch = true break end end
+
+						if isMatch then
+							STATE.traitStatus = "✅ MATCH TARGET FOUND!"
+							if F.autoLockTarget and R.LockUnit and not u.attributes.locked then
+								R.LockUnit:FireServer(unitId, true)
+								Notify("Auto Lock Unit!", "Trait Target Didapat: " .. tostring(curTrait), 4)
+							end
+						else
+							STATE.traitStatus = "🧬 Rolling Trait..."
+							R.TraitRoll:FireServer(unitId)
+							task.wait(0.5)
+						end
+					end
+				end
+			end)
+		else
+			STATE.traitStatus = "Idle"
+		end
+		task.wait(0.5)
 	end
 end)
 
@@ -1206,9 +1267,19 @@ end)
 -- DRAIN TOWER FUNCTION
 local function drainTower()
 	if not R.CancelTower then return end
-	pcall(function() R.CancelTower:InvokeServer() end)
+	pcall(function()
+		if R.CancelTower:IsA("RemoteFunction") then
+			R.CancelTower:InvokeServer()
+		elseif R.CancelTower:IsA("RemoteEvent") then
+			R.CancelTower:FireServer()
+		end
+	end)
 	for _ = 1, 20 do
-		local ok, seq = pcall(function() return R.CompleteFloor:InvokeServer() end)
+		local ok, seq = pcall(function()
+			if R.CompleteFloor:IsA("RemoteFunction") then
+				return R.CompleteFloor:InvokeServer()
+			end
+		end)
 		if ok and type(seq) == "table" then
 			for _, ev in ipairs(seq) do if ev.action == "ended" then return end end
 		end
@@ -1216,7 +1287,7 @@ local function drainTower()
 	end
 end
 
--- MAIN TOWER FARMING THREAD (DYNAMIC DIVERSITY & RANDOM MIX)
+-- MAIN TOWER FARMING THREAD (FIXED PLAY REMOTE & MULTI-SELECT)
 task.spawn(function()
 	while _G.__ANIMEDICE == generation do
 		if F.tower and R.PlayTower and R.CompleteFloor then
@@ -1235,16 +1306,34 @@ task.spawn(function()
 			end
 
 			STATE.towerLive = "Memulai: " .. tostring(pickTower); STATE.towerDrops = 0; STATE.towerTraitsGot = "Mencari..."
-			local okStart, started = pcall(function() return R.PlayTower:InvokeServer(pickTower) end)
+			
+			local okStart, started = false, false
+			pcall(function()
+				if R.PlayTower:IsA("RemoteFunction") then
+					started = R.PlayTower:InvokeServer(pickTower)
+					okStart = true
+				elseif R.PlayTower:IsA("RemoteEvent") then
+					R.PlayTower:FireServer(pickTower)
+					okStart, started = true, true
+				end
+			end)
+
 			if not (okStart and started) then
 				drainTower()
 				task.wait(2.5)
-				pcall(function() R.PlayTower:InvokeServer(pickTower) end)
+				pcall(function()
+					if R.PlayTower:IsA("RemoteFunction") then R.PlayTower:InvokeServer(pickTower)
+					else R.PlayTower:FireServer(pickTower) end
+				end)
 			end
 
 			local done, fails = false, 0
 			while F.tower and not done do
-				local okP, seq = pcall(function() return R.CompleteFloor:InvokeServer() end)
+				local okP, seq = pcall(function()
+					if R.CompleteFloor:IsA("RemoteFunction") then
+						return R.CompleteFloor:InvokeServer()
+					end
+				end)
 				if okP and type(seq) == "table" and #seq > 0 then
 					fails = 0
 					for _, act in ipairs(seq) do
@@ -1291,11 +1380,18 @@ task.spawn(function()
 			end
 
 			STATE.hauntedLive = "Memulai: " .. tostring(pickHaunted); STATE.hauntedDrops = 0
-			local okStart, started = pcall(function() return R.PlayTower:InvokeServer(pickHaunted) end)
-			if okStart and started then
+			
+			local okStart = pcall(function()
+				if R.PlayTower:IsA("RemoteFunction") then R.PlayTower:InvokeServer(pickHaunted)
+				else R.PlayTower:FireServer(pickHaunted) end
+			end)
+
+			if okStart then
 				local done, fails = false, 0
 				while F.hauntedTower and not done do
-					local okP, seq = pcall(function() return R.CompleteFloor:InvokeServer() end)
+					local okP, seq = pcall(function()
+						if R.CompleteFloor:IsA("RemoteFunction") then return R.CompleteFloor:InvokeServer() end
+					end)
 					if okP and type(seq) == "table" and #seq > 0 then
 						fails = 0
 						for _, act in ipairs(seq) do
@@ -1351,5 +1447,5 @@ task.spawn(function()
 	end
 end)
 
-Notify("MofenkHub V99.0 Loaded!", "Script siap digunakan dengan perbaikan penuh.", 4)
-AddSpyLog("MofenkHub V99.0 Initialized successfully.")
+Notify("MofenkHub V100.0 Ready!", "Script berhasil di-update dengan Realtime Data.", 4)
+AddSpyLog("MofenkHub V100.0 Loaded Successfully.")
