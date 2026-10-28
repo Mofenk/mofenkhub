@@ -1,5 +1,5 @@
 -- ===================================================================== --
--- 👑 MOFENKHUB V100.0 — DARK BLUE GLASS EDITION (REALTIME DATA FIX)
+-- 👑 MOFENKHUB V103.0 — LIVE REROLL MONITORING & ANTI-COLLISION EDITION
 -- ===================================================================== --
 
 --!nocheck
@@ -44,9 +44,10 @@ local F = {
 	collect = false, levelup = false, maxLevel = 40, smartLevel = false,
 	rebirth = false, upgrades = false, buyDice = true, equipDice = true, autoRoll = false,
 	autoBestPlaceBase = false, smartPlace = true,
-	-- Inventory & Auto Sell Max
-	sellAuto = false, sellMaxInvent = false, keepBest = 20, autoFuse = false,
-	keepRarityMythic = true, keepRaritySecret = true, keepRarityLegendary = false,
+	-- Inventory & Dynamic Rarity Multi-Select Auto Sell / Lock
+	sellAuto = false, sellMaxInvent = false, keepBest = 0, autoFuse = false,
+	keepRarities = {"Mythic", "Secret", "Divine", "Godly"},
+	autoLockRarity = true,
 	specificSellUnits = {},
 	-- Potions
 	potionAuto = false, potionBest = true, potionSpecific = {},
@@ -72,22 +73,20 @@ local STATE = {
 	towerLive = "Standby", towerFloor = 0, towerDrops = 0, towerTraitsGot = "Belum Ada",
 	hauntedLive = "Standby", hauntedFloor = 0, hauntedDrops = 0, activeBuffs = "Tidak Ada",
 	pingMs = 0, fpsCurrent = 60,
-	-- Realtime Reroll Monitor States
-	quirkActiveUnit = "-", quirkCurrentVal = "-", quirkStatus = "Idle",
-	gradeActiveUnit = "-", gradeCurrentVal = "-", gradeStatus = "Idle",
-	traitActiveUnit = "-", traitCurrentVal = "-", traitStatus = "Idle"
+	quirkActiveUnit = "-", quirkCurrentVal = "-", quirkStatus = "Standby",
+	gradeActiveUnit = "-", gradeCurrentVal = "-", gradeStatus = "Standby",
+	traitActiveUnit = "-", traitCurrentVal = "-", traitStatus = "Standby"
 }
 local ConfigUpdaters = {}
 
--- DARK BLUE GLASS THEME PALETTE
 local GLASS_THEME = {
-	Bg     = Color3.fromRGB(11, 19, 36),     -- Dark Navy Background
-	Card   = Color3.fromRGB(20, 32, 58),     -- Glass Card
-	Header = Color3.fromRGB(15, 23, 42),     -- Deep Navy Header
-	Acc1   = Color3.fromRGB(59, 130, 246),    -- Royal Blue Accent
-	Acc2   = Color3.fromRGB(37, 99, 235),    -- Deep Blue Accent
-	Text   = Color3.fromRGB(241, 245, 249),   -- Soft White Text
-	SubText= Color3.fromRGB(148, 163, 184)   -- Muted Blue Gray Text
+	Bg     = Color3.fromRGB(11, 19, 36),
+	Card   = Color3.fromRGB(20, 32, 58),
+	Header = Color3.fromRGB(15, 23, 42),
+	Acc1   = Color3.fromRGB(59, 130, 246),
+	Acc2   = Color3.fromRGB(37, 99, 235),
+	Text   = Color3.fromRGB(241, 245, 249),
+	SubText= Color3.fromRGB(148, 163, 184)
 }
 
 local CFG_FOLDER = "MofenkHub_Configs"
@@ -133,12 +132,10 @@ pcall(function()
 	end
 end)
 
--- CONSOLE SPY LOGGER
 local function AddSpyLog(txt)
 	print("[MofenkHub-Spy] [" .. os.date("%X") .. "] " .. tostring(txt))
 end
 
--- FORMAT NUMBERS
 local function FormatMoney(val)
 	val = tonumber(val) or 0
 	if val >= 1e12 then return string.format("%.2fT", val/1e12)
@@ -164,7 +161,7 @@ local R = {
 	EquipDice       = svc("DiceShopService.RE.EquipDice"),
 	Rebirth         = svc("RebirthService.RE.Rebirth"), 
 	BuyUpgrade      = svc("RE.BuyUpgrade") or svc("PlotService.RE.BuyPadUpgrade"),
-	QuirkRoll       = svc("QuirkService.RE.Roll") or svc("MutationService.RE.Roll") or svc("Quirks.RE.Roll"),
+	QuirkRoll       = svc("QuirkService.RE.Roll") or svc("Quirks.RE.Roll") or svc("MutationService.RE.Roll"),
 	GradeRoll       = svc("GradeService.RE.Roll") or svc("Grades.RE.Roll"), 
 	TraitRoll       = svc("TraitService.RE.Roll") or svc("Traits.RE.Roll"), 
 	BoostUse        = svc("BoostService.RE.Use"),
@@ -177,7 +174,7 @@ local R = {
 	ClaimDaily      = svc("DailyRewardService.RE.Claim"),
 	ClaimOffline    = svc("OfflineEarningsService.RE.Claim"), 
 	ClaimGroup      = svc("GroupRewardService.RE.Claim"),
-	SellInventory   = svc("SellService.RF.SellInventory"),
+	SellInventory   = svc("SellService.RF.SellInventory") or svc("SellService.RE.SellInventory"),
 	UpdateAutoSell  = svc("SellService.RE.UpdateAutoSell"),
 	Fuse            = svc("FusingService.RE.Fuse"),
 	InteractSlot    = svc("PlotService.RE.InteractSlot"),
@@ -194,10 +191,6 @@ local R = {
 	PumpkinRoll     = svc("PumpkinDiceService.RF.Roll") or svc("PumpkinDiceService.RE.Roll"),
 	PumpkinAutoSell = svc("PumpkinDiceService.RE.SetAutoSell")
 }
-
-for k, v in pairs(R) do
-	if v then AddSpyLog("Remote Registered: " .. k) else AddSpyLog("Remote Warning: " .. k .. " not found") end
-end
 
 local G = {}
 pcall(function()
@@ -227,6 +220,30 @@ local function inventory() return data().Inventory or {} end
 local function slots() return data().Slots or {} end
 local function isUnitEntry(e) return e and type(e)=="table" and e.name and G.EntryRegistry and pcall(function() return G.EntryRegistry.getEntryConfig(e.name).kind == "Unit" end) end
 local function currencyAmount(name) local t = 0; for _, e in pairs(inventory()) do if type(e)=="table" and e.name==name then t += tonumber(e.amount) or 0 end end; return t end
+
+local function isBeingRolled(unitId)
+	if not unitId then return false end
+	if F.quirkAuto then for _, id in ipairs(F.quirkUnits or {}) do if id == unitId then return true end end end
+	if F.gradeAuto then for _, id in ipairs(F.gradeUnits or {}) do if id == unitId then return true end end end
+	if F.traitAuto then for _, id in ipairs(F.traitUnits or {}) do if id == unitId then return true end end end
+	return false
+end
+
+local function getUnitRarity(u)
+	local rarity = "Common"
+	if u and u.name then
+		pcall(function()
+			if G.EntryRegistry and G.EntryRegistry.getEntryConfig then
+				local cfg = G.EntryRegistry.getEntryConfig(u.name)
+				if cfg and cfg.rarity then rarity = cfg.rarity end
+			elseif G.UnitConfig and G.UnitConfig.entries then
+				local cfg = G.UnitConfig.entries[u.name]
+				if cfg and cfg.rarity then rarity = cfg.rarity end
+			end
+		end)
+	end
+	return tostring(rarity)
+end
 
 local function baseIncome(u)
 	if not u then return 0 end
@@ -309,9 +326,9 @@ local function Notify(title, msg, duration)
 end
 
 -- ===================================================================== --
--- 4. ULTIMATE UI SETUP (DARK BLUE GLASS STYLE)
+-- 4. ULTIMATE UI SETUP
 -- ===================================================================== --
-local MainGui = Instance.new("ScreenGui"); MainGui.Name = "MofenkUltraHubV100"; MainGui.Parent = parentGui; MainGui.ResetOnSpawn = false
+local MainGui = Instance.new("ScreenGui"); MainGui.Name = "MofenkUltraHubV103"; MainGui.Parent = parentGui; MainGui.ResetOnSpawn = false
 
 local MainFrame = Instance.new("Frame"); MainFrame.Parent = MainGui
 MainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -334,7 +351,7 @@ ToggleBtn.MouseButton1Click:Connect(function() MainFrame.Visible = not MainFrame
 local TopBar = Instance.new("Frame"); TopBar.Parent = MainFrame; TopBar.Size = UDim2.new(1, 0, 0, 54); TopBar.BackgroundColor3 = GLASS_THEME.Header; TopBar.BackgroundTransparency = 0.2
 local TopCorner = Instance.new("UICorner"); TopCorner.CornerRadius = UDim.new(0, 16); TopCorner.Parent = TopBar
 
-local Title = Instance.new("TextLabel"); Title.Parent = TopBar; Title.Position = UDim2.new(0, 20, 0, 0); Title.Size = UDim2.new(0, 580, 1, 0); Title.Text = "👑 MOFENKHUB V100.0  |  DARK BLUE GLASS MASTER"; Title.TextColor3 = GLASS_THEME.Acc1; Title.TextSize = 15; Title.Font = Enum.Font.GothamBlack; Title.TextXAlignment = Enum.TextXAlignment.Left; Title.BackgroundTransparency = 1
+local Title = Instance.new("TextLabel"); Title.Parent = TopBar; Title.Position = UDim2.new(0, 20, 0, 0); Title.Size = UDim2.new(0, 580, 1, 0); Title.Text = "👑 MOFENKHUB V103.0  |  DARK BLUE GLASS MASTER"; Title.TextColor3 = GLASS_THEME.Acc1; Title.TextSize = 15; Title.Font = Enum.Font.GothamBlack; Title.TextXAlignment = Enum.TextXAlignment.Left; Title.BackgroundTransparency = 1
 
 local CloseBtn = Instance.new("TextButton"); CloseBtn.Parent = TopBar; CloseBtn.Position = UDim2.new(1, -48, 0, 11); CloseBtn.Size = UDim2.new(0, 34, 0, 34); CloseBtn.Text = "✕"; CloseBtn.TextColor3 = GLASS_THEME.Text; CloseBtn.Font = Enum.Font.GothamBold; CloseBtn.TextSize = 16; CloseBtn.BackgroundColor3 = GLASS_THEME.Card; CloseBtn.BackgroundTransparency = 0.3
 local CC = Instance.new("UICorner"); CC.CornerRadius = UDim.new(0, 10); CC.Parent = CloseBtn
@@ -412,7 +429,7 @@ local function AddInput(parent, text, flag, isNum)
 	updateVisuals()
 end
 
--- DROPDOWN WITH REALTIME UNIT INCOME DATA
+-- ADVANCED MULTI-SELECT DROPDOWN
 local function AddDropdown(parent, title, options, flag, isMulti)
 	local Frm = Instance.new("Frame"); Frm.Parent = parent; Frm.Size = UDim2.new(1, 0, 0, 46); Frm.BackgroundTransparency = 1
 	local L = Instance.new("TextLabel"); L.Parent = Frm; L.Position = UDim2.new(0, 6, 0, 0); L.Size = UDim2.new(0.4, 0, 1, 0); L.Text = title; L.TextColor3 = GLASS_THEME.Text; L.TextSize = 13; L.Font = Enum.Font.GothamMedium; L.TextXAlignment = Enum.TextXAlignment.Left; L.BackgroundTransparency = 1
@@ -512,10 +529,29 @@ local function AddDropdown(parent, title, options, flag, isMulti)
 	Btn.MouseButton1Click:Connect(function() DropList.Visible = not DropList.Visible; UpdatePos() end)
 end
 
--- REALTIME UNIT OPTIONS WITH INCOME INFORMATION ($/s)
+-- DYNAMIC OPTIONS GENERATOR
 local function GetOpts(mode)
 	local t = {}; 
-	if mode == "grade" and G.GradesMod then for n, g in pairs(G.GradesMod) do if type(g)=="table" and g.order then table.insert(t, {label=n, val=n, order=g.order}) end end; table.sort(t, function(a,b) return a.order<b.order end)
+	if mode == "rarity" then
+		local foundRarities = {}
+		pcall(function()
+			if G.EntryRegistry and G.EntryRegistry.getEntries then
+				for _, entry in pairs(G.EntryRegistry.getEntries()) do
+					if entry and entry.rarity and not foundRarities[entry.rarity] then
+						foundRarities[entry.rarity] = true
+						table.insert(t, {label = tostring(entry.rarity), val = tostring(entry.rarity)})
+					end
+				end
+			end
+		end)
+		local defaultRarities = {"Common", "Uncommon", "Rare", "Epic", "Legendary", "Mythic", "Secret", "Divine", "Godly"}
+		for _, rName in ipairs(defaultRarities) do
+			if not foundRarities[rName] then
+				table.insert(t, {label = rName, val = rName})
+			end
+		end
+		table.sort(t, function(a,b) return a.label < b.label end)
+	elseif mode == "grade" and G.GradesMod then for n, g in pairs(G.GradesMod) do if type(g)=="table" and g.order then table.insert(t, {label=n, val=n, order=g.order}) end end; table.sort(t, function(a,b) return a.order<b.order end)
 	elseif mode == "trait" and G.TraitsMod then for n, g in pairs(G.TraitsMod) do if type(g)=="table" and g.order then table.insert(t, {label=n, val=n, order=g.order}) end end; table.sort(t, function(a,b) return a.order<b.order end)
 	elseif mode == "quirk" and G.QuirksMod then for n, q in pairs(G.QuirksMod) do if type(q)=="table" then table.insert(t, {label=n, val=n}) end end; table.sort(t, function(a,b) return a.label<b.label end)
 	elseif mode == "pot" and G.BoostConfig then for n, e in pairs(G.BoostConfig.entries or {}) do table.insert(t, {label=n.." [T"..tostring(e.tier).."]", val=n}) end; table.sort(t, function(a,b) return a.label<b.label end)
@@ -562,7 +598,7 @@ local function GetOpts(mode)
 end
 
 -- ===================================================================== --
--- 5. TABS ASSEMBLY (DASHBOARD, FARM, TOWER, SEPARATE MONITORING)
+-- 5. TABS ASSEMBLY
 -- ===================================================================== --
 local T_Dash = CreateTab("Dashboard", "📊")
 local T_Farm = CreateTab("Farming", "⛏️")
@@ -611,7 +647,7 @@ task.spawn(function()
 			if isUnitEntry(e) then
 				tot += 1
 				if e.attributes then
-					if e.attributes.mutation or e.attributes.quirk then qrk+=1 end
+					if e.attributes.quirk or e.attributes.mutation then qrk+=1 end
 					if e.attributes.trait then trt+=1 end
 					if e.attributes.grade then grd+=1 end
 				end
@@ -619,7 +655,7 @@ task.spawn(function()
 		end
 		
 		local buffs = ""; if G.BuffController and G.BuffController.ActiveBuffs then for k,v in pairs(G.BuffController.ActiveBuffs) do buffs = buffs..k..", " end end; if buffs=="" then buffs="Tidak ada" end; STATE.activeBuffs = buffs
-		SLbl.Text = string.format("💎 Gems: %s | 🧬 Trait Rerolls: %s\n⚔️ Total Units: %d/100\n⚡ Quirk/Mutations: %d | 🧬 Traits: %d | ⭐ Grades: %d\n🧪 Active Buffs: %s", FormatMoney(currencyAmount("Gems")), FormatMoney(currencyAmount("Trait Reroll")), tot, qrk, trt, grd, STATE.activeBuffs)
+		SLbl.Text = string.format("💎 Gems: %s | 🧬 Trait Rerolls: %s\n⚔️ Total Units: %d/100\n⚡ Quirks: %d | 🧬 Traits: %d | ⭐ Grades: %d\n🧪 Active Buffs: %s", FormatMoney(currencyAmount("Gems")), FormatMoney(currencyAmount("Trait Reroll")), tot, qrk, trt, grd, STATE.activeBuffs)
 	end) end
 end)
 
@@ -670,13 +706,12 @@ local HauntedLbl = Instance.new("TextLabel"); HauntedLbl.Parent = G_HauntedMon; 
 task.spawn(function() while task.wait(0.5) do pcall(function() HauntedLbl.Text = string.format("🎃 Status: %s\n🏢 Lantai: %d | 🍬 Total Drops/Item: %d", STATE.hauntedLive, STATE.hauntedFloor, STATE.hauntedDrops) end) end end)
 
 -- 4. INVENTORY TAB
-local G_Inv = AddGroup(T_Inv, "MANAGEMENT & MAX AUTO SELL")
-AddToggle(G_Inv, "Auto Sell General (Pilihan Rarity)", "sellAuto")
+local G_Inv = AddGroup(T_Inv, "MANAGEMENT, RARITY KEEP & AUTO LOCK")
+AddToggle(G_Inv, "Auto Sell General (Jual Rarity Tidak Dicentang)", "sellAuto")
 AddToggle(G_Inv, "Auto Sell Saat Inventory Penuh (Max Capacity)", "sellMaxInvent")
-AddInput(G_Inv, "Simpan Unit Terbaik (Keep Best):", "keepBest", true)
-AddToggle(G_Inv, "Keep Mythic Units (Jangan Jual)", "keepRarityMythic")
-AddToggle(G_Inv, "Keep Secret Units (Jangan Jual)", "keepRaritySecret")
-AddToggle(G_Inv, "Keep Legendary Units (Jangan Jual)", "keepRarityLegendary")
+AddInput(G_Inv, "Simpan Unit Terbaik (Keep Best Income):", "keepBest", true)
+AddDropdown(G_Inv, "Pilih Rarity yang Disimpan (Keep Rarity):", GetOpts("rarity"), "keepRarities", true)
+AddToggle(G_Inv, "Auto Lock Unit Berdasarkan Rarity Terpilih", "autoLockRarity")
 AddToggle(G_Inv, "Auto Fusion Unit", "autoFuse")
 
 -- 5. POTIONS TAB
@@ -684,22 +719,22 @@ local G_Pot = AddGroup(T_Pot, "SMART POTION MANAGER")
 AddToggle(G_Pot, "Auto Gunakan Potion", "potionAuto")
 AddDropdown(G_Pot, "Pilih Potion Spesifik (Multi-Select):", GetOpts("pot"), "potionSpecific", true)
 
--- 6. QUIRK TAB (TERPISAH & DETAIL)
+-- 6. QUIRK TAB (LIVE REROLL MONITORING)
 local G_QrkCtrl = AddGroup(T_Qrk, "AUTO LOCK & QUIRK REROLL CONFIG")
 AddToggle(G_QrkCtrl, "Auto Lock Unit jika Quirk Target Didapat", "autoLockTarget")
 AddToggle(G_QrkCtrl, "Aktifkan Auto Quirk Reroll", "quirkAuto")
 AddDropdown(G_QrkCtrl, "Target Quirk (Multi-Select):", GetOpts("quirk"), "quirkTargets", true)
 AddDropdown(G_QrkCtrl, "Pilih Unit Reroll Quirk (Realtime Income):", GetOpts("unit"), "quirkUnits", true)
 
-local G_QrkMon = AddGroup(T_Qrk, "⚡ REALTIME MONITORING QUIRK / MUTATION")
-local QrkLbl = Instance.new("TextLabel"); QrkLbl.Parent = G_QrkMon; QrkLbl.Size = UDim2.new(1,0,0,80); QrkLbl.BackgroundTransparency = 1; QrkLbl.TextColor3 = GLASS_THEME.Text; QrkLbl.TextSize = 13; QrkLbl.Font = Enum.Font.GothamMedium; QrkLbl.TextXAlignment = Enum.TextXAlignment.Left; QrkLbl.TextYAlignment = Enum.TextYAlignment.Top
+local G_QrkMon = AddGroup(T_Qrk, "⚡ REALTIME MONITORING QUIRK")
+local QrkLbl = Instance.new("TextLabel"); QrkLbl.Parent = G_QrkMon; QrkLbl.Size = UDim2.new(1,0,0,85); QrkLbl.BackgroundTransparency = 1; QrkLbl.TextColor3 = GLASS_THEME.Text; QrkLbl.TextSize = 13; QrkLbl.Font = Enum.Font.GothamMedium; QrkLbl.TextXAlignment = Enum.TextXAlignment.Left; QrkLbl.TextYAlignment = Enum.TextYAlignment.Top
 task.spawn(function()
 	while task.wait(0.3) do pcall(function()
-		QrkLbl.Text = string.format("⚡ Status Quirk Roll: %s\n🎯 Unit Aktif: %s\n🔮 Quirk/Mutation Saat Ini: %s", STATE.quirkStatus, STATE.quirkActiveUnit, STATE.quirkCurrentVal)
+		QrkLbl.Text = string.format("🎯 Unit Aktif: %s\n⚡ Quirk Saat Ini: %s\n📊 Log Roll: %s", STATE.quirkActiveUnit, STATE.quirkCurrentVal, STATE.quirkStatus)
 	end) end
 end)
 
--- 7. GRADE TAB (TERPISAH & DETAIL)
+-- 7. GRADE TAB (LIVE REROLL MONITORING)
 local G_GrdCtrl = AddGroup(T_Grd, "AUTO GRADE REROLL CONFIG")
 AddToggle(G_GrdCtrl, "Aktifkan Auto Grade Reroll", "gradeAuto")
 AddToggle(G_GrdCtrl, "Hanya Unit di Base (Placed)", "gradePlacedOnly")
@@ -708,14 +743,14 @@ AddDropdown(G_GrdCtrl, "Pilih Unit Reroll Grade (Realtime Income):", GetOpts("un
 AddInput(G_GrdCtrl, "Sisakan Gems Minimum:", "gemReserve", true)
 
 local G_GrdMon = AddGroup(T_Grd, "⭐ REALTIME MONITORING GRADE")
-local GrdLbl = Instance.new("TextLabel"); GrdLbl.Parent = G_GrdMon; GrdLbl.Size = UDim2.new(1,0,0,80); GrdLbl.BackgroundTransparency = 1; GrdLbl.TextColor3 = GLASS_THEME.Text; GrdLbl.TextSize = 13; GrdLbl.Font = Enum.Font.GothamMedium; GrdLbl.TextXAlignment = Enum.TextXAlignment.Left; GrdLbl.TextYAlignment = Enum.TextYAlignment.Top
+local GrdLbl = Instance.new("TextLabel"); GrdLbl.Parent = G_GrdMon; GrdLbl.Size = UDim2.new(1,0,0,85); GrdLbl.BackgroundTransparency = 1; GrdLbl.TextColor3 = GLASS_THEME.Text; GrdLbl.TextSize = 13; GrdLbl.Font = Enum.Font.GothamMedium; GrdLbl.TextXAlignment = Enum.TextXAlignment.Left; GrdLbl.TextYAlignment = Enum.TextYAlignment.Top
 task.spawn(function()
 	while task.wait(0.3) do pcall(function()
-		GrdLbl.Text = string.format("⭐ Status Grade Roll: %s\n🎯 Unit Aktif: %s\n🌟 Grade Saat Ini: %s", STATE.gradeStatus, STATE.gradeActiveUnit, STATE.gradeCurrentVal)
+		GrdLbl.Text = string.format("🎯 Unit Aktif: %s\n🌟 Grade Saat Ini: %s\n📊 Log Roll: %s", STATE.gradeActiveUnit, STATE.gradeCurrentVal, STATE.gradeStatus)
 	end) end
 end)
 
--- 8. TRAIT TAB (TERPISAH & DETAIL)
+-- 8. TRAIT TAB (LIVE REROLL MONITORING)
 local G_TrtCtrl = AddGroup(T_Trt, "AUTO TRAIT REROLL CONFIG")
 AddToggle(G_TrtCtrl, "Aktifkan Auto Trait Reroll", "traitAuto")
 AddToggle(G_TrtCtrl, "Hanya Unit di Base (Placed)", "traitPlacedOnly")
@@ -724,14 +759,14 @@ AddDropdown(G_TrtCtrl, "Pilih Unit Reroll Trait (Realtime Income):", GetOpts("un
 AddInput(G_TrtCtrl, "Sisakan Trait Reroll Minimum:", "rerollReserve", true)
 
 local G_TrtMon = AddGroup(T_Trt, "🧬 REALTIME MONITORING TRAIT")
-local TrtLbl = Instance.new("TextLabel"); TrtLbl.Parent = G_TrtMon; TrtLbl.Size = UDim2.new(1,0,0,80); TrtLbl.BackgroundTransparency = 1; TrtLbl.TextColor3 = GLASS_THEME.Text; TrtLbl.TextSize = 13; TrtLbl.Font = Enum.Font.GothamMedium; TrtLbl.TextXAlignment = Enum.TextXAlignment.Left; TrtLbl.TextYAlignment = Enum.TextYAlignment.Top
+local TrtLbl = Instance.new("TextLabel"); TrtLbl.Parent = G_TrtMon; TrtLbl.Size = UDim2.new(1,0,0,85); TrtLbl.BackgroundTransparency = 1; TrtLbl.TextColor3 = GLASS_THEME.Text; TrtLbl.TextSize = 13; TrtLbl.Font = Enum.Font.GothamMedium; TrtLbl.TextXAlignment = Enum.TextXAlignment.Left; TrtLbl.TextYAlignment = Enum.TextYAlignment.Top
 task.spawn(function()
 	while task.wait(0.3) do pcall(function()
-		TrtLbl.Text = string.format("🧬 Status Trait Roll: %s\n🎯 Unit Aktif: %s\n🧬 Trait Saat Ini: %s", STATE.traitStatus, STATE.traitActiveUnit, STATE.traitCurrentVal)
+		TrtLbl.Text = string.format("🎯 Unit Aktif: %s\n🧬 Trait Saat Ini: %s\n📊 Log Roll: %s", STATE.traitActiveUnit, STATE.traitCurrentVal, STATE.traitStatus)
 	end) end
 end)
 
--- 9. MAIN TOWER TAB (FIXED STUCK & REMOTE DISCOVERY)
+-- 9. MAIN TOWER TAB
 local G_Twr = AddGroup(T_Twr, "MAIN TOWER FARMING SETUP")
 AddToggle(G_Twr, "Auto Main Tower Farming", "tower")
 AddToggle(G_Twr, "Mode MIX / Random Tower (Acak Terpilih)", "towerMix")
@@ -744,7 +779,7 @@ local G_TwrMon = AddGroup(T_Twr, "LIVE TOWER MONITORING & TRAIT DROPS")
 local TwrLbl = Instance.new("TextLabel"); TwrLbl.Parent = G_TwrMon; TwrLbl.Size = UDim2.new(1,0,0,70); TwrLbl.BackgroundTransparency = 1; TwrLbl.TextColor3 = GLASS_THEME.Text; TwrLbl.TextSize = 13; TwrLbl.Font = Enum.Font.GothamMedium; TwrLbl.TextXAlignment = Enum.TextXAlignment.Left; TwrLbl.TextYAlignment = Enum.TextYAlignment.Top
 task.spawn(function() while task.wait(0.5) do pcall(function() TwrLbl.Text = string.format("🎮 Status: %s\n🏢 Lantai: %d | 💎 Gems Didapat: %d\n🧬 Trait Drops: %s", STATE.towerLive, STATE.towerFloor, STATE.towerDrops, tostring(STATE.towerTraitsGot)) end) end end)
 
--- 10. SETTINGS & FILE CONFIG MANAGER TAB
+-- 10. SETTINGS TAB
 local G_SetConfig = AddGroup(T_Set, "FILE CONFIG MANAGEMENT")
 AddToggle(G_SetConfig, "Auto Load Config Saat Nyala", "autoLoadEnabled")
 AddInput(G_SetConfig, "Nama File Config:", "cfgName", false)
@@ -802,7 +837,7 @@ local G_Web = AddGroup(T_Set, "DISCORD WEBHOOK NOTIFIER")
 AddToggle(G_Web, "Aktifkan Webhook Discord", "webhookEnabled")
 AddInput(G_Web, "Webhook URL:", "webhookUrl", false)
 local BtnTestWeb = Instance.new("TextButton"); BtnTestWeb.Parent = G_Web; BtnTestWeb.Size = UDim2.new(1, 0, 0, 34); BtnTestWeb.Text = "🔔 TEST KIRIM WEBHOOK"; BtnTestWeb.Font = Enum.Font.GothamBold; BtnTestWeb.TextSize = 12; BtnTestWeb.TextColor3 = GLASS_THEME.Acc1; BtnTestWeb.BackgroundColor3 = GLASS_THEME.Header; local BTWC = Instance.new("UICorner"); BTWC.CornerRadius = UDim.new(0,8); BTWC.Parent = BtnTestWeb
-BtnTestWeb.MouseButton1Click:Connect(function() SendWebhook("✅ Webhook Connected!", "MofenkHub V100.0 tersambung sukses.", 3447003); Notify("Webhook", "Test webhook dikirim.") end)
+BtnTestWeb.MouseButton1Click:Connect(function() SendWebhook("✅ Webhook Connected!", "MofenkHub V103.0 tersambung sukses.", 3447003); Notify("Webhook", "Test webhook dikirim.") end)
 
 local G_Set2 = AddGroup(T_Set, "OPTIMALISASI & DISCONNECT PROTECTION")
 AddToggle(G_Set2, "Anti-AFK Protection (Prevent Disconnect)", "afk")
@@ -837,10 +872,10 @@ BtnHop.MouseButton1Click:Connect(function()
 end)
 
 -- ===================================================================== --
--- 6. BACKEND THREADS (REALTIME SEPARATE MONITORING, TOWER & AUTO LOCK)
+-- 6. BACKEND THREADS (ENHANCED LIVE MONITORING & ANTI-COLLISION LOCK)
 -- ===================================================================== --
 
--- Anti-AFK & Reconnection
+-- Anti-AFK Protection
 local vu = game:GetService("VirtualUser")
 pcall(function()
 	local PromptOverlay = CoreGui:FindFirstChild("PromptOverlay", true) or LocalPlayer.PlayerGui:FindFirstChild("PromptOverlay", true)
@@ -872,8 +907,117 @@ LocalPlayer.Idled:Connect(function()
 	end
 end)
 
+-- AUTO LOCK / UNLOCK UNIT BERDASARKAN DYNAMIC RARITY (WITH SAFETY CHECK)
+task.spawn(function()
+	while _G.__ANIMEDICE == generation do
+		if F.autoLockRarity and R.LockUnit then
+			pcall(function()
+				for id, u in pairs(inventory()) do
+					if isUnitEntry(u) and not isBeingRolled(id) then
+						local rarity = getUnitRarity(u)
+						
+						local isSelectedRarity = false
+						for _, rName in ipairs(F.keepRarities or {}) do
+							if string.lower(tostring(rarity)) == string.lower(tostring(rName)) then
+								isSelectedRarity = true
+								break
+							end
+						end
+
+						local isLocked = u.attributes and u.attributes.locked
+						if isSelectedRarity and not isLocked then
+							R.LockUnit:FireServer(id, true)
+						elseif not isSelectedRarity and isLocked then
+							R.LockUnit:FireServer(id, false)
+						end
+					end
+				end
+			end)
+		end
+		task.wait(3)
+	end
+end)
+
+-- AUTO SELL INVENTORY THREAD (WITH SAFETY CHECK)
+task.spawn(function()
+	while _G.__ANIMEDICE == generation do
+		if (F.sellAuto or F.sellMaxInvent) and R.SellInventory then
+			pcall(function()
+				local d = data()
+				local cap = 100
+				pcall(function()
+					local buff = tonumber(select(2, pcall(G.BuffController.GetBuff, "Unit Storage")))
+					if buff and buff > 0 then cap = buff end
+				end)
+
+				local totalOwned = 0
+				local placed = {}
+				for _, slot in pairs(d.Slots or {}) do if slot.unitId then placed[slot.unitId] = true end end
+				for _, id in pairs(d.TowerTeam or {}) do placed[id] = true end
+
+				local sellCandidates = {}
+				for id, u in pairs(d.Inventory or {}) do
+					if isUnitEntry(u) then
+						totalOwned += 1
+						local rarity = getUnitRarity(u)
+						
+						local isKeepRarity = false
+						for _, rName in ipairs(F.keepRarities or {}) do
+							if string.lower(tostring(rarity)) == string.lower(tostring(rName)) then
+								isKeepRarity = true
+								break
+							end
+						end
+
+						-- Jangan pernah menjual unit yang sedang masuk daftar roll atau di-placed/keep
+						if not isKeepRarity and not placed[id] and not isBeingRolled(id) then
+							if u.attributes and u.attributes.locked and R.LockUnit then
+								R.LockUnit:FireServer(id, false)
+								task.wait(0.05)
+							end
+							table.insert(sellCandidates, { id = id, value = baseIncome(u) })
+						end
+					end
+				end
+
+				local isFull = totalOwned >= (cap - 3)
+				if F.sellAuto or (F.sellMaxInvent and isFull) then
+					table.sort(sellCandidates, function(a, b) return a.value < b.value end)
+					
+					local keepQty = tonumber(F.keepBest) or 0
+					local sellCount = math.max(0, #sellCandidates - keepQty)
+					
+					local list = {}
+					for i = 1, sellCount do
+						table.insert(list, sellCandidates[i].id)
+						if #list >= 150 then break end
+					end
+					
+					if #list > 0 then
+						local successSell = false
+						pcall(function()
+							if R.SellInventory:IsA("RemoteFunction") then
+								successSell = R.SellInventory:InvokeServer(list)
+							elseif R.SellInventory:IsA("RemoteEvent") then
+								R.SellInventory:FireServer(list)
+								successSell = true
+							end
+						end)
+						if successSell then
+							Notify("Auto Sell", "Berhasil menjual " .. #list .. " unit di luar list Keep Rarity.", 3)
+							AddSpyLog("Auto Sell: Successfully sold " .. #list .. " units")
+						end
+					end
+				end
+			end)
+		end
+		task.wait(3.5)
+	end
+end)
+
 -- REALTIME SEPARATE REROLL THREADS
--- 1. Quirk Reroll
+
+-- 1. Quirk Reroll Thread (Immediate Auto Lock & Detailed Live Monitoring)
 task.spawn(function()
 	while _G.__ANIMEDICE == generation do
 		if F.quirkAuto and R.QuirkRoll and #F.quirkUnits > 0 then
@@ -882,35 +1026,41 @@ task.spawn(function()
 				for _, unitId in ipairs(F.quirkUnits) do
 					local u = inv[unitId]
 					if u and u.attributes then
+						-- Auto Lock unit langsung di inventaris saat dipilih di list roll
+						if R.LockUnit and not u.attributes.locked then
+							R.LockUnit:FireServer(unitId, true)
+						end
+
 						STATE.quirkActiveUnit = string.format("%s (Lv.%d | 💰$%s/s)", tostring(u.name), tonumber(u.attributes.level) or 1, FormatMoney(baseIncome(u)))
-						local curQuirk = u.attributes.mutation or u.attributes.quirk or "None"
+						local curQuirk = u.attributes.quirk or u.attributes.mutation or "None"
 						STATE.quirkCurrentVal = tostring(curQuirk)
 						
 						local isMatch = false
-						for _, target in ipairs(F.quirkTargets) do if curQuirk == target then isMatch = true break end end
+						for _, target in ipairs(F.quirkTargets) do 
+							if string.lower(tostring(curQuirk)) == string.lower(tostring(target)) then 
+								isMatch = true 
+								break 
+							end 
+						end
 
 						if isMatch then
-							STATE.quirkStatus = "✅ MATCH TARGET FOUND!"
-							if F.autoLockTarget and R.LockUnit and not u.attributes.locked then
-								R.LockUnit:FireServer(unitId, true)
-								Notify("Auto Lock Unit!", "Quirk Target Didapat: " .. tostring(curQuirk), 4)
-							end
+							STATE.quirkStatus = string.format("[Quirk] > ✅ Berhasil didapat: %s", tostring(curQuirk))
+							Notify("Auto Quirk Target!", "Quirk > Berhasil didapat " .. tostring(curQuirk), 4)
+							SendWebhook("⚡ Quirk Matched!", "Berhasil mendapatkan Quirk **" .. tostring(curQuirk) .. "** untuk unit " .. tostring(u.name), 65280)
 						else
-							STATE.quirkStatus = "⚡ Rolling Quirk..."
+							STATE.quirkStatus = string.format("[Quirk] > Rolling... (Saat ini: %s)", tostring(curQuirk))
 							R.QuirkRoll:FireServer(unitId)
 							task.wait(0.5)
 						end
 					end
 				end
 			end)
-		else
-			STATE.quirkStatus = "Idle"
-		end
+		else STATE.quirkStatus = "Standby" end
 		task.wait(0.5)
 	end
 end)
 
--- 2. Grade Reroll
+-- 2. Grade Reroll Thread (Immediate Auto Lock & Detailed Live Monitoring)
 task.spawn(function()
 	while _G.__ANIMEDICE == generation do
 		if F.gradeAuto and R.GradeRoll and #F.gradeUnits > 0 then
@@ -919,35 +1069,41 @@ task.spawn(function()
 				for _, unitId in ipairs(F.gradeUnits) do
 					local u = inv[unitId]
 					if u and u.attributes and currencyAmount("Gems") > (F.gemReserve or 100) then
+						-- Auto Lock unit langsung di inventaris saat dipilih di list roll
+						if R.LockUnit and not u.attributes.locked then
+							R.LockUnit:FireServer(unitId, true)
+						end
+
 						STATE.gradeActiveUnit = string.format("%s (Lv.%d | 💰$%s/s)", tostring(u.name), tonumber(u.attributes.level) or 1, FormatMoney(baseIncome(u)))
 						local curGrade = u.attributes.grade or "None"
 						STATE.gradeCurrentVal = tostring(curGrade)
 
 						local isMatch = false
-						for _, target in ipairs(F.gradeTargets) do if curGrade == target then isMatch = true break end end
+						for _, target in ipairs(F.gradeTargets) do 
+							if string.lower(tostring(curGrade)) == string.lower(tostring(target)) then 
+								isMatch = true 
+								break 
+							end 
+						end
 
 						if isMatch then
-							STATE.gradeStatus = "✅ MATCH TARGET FOUND!"
-							if F.autoLockTarget and R.LockUnit and not u.attributes.locked then
-								R.LockUnit:FireServer(unitId, true)
-								Notify("Auto Lock Unit!", "Grade Target Didapat: " .. tostring(curGrade), 4)
-							end
+							STATE.gradeStatus = string.format("[Grade] > ✅ Berhasil didapat: %s", tostring(curGrade))
+							Notify("Auto Grade Target!", "Grade > Berhasil didapat " .. tostring(curGrade), 4)
+							SendWebhook("⭐ Grade Matched!", "Berhasil mendapatkan Grade **" .. tostring(curGrade) .. "** untuk unit " .. tostring(u.name), 65280)
 						else
-							STATE.gradeStatus = "⭐ Rolling Grade..."
+							STATE.gradeStatus = string.format("[Grade] > Rolling... (Saat ini: %s)", tostring(curGrade))
 							R.GradeRoll:FireServer(unitId)
 							task.wait(0.5)
 						end
 					end
 				end
 			end)
-		else
-			STATE.gradeStatus = "Idle"
-		end
+		else STATE.gradeStatus = "Standby" end
 		task.wait(0.5)
 	end
 end)
 
--- 3. Trait Reroll
+-- 3. Trait Reroll Thread (Immediate Auto Lock & Detailed Live Monitoring)
 task.spawn(function()
 	while _G.__ANIMEDICE == generation do
 		if F.traitAuto and R.TraitRoll and #F.traitUnits > 0 then
@@ -956,30 +1112,36 @@ task.spawn(function()
 				for _, unitId in ipairs(F.traitUnits) do
 					local u = inv[unitId]
 					if u and u.attributes and currencyAmount("Trait Reroll") > (F.rerollReserve or 50) then
+						-- Auto Lock unit langsung di inventaris saat dipilih di list roll
+						if R.LockUnit and not u.attributes.locked then
+							R.LockUnit:FireServer(unitId, true)
+						end
+
 						STATE.traitActiveUnit = string.format("%s (Lv.%d | 💰$%s/s)", tostring(u.name), tonumber(u.attributes.level) or 1, FormatMoney(baseIncome(u)))
 						local curTrait = u.attributes.trait or "None"
 						STATE.traitCurrentVal = tostring(curTrait)
 
 						local isMatch = false
-						for _, target in ipairs(F.traitTargets) do if curTrait == target then isMatch = true break end end
+						for _, target in ipairs(F.traitTargets) do 
+							if string.lower(tostring(curTrait)) == string.lower(tostring(target)) then 
+								isMatch = true 
+								break 
+							end 
+						end
 
 						if isMatch then
-							STATE.traitStatus = "✅ MATCH TARGET FOUND!"
-							if F.autoLockTarget and R.LockUnit and not u.attributes.locked then
-								R.LockUnit:FireServer(unitId, true)
-								Notify("Auto Lock Unit!", "Trait Target Didapat: " .. tostring(curTrait), 4)
-							end
+							STATE.traitStatus = string.format("[Trait] > ✅ Berhasil didapat: %s", tostring(curTrait))
+							Notify("Auto Trait Target!", "Trait > Berhasil didapat " .. tostring(curTrait), 4)
+							SendWebhook("🧬 Trait Matched!", "Berhasil mendapatkan Trait **" .. tostring(curTrait) .. "** untuk unit " .. tostring(u.name), 65280)
 						else
-							STATE.traitStatus = "🧬 Rolling Trait..."
+							STATE.traitStatus = string.format("[Trait] > Rolling... (Saat ini: %s)", tostring(curTrait))
 							R.TraitRoll:FireServer(unitId)
 							task.wait(0.5)
 						end
 					end
 				end
 			end)
-		else
-			STATE.traitStatus = "Idle"
-		end
+		else STATE.traitStatus = "Standby" end
 		task.wait(0.5)
 	end
 end)
@@ -1026,7 +1188,7 @@ task.spawn(function()
 
 				local sellList = {}
 				for id, u in pairs(d.Inventory or {}) do
-					if isUnitEntry(u) and u.name then
+					if isUnitEntry(u) and u.name and not isBeingRolled(id) then
 						local isTarget = false
 						for _, targetName in ipairs(F.specificSellUnits) do
 							if u.name == targetName then isTarget = true break end
@@ -1152,64 +1314,6 @@ task.spawn(function()
 	end
 end)
 
--- Auto Sell Inventory
-task.spawn(function()
-	while _G.__ANIMEDICE == generation do
-		if (F.sellAuto or F.sellMaxInvent) and R.SellInventory then
-			pcall(function()
-				local d = data()
-				local cap = 100
-				pcall(function()
-					local buff = tonumber(select(2, pcall(G.BuffController.GetBuff, "Unit Storage")))
-					if buff and buff > 0 then cap = buff end
-				end)
-
-				local totalOwned = 0
-				local placed = {}
-				for _, slot in pairs(d.Slots or {}) do if slot.unitId then placed[slot.unitId] = true end end
-				for _, id in pairs(d.TowerTeam or {}) do placed[id] = true end
-
-				local sellCandidates = {}
-				for id, u in pairs(d.Inventory or {}) do
-					if isUnitEntry(u) then
-						totalOwned += 1
-						local cfg = G.EntryRegistry and pcall(function() return G.EntryRegistry.getEntryConfig(u.name) end)
-						local rarity = (cfg and cfg.rarity) or "Common"
-						
-						local isProt = false
-						if u.attributes and u.attributes.locked then isProt = true end
-						if F.keepRarityMythic and string.find(string.lower(rarity), "mythic") then isProt = true end
-						if F.keepRaritySecret and string.find(string.lower(rarity), "secret") then isProt = true end
-						if F.keepRarityLegendary and string.find(string.lower(rarity), "legendary") then isProt = true end
-
-						if not placed[id] and not isProt then
-							table.insert(sellCandidates, { id = id, value = baseIncome(u) })
-						end
-					end
-				end
-
-				local isFull = totalOwned >= (cap - 3)
-				if F.sellAuto or (F.sellMaxInvent and isFull) then
-					table.sort(sellCandidates, function(a, b) return a.value < b.value end)
-					local sellCount = math.max(0, #sellCandidates - (F.keepBest or 20))
-					
-					local list = {}
-					for i = 1, sellCount do
-						table.insert(list, sellCandidates[i].id)
-						if #list >= 200 then break end
-					end
-					if #list > 0 then
-						R.SellInventory:InvokeServer(list)
-						Notify("Auto Sell", "Menjual " .. #list .. " unit.", 3)
-						AddSpyLog("Auto Sell: Sold " .. #list .. " units")
-					end
-				end
-			end)
-		end
-		task.wait(4)
-	end
-end)
-
 -- Farming Level & Rebirth Loop
 task.spawn(function()
 	local lastRebirth = 0
@@ -1287,7 +1391,7 @@ local function drainTower()
 	end
 end
 
--- MAIN TOWER FARMING THREAD (FIXED PLAY REMOTE & MULTI-SELECT)
+-- MAIN TOWER FARMING THREAD
 task.spawn(function()
 	while _G.__ANIMEDICE == generation do
 		if F.tower and R.PlayTower and R.CompleteFloor then
@@ -1422,7 +1526,7 @@ task.spawn(function()
 	while _G.__ANIMEDICE == generation do
 		if F.claimQuests then
 			pcall(function()
-				if R.ClaimDaily then R.ClaimDaily:FireServer() end; if R.ClaimOffline then R.ClaimOffline:FireServer() end; if R.ClaimGroup then R.ClaimGroup:FireServer() end
+				if R.ClaimDaily then R.ClaimDaily:FireServer() end; if R.ClaimOffline then R.ClaimOffline:FireServer() end; if R.ClaimGroup subterranean end; if R.ClaimGroup then R.ClaimGroup:FireServer() end
 				if R.QuestClaim and G.DC and G.DC.Quests and G.QuestConfig then
 					local now = workspace:GetServerTimeNow()
 					for _, p in ipairs({"Daily", "Weekly"}) do
@@ -1447,5 +1551,5 @@ task.spawn(function()
 	end
 end)
 
-Notify("MofenkHub V100.0 Ready!", "Script berhasil di-update dengan Realtime Data.", 4)
-AddSpyLog("MofenkHub V100.0 Loaded Successfully.")
+Notify("MofenkHub V103.0 Ready!", "Monitoring Reroll & Anti-Collision Auto Lock Aktif.", 4)
+AddSpyLog("MofenkHub V103.0 Loaded Successfully.")
