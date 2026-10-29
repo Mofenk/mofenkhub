@@ -1,5 +1,5 @@
 -- ===================================================================== --
--- 👑 MOFENKHUB V104.0 — ULTIMATE EDITION (SMOOTH ANIMATIONS & THEMES)
+-- 👑 MOFENKHUB V105.0 — MONOCHROME & MULTI-INSTANCE AUTO-SCALE EDITION
 -- ===================================================================== --
 
 --!nocheck
@@ -62,6 +62,15 @@ local generation = _G.__MOFENKHUB
 -- 2. THEMES & CONFIGURATION MANAGER
 -- ===================================================================== --
 local THEMES = {
+    ["Hitam Putih"] = {
+        Bg      = Color3.fromRGB(0, 0, 0),          -- Hitam Pekat (AMOLED)
+        Card    = Color3.fromRGB(18, 18, 18),       -- Charcoal Gelap
+        Header  = Color3.fromRGB(10, 10, 10),       -- Header Hitam Soft
+        Acc1    = Color3.fromRGB(255, 255, 255),   -- Putih Cerah (Aksen)
+        Acc2    = Color3.fromRGB(200, 200, 200),   -- Putih Soft
+        Text    = Color3.fromRGB(255, 255, 255),   -- Teks Putih
+        SubText = Color3.fromRGB(160, 160, 160)    -- Abu-abu Subteks
+    },
     ["Glass Blue"] = {
         Bg      = Color3.fromRGB(11, 19, 36),
         Card    = Color3.fromRGB(20, 32, 58),
@@ -80,15 +89,6 @@ local THEMES = {
         Text    = Color3.fromRGB(250, 245, 255),
         SubText = Color3.fromRGB(192, 132, 252)
     },
-    ["AMOLED Black"] = {
-        Bg      = Color3.fromRGB(10, 10, 10),
-        Card    = Color3.fromRGB(22, 22, 22),
-        Header  = Color3.fromRGB(16, 16, 16),
-        Acc1    = Color3.fromRGB(255, 255, 255),
-        Acc2    = Color3.fromRGB(200, 200, 200),
-        Text    = Color3.fromRGB(255, 255, 255),
-        SubText = Color3.fromRGB(150, 150, 150)
-    },
     ["Emerald Green"] = {
         Bg      = Color3.fromRGB(6, 28, 20),
         Card    = Color3.fromRGB(14, 48, 36),
@@ -102,7 +102,7 @@ local THEMES = {
 
 local F = {
     cfgName = "MofenkConfig1", autoLoadEnabled = false,
-    selectedTheme = "Glass Blue",
+    selectedTheme = "Hitam Putih",
     toggleKey = Enum.KeyCode.RightControl.Name,
     -- Server & Hop
     autoHop40 = false, hopInterval = 2400,
@@ -122,7 +122,7 @@ local STATE = {
 local ConfigUpdaters = {}
 local ThemeElements = { Strokes = {}, Cards = {}, Headers = {}, Accents = {}, Texts = {}, SubTexts = {}, Backgrounds = {} }
 
-local GLASS_THEME = THEMES["Glass Blue"]
+local GLASS_THEME = THEMES["Hitam Putih"]
 
 local function UpdateTheme(themeName)
     if not THEMES[themeName] then return end
@@ -189,7 +189,7 @@ local function SendWebhook(title, description, colorCode)
         pcall(function()
             req({
                 Url = F.webhookUrl, Method = "POST", Headers = {["Content-Type"] = "application/json"},
-                Body = HttpService:JSONEncode({ username = "MOFENKHUB", avatar_url = "https://i.imgur.com/3qGMB7j.png", embeds = {{ title = title, description = description, color = colorCode or 3447003, footer = {text = "Player: " .. LocalPlayer.Name} }} })
+                Body = HttpService:JSONEncode({ username = "MOFENKHUB", avatar_url = "https://i.imgur.com/3qGMB7j.png", embeds = {{ title = title, description = description, color = colorCode or 16777215, footer = {text = "Player: " .. LocalPlayer.Name} }} })
             })
         end)
     end
@@ -201,10 +201,10 @@ end
 local ToggleGui = Instance.new("ScreenGui"); ToggleGui.Name = "MofenkToggleFront"; ToggleGui.Parent = parentGui; ToggleGui.ResetOnSpawn = false
 ToggleGui.DisplayOrder = 99999
 
-local ToggleBtn = Instance.new("TextButton"); ToggleBtn.Parent = ToggleGui; ToggleBtn.Size = UDim2.new(0, 62, 0, 62); ToggleBtn.Position = UDim2.new(0.02, 0, 0.4, 0)
-ToggleBtn.BackgroundColor3 = GLASS_THEME.Card; ToggleBtn.Text = "M"; ToggleBtn.Font = Enum.Font.GothamBlack; ToggleBtn.TextSize = 32; ToggleBtn.TextColor3 = GLASS_THEME.Acc1; ToggleBtn.ZIndex = 99999
-local TC = Instance.new("UICorner"); TC.CornerRadius = UDim.new(0, 16); TC.Parent = ToggleBtn
-local TS = Instance.new("UIStroke"); TS.Thickness = 2.5; TS.Color = GLASS_THEME.Acc1; TS.Parent = ToggleBtn
+local ToggleBtn = Instance.new("TextButton"); ToggleBtn.Parent = ToggleGui; ToggleBtn.Size = UDim2.new(0, 56, 0, 56); ToggleBtn.Position = UDim2.new(0.02, 0, 0.4, 0)
+ToggleBtn.BackgroundColor3 = GLASS_THEME.Card; ToggleBtn.Text = "M"; ToggleBtn.Font = Enum.Font.GothamBlack; ToggleBtn.TextSize = 28; ToggleBtn.TextColor3 = GLASS_THEME.Acc1; ToggleBtn.ZIndex = 99999
+local TC = Instance.new("UICorner"); TC.CornerRadius = UDim.new(0, 14); TC.Parent = ToggleBtn
+local TS = Instance.new("UIStroke"); TS.Thickness = 2; TS.Color = GLASS_THEME.Acc1; TS.Parent = ToggleBtn
 
 table.insert(ThemeElements.Cards, ToggleBtn)
 table.insert(ThemeElements.Accents, ToggleBtn)
@@ -212,10 +212,10 @@ table.insert(ThemeElements.Accents, TS)
 
 -- Hover Animation for Logo Button
 ToggleBtn.MouseEnter:Connect(function()
-    TweenService:Create(ToggleBtn, TweenInfo.new(0.2), {Size = UDim2.new(0, 66, 0, 66)}):Play()
+    TweenService:Create(ToggleBtn, TweenInfo.new(0.18), {Size = UDim2.new(0, 60, 0, 60)}):Play()
 end)
 ToggleBtn.MouseLeave:Connect(function()
-    TweenService:Create(ToggleBtn, TweenInfo.new(0.2), {Size = UDim2.new(0, 62, 0, 62)}):Play()
+    TweenService:Create(ToggleBtn, TweenInfo.new(0.18), {Size = UDim2.new(0, 56, 0, 56)}):Play()
 end)
 
 -- Drag Mechanics
@@ -230,7 +230,7 @@ ToggleBtn.InputChanged:Connect(function(input) if input.UserInputType == Enum.Us
 UserInputService.InputChanged:Connect(function(input)
     if input == dragInput and dragging then
         local delta = input.Position - dragStart; local viewport = workspace.CurrentCamera.ViewportSize
-        ToggleBtn.Position = UDim2.new(0, math.clamp(startPos.X.Offset + delta.X, 10, viewport.X - 70), 0, math.clamp(startPos.Y.Offset + delta.Y, 10, viewport.Y - 70))
+        ToggleBtn.Position = UDim2.new(0, math.clamp(startPos.X.Offset + delta.X, 10, viewport.X - 65), 0, math.clamp(startPos.Y.Offset + delta.Y, 10, viewport.Y - 65))
     end
 end)
 
@@ -261,19 +261,40 @@ local function Notify(title, msg, duration)
 end
 
 -- ===================================================================== --
--- 4. ULTIMATE MAIN UI SETUP WITH SMOOTH ANIMATIONS
+-- 4. ULTIMATE MAIN UI SETUP WITH RESPONSIVE MULTI-ROBLOX AUTO-SCALE
 -- ===================================================================== --
 local MainGui = Instance.new("ScreenGui"); MainGui.Name = "MofenkUltraHubGAG"; MainGui.Parent = parentGui; MainGui.ResetOnSpawn = false
 
 local MainFrame = Instance.new("Frame"); MainFrame.Parent = MainGui
 MainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
 MainFrame.Size = UDim2.new(0, 960, 0, 620); MainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
-MainFrame.Active = true; MainFrame.Draggable = true; MainFrame.Visible = false; MainFrame.BackgroundColor3 = GLASS_THEME.Bg; MainFrame.BackgroundTransparency = 0.12
+MainFrame.Active = true; MainFrame.Draggable = true; MainFrame.Visible = false; MainFrame.BackgroundColor3 = GLASS_THEME.Bg; MainFrame.BackgroundTransparency = 0.08
 local MainCorner = Instance.new("UICorner"); MainCorner.CornerRadius = UDim.new(0, 16); MainCorner.Parent = MainFrame
 local MainStroke = Instance.new("UIStroke"); MainStroke.Thickness = 2; MainStroke.Color = GLASS_THEME.Acc1; MainStroke.Parent = MainFrame
 
 table.insert(ThemeElements.Backgrounds, MainFrame)
 table.insert(ThemeElements.Accents, MainStroke)
+
+-- DYNAMIC AUTO SCALE LOGIC (UNTUK ROBLOX UKURAN KECIL / MULTI-INSTANCE / CLOUD PHONE)
+local ScreenScale = Instance.new("UIScale"); ScreenScale.Parent = MainGui
+local function UpdateResponsiveScale()
+    local cam = workspace.CurrentCamera
+    if not cam then return end
+    local viewport = cam.ViewportSize
+    if viewport.X <= 0 or viewport.Y <= 0 then return end
+    
+    local scaleX = (viewport.X * 0.92) / 960
+    local scaleY = (viewport.Y * 0.92) / 620
+    local targetScale = math.min(scaleX, scaleY)
+    
+    -- Mengizinkan skala hingga 0.35x untuk jendela Roblox ultra-kecil
+    ScreenScale.Scale = math.clamp(targetScale, 0.35, 1.15)
+end
+
+UpdateResponsiveScale()
+if workspace.CurrentCamera then
+    workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(UpdateResponsiveScale)
+end
 
 local MainScale = Instance.new("UIScale"); MainScale.Parent = MainFrame; MainScale.Scale = 1
 
@@ -281,7 +302,7 @@ local isWindowOpen = false
 local function ToggleWindow()
     if isWindowOpen then
         isWindowOpen = false
-        local tw = TweenService:Create(MainScale, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.In), {Scale = 0})
+        local tw = TweenService:Create(MainScale, TweenInfo.new(0.22, Enum.EasingStyle.Back, Enum.EasingDirection.In), {Scale = 0})
         tw:Play()
         tw.Completed:Connect(function()
             if not isWindowOpen then MainFrame.Visible = false end
@@ -290,7 +311,7 @@ local function ToggleWindow()
         isWindowOpen = true
         MainFrame.Visible = true
         MainScale.Scale = 0
-        TweenService:Create(MainScale, TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Scale = 1}):Play()
+        TweenService:Create(MainScale, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Scale = 1}):Play()
     end
 end
 
@@ -309,7 +330,7 @@ local TopBar = Instance.new("Frame"); TopBar.Parent = MainFrame; TopBar.Size = U
 local TopCorner = Instance.new("UICorner"); TopCorner.CornerRadius = UDim.new(0, 16); TopCorner.Parent = TopBar
 table.insert(ThemeElements.Headers, TopBar)
 
-local Title = Instance.new("TextLabel"); Title.Parent = TopBar; Title.Position = UDim2.new(0, 20, 0, 0); Title.Size = UDim2.new(0, 580, 1, 0); Title.Text = "👑 MOFENKHUB  |  GROW A GARDEN EDITION"; Title.TextColor3 = GLASS_THEME.Acc1; Title.TextSize = 15; Title.Font = Enum.Font.GothamBlack; Title.TextXAlignment = Enum.TextXAlignment.Left; Title.BackgroundTransparency = 1
+local Title = Instance.new("TextLabel"); Title.Parent = TopBar; Title.Position = UDim2.new(0, 20, 0, 0); Title.Size = UDim2.new(0, 580, 1, 0); Title.Text = "👑 MOFENKHUB  |  MONOCHROME EDITION"; Title.TextColor3 = GLASS_THEME.Acc1; Title.TextSize = 15; Title.Font = Enum.Font.GothamBlack; Title.TextXAlignment = Enum.TextXAlignment.Left; Title.BackgroundTransparency = 1
 table.insert(ThemeElements.Accents, Title)
 
 local CloseBtn = Instance.new("TextButton"); CloseBtn.Parent = TopBar; CloseBtn.Position = UDim2.new(1, -48, 0, 11); CloseBtn.Size = UDim2.new(0, 34, 0, 34); CloseBtn.Text = "✕"; CloseBtn.TextColor3 = GLASS_THEME.Text; CloseBtn.Font = Enum.Font.GothamBold; CloseBtn.TextSize = 16; CloseBtn.BackgroundColor3 = GLASS_THEME.Card; CloseBtn.BackgroundTransparency = 0.3
@@ -383,7 +404,7 @@ local function AddToggle(parent, text, flag, callback)
     table.insert(ThemeElements.Texts, L)
 
     local function updateVisuals()
-        Sw.BackgroundColor3 = F[flag] and GLASS_THEME.Acc1 or Color3.fromRGB(30, 41, 59)
+        Sw.BackgroundColor3 = F[flag] and GLASS_THEME.Acc1 or Color3.fromRGB(40, 40, 40)
         TweenService:Create(Knob, TweenInfo.new(0.2, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {Position = F[flag] and UDim2.new(1, -24, 0.5, -11) or UDim2.new(0, 2, 0.5, -11)}):Play()
     end
     table.insert(ConfigUpdaters, updateVisuals)
@@ -835,7 +856,6 @@ end)
 -- 5. SETTINGS TAB
 local G_Theme = AddGroup(T_Set, "TEMA & KEYBIND BINDING")
 
-local ThemeBtns = {}
 local FrmTheme = Instance.new("Frame"); FrmTheme.Parent = G_Theme; FrmTheme.Size = UDim2.new(1, 0, 0, 42); FrmTheme.BackgroundTransparency = 1
 local LTheme = Instance.new("TextLabel"); LTheme.Parent = FrmTheme; LTheme.Position = UDim2.new(0, 6, 0, 0); LTheme.Size = UDim2.new(0.35, 0, 1, 0); LTheme.Text = "Pilih Tema UI:"; LTheme.TextColor3 = GLASS_THEME.Text; LTheme.TextSize = 13; LTheme.Font = Enum.Font.GothamMedium; LTheme.TextXAlignment = Enum.TextXAlignment.Left; LTheme.BackgroundTransparency = 1; table.insert(ThemeElements.Texts, LTheme)
 
@@ -917,7 +937,7 @@ local G_Web = AddGroup(T_Set, "DISCORD WEBHOOK NOTIFIER")
 AddToggle(G_Web, "Aktifkan Webhook Discord", "webhookEnabled")
 AddInput(G_Web, "Webhook URL:", "webhookUrl", false)
 local BtnTestWeb = Instance.new("TextButton"); BtnTestWeb.Parent = G_Web; BtnTestWeb.Size = UDim2.new(1, 0, 0, 34); BtnTestWeb.Text = "🔔 TEST KIRIM WEBHOOK"; BtnTestWeb.Font = Enum.Font.GothamBold; BtnTestWeb.TextSize = 12; BtnTestWeb.TextColor3 = GLASS_THEME.Acc1; BtnTestWeb.BackgroundColor3 = GLASS_THEME.Header; local BTWC = Instance.new("UICorner"); BTWC.CornerRadius = UDim.new(0,8); BTWC.Parent = BtnTestWeb
-BtnTestWeb.MouseButton1Click:Connect(function() SendWebhook("✅ Webhook Connected!", "MOFENKHUB V104.0 tersambung sukses.", 3447003); Notify("Webhook", "Test webhook dikirim.", 3) end)
+BtnTestWeb.MouseButton1Click:Connect(function() SendWebhook("✅ Webhook Connected!", "MOFENKHUB V105.0 tersambung sukses.", 16777215); Notify("Webhook", "Test webhook dikirim.", 3) end)
 
 table.insert(ThemeElements.Headers, BtnTestWeb); table.insert(ThemeElements.Accents, BtnTestWeb)
 
@@ -929,5 +949,5 @@ task.spawn(function()
     end
 end)
 
-clog("MOFENKHUB V104.0 Ultimate Edition Loaded!")
-Notify("MOFENKHUB V104.0 Loaded!", "UI Animations, Slider, Keybind & Theme Preset siap digunakan.", 4)
+clog("MOFENKHUB V105.0 Monochrome Edition Loaded!")
+Notify("MOFENKHUB V105.0 Ready!", "Tema Hitam Putih & Auto-Scale Jendela Kecil Aktif.", 4)
