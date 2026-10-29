@@ -1,5 +1,5 @@
 -- ===================================================================== --
--- 👑 MOFENKHUB V105.0 — MONOCHROME & MULTI-INSTANCE AUTO-SCALE EDITION
+-- 👑 MOFENKHUB V106.0 — FIXED HOP & DELTA CONSOLE SPY EDITION
 -- ===================================================================== --
 
 --!nocheck
@@ -18,7 +18,7 @@ local Stats             = game:GetService("Stats")
 local LocalPlayer = Players.LocalPlayer
 
 -- ===================================================================== --
--- 1. AUTO EXECUTE ON TELEPORT
+-- 1. AUTO EXECUTE ON TELEPORT & HTTP BYPASS
 -- ===================================================================== --
 local SCRIPT_URL = "https://raw.githubusercontent.com/Mofenk/mofenkhub/refs/heads/main/animedice.lua"
 local AUTOEXEC_CODE = string.format([[
@@ -33,6 +33,30 @@ local function armAutoExec()
     end
 end
 armAutoExec()
+
+-- Helper HTTP Request Bypass untuk Executor Mobile (Delta/Codex)
+local function httpRequest(url)
+    local req = (syn and syn.request) or request or http_request or (fluxus and fluxus.request)
+    if req then
+        local ok, res = pcall(req, {Url = url, Method = "GET"})
+        if ok and res then
+            return res.Body or res.body
+        end
+    end
+    local ok, res = pcall(function() return game:HttpGet(url) end)
+    if ok then return res end
+    return nil
+end
+
+-- Print Helper khusus Delta / Executor Console
+local function printDeltaConsole(txt)
+    print(txt)
+    if rconsoleprint then
+        pcall(rconsoleprint, txt .. "\n")
+    elseif printconsole then
+        pcall(printconsole, txt)
+    end
+end
 
 -- Safe Parent GUI Setup
 local successGui, parentGui = pcall(function()
@@ -63,13 +87,13 @@ local generation = _G.__MOFENKHUB
 -- ===================================================================== --
 local THEMES = {
     ["Hitam Putih"] = {
-        Bg      = Color3.fromRGB(0, 0, 0),          -- Hitam Pekat (AMOLED)
-        Card    = Color3.fromRGB(18, 18, 18),       -- Charcoal Gelap
-        Header  = Color3.fromRGB(10, 10, 10),       -- Header Hitam Soft
-        Acc1    = Color3.fromRGB(255, 255, 255),   -- Putih Cerah (Aksen)
-        Acc2    = Color3.fromRGB(200, 200, 200),   -- Putih Soft
-        Text    = Color3.fromRGB(255, 255, 255),   -- Teks Putih
-        SubText = Color3.fromRGB(160, 160, 160)    -- Abu-abu Subteks
+        Bg      = Color3.fromRGB(0, 0, 0),
+        Card    = Color3.fromRGB(18, 18, 18),
+        Header  = Color3.fromRGB(10, 10, 10),
+        Acc1    = Color3.fromRGB(255, 255, 255),
+        Acc2    = Color3.fromRGB(200, 200, 200),
+        Text    = Color3.fromRGB(255, 255, 255),
+        SubText = Color3.fromRGB(160, 160, 160)
     },
     ["Glass Blue"] = {
         Bg      = Color3.fromRGB(11, 19, 36),
@@ -275,7 +299,7 @@ local MainStroke = Instance.new("UIStroke"); MainStroke.Thickness = 2; MainStrok
 table.insert(ThemeElements.Backgrounds, MainFrame)
 table.insert(ThemeElements.Accents, MainStroke)
 
--- DYNAMIC AUTO SCALE LOGIC (UNTUK ROBLOX UKURAN KECIL / MULTI-INSTANCE / CLOUD PHONE)
+-- DYNAMIC AUTO SCALE LOGIC
 local ScreenScale = Instance.new("UIScale"); ScreenScale.Parent = MainGui
 local function UpdateResponsiveScale()
     local cam = workspace.CurrentCamera
@@ -287,7 +311,6 @@ local function UpdateResponsiveScale()
     local scaleY = (viewport.Y * 0.92) / 620
     local targetScale = math.min(scaleX, scaleY)
     
-    -- Mengizinkan skala hingga 0.35x untuk jendela Roblox ultra-kecil
     ScreenScale.Scale = math.clamp(targetScale, 0.35, 1.15)
 end
 
@@ -317,7 +340,6 @@ end
 
 ToggleBtn.MouseButton1Click:Connect(ToggleWindow)
 
--- Global Keybind Handler
 UserInputService.InputBegan:Connect(function(input, gpe)
     if gpe then return end
     if input.KeyCode.Name == F.toggleKey then
@@ -330,7 +352,7 @@ local TopBar = Instance.new("Frame"); TopBar.Parent = MainFrame; TopBar.Size = U
 local TopCorner = Instance.new("UICorner"); TopCorner.CornerRadius = UDim.new(0, 16); TopCorner.Parent = TopBar
 table.insert(ThemeElements.Headers, TopBar)
 
-local Title = Instance.new("TextLabel"); Title.Parent = TopBar; Title.Position = UDim2.new(0, 20, 0, 0); Title.Size = UDim2.new(0, 580, 1, 0); Title.Text = "👑 MOFENKHUB  |  MONOCHROME EDITION"; Title.TextColor3 = GLASS_THEME.Acc1; Title.TextSize = 15; Title.Font = Enum.Font.GothamBlack; Title.TextXAlignment = Enum.TextXAlignment.Left; Title.BackgroundTransparency = 1
+local Title = Instance.new("TextLabel"); Title.Parent = TopBar; Title.Position = UDim2.new(0, 20, 0, 0); Title.Size = UDim2.new(0, 580, 1, 0); Title.Text = "👑 MOFENKHUB  |  FIXED HOP & SPY"; Title.TextColor3 = GLASS_THEME.Acc1; Title.TextSize = 15; Title.Font = Enum.Font.GothamBlack; Title.TextXAlignment = Enum.TextXAlignment.Left; Title.BackgroundTransparency = 1
 table.insert(ThemeElements.Accents, Title)
 
 local CloseBtn = Instance.new("TextButton"); CloseBtn.Parent = TopBar; CloseBtn.Position = UDim2.new(1, -48, 0, 11); CloseBtn.Size = UDim2.new(0, 34, 0, 34); CloseBtn.Text = "✕"; CloseBtn.TextColor3 = GLASS_THEME.Text; CloseBtn.Font = Enum.Font.GothamBold; CloseBtn.TextSize = 16; CloseBtn.BackgroundColor3 = GLASS_THEME.Card; CloseBtn.BackgroundTransparency = 0.3
@@ -353,7 +375,6 @@ local function CreateTab(name, icon)
     local Btn = Instance.new("TextButton"); Btn.Parent = Sidebar; Btn.Size = UDim2.new(1, -4, 0, 42); Btn.Text = "   " .. icon .. "   " .. name; Btn.TextColor3 = GLASS_THEME.SubText; Btn.TextSize = 13; Btn.Font = Enum.Font.GothamBold; Btn.TextXAlignment = Enum.TextXAlignment.Left; Btn.BackgroundColor3 = GLASS_THEME.Card; Btn.BackgroundTransparency = 0.4
     local Corner = Instance.new("UICorner"); Corner.CornerRadius = UDim.new(0, 10); Corner.Parent = Btn
     
-    -- Accent Indicator Bar
     local AccentBar = Instance.new("Frame"); AccentBar.Parent = Btn; AccentBar.Size = UDim2.new(0, 0, 0.7, 0); AccentBar.Position = UDim2.new(0, 4, 0.15, 0); AccentBar.BackgroundColor3 = GLASS_THEME.Acc1
     local AC = Instance.new("UICorner"); AC.CornerRadius = UDim.new(1, 0); AC.Parent = AccentBar
     
@@ -571,7 +592,7 @@ table.insert(ThemeElements.Accents, HopTimerLbl)
 local G_Logs = AddGroup(T_Dash, "MOFENKHUB CONSOLE LOG")
 local console = makeConsole(G_Logs, { Name = "Console Log", MaxLines = 100 })
 local function clog(m)
-    print("[MOFENKHUB]", m)
+    printDeltaConsole("[MOFENKHUB] " .. tostring(m))
     pcall(function() console:Append(m) end)
 end
 
@@ -595,30 +616,35 @@ task.spawn(function()
     end) end
 end)
 
--- 2. SPY SCANNER TAB
-local G_SpyScan = AddGroup(T_Spy, "REMOTE SERVICE SCANNER (DELTA / ROBLOX CONSOLE)")
+-- 2. SPY SCANNER TAB (PRINTS DIRECTLY TO DELTA / DEV CONSOLE)
+local G_SpyScan = AddGroup(T_Spy, "REMOTE SERVICE SCANNER (DIRECT TO DELTA CONSOLE)")
 
 local function scanAndPrintRemotes()
-    clog("--- [ SPY SCANNER STARTED ] ---")
+    printDeltaConsole("==========================================")
+    printDeltaConsole("   🔍 MOFENKHUB - SPY SCANNER STARTED")
+    printDeltaConsole("==========================================")
+    
     local count = 0
     local targetServices = { ReplicatedStorage, workspace, Players, game:GetService("Lighting") }
     
     for _, svc in ipairs(targetServices) do
-        clog("Scanning Service: " .. svc.Name)
+        printDeltaConsole("📂 Scanning Service: " .. svc.Name)
         for _, obj in ipairs(svc:GetDescendants()) do
             if obj:IsA("RemoteEvent") or obj:IsA("RemoteFunction") or obj:IsA("BindableEvent") or obj:IsA("BindableFunction") then
                 count = count + 1
-                local info = string.format("[%s] -> %s", obj.ClassName, obj:GetFullName())
-                print("[MOFENK SPY] " .. info)
+                local info = string.format("   [%s] -> %s", obj.ClassName, obj:GetFullName())
+                printDeltaConsole(info)
                 clog(info)
             end
         end
     end
-    clog("--- [ SCAN FINISHED: " .. count .. " REMOTES FOUND ] ---")
-    Notify("Spy Scanner", "Ditemukan " .. count .. " remotes! Cek Delta Console.", 4)
+    printDeltaConsole("==========================================")
+    printDeltaConsole("✅ SCAN COMPLETE: " .. count .. " REMOTES FOUND")
+    printDeltaConsole("==========================================")
+    Notify("Spy Scanner", "Berhasil scan " .. count .. " remotes! Cek Delta Console.", 4)
 end
 
-local BtnScan = Instance.new("TextButton"); BtnScan.Parent = G_SpyScan; BtnScan.Size = UDim2.new(1, 0, 0, 36); BtnScan.Text = "🔍 SCAN ALL SERVICES & PRINT TO CONSOLE"; BtnScan.Font = Enum.Font.GothamBold; BtnScan.TextSize = 12; BtnScan.TextColor3 = GLASS_THEME.Acc1; BtnScan.BackgroundColor3 = GLASS_THEME.Header; local BSC = Instance.new("UICorner"); BSC.CornerRadius = UDim.new(0,8); BSC.Parent = BtnScan
+local BtnScan = Instance.new("TextButton"); BtnScan.Parent = G_SpyScan; BtnScan.Size = UDim2.new(1, 0, 0, 36); BtnScan.Text = "🔍 SCAN ALL SERVICES (PRINT TO DELTA CONSOLE)"; BtnScan.Font = Enum.Font.GothamBold; BtnScan.TextSize = 12; BtnScan.TextColor3 = GLASS_THEME.Acc1; BtnScan.BackgroundColor3 = GLASS_THEME.Header; local BSC = Instance.new("UICorner"); BSC.CornerRadius = UDim.new(0,8); BSC.Parent = BtnScan
 BtnScan.MouseButton1Click:Connect(function() task.spawn(scanAndPrintRemotes) end)
 table.insert(ThemeElements.Headers, BtnScan)
 table.insert(ThemeElements.Accents, BtnScan)
@@ -634,14 +660,14 @@ if hookmetamethod then
         local method = getnamecallmethod()
         if F.spyHook and (method == "FireServer" or method == "InvokeServer") then
             local args = {...}
-            print(string.format("[MOFENK SPY CALL] %s:%s() | Args: %s", self:GetFullName(), method, HttpService:JSONEncode(args)))
+            printDeltaConsole(string.format("[SPY CALL] %s:%s() | Args: %s", self:GetFullName(), method, HttpService:JSONEncode(args)))
         end
         return oldNamecall(self, ...)
     end)
 end
 
--- 3. SERVER HOP TAB (LIST & VISITED SYSTEM)
-local G_HopSys = AddGroup(T_Server, "AUTO SERVER HOP SYSTEM (PUBLIC API LIST)")
+-- 3. SERVER HOP TAB (BYPASS PUBLIC API VIA HTTP REQUEST)
+local G_HopSys = AddGroup(T_Server, "AUTO SERVER HOP SYSTEM (PUBLIC API BYPASS)")
 
 local VISIT_TTL = 1800
 local function visitedPath() return CFG_FOLDER .. "/visited_" .. tostring(LocalPlayer.UserId) .. ".json" end
@@ -677,34 +703,41 @@ local function doHop(lowPop)
         local order = lowPop and "Asc" or "Desc"
         local currentPlace = game.PlaceId
 
-        while pages < 3 do
+        while pages < 4 do
             local url = "https://games.roblox.com/v1/games/" .. tostring(currentPlace) .. "/servers/Public?sortOrder=" .. order .. "&limit=100&excludeFullGames=true"
-            if cursor then url = url .. "&cursor=" .. cursor end
-            local ok, res = pcall(function() return game:HttpGet(url) end)
-            if not ok then break end
-            local ok2, data = pcall(function() return HttpService:JSONDecode(res) end)
+            if cursor and cursor ~= "" then url = url .. "&cursor=" .. cursor end
+            
+            local resBody = httpRequest(url)
+            if not resBody then break end
+            
+            local ok2, data = pcall(function() return HttpService:JSONDecode(resBody) end)
             if not (ok2 and data and data.data) then break end
+            
             for _, s in ipairs(data.data) do
                 if s.id ~= game.JobId and not visited[s.id] and (tonumber(s.playing) or 0) < (tonumber(s.maxPlayers) or 99) then
                     table.insert(cands, s)
                 end
             end
+            
             cursor = data.nextPageCursor
             pages += 1
-            if not cursor then break end
+            if not cursor or cursor == "" then break end
         end
 
         if #cands == 0 then
-            Notify("Server Hop", "Semua server publik sudah dikunjungi, berpindah acak...", 4)
+            Notify("Server Hop", "Semua server publik sudah dikunjungi, mencoba random hop...", 4)
             TeleportService:Teleport(currentPlace, LocalPlayer)
             return
         end
 
-        local target = cands[1]
+        local target = cands[math.random(1, math.min(#cands, 10))]
         visited[target.id] = os.time()
         saveVisited(visited)
         Notify("Server Hop", "Teleportasi ke " .. target.id .. " (" .. target.playing .. " pemain)...", 4)
-        TeleportService:TeleportToPlaceInstance(currentPlace, target.id, LocalPlayer)
+        
+        pcall(function()
+            TeleportService:TeleportToPlaceInstance(currentPlace, target.id, LocalPlayer)
+        end)
     end)
 end
 
@@ -937,7 +970,7 @@ local G_Web = AddGroup(T_Set, "DISCORD WEBHOOK NOTIFIER")
 AddToggle(G_Web, "Aktifkan Webhook Discord", "webhookEnabled")
 AddInput(G_Web, "Webhook URL:", "webhookUrl", false)
 local BtnTestWeb = Instance.new("TextButton"); BtnTestWeb.Parent = G_Web; BtnTestWeb.Size = UDim2.new(1, 0, 0, 34); BtnTestWeb.Text = "🔔 TEST KIRIM WEBHOOK"; BtnTestWeb.Font = Enum.Font.GothamBold; BtnTestWeb.TextSize = 12; BtnTestWeb.TextColor3 = GLASS_THEME.Acc1; BtnTestWeb.BackgroundColor3 = GLASS_THEME.Header; local BTWC = Instance.new("UICorner"); BTWC.CornerRadius = UDim.new(0,8); BTWC.Parent = BtnTestWeb
-BtnTestWeb.MouseButton1Click:Connect(function() SendWebhook("✅ Webhook Connected!", "MOFENKHUB V105.0 tersambung sukses.", 16777215); Notify("Webhook", "Test webhook dikirim.", 3) end)
+BtnTestWeb.MouseButton1Click:Connect(function() SendWebhook("✅ Webhook Connected!", "MOFENKHUB V106.0 tersambung sukses.", 16777215); Notify("Webhook", "Test webhook dikirim.", 3) end)
 
 table.insert(ThemeElements.Headers, BtnTestWeb); table.insert(ThemeElements.Accents, BtnTestWeb)
 
@@ -949,5 +982,5 @@ task.spawn(function()
     end
 end)
 
-clog("MOFENKHUB V105.0 Monochrome Edition Loaded!")
-Notify("MOFENKHUB V105.0 Ready!", "Tema Hitam Putih & Auto-Scale Jendela Kecil Aktif.", 4)
+clog("MOFENKHUB V106.0 Loaded Successfully!")
+Notify("MOFENKHUB V106.0 Ready!", "Spy output dikirim langsung ke Delta Console & Server Hop siap.", 4)
