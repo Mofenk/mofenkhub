@@ -13,7 +13,7 @@ game.Loaded:Wait()
 end
 ​-- ================= AUTO EXECUTE ON TELEPORT CONFIG ================= --
 -- Masukkan URL raw script kamu di sini jika di-host di GitHub / Gist / Netlify.
-getgenv().GAG_ScriptUrl = getgenv().GAG_ScriptUrl or "https://raw.githubusercontent.com/username/repo/main/gag_hub.lua"
+getgenv().GAG_ScriptUrl = getgenv().GAG_ScriptUrl or "https://raw.githubusercontent.com/Mofenk/mofenkhub/refs/heads/main/gag.lua"
 ​local function queueAutoExec()
 local rawUrl = getgenv().GAG_ScriptUrl
 local code = string.format('loadstring(game:HttpGet("%s"))()', rawUrl)
