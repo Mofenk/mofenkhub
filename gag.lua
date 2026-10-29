@@ -1,5 +1,5 @@
 -- ===================================================================== --
--- 👑 MOFENKHUB V107.0 — GROW A GARDEN (GAG) FULL SPY & CONFIG SCRIPT
+-- 👑 MOFENKHUB V107.1 — GROW A GARDEN (GAG) AUTO BOOTH FIX
 -- ===================================================================== --
 
 --!nocheck
@@ -314,7 +314,7 @@ local TopBar = Instance.new("Frame"); TopBar.Parent = MainFrame; TopBar.Size = U
 local TopCorner = Instance.new("UICorner"); TopCorner.CornerRadius = UDim.new(0, 16); TopCorner.Parent = TopBar
 table.insert(ThemeElements.Headers, TopBar)
 
-local Title = Instance.new("TextLabel"); Title.Parent = TopBar; Title.Position = UDim2.new(0, 20, 0, 0); Title.Size = UDim2.new(0, 580, 1, 0); Title.Text = "👑 MOFENKHUB  |  GROW A GARDEN V107.0"; Title.TextColor3 = GLASS_THEME.Acc1; Title.TextSize = 15; Title.Font = Enum.Font.GothamBlack; Title.TextXAlignment = Enum.TextXAlignment.Left; Title.BackgroundTransparency = 1
+local Title = Instance.new("TextLabel"); Title.Parent = TopBar; Title.Position = UDim2.new(0, 20, 0, 0); Title.Size = UDim2.new(0, 580, 1, 0); Title.Text = "👑 MOFENKHUB  |  GROW A GARDEN V107.1"; Title.TextColor3 = GLASS_THEME.Acc1; Title.TextSize = 15; Title.Font = Enum.Font.GothamBlack; Title.TextXAlignment = Enum.TextXAlignment.Left; Title.BackgroundTransparency = 1
 table.insert(ThemeElements.Accents, Title)
 
 local CloseBtn = Instance.new("TextButton"); CloseBtn.Parent = TopBar; CloseBtn.Position = UDim2.new(1, -48, 0, 11); CloseBtn.Size = UDim2.new(0, 34, 0, 34); CloseBtn.Text = "✕"; CloseBtn.TextColor3 = GLASS_THEME.Text; CloseBtn.Font = Enum.Font.GothamBold; CloseBtn.TextSize = 16; CloseBtn.BackgroundColor3 = GLASS_THEME.Card; CloseBtn.BackgroundTransparency = 0.3
@@ -523,6 +523,59 @@ task.spawn(function()
     end) end
 end)
 
+-- HELPER: ENHANCED MULTI-METHOD BOOTH CLAIMER
+local function TryClaimBoothMultiMethod()
+    pcall(function()
+        local boothsFolder = workspace:FindFirstChild("Booths") or workspace:FindFirstChild("TradeBooths") or (workspace:FindFirstChild("TradeWorld") and workspace.TradeWorld:FindFirstChild("Booths"))
+        
+        -- Method 1: Check workspace for unclaimed booth model & invoke remote with model / id
+        if boothsFolder then
+            for _, booth in ipairs(boothsFolder:GetChildren()) do
+                local ownerVal = booth:FindFirstChild("Owner") or booth:GetAttribute("Owner")
+                local ownerName = type(ownerVal) == "Instance" and ownerVal.Value or tostring(ownerVal or "")
+                
+                if ownerName == "" or ownerName == "nil" or ownerName == "Nobody" then
+                    clog("Attempting Booth Claim on: " .. booth.Name)
+                    
+                    if Remotes.ClaimBooth then
+                        -- Try Instance Arg
+                        pcall(function()
+                            if Remotes.ClaimBooth:IsA("RemoteFunction") then Remotes.ClaimBooth:InvokeServer(booth)
+                            elseif Remotes.ClaimBooth:IsA("RemoteEvent") then Remotes.ClaimBooth:FireServer(booth) end
+                        end)
+                        
+                        -- Try Number/String Arg
+                        pcall(function()
+                            local boothNum = tonumber(booth.Name) or booth.Name
+                            if Remotes.ClaimBooth:IsA("RemoteFunction") then Remotes.ClaimBooth:InvokeServer(boothNum)
+                            elseif Remotes.ClaimBooth:IsA("RemoteEvent") then Remotes.ClaimBooth:FireServer(boothNum) end
+                        end)
+                    end
+                    
+                    -- Method 2: Fire ProximityPrompt on Booth if present
+                    pcall(function()
+                        for _, desc in ipairs(booth:GetDescendants()) do
+                            if desc:IsA("ProximityPrompt") then
+                                fireproximityprompt(desc, 1)
+                            end
+                        end
+                    end)
+                    
+                    break
+                end
+            end
+        else
+            -- Method 3: Fallback Direct Claim without parameters
+            if Remotes.ClaimBooth then
+                pcall(function()
+                    if Remotes.ClaimBooth:IsA("RemoteFunction") then Remotes.ClaimBooth:InvokeServer()
+                    elseif Remotes.ClaimBooth:IsA("RemoteEvent") then Remotes.ClaimBooth:FireServer() end
+                end)
+            end
+        end
+    end)
+end
+
 -- 2. TRADE & BOOTH TAB
 local G_Trade = AddGroup(T_Trd, "AUTO FARMER TRADE WORLD & BOOTH CLAIM")
 AddToggle(G_Trade, "Auto Join Farmer Trade World (Saat Terlempar ke Main)", "autoJoinTrade")
@@ -532,17 +585,12 @@ local G_Skin = AddGroup(T_Trd, "BOOTH SKIN SELECTION")
 AddDropdown(G_Skin, "Pilih Skin Booth:", KnownBoothSkins, "selectedBoothSkin", false)
 AddToggle(G_Skin, "Auto Equip Skin Saat Klaim Booth", "autoEquipSkin")
 
-local BtnManualClaim = Instance.new("TextButton"); BtnManualClaim.Parent = G_Trade; BtnManualClaim.Size = UDim2.new(1, 0, 0, 36); BtnManualClaim.Text = "🏬 KLAIM BOOTH SEKARANG"; BtnManualClaim.Font = Enum.Font.GothamBold; BtnManualClaim.TextSize = 13; BtnManualClaim.TextColor3 = GLASS_THEME.Acc1; BtnManualClaim.BackgroundColor3 = GLASS_THEME.Header; local BMC = Instance.new("UICorner"); BMC.CornerRadius = UDim.new(0,8); BMC.Parent = BtnManualClaim
+local BtnManualClaim = Instance.new("TextButton"); BtnManualClaim.Parent = G_Trade; BtnManualClaim.Size = UDim2.new(1, 0, 0, 36); BtnManualClaim.Text = "🏬 KLAIM BOOTH SEKARANG (MANUAL FORCE)"; BtnManualClaim.Font = Enum.Font.GothamBold; BtnManualClaim.TextSize = 13; BtnManualClaim.TextColor3 = GLASS_THEME.Acc1; BtnManualClaim.BackgroundColor3 = GLASS_THEME.Header; local BMC = Instance.new("UICorner"); BMC.CornerRadius = UDim.new(0,8); BMC.Parent = BtnManualClaim
 table.insert(ThemeElements.Headers, BtnManualClaim); table.insert(ThemeElements.Accents, BtnManualClaim)
 
 BtnManualClaim.MouseButton1Click:Connect(function()
-    pcall(function()
-        if Remotes.ClaimBooth then
-            if Remotes.ClaimBooth:IsA("RemoteFunction") then Remotes.ClaimBooth:InvokeServer()
-            elseif Remotes.ClaimBooth:IsA("RemoteEvent") then Remotes.ClaimBooth:FireServer() end
-            Notify("Booth Claim", "Eksekusi Klaim Booth Terkirim!", 2.5)
-        end
-    end)
+    TryClaimBoothMultiMethod()
+    Notify("Booth Claim", "Eksekusi Klaim Multi-Method Dikirim!", 2.5)
 end)
 
 -- 3. EVENTS TAB
@@ -559,7 +607,7 @@ end
 AddToggle(G_Char, "Aktifkan WalkSpeed Modifier", "wsOn", function() applyWS() end)
 AddToggle(G_Char, "Anti-AFK Protection", "afk")
 
--- 5. SETTINGS TAB (FULL COMPLETE CONFIG MANAGER)
+-- 5. SETTINGS TAB
 local G_Theme = AddGroup(T_Set, "TEMA & KEYBIND BINDING")
 
 local FrmTheme = Instance.new("Frame"); FrmTheme.Parent = G_Theme; FrmTheme.Size = UDim2.new(1, 0, 0, 42); FrmTheme.BackgroundTransparency = 1
@@ -578,7 +626,6 @@ for tName, _ in pairs(THEMES) do
     end)
 end
 
--- FULL CONFIG PRESETS MANAGEMENT UI
 local G_SetConfig = AddGroup(T_Set, "FILE CONFIG PRESETS MANAGEMENT")
 AddToggle(G_SetConfig, "Auto Load Config Saat Nyala", "autoLoadEnabled")
 AddInput(G_SetConfig, "Nama File Config:", "cfgName", false)
@@ -659,7 +706,7 @@ end)
 
 pcall(function()
     local PromptOverlay = CoreGui:FindFirstChild("PromptOverlay", true) or LocalPlayer.PlayerGui:FindFirstChild("PromptOverlay", true)
-    if PromptOverlay then
+    if PromptOverlay me then
         PromptOverlay.ChildAdded:Connect(function(child)
             if F.afk and (child.Name == "ErrorPrompt" or child.Name == "DisconnectPrompt") then
                 clog("Disconnect detected! Reconnecting...")
@@ -682,7 +729,7 @@ task.spawn(function()
     while _G.__GAG_SCRIPT == generation do
         if F.autoJoinTrade then
             pcall(function()
-                local inTradeWorld = workspace:FindFirstChild("TradeWorld") or workspace:FindFirstChild("Booths")
+                local inTradeWorld = workspace:FindFirstChild("TradeWorld") or workspace:FindFirstChild("Booths") or workspace:FindFirstChild("TradeBooths")
                 if not inTradeWorld and Remotes.TeleportTrade then
                     clog("Teleporting to Farmer Trade World...")
                     if Remotes.TeleportTrade:IsA("RemoteFunction") then
@@ -697,56 +744,45 @@ task.spawn(function()
     end
 end)
 
--- 3. Auto Claim Booth & Skin Equip Thread (Booths.ClaimBooth & TradeBoothSkinService.Equip)
+-- 3. Auto Claim Booth Loop Thread
 task.spawn(function()
     while _G.__GAG_SCRIPT == generation do
         if F.autoClaimBooth then
             pcall(function()
-                local boothsFolder = workspace:FindFirstChild("Booths") or (workspace:FindFirstChild("TradeWorld") and workspace.TradeWorld:FindFirstChild("Booths"))
+                local boothsFolder = workspace:FindFirstChild("Booths") or workspace:FindFirstChild("TradeBooths") or (workspace:FindFirstChild("TradeWorld") and workspace.TradeWorld:FindFirstChild("Booths"))
                 local myBoothFound = false
 
                 if boothsFolder then
                     for _, booth in ipairs(boothsFolder:GetChildren()) do
-                        local owner = booth:FindFirstChild("Owner") or booth:GetAttribute("Owner")
-                        if owner == LocalPlayer.Name then
+                        local ownerVal = booth:FindFirstChild("Owner") or booth:GetAttribute("Owner")
+                        local ownerName = type(ownerVal) == "Instance" and ownerVal.Value or tostring(ownerVal or "")
+                        
+                        if ownerName == LocalPlayer.Name then
                             myBoothFound = true
                             STATE.boothStatus = "Sudah Klaim (" .. booth.Name .. ")"
                             break
                         end
                     end
 
-                    if not myBoothFound and Remotes.ClaimBooth then
-                        for _, booth in ipairs(boothsFolder:GetChildren()) do
-                            local owner = booth:FindFirstChild("Owner") or booth:GetAttribute("Owner")
-                            if not owner or owner == "" then
-                                local boothId = booth.Name
-                                clog("Claiming Booth: " .. tostring(boothId))
-                                if Remotes.ClaimBooth:IsA("RemoteFunction") then
-                                    Remotes.ClaimBooth:InvokeServer(boothId)
-                                elseif Remotes.ClaimBooth:IsA("RemoteEvent") then
-                                    Remotes.ClaimBooth:FireServer(boothId)
-                                end
-                                
-                                STATE.boothStatus = "Berhasil Klaim (" .. tostring(boothId) .. ")"
-                                Notify("Auto Booth", "Berhasil Klaim Booth: " .. tostring(boothId), 3)
-                                task.wait(0.5)
-
-                                if F.autoEquipSkin and Remotes.EquipSkin and F.selectedBoothSkin ~= "Default" then
-                                    clog("Equipping Skin: " .. tostring(F.selectedBoothSkin))
-                                    if Remotes.EquipSkin:IsA("RemoteEvent") then
-                                        Remotes.EquipSkin:FireServer(F.selectedBoothSkin)
-                                    elseif Remotes.EquipSkin:IsA("RemoteFunction") then
-                                        Remotes.EquipSkin:InvokeServer(F.selectedBoothSkin)
-                                    end
-                                end
-                                break
+                    if not myBoothFound then
+                        STATE.boothStatus = "Mencari Booth Kosong..."
+                        TryClaimBoothMultiMethod()
+                        
+                        task.wait(1.5)
+                        -- Auto Equip Skin Setelah Klaim
+                        if F.autoEquipSkin and Remotes.EquipSkin and F.selectedBoothSkin ~= "Default" then
+                            clog("Equipping Skin: " .. tostring(F.selectedBoothSkin))
+                            if Remotes.EquipSkin:IsA("RemoteEvent") then
+                                Remotes.EquipSkin:FireServer(F.selectedBoothSkin)
+                            elseif Remotes.EquipSkin:IsA("RemoteFunction") then
+                                Remotes.EquipSkin:InvokeServer(F.selectedBoothSkin)
                             end
                         end
                     end
                 end
             end)
         end
-        task.wait(3.5)
+        task.wait(4)
     end
 end)
 
@@ -771,5 +807,5 @@ task.spawn(function()
     end
 end)
 
-clog("MOFENKHUB GAG V107.0 Loaded Full Successfully!")
-Notify("MOFENKHUB GAG Ready!", "Remote Spy & Full Config Presets Siap Digunakan.", 4)
+clog("MOFENKHUB GAG V107.1 Loaded Fixed Successfully!")
+Notify("MOFENKHUB GAG Ready!", "Pembaruan Auto Claim Booth Multi-Method Siap.", 4)
