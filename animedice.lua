@@ -1,6 +1,6 @@
 -- ===================================================================== --
--- 👑 MOFENKHUB V124.0 — THE ULTIMATE AUTONOMOUS OMNISCIENT ECOSYSTEM
--- Game: Anime Dice | Complete Feature Integration + Floating Mini HUD + Adaptive Debounce
+-- 👑 MOFENKHUB V125.0 — THE ULTIMATE AUTONOMOUS OMNISCIENT ECOSYSTEM
+-- Game: Anime Dice | Complete Feature Integration + Floating Mini HUD + Error Telemetry Console
 -- ===================================================================== --
 
 --!nocheck
@@ -38,10 +38,52 @@ _G.__ANIMEDICE = (_G.__ANIMEDICE or 0) + 1
 local generation = _G.__ANIMEDICE
 
 -- ===================================================================== --
--- 1. FULL COMPREHENSIVE CONFIGURATION & ADAPTIVE STATE
+-- 1. SMART ERROR & DIAGNOSTIC TELEMETRY ENGINE V125.0
+-- ===================================================================== --
+local DiagnosticHub = {
+	TotalCalls = 0,
+	SuccessCount = 0,
+	ErrorCount = 0,
+	ErrorHistory = {}
+}
+
+function DiagnosticHub:Log(tag, message, errData)
+	local timestamp = os.date("%X")
+	local entry = { Time = timestamp, Tag = tag, Message = message, Error = errData and tostring(errData) or nil }
+	
+	if errData then
+		self.ErrorCount = self.ErrorCount + 1
+		table.insert(self.ErrorHistory, 1, entry)
+		if #self.ErrorHistory > 50 then table.remove(self.ErrorHistory) end
+		warn(string.format("[🚨 MofenkError] [%s] [%s]: %s | Details: %s", timestamp, tag, message, tostring(errData)))
+	else
+		self.SuccessCount = self.SuccessCount + 1
+	end
+	self.TotalCalls = self.TotalCalls + 1
+end
+
+function DiagnosticHub:SafeExecute(tag, fn, ...)
+	local args = {...}
+	local ok, result = xpcall(function() return fn(unpack(args)) end, function(err) return debug.traceback(tostring(err), 2) end)
+	if not ok then
+		self:Log(tag, "Eksekusi Fungsi Gagal", result)
+		return false, result
+	else
+		self.SuccessCount = self.SuccessCount + 1
+		return true, result
+	end
+end
+
+function DiagnosticHub:GetHealthScore()
+	if self.TotalCalls == 0 then return 100.0 end
+	return math.clamp((self.SuccessCount / self.TotalCalls) * 100, 0, 100)
+end
+
+-- ===================================================================== --
+-- 2. CONFIGURATION & STATE MANAGEMENT
 -- ===================================================================== --
 local F = {
-	cfgName = "MofenkUltimateConfigV124", autoLoadEnabled = true,
+	cfgName = "MofenkUltimateConfigV125", autoLoadEnabled = true,
 	smartPlannerActive = true, adaptiveDebounce = true,
 	-- Farm & Plot
 	collect = true, levelup = true, maxLevel = 50, smartLevel = true,
@@ -90,7 +132,7 @@ local GLASS_THEME = {
 }
 
 -- ===================================================================== --
--- 2. SAFE REMOTE BINDINGS & CLOUD/LOCAL CONFIG SYNC
+-- 3. SAFE REMOTE BINDINGS & CLOUD/LOCAL CONFIG SYNC
 -- ===================================================================== --
 local Network = nil
 pcall(function() Network = ReplicatedStorage:WaitForChild("Network", 5) end)
@@ -158,7 +200,7 @@ end
 local function SafeCall(remoteObj, ...)
 	if not remoteObj then return false end
 	local args = {...}
-	local ok, res = pcall(function()
+	local ok, res = DiagnosticHub:SafeExecute("RemoteCall", function()
 		if remoteObj:IsA("RemoteEvent") then
 			remoteObj:FireServer(unpack(args))
 			return true
@@ -236,12 +278,13 @@ local function FormatMoney(val)
 end
 
 -- ===================================================================== --
--- 3. CORVUS TASK QUEUE & FORECASTING ENGINE
+-- 4. CORVUS TASK QUEUE & WATCHDOG CRASH RECOVERY
 -- ===================================================================== --
 local SmartPlanner = {
 	IsBusy = false,
 	TaskQueue = {},
-	Priority = { CRITICAL = 1, EVENT = 2, STRATEGY = 3, PROGRESS = 4, OPTIMIZE = 5, COMPETITIVE = 6, FARM = 7 }
+	Priority = { CRITICAL = 1, EVENT = 2, STRATEGY = 3, PROGRESS = 4, OPTIMIZE = 5, COMPETITIVE = 6, FARM = 7 },
+	LastActivity = os.clock()
 }
 
 function SmartPlanner:AddTask(id, prio, action, desc)
@@ -254,7 +297,6 @@ function SmartPlanner:EvaluateEnvironment()
 	if not F.smartPlannerActive then return end
 	local inv = inventory()
 
-	-- Calculate total income per second
 	local totalInc = 0
 	for _, slot in pairs(slots()) do
 		if slot.unitId and inv[slot.unitId] then
@@ -263,29 +305,22 @@ function SmartPlanner:EvaluateEnvironment()
 	end
 	STATE.incomePerSec = totalInc
 
-	-- Forecast time to next rebirth
 	pcall(function()
 		local nr = G.Rebirths.GetNext(rebirthAmt())
 		if nr and nr.cost then
 			local diff = nr.cost - money()
-			if diff <= 0 then
-				STATE.timeToNextRebirth = "Ready Now!"
-			elseif totalInc > 0 then
-				local secs = math.ceil(diff / totalInc)
-				STATE.timeToNextRebirth = string.format("~%d secs", secs)
-			else
-				STATE.timeToNextRebirth = "Stalled (No Income)"
-			end
+			if diff <= 0 then STATE.timeToNextRebirth = "Ready Now!"
+			elseif totalInc > 0 then STATE.timeToNextRebirth = string.format("~%d secs", math.ceil(diff / totalInc))
+			else STATE.timeToNextRebirth = "Stalled (No Income)" end
 		end
 	end)
 
-	-- [P1] CRITICAL: INVENTORY CAPACITY & AUTO FUSE / SELL
 	local totalOwned = 0
 	for _, e in pairs(inv) do if isUnitEntry(e) then totalOwned += 1 end end
 	
 	if (totalOwned >= 85 and F.sellMaxInvent) or F.sellAuto then
 		self:AddTask("CLEAR_INVENTORY", self.Priority.CRITICAL, function()
-			STATE.aiDecision = "P1: Inventory Penuh/Active -> Auto Sell & Fuse"
+			STATE.aiDecision = "P1: Inventory Penuh -> Auto Sell & Fuse"
 			local sellList = {}
 			local safeUnits = {}
 			for _, s in pairs(slots()) do if s.unitId then safeUnits[s.unitId] = true end end
@@ -310,40 +345,32 @@ function SmartPlanner:EvaluateEnvironment()
 		end, "Clear Inventory & Fuse")
 	end
 
-	-- [P2] EVENT: HALLOWEEN & PUMPKIN DICE
 	if F.halloweenTeleport or F.pumpkinAutoRoll then
 		self:AddTask("HALLOWEEN_EVENTS", self.Priority.EVENT, function()
 			STATE.aiDecision = "P2: Event Halloween & Pumpkin Roll"
 			if F.halloweenTeleport and R.HWTeleport then SafeCall(R.HWTeleport) end
 			if F.pumpkinAutoRoll and R.PumpkinRoll then
-				for i = 1, (F.pumpkinRollQty or 1) do
-					SafeCall(R.PumpkinRoll)
-					task.wait(0.2)
-				end
+				for i = 1, (F.pumpkinRollQty or 1) do SafeCall(R.PumpkinRoll); task.wait(0.2) end
 			end
 			if F.trickOrTreat and R.TrickOrTreat then SafeCall(R.TrickOrTreat) end
 			if F.halloweenQuest and R.HWQuestClaim then SafeCall(R.HWQuestClaim) end
 			if F.halloweenPath and R.HWClaimPath then SafeCall(R.HWClaimPath) end
-			if F.halloweenOffer and R.HWBuyOffer then SafeCall(R.HWBuyOffer) end
 			task.wait(0.5)
-		end, "Halloween & Pumpkin Automation")
+		end, "Halloween Automation")
 	end
 
-	-- [P3] STRATEGY: POTION & BUFF MANAGER
 	if F.potionAuto then
 		self:AddTask("POTION_MANAGER", self.Priority.STRATEGY, function()
-			STATE.aiDecision = "P3: Potion Manager (Maximizing Luck)"
+			STATE.aiDecision = "P3: Potion Manager (Luck Boost)"
 			local activeBuffs = G.BuffController and G.BuffController.ActiveBuffs or {}
 			local hasLuck = false
-			for bName, _ in pairs(activeBuffs) do
-				if string.find(string.lower(bName), "luck") then hasLuck = true break end
-			end
+			for bName, _ in pairs(activeBuffs) do if string.find(string.lower(bName), "luck") then hasLuck = true break end end
 
 			if not hasLuck then
 				for id, item in pairs(inv) do
 					if item.name and string.find(string.lower(item.name), "luck") then
 						SafeCall(R.BoostUse, id)
-						SendWebhook("🧪 Potion Activated!", "Successfully consumed Luck Potion to boost rolls.", 3447003)
+						SendWebhook("🧪 Potion Activated!", "Successfully consumed Luck Potion.", 3447003)
 						break
 					end
 				end
@@ -352,20 +379,17 @@ function SmartPlanner:EvaluateEnvironment()
 		end, "Potion Manager")
 	end
 
-	-- [P4] PROGRESSION: REBIRTH & DICE SHOP
 	if F.rebirth and (level() >= 100 or money() >= 1e6) then
 		self:AddTask("REBIRTH_PROGRESS", self.Priority.PROGRESS, function()
 			STATE.aiDecision = "P4: Rebirth & Dice Upgrade"
 			SafeCall(R.Rebirth)
-			SendWebhook("🔄 Rebirth Executed!", "Successfully performed rebirth to scale multiplier.", 65280)
+			SendWebhook("🔄 Rebirth Executed!", "Successfully performed rebirth.", 65280)
 			if F.buyDice and G.DiceModule and R.BuyDice and R.EquipDice then
 				pcall(function()
 					local all = G.DiceModule.GetAll()
 					for key, def in pairs(all) do
 						if def.price and money() >= def.price then
-							SafeCall(R.BuyDice, key)
-							task.wait(0.2)
-							SafeCall(R.EquipDice, key)
+							SafeCall(R.BuyDice, key); task.wait(0.2); SafeCall(R.EquipDice, key)
 						end
 					end
 				end)
@@ -374,7 +398,6 @@ function SmartPlanner:EvaluateEnvironment()
 		end, "Rebirth & Dice Upgrade")
 	end
 
-	-- [P5] OPTIMIZATION: SNIPER REROLL
 	if F.traitAuto or F.gradeAuto or F.quirkAuto then
 		self:AddTask("SNIPER_REROLL", self.Priority.OPTIMIZE, function()
 			STATE.aiDecision = "P5: Sniper Reroll (Trait/Grade/Quirk)"
@@ -395,7 +418,6 @@ function SmartPlanner:EvaluateEnvironment()
 		end, "Sniper Stat Optimization")
 	end
 
-	-- [P6] COMPETITIVE: TOWER PUSHING
 	if F.tower or F.hauntedTower then
 		self:AddTask("TOWER_PUSH", self.Priority.COMPETITIVE, function()
 			STATE.aiDecision = "P6: Tower & Haunted Tower Assault"
@@ -407,18 +429,15 @@ function SmartPlanner:EvaluateEnvironment()
 		end, "Tower Assault")
 	end
 
-	-- [P7] BASELINE FARMING
 	self:AddTask("BASELINE_FARM", self.Priority.FARM, function()
-		STATE.aiDecision = "P7: Baseline Farming (Auto Roll, Collect, Quests)"
+		STATE.aiDecision = "P7: Baseline Farming (Roll, Collect, Quests)"
 		if F.autoRoll and R.RollDice then SafeCall(R.RollDice) end
 		if F.collect and R.CollectBalance then
 			for i = 1, 15 do SafeCall(R.CollectBalance, i) end
 		end
 		if F.autoBestPlaceBase and R.EquipBestPlot then SafeCall(R.EquipBestPlot) end
 		if F.claimQuests and R.ClaimDaily then
-			SafeCall(R.ClaimDaily)
-			SafeCall(R.ClaimOffline)
-			SafeCall(R.ClaimGroup)
+			SafeCall(R.ClaimDaily); SafeCall(R.ClaimOffline); SafeCall(R.ClaimGroup)
 		end
 		if F.codesAuto and R.RedeemCode then
 			local codes = {"RELEASE", "UPDATE1", "UPDATE2", "UPDATE3", "UPDATE4", "1KCCU", "5KCCU"}
@@ -429,7 +448,7 @@ function SmartPlanner:EvaluateEnvironment()
 end
 
 -- ===================================================================== --
--- 4. UI DASHBOARD & FLOATING MINI HUD
+-- 5. UI DASHBOARD, FLOATING MINI HUD & ERROR CONSOLE VIEWER
 -- ===================================================================== --
 local ToggleGui = Instance.new("ScreenGui"); ToggleGui.Name = "MofenkToggleFront"; ToggleGui.Parent = parentGui; ToggleGui.ResetOnSpawn = false
 ToggleGui.DisplayOrder = 99999
@@ -455,7 +474,7 @@ task.spawn(function()
 	end
 end)
 
-local MainGui = Instance.new("ScreenGui"); MainGui.Name = "MofenkV124Hub"; MainGui.Parent = parentGui; MainGui.ResetOnSpawn = false
+local MainGui = Instance.new("ScreenGui"); MainGui.Name = "MofenkV125Hub"; MainGui.Parent = parentGui; MainGui.ResetOnSpawn = false
 local MainFrame = Instance.new("Frame"); MainFrame.Parent = MainGui; MainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
 MainFrame.Size = UDim2.new(0, 960, 0, 620); MainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
 MainFrame.Active = true; MainFrame.Draggable = true; MainFrame.Visible = false
@@ -469,37 +488,62 @@ local TopBar = Instance.new("Frame"); TopBar.Parent = MainFrame; TopBar.Size = U
 Instance.new("UICorner", TopBar).CornerRadius = UDim.new(0, 18)
 
 local Title = Instance.new("TextLabel"); Title.Parent = TopBar; Title.Position = UDim2.new(0, 20, 0, 0); Title.Size = UDim2.new(0, 600, 1, 0)
-Title.Text = "👑 MOFENKHUB V124.0 | THE ULTIMATE AUTONOMOUS ECOSYSTEM"; Title.TextColor3 = GLASS_THEME.Acc1; Title.TextSize = 13; Title.Font = Enum.Font.GothamBlack; Title.BackgroundTransparency = 1
+Title.Text = "👑 MOFENKHUB V125.0 | DIAGNOSTIC TELEMETRY & ERROR CONSOLE"; Title.TextColor3 = GLASS_THEME.Acc1; Title.TextSize = 12; Title.Font = Enum.Font.GothamBlack; Title.BackgroundTransparency = 1
 
 local CloseBtn = Instance.new("TextButton"); CloseBtn.Parent = TopBar; CloseBtn.Position = UDim2.new(1, -48, 0, 11); CloseBtn.Size = UDim2.new(0, 34, 0, 34)
 CloseBtn.Text = "✕"; CloseBtn.TextColor3 = GLASS_THEME.Text; CloseBtn.Font = Enum.Font.GothamBold; CloseBtn.BackgroundColor3 = GLASS_THEME.Card
 Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(0, 10)
 CloseBtn.MouseButton1Click:Connect(function() MainFrame.Visible = false end)
 
-local ConsoleBox = Instance.new("TextLabel"); ConsoleBox.Parent = MainFrame; ConsoleBox.Position = UDim2.new(0, 20, 0, 70); ConsoleBox.Size = UDim2.new(1, -40, 0, 140)
+local ConsoleBox = Instance.new("TextLabel"); ConsoleBox.Parent = MainFrame; ConsoleBox.Position = UDim2.new(0, 20, 0, 70); ConsoleBox.Size = UDim2.new(1, -40, 0, 110)
 ConsoleBox.BackgroundColor3 = GLASS_THEME.Card; ConsoleBox.TextColor3 = GLASS_THEME.Text; ConsoleBox.TextSize = 11; ConsoleBox.Font = Enum.Font.Code
 ConsoleBox.TextXAlignment = Enum.TextXAlignment.Left; ConsoleBox.TextYAlignment = Enum.TextYAlignment.Top; ConsoleBox.TextWrapped = true
 Instance.new("UICorner", ConsoleBox).CornerRadius = UDim.new(0, 10)
 Instance.new("UIStroke", ConsoleBox).Color = GLASS_THEME.Acc1
+
+-- Error Log Scrolling Console Viewer in UI
+local ErrorTitle = Instance.new("TextLabel"); ErrorTitle.Parent = MainFrame; ErrorTitle.Position = UDim2.new(0, 20, 0, 190); ErrorTitle.Size = UDim2.new(1, -40, 0, 20)
+ErrorTitle.Text = "🚨 REAL-TIME ERROR LOG & DIAGNOSTIC CONSOLE:"; ErrorTitle.TextColor3 = Color3.fromRGB(255, 100, 100); ErrorTitle.TextSize = 11; ErrorTitle.Font = Enum.Font.GothamBold; ErrorTitle.BackgroundTransparency = 1; ErrorTitle.TextXAlignment = Enum.TextXAlignment.Left
+
+local LogScroll = Instance.new("ScrollingFrame"); LogScroll.Parent = MainFrame; LogScroll.Position = UDim2.new(0, 20, 0, 215); LogScroll.Size = UDim2.new(1, -40, 0, 180)
+LogScroll.BackgroundColor3 = GLASS_THEME.Card; LogScroll.ScrollBarThickness = 4; LogScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y; LogScroll.CanvasSize = UDim2.new(0,0,0,0)
+Instance.new("UICorner", LogScroll).CornerRadius = UDim.new(0, 10)
+local LogLayout = Instance.new("UIListLayout"); LogLayout.Parent = LogScroll; LogLayout.Padding = UDim.new(0, 4)
 
 task.spawn(function()
 	while generation == _G.__ANIMEDICE do
 		local m = money(); local lvl = level(); local rb = rebirthAmt()
 		local ic = 0; for _ in pairs(inventory()) do ic += 1 end
 		ConsoleBox.Text = string.format(
-			"📊 TELEMETRY & ECONOMIC FORECASTING
-💰 Money: %s | ⭐ Lvl: %d | 🔄 Rebirth: %d | 🎒 Storage: %d/100
-📈 Income: $%s/s | ⏱️ Time to Next Rebirth: %s
-
-🧠 OMNISCIENT AI DISPATCH (CORVUS QUEUE)
-➤ Current Directive: %s
-➤ Pending Task Queue: %d Operations Active",
+			"📊 TELEMETRY | Health: %.1f%% | Success: %d | Errors: %d
+💰 Money: %s | Lvl: %d | Rebirth: %d | Storage: %d/100
+📈 Income: $%s/s | ⏱️ Time to Rebirth: %s
+🧠 Directive: %s | Queue: %d Ops",
+			DiagnosticHub:GetHealthScore(), DiagnosticHub.SuccessCount, DiagnosticHub.ErrorCount,
 			FormatMoney(m), lvl, rb, ic, FormatMoney(STATE.incomePerSec), STATE.timeToNextRebirth, STATE.aiDecision, #SmartPlanner.TaskQueue
 		)
-		task.wait(0.3)
+		
+		pcall(function()
+			for _, v in pairs(LogScroll:GetChildren()) do if v:IsA("TextLabel") then v:Destroy() end end
+			if #DiagnosticHub.ErrorHistory == 0 then
+				local lbl = Instance.new("TextLabel"); lbl.Parent = LogScroll; lbl.Size = UDim2.new(1, 0, 0, 28); lbl.BackgroundTransparency = 1
+				lbl.Text = " ✅ Status Sistem Bersih: Belum ada eror tercatat."; lbl.TextColor3 = Color3.fromRGB(0, 255, 150)
+				lbl.Font = Enum.Font.GothamMedium; lbl.TextSize = 11; lbl.TextXAlignment = Enum.TextXAlignment.Left
+			else
+				for _, errInfo in ipairs(DiagnosticHub.ErrorHistory) do
+					local lbl = Instance.new("TextLabel"); lbl.Parent = LogScroll; lbl.Size = UDim2.new(1, 0, 0, 42); lbl.BackgroundTransparency = 1
+					lbl.Text = string.format("[%s] [%s] %s
+-> %s", errInfo.Time, errInfo.Tag, errInfo.Message, errInfo.Error or "")
+					lbl.TextColor3 = Color3.fromRGB(255, 100, 100); lbl.Font = Enum.Font.Code; lbl.TextSize = 10
+					lbl.TextXAlignment = Enum.TextXAlignment.Left; lbl.TextYAlignment = Enum.TextYAlignment.Top; lbl.TextWrapped = true
+				end
+			end
+		end)
+		task.wait(0.5)
 	end
 end)
 
+-- Background Coroutines & Watchdog Guard
 task.spawn(function()
 	while generation == _G.__ANIMEDICE do
 		pcall(function() SmartPlanner:EvaluateEnvironment() end)
@@ -512,10 +556,22 @@ task.spawn(function()
 		if not SmartPlanner.IsBusy and #SmartPlanner.TaskQueue > 0 then
 			local taskItem = table.remove(SmartPlanner.TaskQueue, 1)
 			SmartPlanner.IsBusy = true
-			pcall(taskItem.Action)
+			DiagnosticHub:SafeExecute("TaskExec:"..taskItem.Id, taskItem.Action)
 			SmartPlanner.IsBusy = false
+			SmartPlanner.LastActivity = os.clock()
 		end
 		task.wait(0.1)
+	end
+end)
+
+-- Watchdog Guard (Auto-Reconnect / Crash Recovery if frozen > 30s)
+task.spawn(function()
+	while generation == _G.__ANIMEDICE do
+		task.wait(10)
+		if os.clock() - SmartPlanner.LastActivity > 30 then
+			DiagnosticHub:Log("Watchdog", "Bot freeze detected! Reconnecting...")
+			pcall(function() TeleportService:Teleport(game.PlaceId, LocalPlayer) end)
+		end
 	end
 end)
 
@@ -529,4 +585,4 @@ LocalPlayer.Idled:Connect(function()
 	end
 end)
 
-print("[MOFENKHUB V124.0] ULTIMATE AUTONOMOUS ECOSYSTEM ONLINE.")
+print("[MOFENKHUB V125.0] DIAGNOSTIC TELEMETRY & ERROR CONSOLE ONLINE.")
