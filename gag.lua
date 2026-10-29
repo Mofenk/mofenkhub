@@ -1,4 +1,6 @@
--- Grow A Garden (GAG) - Base Architecture & UI by Venxz
+-- Grow A Garden (GAG) - Multi-Place & Market Map Compatible
+-- Base Script by Venxz
+
 local Players = game:GetService("Players")
 local RS = game:GetService("ReplicatedStorage")
 local HttpService = game:GetService("HttpService")
@@ -8,27 +10,29 @@ local UIS = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
 
--- Auto Exec Link Setup
-local AUTOEXEC_CODE = [[loadstring(game:HttpGet("https://raw.githubusercontent.com/username/repo/main/gag.lua"))()]]
+-- Link Auto Exec (Ganti dengan link raw script kamu jika ada)
+local SCRIPT_URL = "https://raw.githubusercontent.com/username/repo/main/gag.lua"
+local AUTOEXEC_CODE = string.format('loadstring(game:HttpGet("%s"))()', SCRIPT_URL)
 
--- Game Load & Client Boot Check
+-- Safe Wait for Game & Client Boot (Market Map Friendly)
 if not game:IsLoaded() then
     local t0 = os.clock()
-    while not game:IsLoaded() and os.clock() - t0 < 30 do
+    while not game:IsLoaded() and os.clock() - t0 < 45 do
         task.wait(0.2)
     end
 end
 
-if LocalPlayer == nil then
+if not LocalPlayer then
     local t0 = os.clock()
-    while LocalPlayer == nil and os.clock() - t0 < 30 do
+    while not LocalPlayer and os.clock() - t0 < 45 do
         task.wait(0.2)
         pcall(function() LocalPlayer = Players.LocalPlayer end)
     end
 end
 
-if LocalPlayer == nil then
-    error("[GAG Hub] Client still booting (no LocalPlayer yet). Re-execute in a moment.", 0)
+if not LocalPlayer then
+    warn("[GAG Hub] Client boot timeout in Market Map. Re-execute script.")
+    return
 end
 
 -- Double-Run Guard (Heartbeat System)
@@ -47,9 +51,12 @@ do
     end)
     if blocked then
         pcall(function()
-            game:GetService("StarterGui"):SetCore("SendNotification", { Title = "GAG Hub", Text = "Already running.", Duration = 4 })
+            game:GetService("StarterGui"):SetCore("SendNotification", { 
+                Title = "GAG Hub", 
+                Text = "Script sudah berjalan!", 
+                Duration = 4 
+            })
         end)
-        warn("[GAG Hub] Already running.")
         return
     end
 end
@@ -72,11 +79,11 @@ task.spawn(function()
     end)
 end)
 
--- Robust Rayfield Loader (4 Retries Loop)
+-- Robust Rayfield Loader with Safe UI Parent
 local Rayfield
 do
     local lastErr
-    for attempt = 1, 4 do
+    for attempt = 1, 5 do
         local ok, lib = pcall(function()
             return loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
         end)
@@ -85,19 +92,19 @@ do
             break
         end
         lastErr = lib
-        if attempt < 4 then task.wait(2) end
+        task.wait(2)
     end
     if not Rayfield then
-        error("[GAG Hub] Rayfield failed to load after 4 tries. Re-execute. Last error: " .. tostring(lastErr))
+        error("[GAG Hub] Gagal memuat Rayfield UI. Coba eksekusi ulang. Err: " .. tostring(lastErr))
     end
 end
 
--- Create Window (Preserved Original Icon & Style)
+-- Create Window UI
 local window = Rayfield:CreateWindow({
     Name = "Grow A Garden | Hub",
-    Icon = 106073659711836, -- Logo Interaktif Topbar
+    Icon = 106073659711836,
     LoadingTitle = "Grow A Garden",
-    LoadingSubtitle = "v2.0 | Venxz Base",
+    LoadingSubtitle = "Market & Main Map Supported",
     Theme = "Default",
     DisableRayfieldPrompts = true,
     DisableBuildWarnings = false,
@@ -109,14 +116,13 @@ local window = Rayfield:CreateWindow({
     KeySystem = false,
 })
 
--- Feature State Flags
+-- Feature Flags
 local F = {
     afk = true,
     autoReconnect = true,
     autoHop40 = false,
     hopInterval = 2400,
     saveSettings = true,
-    autoMinimize = false,
     wsOn = false,
     wsValue = 16,
     flyOn = false,
@@ -127,7 +133,6 @@ local F = {
     spyHook = false,
 }
 
-local U = {}
 local CFG_FOLDER = "GAG_Hub"
 local CFG_FOLDER_OLD = "GAG_Hub_Old"
 
@@ -143,34 +148,20 @@ local function existingPath(newPath, oldPath)
     return nil
 end
 
-local function cfgPath() return CFG_FOLDER .. "/config_" .. tostring(LocalPlayer.UserId) .. ".json" end
+local function cfgPath() 
+    return CFG_FOLDER .. "/config_" .. tostring(LocalPlayer.UserId) .. ".json" 
+end
 
 local function saveNow()
     if typeof(writefile) ~= "function" or typeof(makefolder) ~= "function" then return false end
     pcall(function() makefolder(CFG_FOLDER) end)
-    local ok, txt = pcall(function()
-        return HttpService:JSONEncode({ v = 1, F = F })
-    end)
+    local ok, txt = pcall(function() return HttpService:JSONEncode({ v = 1, F = F }) end)
     if not ok then return false end
     return pcall(function() writefile(cfgPath(), txt) end)
 end
 
--- Custom UI Helpers (makeStat & makeConsole)
+-- UI Helpers
 local CONSOLE_VIEW_LINES = 12
-
-local function makeStat(tab, cfg)
-    local handle = {}
-    handle.name = cfg.Name or "Stat"
-    handle.icon = tonumber(cfg.Icon) or nil
-    handle.value = tonumber(cfg.Value) or 0
-    local label = tab:CreateLabel(handle.name .. ": " .. tostring(handle.value), handle.icon)
-
-    function handle:Set(v)
-        handle.value = v
-        pcall(function() label:Set(handle.name .. ": " .. tostring(handle.value), handle.icon) end)
-    end
-    return handle
-end
 
 local function makeConsole(tab, cfg)
     local handle = {}
@@ -189,17 +180,17 @@ local function makeConsole(tab, cfg)
     return handle
 end
 
--- TAB SETUP
+-- TABS
 local tDash = window:CreateTab("Dashboard", 93129522258096)
 local tSpy = window:CreateTab("Spy Scanner", 137296756955034)
 local tServer = window:CreateTab("Server Hop", 72821498911763)
 local tSettings = window:CreateTab("Settings", 103326255092488)
 
--- 1. DASHBOARD TAB
+-- 1. DASHBOARD
 tDash:CreateSection("Profile Dashboard")
 tDash:CreateParagraph({
-    Title = "Player Info",
-    Content = "User: " .. LocalPlayer.Name .. " (" .. LocalPlayer.DisplayName .. ")\nUserId: " .. tostring(LocalPlayer.UserId) .. "\nPlaceId: " .. tostring(game.PlaceId)
+    Title = "Player & Map Info",
+    Content = "User: " .. LocalPlayer.Name .. " (" .. LocalPlayer.DisplayName .. ")\nUserId: " .. tostring(LocalPlayer.UserId) .. "\nCurrent PlaceId: " .. tostring(game.PlaceId)
 })
 
 local hopTimerPara = tDash:CreateParagraph({
@@ -213,7 +204,7 @@ local function clog(m)
     pcall(function() console:Append(m) end)
 end
 
--- 2. SPY SCANNER TAB
+-- 2. SPY SCANNER (REMOTES)
 tSpy:CreateSection("Remote Service Scanner")
 
 local function scanAndPrintRemotes()
@@ -233,7 +224,7 @@ local function scanAndPrintRemotes()
         end
     end
     clog("--- [ SCAN FINISHED: " .. count .. " REMOTES FOUND ] ---")
-    notify("Spy Scanner", "Found " .. count .. " remotes! Printed to Delta Console.")
+    notify("Spy Scanner", "Ditemukan " .. count .. " remotes! Cek Delta Console.")
 end
 
 tSpy:CreateButton({
@@ -247,7 +238,7 @@ tSpy:CreateToggle({
     CurrentValue = false,
     Callback = function(v)
         F.spyHook = v
-        if v then notify("Spy Hook", "Listening to remote calls... Check Delta Console!") end
+        if v then notify("Spy Hook", "Mendengarkan panggilan remote... Cek Delta Console!") end
     end,
 })
 
@@ -263,7 +254,7 @@ if hookmetamethod then
     end)
 end
 
--- 3. SERVER HOP TAB (LIST & VISITED SYSTEM)
+-- 3. SERVER HOP (DYNAMIC PLACEID FOR MARKET)
 tServer:CreateSection("Server Hop System")
 
 local VISIT_TTL = 1800
@@ -303,13 +294,14 @@ end
 local function doHop(lowPop)
     task.spawn(function()
         armReexec()
-        notify("Server Hop", "Searching public servers list...")
+        notify("Server Hop", "Mencari server...")
         local visited = loadVisited()
         local cands, cursor, pages = {}, nil, 0
         local order = lowPop and "Asc" or "Desc"
+        local currentPlace = game.PlaceId -- Menggunakan PlaceId aktif (Support Market Map)
 
         while pages < 3 do
-            local url = "https://games.roblox.com/v1/games/" .. tostring(game.PlaceId) .. "/servers/Public?sortOrder=" .. order .. "&limit=100&excludeFullGames=true"
+            local url = "https://games.roblox.com/v1/games/" .. tostring(currentPlace) .. "/servers/Public?sortOrder=" .. order .. "&limit=100&excludeFullGames=true"
             if cursor then url = url .. "&cursor=" .. cursor end
             local ok, res = pcall(function() return game:HttpGet(url) end)
             if not ok then break end
@@ -326,16 +318,16 @@ local function doHop(lowPop)
         end
 
         if #cands == 0 then
-            notify("Server Hop", "No unvisited server found, hopping random...")
-            TeleportService:Teleport(game.PlaceId, LocalPlayer)
+            notify("Server Hop", "Server baru tidak ditemukan, melakukan random hop...")
+            TeleportService:Teleport(currentPlace, LocalPlayer)
             return
         end
 
         local target = cands[1]
         visited[target.id] = os.time()
         saveVisited(visited)
-        notify("Server Hop", "Teleporting to " .. target.id .. " (" .. target.playing .. " players)...")
-        TeleportService:TeleportToPlaceInstance(game.PlaceId, target.id, LocalPlayer)
+        notify("Server Hop", "Teleportasi ke server " .. target.id .. "...")
+        TeleportService:TeleportToPlaceInstance(currentPlace, target.id, LocalPlayer)
     end)
 end
 
@@ -346,7 +338,7 @@ tServer:CreateToggle({
         F.autoHop40 = v
         if v then
             F.hopInterval = 2400
-            clog("Auto Hop 40-min enabled.")
+            clog("Auto Hop 40 menit diaktifkan.")
         else
             hopTimerPara:Set({ Title = "40-Min Auto Hop Status", Content = "Status: Disabled" })
         end
@@ -360,7 +352,7 @@ tServer:CreateButton({ Name = "Rejoin Same Server", Callback = function()
     TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, LocalPlayer)
 end })
 
--- Timer Thread 40 Mins
+-- Timer 40 Menit
 task.spawn(function()
     while Alive do
         task.wait(1)
@@ -380,14 +372,14 @@ task.spawn(function()
     end
 end)
 
--- 4. ANTI-AFK & AUTO RECONNECT
+-- 4. PROTECTION & RECONNECT
 LocalPlayer.Idled:Connect(function()
     if F.afk then
         pcall(function()
             local vu = game:GetService("VirtualUser")
             vu:CaptureController()
             vu:ClickButton2(Vector2.new())
-            clog("Anti-AFK active.")
+            clog("Anti-AFK aktif.")
         end)
     end
 end)
@@ -396,7 +388,7 @@ GuiService.ErrorMessageChanged:Connect(function()
     if F.autoReconnect then
         local err = GuiService:GetErrorMessage()
         if err and err ~= "" then
-            clog("Disconnected (" .. tostring(err) .. "). Auto reconnecting...")
+            clog("Terputus (" .. tostring(err) .. "). Mencoba menghubungkan ulang...")
             task.wait(2)
             armReexec()
             TeleportService:Teleport(game.PlaceId, LocalPlayer)
@@ -404,7 +396,7 @@ GuiService.ErrorMessageChanged:Connect(function()
     end
 end)
 
--- 5. SETTINGS & CHARACTER TAB
+-- 5. SETTINGS & CHARACTER
 tSettings:CreateSection("Character & Movement")
 
 local function applyWS()
@@ -421,7 +413,7 @@ tSettings:CreateSlider({
     Callback = function(v) F.wsValue = math.floor(v) applyWS() end,
 })
 
--- Fly Mechanics
+-- Fly Setup
 local flyGyro, flyVel, flyMoveConn, flyKeys = nil, nil, nil, {}
 local function flyStop()
     if flyMoveConn then pcall(function() flyMoveConn:Disconnect() end) flyMoveConn = nil end
@@ -494,7 +486,6 @@ tSettings:CreateSlider({
     Callback = function(v) F.flySpeed = v end,
 })
 
--- Noclip & FPS Boost
 RunService.Stepped:Connect(function()
     if not F.noclip then return end
     local ch = LocalPlayer.Character
@@ -509,7 +500,7 @@ tSettings:CreateToggle({ Name = "Noclip", CurrentValue = false, Callback = funct
 tSettings:CreateToggle({ Name = "Anti-AFK", CurrentValue = true, Callback = function(v) F.afk = v end })
 tSettings:CreateToggle({ Name = "Auto Reconnect", CurrentValue = true, Callback = function(v) F.autoReconnect = v end })
 
--- FPS Boost Toggle
+-- FPS Boost
 local fpsRestore = {}
 local function applyFpsBoost(on)
     if on then
@@ -524,11 +515,11 @@ local function applyFpsBoost(on)
                 end
             end
         end)
-        notify("Performance", "FPS Boost Activated.")
+        notify("Performance", "FPS Boost Aktif.")
     else
         for _, r in ipairs(fpsRestore) do pcall(function() r.o[r.p] = r.v end) end
         table.clear(fpsRestore)
-        notify("Performance", "FPS Boost Deactivated.")
+        notify("Performance", "FPS Boost Nonaktif.")
     end
 end
 
@@ -538,7 +529,7 @@ tSettings:CreateToggle({
     Callback = function(v) F.fpsOn = v applyFpsBoost(v) end,
 })
 
--- 6. RAYFIELD CONFIG PROFILE MANAGER
+-- 6. CONFIG PRESETS
 tSettings:CreateSection("Config Presets System")
 
 local PROFILE_FOLDER = CFG_FOLDER .. "/profiles"
@@ -568,7 +559,7 @@ local cfgSelName = ""
 local cfgNameInput = tSettings:CreateInput({
     Name = "Config Name",
     CurrentValue = "",
-    PlaceholderText = "e.g. gag-main",
+    PlaceholderText = "contoh: gag-market",
     RemoveTextAfterFocusLost = false,
     Callback = function() end,
 })
@@ -594,9 +585,9 @@ tSettings:CreateButton({
     Name = "Save New Config",
     Callback = function()
         local nm = cfgNameInput and cfgNameInput.CurrentValue or ""
-        if nm == "" then notify("Config", "Enter config name first.") return end
+        if nm == "" then notify("Config", "Masukkan nama config terlebih dahulu.") return end
         if saveProfile(nm) then
-            notify("Config", "Saved: " .. nm)
+            notify("Config", "Tersimpan: " .. nm)
             refreshCfgList()
         end
     end,
@@ -609,11 +600,11 @@ tSettings:CreateButton({
         pcall(function() delfile(profilePath(cfgSelName)) end)
         cfgSelName = ""
         refreshCfgList()
-        notify("Config", "Deleted config.")
+        notify("Config", "Config dihapus.")
     end,
 })
 
--- Auto-Save Thread
+-- Auto-Save Loop
 task.spawn(function()
     while Alive do
         task.wait(5)
@@ -621,5 +612,5 @@ task.spawn(function()
     end
 end)
 
-clog("Grow A Garden Hub Loaded Successfully!")
-notify("Grow A Garden", "Hub Started! All original Rayfield UI components restored.")
+clog("Grow A Garden Hub Berhasil Dimuat di Map ini!")
+notify("Grow A Garden", "Hub Aktif! Siap digunakan di Map Market maupun Utama.")
