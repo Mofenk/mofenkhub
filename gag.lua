@@ -1,5 +1,5 @@
 -- ===================================================================== --
--- 👑 MOFENKHUB V106.0 — FIXED HOP & DELTA CONSOLE SPY EDITION
+-- 👑 MOFENKHUB V107.0 — GROW A GARDEN (GAG) FULL SPY & CONFIG SCRIPT
 -- ===================================================================== --
 
 --!nocheck
@@ -12,78 +12,37 @@ local TweenService      = game:GetService("TweenService")
 local UserInputService  = game:GetService("UserInputService")
 local TeleportService   = game:GetService("TeleportService")
 local RunService        = game:GetService("RunService")
-local GuiService        = game:GetService("GuiService")
 local Stats             = game:GetService("Stats")
 
-local LocalPlayer = Players.LocalPlayer
-
--- ===================================================================== --
--- 1. AUTO EXECUTE ON TELEPORT & HTTP BYPASS
--- ===================================================================== --
-local SCRIPT_URL = "https://raw.githubusercontent.com/Mofenk/mofenkhub/refs/heads/main/animedice.lua"
-local AUTOEXEC_CODE = string.format([[
-    task.wait(3)
-    loadstring(game:HttpGet("%s"))()
-]], SCRIPT_URL)
-
-local function armAutoExec()
+-- Auto Exec on Teleport
+pcall(function()
     local qot = queue_on_teleport or queueonteleport or (syn and syn.queue_on_teleport) or (fluxus and fluxus.queue_on_teleport)
     if qot then
-        pcall(qot, AUTOEXEC_CODE)
+        qot([[
+            task.wait(3)
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/Mofenk/mofenkhub/refs/heads/main/gag.lua"))()
+        ]])
     end
-end
-armAutoExec()
+end)
 
--- Helper HTTP Request Bypass untuk Executor Mobile (Delta/Codex)
-local function httpRequest(url)
-    local req = (syn and syn.request) or request or http_request or (fluxus and fluxus.request)
-    if req then
-        local ok, res = pcall(req, {Url = url, Method = "GET"})
-        if ok and res then
-            return res.Body or res.body
-        end
-    end
-    local ok, res = pcall(function() return game:HttpGet(url) end)
-    if ok then return res end
-    return nil
-end
-
--- Print Helper khusus Delta / Executor Console
-local function printDeltaConsole(txt)
-    print(txt)
-    if rconsoleprint then
-        pcall(rconsoleprint, txt .. "\n")
-    elseif printconsole then
-        pcall(printconsole, txt)
-    end
-end
-
--- Safe Parent GUI Setup
+local LocalPlayer = Players.LocalPlayer
 local successGui, parentGui = pcall(function()
     if gethui then return gethui() elseif CoreGui:FindFirstChild("RobloxGui") then return CoreGui else return LocalPlayer:WaitForChild("PlayerGui") end
 end)
 if not successGui or not parentGui then parentGui = LocalPlayer:WaitForChild("PlayerGui") end
 
-pcall(function() for _, v in pairs(parentGui:GetChildren()) do if string.find(v.Name, "Mofenk") then v:Destroy() end end end)
+pcall(function() for _, v in pairs(parentGui:GetChildren()) do if string.find(v.Name, "MofenkGAG") then v:Destroy() end end end)
 
--- Safe Wait for Client Boot
 if not game:IsLoaded() then
     local t0 = os.clock()
     while not game:IsLoaded() and os.clock() - t0 < 30 do task.wait(0.2) end
 end
-if not LocalPlayer then
-    local t0 = os.clock()
-    while not LocalPlayer and os.clock() - t0 < 30 do
-        task.wait(0.2)
-        pcall(function() LocalPlayer = Players.LocalPlayer end)
-    end
-end
 
-_G.__MOFENKHUB = (_G.__MOFENKHUB or 0) + 1
-local generation = _G.__MOFENKHUB
+_G.__GAG_SCRIPT = (_G.__GAG_SCRIPT or 0) + 1
+local generation = _G.__GAG_SCRIPT
 
 -- ===================================================================== --
--- 2. THEMES & CONFIGURATION MANAGER
+-- 1. THEMES & CONFIGURATION MANAGER
 -- ===================================================================== --
 local THEMES = {
     ["Hitam Putih"] = {
@@ -125,27 +84,29 @@ local THEMES = {
 }
 
 local F = {
-    cfgName = "MofenkConfig1", autoLoadEnabled = false,
+    cfgName = "MofenkGAGConfig1", autoLoadEnabled = false,
     selectedTheme = "Hitam Putih",
     toggleKey = Enum.KeyCode.RightControl.Name,
-    -- Server & Hop
-    autoHop40 = false, hopInterval = 2400,
-    -- System & Character
-    wsOn = false, wsValue = 16, flyOn = false, flySpeed = 50, noclip = false,
-    afk = true, autoReconnect = true, fpsOn = false,
-    spyHook = false,
-    -- Webhook
+    -- Trade & Booth Setup
+    autoJoinTrade = true,
+    autoClaimBooth = true,
+    selectedBoothSkin = "Default",
+    autoEquipSkin = true,
+    -- Events & Pets
+    autoClaimAlien = true,
+    -- Character & Protections
+    wsOn = false, wsValue = 16, afk = true,
     webhookEnabled = false, webhookUrl = ""
 }
 
 local STATE = {
     pingMs = 0, fpsCurrent = 60,
-    hopTimeRemaining = 2400
+    tradeWorldStatus = "Main World",
+    boothStatus = "Belum Klaim"
 }
 
 local ConfigUpdaters = {}
-local ThemeElements = { Strokes = {}, Cards = {}, Headers = {}, Accents = {}, Texts = {}, SubTexts = {}, Backgrounds = {} }
-
+local ThemeElements = { Backgrounds = {}, Cards = {}, Headers = {}, Accents = {}, Texts = {}, SubTexts = {} }
 local GLASS_THEME = THEMES["Hitam Putih"]
 
 local function UpdateTheme(themeName)
@@ -156,7 +117,11 @@ local function UpdateTheme(themeName)
     for _, v in ipairs(ThemeElements.Backgrounds) do v.BackgroundColor3 = GLASS_THEME.Bg end
     for _, v in ipairs(ThemeElements.Cards) do v.BackgroundColor3 = GLASS_THEME.Card end
     for _, v in ipairs(ThemeElements.Headers) do v.BackgroundColor3 = GLASS_THEME.Header end
-    for _, v in ipairs(ThemeElements.Accents) do if v:IsA("UIStroke") then v.Color = GLASS_THEME.Acc1 elseif v:IsA("TextLabel") or v:IsA("TextButton") then v.TextColor3 = GLASS_THEME.Acc1 else v.BackgroundColor3 = GLASS_THEME.Acc1 end end
+    for _, v in ipairs(ThemeElements.Accents) do
+        if v:IsA("UIStroke") then v.Color = GLASS_THEME.Acc1
+        elseif v:IsA("TextLabel") or v:IsA("TextButton") then v.TextColor3 = GLASS_THEME.Acc1
+        else v.BackgroundColor3 = GLASS_THEME.Acc1 end
+    end
     for _, v in ipairs(ThemeElements.Texts) do v.TextColor3 = GLASS_THEME.Text end
     for _, v in ipairs(ThemeElements.SubTexts) do v.TextColor3 = GLASS_THEME.SubText end
 end
@@ -206,23 +171,37 @@ pcall(function()
     end
 end)
 
-local function SendWebhook(title, description, colorCode)
-    if not F.webhookEnabled or F.webhookUrl == "" then return end
-    local req = (syn and syn.request) or request or http_request or (fluxus and fluxus.request)
-    if req then
-        pcall(function()
-            req({
-                Url = F.webhookUrl, Method = "POST", Headers = {["Content-Type"] = "application/json"},
-                Body = HttpService:JSONEncode({ username = "MOFENKHUB", avatar_url = "https://i.imgur.com/3qGMB7j.png", embeds = {{ title = title, description = description, color = colorCode or 16777215, footer = {text = "Player: " .. LocalPlayer.Name} }} })
-            })
-        end)
-    end
-end
+-- ===================================================================== --
+-- 2. GAME EVENT SPY & REMOTE MAPPING
+-- ===================================================================== --
+local GameEvents = ReplicatedStorage:WaitForChild("GameEvents", 15)
+local TradeEvents = GameEvents and GameEvents:FindFirstChild("TradeEvents")
+local BoothEvents = TradeEvents and TradeEvents:FindFirstChild("Booths")
+local SkinService  = GameEvents and GameEvents:FindFirstChild("TradeBoothSkinService")
+local TokenRAPs    = TradeEvents and TradeEvents:FindFirstChild("TokenRAPs")
+local AlienEvent   = GameEvents and GameEvents:FindFirstChild("AlienEvent")
+
+local Remotes = {
+    ClaimBooth    = BoothEvents and BoothEvents:FindFirstChild("ClaimBooth"),
+    RemoveBooth   = BoothEvents and BoothEvents:FindFirstChild("RemoveBooth"),
+    EquipSkin     = SkinService and SkinService:FindFirstChild("Equip"),
+    TeleportTrade = TokenRAPs and TokenRAPs:FindFirstChild("TeleportToListing"),
+    AlienPets     = AlienEvent and AlienEvent:FindFirstChild("GiveAlienatedPets")
+}
+
+local KnownBoothSkins = {
+    {label = "Default Skin", val = "Default"},
+    {label = "Wooden Stand", val = "Wooden Stand"},
+    {label = "Golden Booth", val = "Golden Booth"},
+    {label = "Cyber Neon Stand", val = "Cyber Booth"},
+    {label = "Pumpkin Halloween", val = "Halloween Booth"},
+    {label = "Alien UFO Stand", val = "Alien Stand"}
+}
 
 -- ===================================================================== --
 -- 3. INTERACTIVE LOGO "M" & TOAST NOTIFICATION SYSTEM
 -- ===================================================================== --
-local ToggleGui = Instance.new("ScreenGui"); ToggleGui.Name = "MofenkToggleFront"; ToggleGui.Parent = parentGui; ToggleGui.ResetOnSpawn = false
+local ToggleGui = Instance.new("ScreenGui"); ToggleGui.Name = "MofenkToggleGAG"; ToggleGui.Parent = parentGui; ToggleGui.ResetOnSpawn = false
 ToggleGui.DisplayOrder = 99999
 
 local ToggleBtn = Instance.new("TextButton"); ToggleBtn.Parent = ToggleGui; ToggleBtn.Size = UDim2.new(0, 56, 0, 56); ToggleBtn.Position = UDim2.new(0.02, 0, 0.4, 0)
@@ -230,19 +209,11 @@ ToggleBtn.BackgroundColor3 = GLASS_THEME.Card; ToggleBtn.Text = "M"; ToggleBtn.F
 local TC = Instance.new("UICorner"); TC.CornerRadius = UDim.new(0, 14); TC.Parent = ToggleBtn
 local TS = Instance.new("UIStroke"); TS.Thickness = 2; TS.Color = GLASS_THEME.Acc1; TS.Parent = ToggleBtn
 
-table.insert(ThemeElements.Cards, ToggleBtn)
-table.insert(ThemeElements.Accents, ToggleBtn)
-table.insert(ThemeElements.Accents, TS)
+table.insert(ThemeElements.Cards, ToggleBtn); table.insert(ThemeElements.Accents, ToggleBtn); table.insert(ThemeElements.Accents, TS)
 
--- Hover Animation for Logo Button
-ToggleBtn.MouseEnter:Connect(function()
-    TweenService:Create(ToggleBtn, TweenInfo.new(0.18), {Size = UDim2.new(0, 60, 0, 60)}):Play()
-end)
-ToggleBtn.MouseLeave:Connect(function()
-    TweenService:Create(ToggleBtn, TweenInfo.new(0.18), {Size = UDim2.new(0, 56, 0, 56)}):Play()
-end)
+ToggleBtn.MouseEnter:Connect(function() TweenService:Create(ToggleBtn, TweenInfo.new(0.18), {Size = UDim2.new(0, 60, 0, 60)}):Play() end)
+ToggleBtn.MouseLeave:Connect(function() TweenService:Create(ToggleBtn, TweenInfo.new(0.18), {Size = UDim2.new(0, 56, 0, 56)}):Play() end)
 
--- Drag Mechanics
 local dragging, dragInput, dragStart, startPos
 ToggleBtn.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
@@ -258,8 +229,7 @@ UserInputService.InputChanged:Connect(function(input)
     end
 end)
 
--- Toast Notification Builder
-local NotifyGui = Instance.new("ScreenGui"); NotifyGui.Name = "MofenkNotifyGui"; NotifyGui.Parent = parentGui; NotifyGui.ResetOnSpawn = false
+local NotifyGui = Instance.new("ScreenGui"); NotifyGui.Name = "MofenkNotifyGuiGAG"; NotifyGui.Parent = parentGui; NotifyGui.ResetOnSpawn = false
 local NotifyHolder = Instance.new("Frame"); NotifyHolder.Parent = NotifyGui; NotifyHolder.Position = UDim2.new(1, -320, 0, 20); NotifyHolder.Size = UDim2.new(0, 300, 1, -40); NotifyHolder.BackgroundTransparency = 1
 local NotifyLayout = Instance.new("UIListLayout"); NotifyLayout.Parent = NotifyHolder; NotifyLayout.Padding = UDim.new(0, 8); NotifyLayout.VerticalAlignment = Enum.VerticalAlignment.Top
 
@@ -285,9 +255,9 @@ local function Notify(title, msg, duration)
 end
 
 -- ===================================================================== --
--- 4. ULTIMATE MAIN UI SETUP WITH RESPONSIVE MULTI-ROBLOX AUTO-SCALE
+-- 4. ULTIMATE MAIN UI SETUP
 -- ===================================================================== --
-local MainGui = Instance.new("ScreenGui"); MainGui.Name = "MofenkUltraHubGAG"; MainGui.Parent = parentGui; MainGui.ResetOnSpawn = false
+local MainGui = Instance.new("ScreenGui"); MainGui.Name = "MofenkGAGUltraHub"; MainGui.Parent = parentGui; MainGui.ResetOnSpawn = false
 
 local MainFrame = Instance.new("Frame"); MainFrame.Parent = MainGui
 MainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -296,10 +266,8 @@ MainFrame.Active = true; MainFrame.Draggable = true; MainFrame.Visible = false; 
 local MainCorner = Instance.new("UICorner"); MainCorner.CornerRadius = UDim.new(0, 16); MainCorner.Parent = MainFrame
 local MainStroke = Instance.new("UIStroke"); MainStroke.Thickness = 2; MainStroke.Color = GLASS_THEME.Acc1; MainStroke.Parent = MainFrame
 
-table.insert(ThemeElements.Backgrounds, MainFrame)
-table.insert(ThemeElements.Accents, MainStroke)
+table.insert(ThemeElements.Backgrounds, MainFrame); table.insert(ThemeElements.Accents, MainStroke)
 
--- DYNAMIC AUTO SCALE LOGIC
 local ScreenScale = Instance.new("UIScale"); ScreenScale.Parent = MainGui
 local function UpdateResponsiveScale()
     local cam = workspace.CurrentCamera
@@ -315,9 +283,7 @@ local function UpdateResponsiveScale()
 end
 
 UpdateResponsiveScale()
-if workspace.CurrentCamera then
-    workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(UpdateResponsiveScale)
-end
+if workspace.CurrentCamera then workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(UpdateResponsiveScale) end
 
 local MainScale = Instance.new("UIScale"); MainScale.Parent = MainFrame; MainScale.Scale = 1
 
@@ -327,9 +293,7 @@ local function ToggleWindow()
         isWindowOpen = false
         local tw = TweenService:Create(MainScale, TweenInfo.new(0.22, Enum.EasingStyle.Back, Enum.EasingDirection.In), {Scale = 0})
         tw:Play()
-        tw.Completed:Connect(function()
-            if not isWindowOpen then MainFrame.Visible = false end
-        end)
+        tw.Completed:Connect(function() if not isWindowOpen then MainFrame.Visible = false end end)
     else
         isWindowOpen = true
         MainFrame.Visible = true
@@ -342,9 +306,7 @@ ToggleBtn.MouseButton1Click:Connect(ToggleWindow)
 
 UserInputService.InputBegan:Connect(function(input, gpe)
     if gpe then return end
-    if input.KeyCode.Name == F.toggleKey then
-        ToggleWindow()
-    end
+    if input.KeyCode.Name == F.toggleKey then ToggleWindow() end
 end)
 
 -- Top Bar Header
@@ -352,14 +314,13 @@ local TopBar = Instance.new("Frame"); TopBar.Parent = MainFrame; TopBar.Size = U
 local TopCorner = Instance.new("UICorner"); TopCorner.CornerRadius = UDim.new(0, 16); TopCorner.Parent = TopBar
 table.insert(ThemeElements.Headers, TopBar)
 
-local Title = Instance.new("TextLabel"); Title.Parent = TopBar; Title.Position = UDim2.new(0, 20, 0, 0); Title.Size = UDim2.new(0, 580, 1, 0); Title.Text = "👑 MOFENKHUB  |  FIXED HOP & SPY"; Title.TextColor3 = GLASS_THEME.Acc1; Title.TextSize = 15; Title.Font = Enum.Font.GothamBlack; Title.TextXAlignment = Enum.TextXAlignment.Left; Title.BackgroundTransparency = 1
+local Title = Instance.new("TextLabel"); Title.Parent = TopBar; Title.Position = UDim2.new(0, 20, 0, 0); Title.Size = UDim2.new(0, 580, 1, 0); Title.Text = "👑 MOFENKHUB  |  GROW A GARDEN V107.0"; Title.TextColor3 = GLASS_THEME.Acc1; Title.TextSize = 15; Title.Font = Enum.Font.GothamBlack; Title.TextXAlignment = Enum.TextXAlignment.Left; Title.BackgroundTransparency = 1
 table.insert(ThemeElements.Accents, Title)
 
 local CloseBtn = Instance.new("TextButton"); CloseBtn.Parent = TopBar; CloseBtn.Position = UDim2.new(1, -48, 0, 11); CloseBtn.Size = UDim2.new(0, 34, 0, 34); CloseBtn.Text = "✕"; CloseBtn.TextColor3 = GLASS_THEME.Text; CloseBtn.Font = Enum.Font.GothamBold; CloseBtn.TextSize = 16; CloseBtn.BackgroundColor3 = GLASS_THEME.Card; CloseBtn.BackgroundTransparency = 0.3
 local CC = Instance.new("UICorner"); CC.CornerRadius = UDim.new(0, 10); CC.Parent = CloseBtn
 CloseBtn.MouseButton1Click:Connect(ToggleWindow)
-table.insert(ThemeElements.Cards, CloseBtn)
-table.insert(ThemeElements.Texts, CloseBtn)
+table.insert(ThemeElements.Cards, CloseBtn); table.insert(ThemeElements.Texts, CloseBtn)
 
 -- Sidebar Navigation
 local Sidebar = Instance.new("ScrollingFrame"); Sidebar.Parent = MainFrame; Sidebar.Position = UDim2.new(0, 12, 0, 64); Sidebar.Size = UDim2.new(0, 200, 1, -74); Sidebar.BackgroundTransparency = 1; Sidebar.ScrollBarThickness = 3; Sidebar.AutomaticCanvasSize = Enum.AutomaticSize.Y; Sidebar.CanvasSize = UDim2.new(0,0,0,0)
@@ -383,9 +344,7 @@ local function CreateTab(name, icon)
     
     TabFrames[name] = Scroll; TabButtons[name] = Btn; TabAccents[name] = AccentBar
     
-    table.insert(ThemeElements.Cards, Btn)
-    table.insert(ThemeElements.SubTexts, Btn)
-    table.insert(ThemeElements.Accents, AccentBar)
+    table.insert(ThemeElements.Cards, Btn); table.insert(ThemeElements.SubTexts, Btn); table.insert(ThemeElements.Accents, AccentBar)
 
     Btn.MouseButton1Click:Connect(function()
         for n, f in pairs(TabFrames) do f.Visible = (n == name) end
@@ -406,8 +365,7 @@ local function AddGroup(parent, title)
     local GLayout = Instance.new("UIListLayout"); GLayout.Parent = GroupCard; GLayout.Padding = UDim.new(0, 10); GLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
     local GPadding = Instance.new("UIPadding"); GPadding.Parent = GroupCard; GPadding.PaddingTop = UDim.new(0, 12); GPadding.PaddingBottom = UDim.new(0, 12); GPadding.PaddingLeft = UDim.new(0, 12); GPadding.PaddingRight = UDim.new(0, 12)
     
-    table.insert(ThemeElements.Cards, GroupCard)
-    table.insert(ThemeElements.Accents, GS)
+    table.insert(ThemeElements.Cards, GroupCard); table.insert(ThemeElements.Accents, GS)
 
     if title and title ~= "" then
         local HeaderLbl = Instance.new("TextLabel"); HeaderLbl.Parent = GroupCard; HeaderLbl.Size = UDim2.new(1, 0, 0, 28); HeaderLbl.Text = title; HeaderLbl.TextColor3 = GLASS_THEME.Acc1; HeaderLbl.TextSize = 14; HeaderLbl.Font = Enum.Font.GothamBlack; HeaderLbl.TextXAlignment = Enum.TextXAlignment.Left; HeaderLbl.BackgroundTransparency = 1
@@ -439,70 +397,13 @@ local function AddToggle(parent, text, flag, callback)
     updateVisuals()
 end
 
-local function AddSlider(parent, text, flag, min, max, default, callback)
-    min = min or 0; max = max or 100; default = default or min
-    F[flag] = F[flag] or default
-
-    local Frm = Instance.new("Frame"); Frm.Parent = parent; Frm.Size = UDim2.new(1, 0, 0, 52); Frm.BackgroundTransparency = 1
-    local L = Instance.new("TextLabel"); L.Parent = Frm; L.Position = UDim2.new(0, 6, 0, 0); L.Size = UDim2.new(0.6, 0, 0, 24); L.Text = text; L.TextColor3 = GLASS_THEME.Text; L.TextSize = 13; L.Font = Enum.Font.GothamMedium; L.TextXAlignment = Enum.TextXAlignment.Left; L.BackgroundTransparency = 1
-    local ValLbl = Instance.new("TextLabel"); ValLbl.Parent = Frm; ValLbl.Position = UDim2.new(0.6, 0, 0, 0); ValLbl.Size = UDim2.new(0.4, -6, 0, 24); ValLbl.Text = tostring(F[flag]); ValLbl.TextColor3 = GLASS_THEME.Acc1; ValLbl.TextSize = 13; ValLbl.Font = Enum.Font.GothamBold; ValLbl.TextXAlignment = Enum.TextXAlignment.Right; ValLbl.BackgroundTransparency = 1
-    
-    local Track = Instance.new("Frame"); Track.Parent = Frm; Track.Position = UDim2.new(0, 6, 0, 32); Track.Size = UDim2.new(1, -12, 0, 10); Track.BackgroundColor3 = GLASS_THEME.Header; local TC = Instance.new("UICorner"); TC.CornerRadius = UDim.new(1, 0); TC.Parent = Track
-    local Fill = Instance.new("Frame"); Fill.Parent = Track; Fill.Size = UDim2.new((F[flag] - min) / (max - min), 0, 1, 0); Fill.BackgroundColor3 = GLASS_THEME.Acc1; local FC = Instance.new("UICorner"); FC.CornerRadius = UDim.new(1, 0); FC.Parent = Fill
-    local Knob = Instance.new("Frame"); Knob.Parent = Track; Knob.AnchorPoint = Vector2.new(0.5, 0.5); Knob.Position = UDim2.new((F[flag] - min) / (max - min), 0, 0.5, 0); Knob.Size = UDim2.new(0, 18, 0, 18); Knob.BackgroundColor3 = GLASS_THEME.Text; local KC = Instance.new("UICorner"); KC.CornerRadius = UDim.new(1, 0); KC.Parent = Knob
-
-    table.insert(ThemeElements.Texts, L)
-    table.insert(ThemeElements.Accents, ValLbl)
-    table.insert(ThemeElements.Headers, Track)
-    table.insert(ThemeElements.Accents, Fill)
-
-    local function updateValue(val)
-        val = math.clamp(math.floor(val), min, max)
-        F[flag] = val
-        ValLbl.Text = tostring(val)
-        local percent = (val - min) / (max - min)
-        TweenService:Create(Fill, TweenInfo.new(0.1), {Size = UDim2.new(percent, 0, 1, 0)}):Play()
-        TweenService:Create(Knob, TweenInfo.new(0.1), {Position = UDim2.new(percent, 0, 0.5, 0)}):Play()
-        if callback then pcall(callback, val) end
-    end
-
-    local isDragging = false
-    Track.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            isDragging = true
-            local posX = input.Position.X - Track.AbsolutePosition.X
-            local percent = math.clamp(posX / Track.AbsoluteSize.X, 0, 1)
-            updateValue(min + (max - min) * percent)
-        end
-    end)
-
-    UserInputService.InputChanged:Connect(function(input)
-        if isDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-            local posX = input.Position.X - Track.AbsolutePosition.X
-            local percent = math.clamp(posX / Track.AbsoluteSize.X, 0, 1)
-            updateValue(min + (max - min) * percent)
-        end
-    end)
-
-    UserInputService.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            isDragging = false
-        end
-    end)
-
-    table.insert(ConfigUpdaters, function() updateValue(F[flag] or default) end)
-end
-
 local function AddInput(parent, text, flag, isNum)
     local Frm = Instance.new("Frame"); Frm.Parent = parent; Frm.Size = UDim2.new(1, 0, 0, 42); Frm.BackgroundTransparency = 1
     local L = Instance.new("TextLabel"); L.Parent = Frm; L.Position = UDim2.new(0, 6, 0, 0); L.Size = UDim2.new(0.48, 0, 1, 0); L.Text = text; L.TextColor3 = GLASS_THEME.Text; L.TextSize = 13; L.Font = Enum.Font.GothamMedium; L.TextXAlignment = Enum.TextXAlignment.Left; L.BackgroundTransparency = 1
     local Box = Instance.new("TextBox"); Box.Parent = Frm; Box.Position = UDim2.new(0.5, 0, 0.1, 0); Box.Size = UDim2.new(0.5, 0, 0.8, 0); Box.TextColor3 = GLASS_THEME.Acc1; Box.TextSize = 13; Box.Font = Enum.Font.GothamBold; Box.BackgroundColor3 = GLASS_THEME.Header; Box.BackgroundTransparency = 0.25; local BC = Instance.new("UICorner"); BC.CornerRadius = UDim.new(0, 8); BC.Parent = Box
     local BS = Instance.new("UIStroke"); BS.Thickness = 1; BS.Color = GLASS_THEME.Acc1; BS.Transparency = 0.6; BS.Parent = Box
     
-    table.insert(ThemeElements.Texts, L)
-    table.insert(ThemeElements.Accents, Box)
-    table.insert(ThemeElements.Headers, Box)
-    table.insert(ThemeElements.Accents, BS)
+    table.insert(ThemeElements.Texts, L); table.insert(ThemeElements.Accents, Box); table.insert(ThemeElements.Headers, Box); table.insert(ThemeElements.Accents, BS)
 
     local function updateVisuals() Box.Text = tostring(F[flag] or "") end
     table.insert(ConfigUpdaters, updateVisuals)
@@ -511,39 +412,43 @@ local function AddInput(parent, text, flag, isNum)
     updateVisuals()
 end
 
-local function AddKeybind(parent, text, flag, defaultKey, callback)
-    F[flag] = F[flag] or defaultKey
-    local Frm = Instance.new("Frame"); Frm.Parent = parent; Frm.Size = UDim2.new(1, 0, 0, 42); Frm.BackgroundTransparency = 1
-    local L = Instance.new("TextLabel"); L.Parent = Frm; L.Position = UDim2.new(0, 6, 0, 0); L.Size = UDim2.new(0.5, 0, 1, 0); L.Text = text; L.TextColor3 = GLASS_THEME.Text; L.TextSize = 13; L.Font = Enum.Font.GothamMedium; L.TextXAlignment = Enum.TextXAlignment.Left; L.BackgroundTransparency = 1
-    local Btn = Instance.new("TextButton"); Btn.Parent = Frm; Btn.Position = UDim2.new(0.52, 0, 0.1, 0); Btn.Size = UDim2.new(0.48, 0, 0.8, 0); Btn.Text = tostring(F[flag]); Btn.TextColor3 = GLASS_THEME.Acc1; Btn.TextSize = 12; Btn.Font = Enum.Font.GothamBold; Btn.BackgroundColor3 = GLASS_THEME.Header; Btn.BackgroundTransparency = 0.25; local BC = Instance.new("UICorner"); BC.CornerRadius = UDim.new(0, 8); BC.Parent = Btn
+local function AddDropdown(parent, title, options, flag, isMulti)
+    local Frm = Instance.new("Frame"); Frm.Parent = parent; Frm.Size = UDim2.new(1, 0, 0, 46); Frm.BackgroundTransparency = 1
+    local L = Instance.new("TextLabel"); L.Parent = Frm; L.Position = UDim2.new(0, 6, 0, 0); L.Size = UDim2.new(0.4, 0, 1, 0); L.Text = title; L.TextColor3 = GLASS_THEME.Text; L.TextSize = 13; L.Font = Enum.Font.GothamMedium; L.TextXAlignment = Enum.TextXAlignment.Left; L.BackgroundTransparency = 1
+    local Btn = Instance.new("TextButton"); Btn.Parent = Frm; Btn.Position = UDim2.new(0.42, 0, 0.1, 0); Btn.Size = UDim2.new(0.58, 0, 0.8, 0); Btn.TextColor3 = GLASS_THEME.Acc1; Btn.TextSize = 12; Btn.Font = Enum.Font.GothamBold; Btn.BackgroundColor3 = GLASS_THEME.Header; Btn.BackgroundTransparency = 0.25; local BC = Instance.new("UICorner"); BC.CornerRadius = UDim.new(0, 8); BC.Parent = Btn
     local BS = Instance.new("UIStroke"); BS.Thickness = 1; BS.Color = GLASS_THEME.Acc1; BS.Transparency = 0.6; BS.Parent = Btn
+    
+    local DropList = Instance.new("Frame"); DropList.Parent = MainFrame; DropList.Size = UDim2.new(0, 310, 0, 200); DropList.BackgroundColor3 = GLASS_THEME.Bg; DropList.Visible = false; DropList.ZIndex = 300
+    local DLC = Instance.new("UICorner"); DLC.CornerRadius = UDim.new(0, 10); DLC.Parent = DropList
+    local DLS = Instance.new("UIStroke"); DLS.Thickness = 1.5; DLS.Color = GLASS_THEME.Acc1; DLS.Parent = DropList
 
-    table.insert(ThemeElements.Texts, L)
-    table.insert(ThemeElements.Accents, Btn)
-    table.insert(ThemeElements.Headers, Btn)
-    table.insert(ThemeElements.Accents, BS)
+    local ScrollOpts = Instance.new("ScrollingFrame"); ScrollOpts.Parent = DropList; ScrollOpts.Position = UDim2.new(0, 8, 0, 8); ScrollOpts.Size = UDim2.new(1, -16, 1, -16); ScrollOpts.BackgroundTransparency = 1; ScrollOpts.ScrollBarThickness = 5; ScrollOpts.ZIndex = 301; ScrollOpts.AutomaticCanvasSize = Enum.AutomaticSize.Y; ScrollOpts.CanvasSize = UDim2.new(0,0,0,0)
+    local DLL = Instance.new("UIListLayout"); DLL.Parent = ScrollOpts; DLL.Padding = UDim.new(0, 4)
 
-    local isBinding = false
-    Btn.MouseButton1Click:Connect(function()
-        isBinding = true
-        Btn.Text = "Tekan Tombol..."
-    end)
+    local function UpdatePos()
+        if DropList.Visible then DropList.Position = UDim2.new(0, Btn.AbsolutePosition.X - MainFrame.AbsolutePosition.X, 0, (Btn.AbsolutePosition.Y - MainFrame.AbsolutePosition.Y) + Btn.AbsoluteSize.Y + 3) end
+    end
+    Btn:GetPropertyChangedSignal("AbsolutePosition"):Connect(UpdatePos)
 
-    UserInputService.InputBegan:Connect(function(input, gpe)
-        if isBinding and not gpe then
-            if input.UserInputType == Enum.UserInputType.Keyboard then
-                isBinding = false
-                F[flag] = input.KeyCode.Name
-                Btn.Text = input.KeyCode.Name
-                Notify("Keybind Updated", "Tombol " .. text .. " diubah ke " .. input.KeyCode.Name, 2.5)
-                if callback then pcall(callback, input.KeyCode) end
-            end
-        end
-    end)
+    local function updateMainBtn() Btn.Text = tostring(F[flag] or "Pilih") end
+    table.insert(ConfigUpdaters, updateMainBtn)
 
-    table.insert(ConfigUpdaters, function() Btn.Text = tostring(F[flag] or defaultKey) end)
+    for _, opt in ipairs(options) do
+        local OptBtn = Instance.new("TextButton"); OptBtn.Parent = ScrollOpts; OptBtn.Size = UDim2.new(1, 0, 0, 36); OptBtn.Text = "  " .. tostring(opt.label); OptBtn.TextColor3 = GLASS_THEME.Text; OptBtn.TextSize = 12; OptBtn.Font = Enum.Font.GothamMedium; OptBtn.TextXAlignment = Enum.TextXAlignment.Left; OptBtn.BackgroundColor3 = GLASS_THEME.Card; OptBtn.BackgroundTransparency = 0.5; OptBtn.ZIndex = 302
+        local OC = Instance.new("UICorner"); OC.CornerRadius = UDim.new(0, 6); OC.Parent = OptBtn
+
+        OptBtn.MouseButton1Click:Connect(function()
+            F[flag] = opt.val
+            DropList.Visible = false
+            updateMainBtn()
+        end)
+    end
+
+    updateMainBtn()
+    Btn.MouseButton1Click:Connect(function() DropList.Visible = not DropList.Visible; UpdatePos() end)
 end
 
+-- CONSOLE SPY LOG SYSTEM
 local function makeConsole(tab, cfg)
     local handle = {}
     handle.name = cfg.Name or ""
@@ -551,8 +456,7 @@ local function makeConsole(tab, cfg)
     handle.lines = {}
     local para = Instance.new("TextLabel"); para.Parent = tab; para.Size = UDim2.new(1, 0, 0, 160); para.BackgroundColor3 = GLASS_THEME.Header; para.BackgroundTransparency = 0.4; para.TextColor3 = GLASS_THEME.Text; para.TextSize = 11; para.Font = Enum.Font.Code; para.TextXAlignment = Enum.TextXAlignment.Left; para.TextYAlignment = Enum.TextYAlignment.Top; para.TextWrapped = true; local PC = Instance.new("UICorner"); PC.CornerRadius = UDim.new(0, 8); PC.Parent = para; local PP = Instance.new("UIPadding"); PP.Parent = para; PP.PaddingTop = UDim.new(0, 8); PP.PaddingLeft = UDim.new(0, 8); PP.PaddingRight = UDim.new(0, 8); PP.PaddingBottom = UDim.new(0, 8)
 
-    table.insert(ThemeElements.Headers, para)
-    table.insert(ThemeElements.Texts, para)
+    table.insert(ThemeElements.Headers, para); table.insert(ThemeElements.Texts, para)
 
     function handle:Append(text)
         table.insert(handle.lines, tostring(text))
@@ -567,11 +471,11 @@ end
 -- ===================================================================== --
 -- 5. TABS ASSEMBLY
 -- ===================================================================== --
-local T_Dash   = CreateTab("Dashboard", "📊")
-local T_Spy    = CreateTab("Spy Scanner", "🔍")
-local T_Server = CreateTab("Server Hop", "🌐")
-local T_Char   = CreateTab("Character", "⚡")
-local T_Set    = CreateTab("Settings", "⚙️")
+local T_Dash = CreateTab("Dashboard", "📊")
+local T_Trd  = CreateTab("Trade & Booth", "🏬")
+local T_Evt  = CreateTab("Events & Pets", "🌽")
+local T_Char = CreateTab("Character", "⚡")
+local T_Set  = CreateTab("Settings", "⚙️")
 
 TabFrames["Dashboard"].Visible = true; Sidebar:GetChildren()[2].BackgroundTransparency = 0.1; Sidebar:GetChildren()[2].TextColor3 = GLASS_THEME.Acc1
 
@@ -582,17 +486,16 @@ local PImg = Instance.new("ImageLabel"); PImg.Parent = ProfContainer; PImg.Ancho
 
 local PLbl = Instance.new("TextLabel"); PLbl.Parent = ProfContainer; PLbl.Position = UDim2.new(0, 98, 0, 0); PLbl.Size = UDim2.new(1, -108, 1, 0); PLbl.BackgroundTransparency = 1; PLbl.TextColor3 = GLASS_THEME.Text; PLbl.TextSize = 13; PLbl.Font = Enum.Font.GothamMedium; PLbl.TextXAlignment = Enum.TextXAlignment.Left; PLbl.TextYAlignment = Enum.TextYAlignment.Center
 
-table.insert(ThemeElements.Texts, PLbl)
-table.insert(ThemeElements.Accents, PStr)
+table.insert(ThemeElements.Texts, PLbl); table.insert(ThemeElements.Accents, PStr)
 
-local G_HopTimer = AddGroup(T_Dash, "AUTO SERVER HOP TIMER (40 MENIT)")
-local HopTimerLbl = Instance.new("TextLabel"); HopTimerLbl.Parent = G_HopTimer; HopTimerLbl.Size = UDim2.new(1, 0, 0, 30); HopTimerLbl.BackgroundTransparency = 1; HopTimerLbl.TextColor3 = GLASS_THEME.Acc1; HopTimerLbl.TextSize = 14; HopTimerLbl.Font = Enum.Font.GothamBold; HopTimerLbl.TextXAlignment = Enum.TextXAlignment.Left; HopTimerLbl.Text = "Status: Disabled"
-table.insert(ThemeElements.Accents, HopTimerLbl)
+local G_TradeStats = AddGroup(T_Dash, "LIVE TRADE & BOOTH MONITORING")
+local TradeLbl = Instance.new("TextLabel"); TradeLbl.Parent = G_TradeStats; TradeLbl.Size = UDim2.new(1, 0, 0, 75); TradeLbl.BackgroundTransparency = 1; TradeLbl.TextColor3 = GLASS_THEME.Text; TradeLbl.TextSize = 13; TradeLbl.Font = Enum.Font.GothamMedium; TradeLbl.TextXAlignment = Enum.TextXAlignment.Left; TradeLbl.TextYAlignment = Enum.TextYAlignment.Top
+table.insert(ThemeElements.Texts, TradeLbl)
 
-local G_Logs = AddGroup(T_Dash, "MOFENKHUB CONSOLE LOG")
+local G_Logs = AddGroup(T_Dash, "SYSTEM REMOTE SPY CONSOLE LOG")
 local console = makeConsole(G_Logs, { Name = "Console Log", MaxLines = 100 })
 local function clog(m)
-    printDeltaConsole("[MOFENKHUB] " .. tostring(m))
+    print("[MOFENKHUB GAG] " .. tostring(m))
     pcall(function() console:Append(m) end)
 end
 
@@ -612,281 +515,51 @@ task.spawn(function()
     while task.wait(0.8) do pcall(function()
         local ping = math.floor(Stats.Network.ServerStatsItem["Data Ping"]:GetValue() or 0)
         STATE.pingMs = ping
-        PLbl.Text = string.format("👤 Player: %s (%s)\n🆔 UserId: %d\n📍 PlaceId: %d\n⚡ Ping: %d ms | 🖥️ FPS: %d", LocalPlayer.Name, LocalPlayer.DisplayName, LocalPlayer.UserId, game.PlaceId, STATE.pingMs, STATE.fpsCurrent)
+        PLbl.Text = string.format("👤 Player: %s (%s)\n⚡ Ping: %d ms | 🖥️ FPS: %d\n🎮 Game: Grow a Garden (GAG)", LocalPlayer.Name, LocalPlayer.DisplayName, STATE.pingMs, STATE.fpsCurrent)
+        
+        local inTradeWorld = workspace:FindFirstChild("TradeWorld") or workspace:FindFirstChild("Booths")
+        STATE.tradeWorldStatus = inTradeWorld and "Farmer Trade World" or "Main World"
+        TradeLbl.Text = string.format("🌐 Lokasi World: %s\n🏬 Status Booth: %s\n🎨 Skin Booth Aktif: %s", STATE.tradeWorldStatus, STATE.boothStatus, F.selectedBoothSkin)
     end) end
 end)
 
--- 2. SPY SCANNER TAB (PRINTS DIRECTLY TO DELTA / DEV CONSOLE)
-local G_SpyScan = AddGroup(T_Spy, "REMOTE SERVICE SCANNER (DIRECT TO DELTA CONSOLE)")
+-- 2. TRADE & BOOTH TAB
+local G_Trade = AddGroup(T_Trd, "AUTO FARMER TRADE WORLD & BOOTH CLAIM")
+AddToggle(G_Trade, "Auto Join Farmer Trade World (Saat Terlempar ke Main)", "autoJoinTrade")
+AddToggle(G_Trade, "Auto Claim Booth Kosong (Otomatis)", "autoClaimBooth")
 
-local function scanAndPrintRemotes()
-    printDeltaConsole("==========================================")
-    printDeltaConsole("   🔍 MOFENKHUB - SPY SCANNER STARTED")
-    printDeltaConsole("==========================================")
-    
-    local count = 0
-    local targetServices = { ReplicatedStorage, workspace, Players, game:GetService("Lighting") }
-    
-    for _, svc in ipairs(targetServices) do
-        printDeltaConsole("📂 Scanning Service: " .. svc.Name)
-        for _, obj in ipairs(svc:GetDescendants()) do
-            if obj:IsA("RemoteEvent") or obj:IsA("RemoteFunction") or obj:IsA("BindableEvent") or obj:IsA("BindableFunction") then
-                count = count + 1
-                local info = string.format("   [%s] -> %s", obj.ClassName, obj:GetFullName())
-                printDeltaConsole(info)
-                clog(info)
-            end
+local G_Skin = AddGroup(T_Trd, "BOOTH SKIN SELECTION")
+AddDropdown(G_Skin, "Pilih Skin Booth:", KnownBoothSkins, "selectedBoothSkin", false)
+AddToggle(G_Skin, "Auto Equip Skin Saat Klaim Booth", "autoEquipSkin")
+
+local BtnManualClaim = Instance.new("TextButton"); BtnManualClaim.Parent = G_Trade; BtnManualClaim.Size = UDim2.new(1, 0, 0, 36); BtnManualClaim.Text = "🏬 KLAIM BOOTH SEKARANG"; BtnManualClaim.Font = Enum.Font.GothamBold; BtnManualClaim.TextSize = 13; BtnManualClaim.TextColor3 = GLASS_THEME.Acc1; BtnManualClaim.BackgroundColor3 = GLASS_THEME.Header; local BMC = Instance.new("UICorner"); BMC.CornerRadius = UDim.new(0,8); BMC.Parent = BtnManualClaim
+table.insert(ThemeElements.Headers, BtnManualClaim); table.insert(ThemeElements.Accents, BtnManualClaim)
+
+BtnManualClaim.MouseButton1Click:Connect(function()
+    pcall(function()
+        if Remotes.ClaimBooth then
+            if Remotes.ClaimBooth:IsA("RemoteFunction") then Remotes.ClaimBooth:InvokeServer()
+            elseif Remotes.ClaimBooth:IsA("RemoteEvent") then Remotes.ClaimBooth:FireServer() end
+            Notify("Booth Claim", "Eksekusi Klaim Booth Terkirim!", 2.5)
         end
-    end
-    printDeltaConsole("==========================================")
-    printDeltaConsole("✅ SCAN COMPLETE: " .. count .. " REMOTES FOUND")
-    printDeltaConsole("==========================================")
-    Notify("Spy Scanner", "Berhasil scan " .. count .. " remotes! Cek Delta Console.", 4)
-end
-
-local BtnScan = Instance.new("TextButton"); BtnScan.Parent = G_SpyScan; BtnScan.Size = UDim2.new(1, 0, 0, 36); BtnScan.Text = "🔍 SCAN ALL SERVICES (PRINT TO DELTA CONSOLE)"; BtnScan.Font = Enum.Font.GothamBold; BtnScan.TextSize = 12; BtnScan.TextColor3 = GLASS_THEME.Acc1; BtnScan.BackgroundColor3 = GLASS_THEME.Header; local BSC = Instance.new("UICorner"); BSC.CornerRadius = UDim.new(0,8); BSC.Parent = BtnScan
-BtnScan.MouseButton1Click:Connect(function() task.spawn(scanAndPrintRemotes) end)
-table.insert(ThemeElements.Headers, BtnScan)
-table.insert(ThemeElements.Accents, BtnScan)
-
-local G_SpyHook = AddGroup(T_Spy, "REMOTE CALL INSPECTOR (HOOK NAMECALL)")
-AddToggle(G_SpyHook, "Hook FireServer / InvokeServer Calls", "spyHook", function(v)
-    if v then Notify("Spy Hook", "Mendengarkan panggilan Remote... Cek Delta Console!", 4) end
-end)
-
-if hookmetamethod then
-    local oldNamecall
-    oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
-        local method = getnamecallmethod()
-        if F.spyHook and (method == "FireServer" or method == "InvokeServer") then
-            local args = {...}
-            printDeltaConsole(string.format("[SPY CALL] %s:%s() | Args: %s", self:GetFullName(), method, HttpService:JSONEncode(args)))
-        end
-        return oldNamecall(self, ...)
     end)
-end
-
--- 3. SERVER HOP TAB (BYPASS PUBLIC API VIA HTTP REQUEST)
-local G_HopSys = AddGroup(T_Server, "AUTO SERVER HOP SYSTEM (PUBLIC API BYPASS)")
-
-local VISIT_TTL = 1800
-local function visitedPath() return CFG_FOLDER .. "/visited_" .. tostring(LocalPlayer.UserId) .. ".json" end
-
-local function loadVisited()
-    local t = {}
-    if typeof(readfile) ~= "function" or typeof(isfile) ~= "function" then return t end
-    local path = visitedPath()
-    if not isfile(path) then return t end
-    local okR, txt = pcall(readfile, path)
-    if not okR then return t end
-    local okD, d = pcall(function() return HttpService:JSONDecode(txt) end)
-    if not (okD and type(d) == "table") then return t end
-    local now = os.time()
-    for job, ts in pairs(d) do
-        ts = tonumber(ts)
-        if type(job) == "string" and ts and now - ts < VISIT_TTL then t[job] = ts end
-    end
-    return t
-end
-
-local function saveVisited(t)
-    if typeof(writefile) ~= "function" then return end
-    pcall(function() writefile(visitedPath(), HttpService:JSONEncode(t)) end)
-end
-
-local function doHop(lowPop)
-    task.spawn(function()
-        armAutoExec()
-        Notify("Server Hop", "Mencari server di daftar publik...", 4)
-        local visited = loadVisited()
-        local cands, cursor, pages = {}, nil, 0
-        local order = lowPop and "Asc" or "Desc"
-        local currentPlace = game.PlaceId
-
-        while pages < 4 do
-            local url = "https://games.roblox.com/v1/games/" .. tostring(currentPlace) .. "/servers/Public?sortOrder=" .. order .. "&limit=100&excludeFullGames=true"
-            if cursor and cursor ~= "" then url = url .. "&cursor=" .. cursor end
-            
-            local resBody = httpRequest(url)
-            if not resBody then break end
-            
-            local ok2, data = pcall(function() return HttpService:JSONDecode(resBody) end)
-            if not (ok2 and data and data.data) then break end
-            
-            for _, s in ipairs(data.data) do
-                if s.id ~= game.JobId and not visited[s.id] and (tonumber(s.playing) or 0) < (tonumber(s.maxPlayers) or 99) then
-                    table.insert(cands, s)
-                end
-            end
-            
-            cursor = data.nextPageCursor
-            pages += 1
-            if not cursor or cursor == "" then break end
-        end
-
-        if #cands == 0 then
-            Notify("Server Hop", "Semua server publik sudah dikunjungi, mencoba random hop...", 4)
-            TeleportService:Teleport(currentPlace, LocalPlayer)
-            return
-        end
-
-        local target = cands[math.random(1, math.min(#cands, 10))]
-        visited[target.id] = os.time()
-        saveVisited(visited)
-        Notify("Server Hop", "Teleportasi ke " .. target.id .. " (" .. target.playing .. " pemain)...", 4)
-        
-        pcall(function()
-            TeleportService:TeleportToPlaceInstance(currentPlace, target.id, LocalPlayer)
-        end)
-    end)
-end
-
-AddToggle(G_HopSys, "Auto Server Hop Setiap 40 Menit", "autoHop40", function(v)
-    if v then
-        F.hopInterval = 2400
-        clog("Auto Hop 40 Menit diaktifkan.")
-    else
-        HopTimerLbl.Text = "Status: Disabled"
-    end
 end)
 
-local BtnHopNow = Instance.new("TextButton"); BtnHopNow.Parent = G_HopSys; BtnHopNow.Size = UDim2.new(1, 0, 0, 34); BtnHopNow.Text = "🌐 HOP SERVER SEKARANG"; BtnHopNow.Font = Enum.Font.GothamBold; BtnHopNow.TextSize = 12; BtnHopNow.TextColor3 = GLASS_THEME.Acc1; BtnHopNow.BackgroundColor3 = GLASS_THEME.Header; local BHNC = Instance.new("UICorner"); BHNC.CornerRadius = UDim.new(0,8); BHNC.Parent = BtnHopNow
-BtnHopNow.MouseButton1Click:Connect(function() doHop(false) end)
-
-local BtnHopLow = Instance.new("TextButton"); BtnHopLow.Parent = G_HopSys; BtnHopLow.Size = UDim2.new(1, 0, 0, 34); BtnHopLow.Text = "📉 HOP SERVER SEPI (LOW PLAYER)"; BtnHopLow.Font = Enum.Font.GothamBold; BtnHopLow.TextSize = 12; BtnHopLow.TextColor3 = GLASS_THEME.Acc1; BtnHopLow.BackgroundColor3 = GLASS_THEME.Header; local BHLC = Instance.new("UICorner"); BHLC.CornerRadius = UDim.new(0,8); BHLC.Parent = BtnHopLow
-BtnHopLow.MouseButton1Click:Connect(function() doHop(true) end)
-
-local BtnRejoin = Instance.new("TextButton"); BtnRejoin.Parent = G_HopSys; BtnRejoin.Size = UDim2.new(1, 0, 0, 34); BtnRejoin.Text = "🔄 REJOIN SERVER SAMA"; BtnRejoin.Font = Enum.Font.GothamBold; BtnRejoin.TextSize = 12; BtnRejoin.TextColor3 = GLASS_THEME.Acc1; BtnRejoin.BackgroundColor3 = GLASS_THEME.Header; local BRC = Instance.new("UICorner"); BRC.CornerRadius = UDim.new(0,8); BRC.Parent = BtnRejoin
-BtnRejoin.MouseButton1Click:Connect(function()
-    armAutoExec()
-    TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, LocalPlayer)
-end)
-
-table.insert(ThemeElements.Headers, BtnHopNow); table.insert(ThemeElements.Accents, BtnHopNow)
-table.insert(ThemeElements.Headers, BtnHopLow); table.insert(ThemeElements.Accents, BtnHopLow)
-table.insert(ThemeElements.Headers, BtnRejoin); table.insert(ThemeElements.Accents, BtnRejoin)
-
--- 40-Min Hop Thread
-task.spawn(function()
-    while _G.__MOFENKHUB == generation do
-        task.wait(1)
-        if F.autoHop40 then
-            F.hopInterval = F.hopInterval - 1
-            local m = math.floor(F.hopInterval / 60)
-            local s = F.hopInterval % 60
-            HopTimerLbl.Text = string.format("Hop Berikutnya dalam: %02d:%02d", m, s)
-            if F.hopInterval <= 0 then
-                F.hopInterval = 2400
-                doHop(false)
-            end
-        end
-    end
-end)
+-- 3. EVENTS TAB
+local G_EvtCtrl = AddGroup(T_Evt, "EVENT AUTOMATION & PET REWARDS")
+AddToggle(G_EvtCtrl, "Auto Claim Alien Event Pets", "autoClaimAlien")
 
 -- 4. CHARACTER TAB
-local G_Char = AddGroup(T_Char, "MOVEMENT & CHARACTER MODS")
-
+local G_Char = AddGroup(T_Char, "MOVEMENT & PROTECTION MODS")
 local function applyWS()
     local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
     if hum then hum.WalkSpeed = (F.wsOn and F.wsValue) or 16 end
 end
 
 AddToggle(G_Char, "Aktifkan WalkSpeed Modifier", "wsOn", function() applyWS() end)
-AddSlider(G_Char, "Atur WalkSpeed:", "wsValue", 16, 250, 16, function() applyWS() end)
+AddToggle(G_Char, "Anti-AFK Protection", "afk")
 
--- Fly System
-local flyGyro, flyVel, flyMoveConn, flyKeys = nil, nil, nil, {}
-local function flyStop()
-    if flyMoveConn then pcall(function() flyMoveConn:Disconnect() end) flyMoveConn = nil end
-    if flyGyro then pcall(function() flyGyro:Destroy() end) flyGyro = nil end
-    if flyVel then pcall(function() flyVel:Destroy() end) flyVel = nil end
-    table.clear(flyKeys)
-end
-
-local function flyStart()
-    flyStop()
-    local ch = LocalPlayer.Character
-    local hrp = ch and ch:FindFirstChild("HumanoidRootPart")
-    local hum = ch and ch:FindFirstChildOfClass("Humanoid")
-    if not hrp or not hum then return end
-    hum.PlatformStand = true
-    flyGyro = Instance.new("BodyGyro")
-    flyGyro.P = 9000
-    flyGyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
-    flyGyro.CFrame = hrp.CFrame
-    flyGyro.Parent = hrp
-    flyVel = Instance.new("BodyVelocity")
-    flyVel.MaxForce = Vector3.new(9e9, 9e9, 9e9)
-    flyVel.Velocity = Vector3.zero
-    flyVel.Parent = hrp
-    flyMoveConn = RunService.RenderStepped:Connect(function()
-        if not F.flyOn then return end
-        local cam = workspace.CurrentCamera
-        if not cam then return end
-        local dir = Vector3.zero
-        if flyKeys[Enum.KeyCode.W] then dir += cam.CFrame.LookVector end
-        if flyKeys[Enum.KeyCode.S] then dir -= cam.CFrame.LookVector end
-        if flyKeys[Enum.KeyCode.A] then dir -= cam.CFrame.RightVector end
-        if flyKeys[Enum.KeyCode.D] then dir += cam.CFrame.RightVector end
-        if flyKeys[Enum.KeyCode.Space] then dir += Vector3.new(0, 1, 0) end
-        if flyKeys[Enum.KeyCode.LeftShift] then dir -= Vector3.new(0, 1, 0) end
-        if dir.Magnitude > 0 then dir = dir.Unit * F.flySpeed end
-        pcall(function()
-            flyVel.Velocity = dir
-            flyGyro.CFrame = cam.CFrame
-        end)
-    end)
-end
-
-UserInputService.InputBegan:Connect(function(i, g)
-    if g or not F.flyOn then return end
-    flyKeys[i.KeyCode] = true
-end)
-UserInputService.InputEnded:Connect(function(i) flyKeys[i.KeyCode] = nil end)
-
-AddToggle(G_Char, "Aktifkan Fly (WASD + Space/Shift)", "flyOn", function(v)
-    if v then flyStart() else flyStop() local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") if hum then hum.PlatformStand = false end end
-end)
-AddSlider(G_Char, "Kecepatan Fly (Fly Speed):", "flySpeed", 10, 200, 50)
-
-RunService.Stepped:Connect(function()
-    if not F.noclip then return end
-    local ch = LocalPlayer.Character
-    if ch then
-        for _, p in ipairs(ch:GetDescendants()) do
-            if p:IsA("BasePart") then p.CanCollide = false end
-        end
-    end
-end)
-
-AddToggle(G_Char, "Noclip (Tembus Tembok)", "noclip")
-
-local G_Prot = AddGroup(T_Char, "SYSTEM PROTECTION & OPTIMIZATION")
-AddToggle(G_Prot, "Anti-AFK Protection", "afk")
-AddToggle(G_Prot, "Auto Reconnect Saat Disconnect", "autoReconnect")
-
-AddToggle(G_Prot, "FPS Boost (Matikan Bayangan & Partikel)", "fpsOn", function(v)
-    if v then
-        pcall(function()
-            local L = game:GetService("Lighting")
-            table.insert(fpsRestore, { o = L, p = "GlobalShadows", v = L.GlobalShadows })
-            L.GlobalShadows = false
-            for _, o in ipairs(workspace:GetDescendants()) do
-                if o:IsA("ParticleEmitter") or o:IsA("Trail") or o:IsA("Beam") then
-                    table.insert(fpsRestore, { o = o, p = "Enabled", v = o.Enabled })
-                    o.Enabled = false
-                end
-            end
-        end)
-        Notify("Performance", "FPS Boost Aktif.", 3)
-    else
-        for _, r in ipairs(fpsRestore) do pcall(function() r.o[r.p] = r.v end) end
-        table.clear(fpsRestore)
-        Notify("Performance", "FPS Boost Nonaktif.", 3)
-    end
-end)
-
--- 5. SETTINGS TAB
+-- 5. SETTINGS TAB (FULL COMPLETE CONFIG MANAGER)
 local G_Theme = AddGroup(T_Set, "TEMA & KEYBIND BINDING")
 
 local FrmTheme = Instance.new("Frame"); FrmTheme.Parent = G_Theme; FrmTheme.Size = UDim2.new(1, 0, 0, 42); FrmTheme.BackgroundTransparency = 1
@@ -905,10 +578,9 @@ for tName, _ in pairs(THEMES) do
     end)
 end
 
-AddKeybind(G_Theme, "Tombol Toggle Window UI:", "toggleKey", "RightControl")
-
+-- FULL CONFIG PRESETS MANAGEMENT UI
 local G_SetConfig = AddGroup(T_Set, "FILE CONFIG PRESETS MANAGEMENT")
-AddToggle(G_SetConfig, "Auto Load Config Saat Script Dijalankan", "autoLoadEnabled")
+AddToggle(G_SetConfig, "Auto Load Config Saat Nyala", "autoLoadEnabled")
 AddInput(G_SetConfig, "Nama File Config:", "cfgName", false)
 
 local BtnSave = Instance.new("TextButton"); BtnSave.Parent = G_SetConfig; BtnSave.Size = UDim2.new(1, 0, 0, 36); BtnSave.Text = "💾 SAVE CONFIG SEKARANG"; BtnSave.Font = Enum.Font.GothamBold; BtnSave.TextSize = 13; BtnSave.TextColor3 = GLASS_THEME.Acc1; BtnSave.BackgroundColor3 = GLASS_THEME.Header; local BTS = Instance.new("UICorner"); BTS.CornerRadius = UDim.new(0,8); BTS.Parent = BtnSave
@@ -923,12 +595,10 @@ local ListTitle = Instance.new("TextLabel"); ListTitle.Parent = G_SetConfig; Lis
 
 local ConfigScroll = Instance.new("ScrollingFrame"); ConfigScroll.Parent = G_SetConfig; ConfigScroll.Size = UDim2.new(1, 0, 0, 110); ConfigScroll.BackgroundColor3 = GLASS_THEME.Header; ConfigScroll.BackgroundTransparency = 0.4; ConfigScroll.ScrollBarThickness = 5; ConfigScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y; ConfigScroll.CanvasSize = UDim2.new(0,0,0,0)
 local CSC = Instance.new("UICorner"); CSC.CornerRadius = UDim.new(0, 8); CSC.Parent = ConfigScroll
-local ConfigLayout = Instance.new("UIListLayout"); ConfigLayout.Parent = ConfigScroll; ConfigLayout.Padding = UDim.new(0, 5)
 
 table.insert(ThemeElements.Headers, BtnSave); table.insert(ThemeElements.Accents, BtnSave)
 table.insert(ThemeElements.Headers, BtnLoad); table.insert(ThemeElements.Accents, BtnLoad)
-table.insert(ThemeElements.Headers, ConfigScroll)
-table.insert(ThemeElements.Accents, ListTitle)
+table.insert(ThemeElements.Headers, ConfigScroll); table.insert(ThemeElements.Accents, ListTitle)
 
 local function RefreshConfigList()
     for _, v in pairs(ConfigScroll:GetChildren()) do if v:IsA("TextButton") then v:Destroy() end end
@@ -939,8 +609,7 @@ local function RefreshConfigList()
                 local FileBtn = Instance.new("TextButton"); FileBtn.Parent = ConfigScroll; FileBtn.Size = UDim2.new(1, 0, 0, 34); FileBtn.Text = "📄 " .. fileName; FileBtn.TextSize = 12; FileBtn.Font = Enum.Font.GothamMedium; FileBtn.TextColor3 = GLASS_THEME.Text; FileBtn.BackgroundColor3 = GLASS_THEME.Card; FileBtn.BackgroundTransparency = 0.3
                 local FBC = Instance.new("UICorner"); FBC.CornerRadius = UDim.new(0, 6); FBC.Parent = FileBtn
                 
-                table.insert(ThemeElements.Cards, FileBtn)
-                table.insert(ThemeElements.Texts, FileBtn)
+                table.insert(ThemeElements.Cards, FileBtn); table.insert(ThemeElements.Texts, FileBtn)
 
                 FileBtn.MouseButton1Click:Connect(function()
                     pcall(function()
@@ -966,21 +635,141 @@ BtnDelete.MouseButton1Click:Connect(function()
     end)
 end)
 
-local G_Web = AddGroup(T_Set, "DISCORD WEBHOOK NOTIFIER")
-AddToggle(G_Web, "Aktifkan Webhook Discord", "webhookEnabled")
-AddInput(G_Web, "Webhook URL:", "webhookUrl", false)
-local BtnTestWeb = Instance.new("TextButton"); BtnTestWeb.Parent = G_Web; BtnTestWeb.Size = UDim2.new(1, 0, 0, 34); BtnTestWeb.Text = "🔔 TEST KIRIM WEBHOOK"; BtnTestWeb.Font = Enum.Font.GothamBold; BtnTestWeb.TextSize = 12; BtnTestWeb.TextColor3 = GLASS_THEME.Acc1; BtnTestWeb.BackgroundColor3 = GLASS_THEME.Header; local BTWC = Instance.new("UICorner"); BTWC.CornerRadius = UDim.new(0,8); BTWC.Parent = BtnTestWeb
-BtnTestWeb.MouseButton1Click:Connect(function() SendWebhook("✅ Webhook Connected!", "MOFENKHUB V106.0 tersambung sukses.", 16777215); Notify("Webhook", "Test webhook dikirim.", 3) end)
+local BtnRefresh = Instance.new("TextButton"); BtnRefresh.Parent = G_SetConfig; BtnRefresh.Size = UDim2.new(1, 0, 0, 34); BtnRefresh.Text = "🔄 REFRESH LIST CONFIG"; BtnRefresh.Font = Enum.Font.GothamBold; BtnRefresh.TextSize = 12; BtnRefresh.TextColor3 = GLASS_THEME.Acc1; BtnRefresh.BackgroundColor3 = GLASS_THEME.Card; local BTR = Instance.new("UICorner"); BTR.CornerRadius = UDim.new(0,8); BTR.Parent = BtnRefresh
+BtnRefresh.MouseButton1Click:Connect(RefreshConfigList)
+table.insert(ThemeElements.Cards, BtnRefresh); table.insert(ThemeElements.Accents, BtnRefresh)
 
-table.insert(ThemeElements.Headers, BtnTestWeb); table.insert(ThemeElements.Accents, BtnTestWeb)
+-- ===================================================================== --
+-- 6. ALL BACKEND THREADS
+-- ===================================================================== --
 
--- Auto-Save Settings Thread
+-- 1. Anti-AFK & Disconnect Listener
+local vu = game:GetService("VirtualUser")
 task.spawn(function()
-    while _G.__MOFENKHUB == generation do
+    while _G.__GAG_SCRIPT == generation do
+        task.wait(30)
+        if F.afk then
+            pcall(function()
+                vu:CaptureController()
+                vu:ClickButton2(Vector2.zero)
+            end)
+        end
+    end
+end)
+
+pcall(function()
+    local PromptOverlay = CoreGui:FindFirstChild("PromptOverlay", true) or LocalPlayer.PlayerGui:FindFirstChild("PromptOverlay", true)
+    if PromptOverlay then
+        PromptOverlay.ChildAdded:Connect(function(child)
+            if F.afk and (child.Name == "ErrorPrompt" or child.Name == "DisconnectPrompt") then
+                clog("Disconnect detected! Reconnecting...")
+                local qot = queue_on_teleport or queueonteleport or (syn and syn.queue_on_teleport) or (fluxus and fluxus.queue_on_teleport)
+                if qot then
+                    qot([[
+                        task.wait(3)
+                        loadstring(game:HttpGet("https://raw.githubusercontent.com/Mofenk/mofenkhub/refs/heads/main/gag.lua"))()
+                    ]])
+                end
+                task.wait(2)
+                pcall(function() TeleportService:Teleport(game.PlaceId, LocalPlayer) end)
+            end
+        end)
+    end
+end)
+
+-- 2. Auto Join Trade World Thread (TokenRAPs.TeleportToListing)
+task.spawn(function()
+    while _G.__GAG_SCRIPT == generation do
+        if F.autoJoinTrade then
+            pcall(function()
+                local inTradeWorld = workspace:FindFirstChild("TradeWorld") or workspace:FindFirstChild("Booths")
+                if not inTradeWorld and Remotes.TeleportTrade then
+                    clog("Teleporting to Farmer Trade World...")
+                    if Remotes.TeleportTrade:IsA("RemoteFunction") then
+                        Remotes.TeleportTrade:InvokeServer()
+                    elseif Remotes.TeleportTrade:IsA("RemoteEvent") then
+                        Remotes.TeleportTrade:FireServer()
+                    end
+                end
+            end)
+        end
+        task.wait(5)
+    end
+end)
+
+-- 3. Auto Claim Booth & Skin Equip Thread (Booths.ClaimBooth & TradeBoothSkinService.Equip)
+task.spawn(function()
+    while _G.__GAG_SCRIPT == generation do
+        if F.autoClaimBooth then
+            pcall(function()
+                local boothsFolder = workspace:FindFirstChild("Booths") or (workspace:FindFirstChild("TradeWorld") and workspace.TradeWorld:FindFirstChild("Booths"))
+                local myBoothFound = false
+
+                if boothsFolder then
+                    for _, booth in ipairs(boothsFolder:GetChildren()) do
+                        local owner = booth:FindFirstChild("Owner") or booth:GetAttribute("Owner")
+                        if owner == LocalPlayer.Name then
+                            myBoothFound = true
+                            STATE.boothStatus = "Sudah Klaim (" .. booth.Name .. ")"
+                            break
+                        end
+                    end
+
+                    if not myBoothFound and Remotes.ClaimBooth then
+                        for _, booth in ipairs(boothsFolder:GetChildren()) do
+                            local owner = booth:FindFirstChild("Owner") or booth:GetAttribute("Owner")
+                            if not owner or owner == "" then
+                                local boothId = booth.Name
+                                clog("Claiming Booth: " .. tostring(boothId))
+                                if Remotes.ClaimBooth:IsA("RemoteFunction") then
+                                    Remotes.ClaimBooth:InvokeServer(boothId)
+                                elseif Remotes.ClaimBooth:IsA("RemoteEvent") then
+                                    Remotes.ClaimBooth:FireServer(boothId)
+                                end
+                                
+                                STATE.boothStatus = "Berhasil Klaim (" .. tostring(boothId) .. ")"
+                                Notify("Auto Booth", "Berhasil Klaim Booth: " .. tostring(boothId), 3)
+                                task.wait(0.5)
+
+                                if F.autoEquipSkin and Remotes.EquipSkin and F.selectedBoothSkin ~= "Default" then
+                                    clog("Equipping Skin: " .. tostring(F.selectedBoothSkin))
+                                    if Remotes.EquipSkin:IsA("RemoteEvent") then
+                                        Remotes.EquipSkin:FireServer(F.selectedBoothSkin)
+                                    elseif Remotes.EquipSkin:IsA("RemoteFunction") then
+                                        Remotes.EquipSkin:InvokeServer(F.selectedBoothSkin)
+                                    end
+                                end
+                                break
+                            end
+                        end
+                    end
+                end
+            end)
+        end
+        task.wait(3.5)
+    end
+end)
+
+-- 4. Alien Event Claim Thread
+task.spawn(function()
+    while _G.__GAG_SCRIPT == generation do
+        if F.autoClaimAlien and Remotes.AlienPets then
+            pcall(function()
+                if Remotes.AlienPets:IsA("RemoteFunction") then Remotes.AlienPets:InvokeServer()
+                elseif Remotes.AlienPets:IsA("RemoteEvent") then Remotes.AlienPets:FireServer() end
+            end)
+        end
+        task.wait(10)
+    end
+end)
+
+-- 5. Auto Save Config Loop
+task.spawn(function()
+    while _G.__GAG_SCRIPT == generation do
         task.wait(10)
         pcall(function() saveConfig(F.cfgName) end)
     end
 end)
 
-clog("MOFENKHUB V106.0 Loaded Successfully!")
-Notify("MOFENKHUB V106.0 Ready!", "Spy output dikirim langsung ke Delta Console & Server Hop siap.", 4)
+clog("MOFENKHUB GAG V107.0 Loaded Full Successfully!")
+Notify("MOFENKHUB GAG Ready!", "Remote Spy & Full Config Presets Siap Digunakan.", 4)
