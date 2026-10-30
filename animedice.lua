@@ -1,5 +1,5 @@
 -- ===================================================================== --
--- 👑 MOFENKHUB V103.1 — ENHANCED UI/UX MASTER EDITION
+-- 👑 MOFENKHUB V103.2 — ENHANCED UI/UX MASTER EDITION (AUTO SCALE & ZOOM)
 -- ===================================================================== --
 
 --!nocheck
@@ -326,7 +326,7 @@ local function Notify(title, msg, duration)
 end
 
 -- ===================================================================== --
--- 4. ULTIMATE UI SETUP (REFINED & POLISHED)
+-- 4. ULTIMATE UI SETUP (REFINED, POLISHED & MANUAL ZOOM/SCALE)
 -- ===================================================================== --
 local MainGui = Instance.new("ScreenGui"); MainGui.Name = "MofenkUltraHubV103"; MainGui.Parent = parentGui; MainGui.ResetOnSpawn = false
 
@@ -338,10 +338,14 @@ local MainCorner = Instance.new("UICorner"); MainCorner.CornerRadius = UDim.new(
 local MainStroke = Instance.new("UIStroke"); MainStroke.Thickness = 2; MainStroke.Color = GLASS_THEME.Acc1; MainStroke.Parent = MainFrame
 
 local ScreenScale = Instance.new("UIScale"); ScreenScale.Parent = MainGui
+local baseAutoMultiplier = 1.0
+local userManualZoom = 1.0
+
 local function UpdateScale()
 	local viewport = workspace.CurrentCamera.ViewportSize
 	local scaleX = viewport.X / 1250; local scaleY = viewport.Y / 720
-	ScreenScale.Scale = math.clamp(math.min(scaleX, scaleY), 0.80, 1.30)
+	baseAutoMultiplier = math.clamp(math.min(scaleX, scaleY), 0.80, 1.30)
+	ScreenScale.Scale = baseAutoMultiplier * userManualZoom
 end
 UpdateScale(); workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(UpdateScale)
 
@@ -351,15 +355,37 @@ ToggleBtn.MouseButton1Click:Connect(function() MainFrame.Visible = not MainFrame
 local TopBar = Instance.new("Frame"); TopBar.Parent = MainFrame; TopBar.Size = UDim2.new(1, 0, 0, 54); TopBar.BackgroundColor3 = GLASS_THEME.Header; TopBar.BackgroundTransparency = 0.2
 local TopCorner = Instance.new("UICorner"); TopCorner.CornerRadius = UDim.new(0, 16); TopCorner.Parent = TopBar
 
-local Title = Instance.new("TextLabel"); Title.Parent = TopBar; Title.Position = UDim2.new(0, 20, 0, 0); Title.Size = UDim2.new(0, 320, 1, 0); Title.Text = "👑 MOFENKHUB V103.1"; Title.TextColor3 = GLASS_THEME.Acc1; Title.TextSize = 15; Title.Font = Enum.Font.GothamBlack; Title.TextXAlignment = Enum.TextXAlignment.Left; Title.BackgroundTransparency = 1
+local Title = Instance.new("TextLabel"); Title.Parent = TopBar; Title.Position = UDim2.new(0, 20, 0, 0); Title.Size = UDim2.new(0, 220, 1, 0); Title.Text = "👑 MOFENKHUB V103.2"; Title.TextColor3 = GLASS_THEME.Acc1; Title.TextSize = 14; Title.Font = Enum.Font.GothamBlack; Title.TextXAlignment = Enum.TextXAlignment.Left; Title.BackgroundTransparency = 1
 
 -- Floating Global Status Bar inside Header
-local StatusBar = Instance.new("TextLabel"); StatusBar.Parent = TopBar; StatusBar.Position = UDim2.new(0, 240, 0, 10); StatusBar.Size = UDim2.new(0, 660, 0, 34); StatusBar.BackgroundColor3 = GLASS_THEME.Card; StatusBar.BackgroundTransparency = 0.4; StatusBar.TextColor3 = GLASS_THEME.SubText; StatusBar.TextSize = 11; StatusBar.Font = Enum.Font.GothamMedium; StatusBar.Text = "⚡ Status: Sinkronisasi Real-Time Aktif | Menunggu Aktivitas..."
+local StatusBar = Instance.new("TextLabel"); StatusBar.Parent = TopBar; StatusBar.Position = UDim2.new(0, 240, 0, 10); StatusBar.Size = UDim2.new(0, 560, 0, 34); StatusBar.BackgroundColor3 = GLASS_THEME.Card; StatusBar.BackgroundTransparency = 0.4; StatusBar.TextColor3 = GLASS_THEME.SubText; StatusBar.TextSize = 11; StatusBar.Font = Enum.Font.GothamMedium; StatusBar.Text = "⚡ Status: Sinkronisasi Real-Time Aktif | Menunggu Aktivitas..."
 local SBC = Instance.new("UICorner"); SBC.CornerRadius = UDim.new(0, 8); SBC.Parent = StatusBar
 
+-- Close Button
 local CloseBtn = Instance.new("TextButton"); CloseBtn.Parent = TopBar; CloseBtn.Position = UDim2.new(1, -48, 0, 11); CloseBtn.Size = UDim2.new(0, 34, 0, 34); CloseBtn.Text = "✕"; CloseBtn.TextColor3 = GLASS_THEME.Text; CloseBtn.Font = Enum.Font.GothamBold; CloseBtn.TextSize = 16; CloseBtn.BackgroundColor3 = GLASS_THEME.Card; CloseBtn.BackgroundTransparency = 0.3
 local CC = Instance.new("UICorner"); CC.CornerRadius = UDim.new(0, 10); CC.Parent = CloseBtn
 CloseBtn.MouseButton1Click:Connect(function() MainFrame.Visible = false end)
+
+-- Zoom Out Button (-)
+local ZoomOutBtn = Instance.new("TextButton"); ZoomOutBtn.Parent = TopBar; ZoomOutBtn.Position = UDim2.new(1, -88, 0, 11); ZoomOutBtn.Size = UDim2.new(0, 34, 0, 34); ZoomOutBtn.Text = "-"; ZoomOutBtn.TextColor3 = GLASS_THEME.Text; ZoomOutBtn.Font = Enum.Font.GothamBold; ZoomOutBtn.TextSize = 18; ZoomOutBtn.BackgroundColor3 = GLASS_THEME.Card; ZoomOutBtn.BackgroundTransparency = 0.3
+local ZOC = Instance.new("UICorner"); ZOC.CornerRadius = UDim.new(0, 10); ZOC.Parent = ZoomOutBtn
+
+-- Zoom In Button (+)
+local ZoomInBtn = Instance.new("TextButton"); ZoomInBtn.Parent = TopBar; ZoomInBtn.Position = UDim2.new(1, -128, 0, 11); ZoomInBtn.Size = UDim2.new(0, 34, 0, 34); ZoomInBtn.Text = "+"; ZoomInBtn.TextColor3 = GLASS_THEME.Text; ZoomInBtn.Font = Enum.Font.GothamBold; ZoomInBtn.TextSize = 16; ZoomInBtn.BackgroundColor3 = GLASS_THEME.Card; ZoomInBtn.BackgroundTransparency = 0.3
+local ZIC = Instance.new("UICorner"); ZIC.CornerRadius = UDim.new(0, 10); ZIC.Parent = ZoomInBtn
+
+-- Handle Zoom In/Out Actions
+ZoomInBtn.MouseButton1Click:Connect(function()
+	userManualZoom = math.clamp(userManualZoom + 0.1, 0.7, 1.5)
+	ScreenScale.Scale = baseAutoMultiplier * userManualZoom
+	Notify("UI Scale", "UI diperbesar: " .. string.format("%.1f", userManualZoom) .. "x", 1.5)
+end)
+
+ZoomOutBtn.MouseButton1Click:Connect(function()
+	userManualZoom = math.clamp(userManualZoom - 0.1, 0.7, 1.5)
+	ScreenScale.Scale = baseAutoMultiplier * userManualZoom
+	Notify("UI Scale", "UI diperkecil: " .. string.format("%.1f", userManualZoom) .. "x", 1.5)
+end)
 
 -- Sidebar Navigation
 local Sidebar = Instance.new("ScrollingFrame"); Sidebar.Parent = MainFrame; Sidebar.Position = UDim2.new(0, 12, 0, 64); Sidebar.Size = UDim2.new(0, 200, 1, -74); Sidebar.BackgroundTransparency = 1; Sidebar.ScrollBarThickness = 3; Sidebar.AutomaticCanvasSize = Enum.AutomaticSize.Y; Sidebar.CanvasSize = UDim2.new(0,0,0,0)
@@ -814,7 +840,6 @@ BtnSave.MouseButton1Click:Connect(function() pcall(function() saveConfig(F.cfgNa
 local BtnLoad = Instance.new("TextButton"); BtnLoad.Parent = G_SetConfig; BtnLoad.Size = UDim2.new(1, 0, 0, 36); BtnLoad.Text = "📂 LOAD CONFIG PILIHAN"; BtnLoad.Font = Enum.Font.GothamBold; BtnLoad.TextSize = 13; BtnLoad.TextColor3 = GLASS_THEME.Acc1; BtnLoad.BackgroundColor3 = GLASS_THEME.Header; local BTL = Instance.new("UICorner"); BTL.CornerRadius = UDim.new(0,8); BTL.Parent = BtnLoad
 BtnLoad.MouseButton1Click:Connect(function() pcall(function() loadConfig(F.cfgName); Notify("Config Loaded", "Berhasil dimuat: " .. tostring(F.cfgName)) end) end)
 
--- Safe Delete with Confirmation State
 local BtnDelete = Instance.new("TextButton"); BtnDelete.Parent = G_SetConfig; BtnDelete.Size = UDim2.new(1, 0, 0, 36); BtnDelete.Text = "🗑️ DELETE CONFIG PILIHAN"; BtnDelete.Font = Enum.Font.GothamBold; BtnDelete.TextSize = 13; BtnDelete.TextColor3 = Color3.fromRGB(239, 68, 68); BtnDelete.BackgroundColor3 = GLASS_THEME.Header; local BTD = Instance.new("UICorner"); BTD.CornerRadius = UDim.new(0,8); BTD.Parent = BtnDelete
 
 local ListTitle = Instance.new("TextLabel"); ListTitle.Parent = G_SetConfig; ListTitle.Size = UDim2.new(1, 0, 0, 24); ListTitle.Text = "📁 PILIH CONFIG TERSEDIA:"; ListTitle.TextSize = 13; ListTitle.Font = Enum.Font.GothamBold; ListTitle.TextColor3 = GLASS_THEME.Acc1; ListTitle.BackgroundTransparency = 1
@@ -871,7 +896,7 @@ local G_Web = AddGroup(T_Set, "🔔 DISCORD WEBHOOK NOTIFIER")
 AddToggle(G_Web, "Aktifkan Webhook Discord", "webhookEnabled")
 AddInput(G_Web, "Webhook URL:", "webhookUrl", false)
 local BtnTestWeb = Instance.new("TextButton"); BtnTestWeb.Parent = G_Web; BtnTestWeb.Size = UDim2.new(1, 0, 0, 34); BtnTestWeb.Text = "🔔 TEST KIRIM WEBHOOK"; BtnTestWeb.Font = Enum.Font.GothamBold; BtnTestWeb.TextSize = 12; BtnTestWeb.TextColor3 = GLASS_THEME.Acc1; BtnTestWeb.BackgroundColor3 = GLASS_THEME.Header; local BTWC = Instance.new("UICorner"); BTWC.CornerRadius = UDim.new(0,8); BTWC.Parent = BtnTestWeb
-BtnTestWeb.MouseButton1Click:Connect(function() SendWebhook("✅ Webhook Connected!", "MofenkHub V103.1 tersambung sukses.", 3447003); Notify("Webhook", "Test webhook dikirim.") end)
+BtnTestWeb.MouseButton1Click:Connect(function() SendWebhook("✅ Webhook Connected!", "MofenkHub V103.2 tersambung sukses.", 3447003); Notify("Webhook", "Test webhook dikirim.") end)
 
 local G_Set2 = AddGroup(T_Set, "⚡ OPTIMALISASI & SERVER UTILITY")
 AddToggle(G_Set2, "Anti-AFK Protection (Prevent Disconnect)", "afk")
@@ -1591,5 +1616,5 @@ task.spawn(function()
 	end
 end)
 
-Notify("MofenkHub V103.1 Ready!", "Peningkatan UI/UX & Live Status Bar Aktif.", 4)
-AddSpyLog("MofenkHub V103.1 Loaded Successfully.")
+Notify("MofenkHub V103.2 Ready!", "Fitur Auto Scale & Manual Zoom Berhasil Ditambahkan.", 4)
+AddSpyLog("MofenkHub V103.2 Loaded Successfully.")
