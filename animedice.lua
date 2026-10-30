@@ -1,5 +1,5 @@
 -- ===================================================================== --
--- 👑 MOFENKHUB V103.2 — ENHANCED UI/UX MASTER EDITION (AUTO SCALE & ZOOM)
+-- 👑 MOFENKHUB V103.3 — ADAPTIVE AUTO-SCALE & COMPACT UI EDITION
 -- ===================================================================== --
 
 --!nocheck
@@ -279,10 +279,10 @@ end
 local ToggleGui = Instance.new("ScreenGui"); ToggleGui.Name = "MofenkToggleFront"; ToggleGui.Parent = parentGui; ToggleGui.ResetOnSpawn = false
 ToggleGui.DisplayOrder = 99999
 
-local ToggleBtn = Instance.new("TextButton"); ToggleBtn.Parent = ToggleGui; ToggleBtn.Size = UDim2.new(0, 62, 0, 62); ToggleBtn.Position = UDim2.new(0.02, 0, 0.4, 0)
-ToggleBtn.BackgroundColor3 = GLASS_THEME.Card; ToggleBtn.Text = "M"; ToggleBtn.Font = Enum.Font.GothamBlack; ToggleBtn.TextSize = 32; ToggleBtn.TextColor3 = GLASS_THEME.Acc1; ToggleBtn.ZIndex = 99999
-local TC = Instance.new("UICorner"); TC.CornerRadius = UDim.new(0, 16); TC.Parent = ToggleBtn
-local TS = Instance.new("UIStroke"); TS.Thickness = 2.5; TS.Color = GLASS_THEME.Acc1; TS.Parent = ToggleBtn
+local ToggleBtn = Instance.new("TextButton"); ToggleBtn.Parent = ToggleGui; ToggleBtn.Size = UDim2.new(0, 52, 0, 52); ToggleBtn.Position = UDim2.new(0.02, 0, 0.4, 0)
+ToggleBtn.BackgroundColor3 = GLASS_THEME.Card; ToggleBtn.Text = "M"; ToggleBtn.Font = Enum.Font.GothamBlack; ToggleBtn.TextSize = 28; ToggleBtn.TextColor3 = GLASS_THEME.Acc1; ToggleBtn.ZIndex = 99999
+local TC = Instance.new("UICorner"); TC.CornerRadius = UDim.new(0, 14); TC.Parent = ToggleBtn
+local TS = Instance.new("UIStroke"); TS.Thickness = 2; TS.Color = GLASS_THEME.Acc1; TS.Parent = ToggleBtn
 
 local dragging, dragInput, dragStart, startPos
 ToggleBtn.InputBegan:Connect(function(input)
@@ -295,30 +295,30 @@ ToggleBtn.InputChanged:Connect(function(input) if input.UserInputType == Enum.Us
 UserInputService.InputChanged:Connect(function(input)
 	if input == dragInput and dragging then
 		local delta = input.Position - dragStart; local viewport = workspace.CurrentCamera.ViewportSize
-		ToggleBtn.Position = UDim2.new(0, math.clamp(startPos.X.Offset + delta.X, 10, viewport.X - 70), 0, math.clamp(startPos.Y.Offset + delta.Y, 10, viewport.Y - 70))
+		ToggleBtn.Position = UDim2.new(0, math.clamp(startPos.X.Offset + delta.X, 10, viewport.X - 60), 0, math.clamp(startPos.Y.Offset + delta.Y, 10, viewport.Y - 60))
 	end
 end)
 
 -- TOAST NOTIFICATIONS
 local NotifyGui = Instance.new("ScreenGui"); NotifyGui.Name = "MofenkNotifyGui"; NotifyGui.Parent = parentGui; NotifyGui.ResetOnSpawn = false
-local NotifyHolder = Instance.new("Frame"); NotifyHolder.Parent = NotifyGui; NotifyHolder.Position = UDim2.new(1, -320, 0, 20); NotifyHolder.Size = UDim2.new(0, 300, 1, -40); NotifyHolder.BackgroundTransparency = 1
+local NotifyHolder = Instance.new("Frame"); NotifyHolder.Parent = NotifyGui; NotifyHolder.Position = UDim2.new(1, -280, 0, 20); NotifyHolder.Size = UDim2.new(0, 260, 1, -40); NotifyHolder.BackgroundTransparency = 1
 local NotifyLayout = Instance.new("UIListLayout"); NotifyLayout.Parent = NotifyHolder; NotifyLayout.Padding = UDim.new(0, 8); NotifyLayout.VerticalAlignment = Enum.VerticalAlignment.Top
 
 local function Notify(title, msg, duration)
 	duration = duration or 3.5
-	local Card = Instance.new("Frame"); Card.Parent = NotifyHolder; Card.Size = UDim2.new(1, 0, 0, 62); Card.BackgroundColor3 = GLASS_THEME.Card; Card.BackgroundTransparency = 0.15
-	local CC = Instance.new("UICorner"); CC.CornerRadius = UDim.new(0, 10); CC.Parent = Card
-	local CS = Instance.new("UIStroke"); CS.Thickness = 1.5; CS.Color = GLASS_THEME.Acc1; CS.Parent = Card
+	local Card = Instance.new("Frame"); Card.Parent = NotifyHolder; Card.Size = UDim2.new(1, 0, 0, 56); Card.BackgroundColor3 = GLASS_THEME.Card; Card.BackgroundTransparency = 0.15
+	local CC = Instance.new("UICorner"); CC.CornerRadius = UDim.new(0, 8); CC.Parent = Card
+	local CS = Instance.new("UIStroke"); CS.Thickness = 1.2; CS.Color = GLASS_THEME.Acc1; CS.Parent = Card
 	
-	local T = Instance.new("TextLabel"); T.Parent = Card; T.Position = UDim2.new(0, 12, 0, 6); T.Size = UDim2.new(1, -24, 0, 22); T.Text = title; T.TextColor3 = GLASS_THEME.Acc1; T.Font = Enum.Font.GothamBold; T.TextSize = 14; T.TextXAlignment = Enum.TextXAlignment.Left; T.BackgroundTransparency = 1
-	local M = Instance.new("TextLabel"); M.Parent = Card; M.Position = UDim2.new(0, 12, 0, 28); M.Size = UDim2.new(1, -24, 0, 28); M.Text = msg; M.TextColor3 = GLASS_THEME.Text; M.Font = Enum.Font.GothamMedium; M.TextSize = 12; M.TextXAlignment = Enum.TextXAlignment.Left; M.TextWrapped = true; M.BackgroundTransparency = 1
+	local T = Instance.new("TextLabel"); T.Parent = Card; T.Position = UDim2.new(0, 10, 0, 5); T.Size = UDim2.new(1, -20, 0, 20); T.Text = title; T.TextColor3 = GLASS_THEME.Acc1; T.Font = Enum.Font.GothamBold; T.TextSize = 13; T.TextXAlignment = Enum.TextXAlignment.Left; T.BackgroundTransparency = 1
+	local M = Instance.new("TextLabel"); M.Parent = Card; M.Position = UDim2.new(0, 10, 0, 25); M.Size = UDim2.new(1, -20, 0, 26); M.Text = msg; M.TextColor3 = GLASS_THEME.Text; M.Font = Enum.Font.GothamMedium; M.TextSize = 11; M.TextXAlignment = Enum.TextXAlignment.Left; M.TextWrapped = true; M.BackgroundTransparency = 1
 	
-	Card.Position = UDim2.new(1, 50, 0, 0)
+	Card.Position = UDim2.new(1, 40, 0, 0)
 	TweenService:Create(Card, TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {Position = UDim2.new(0, 0, 0, 0)}):Play()
 	
 	task.delay(duration, function()
 		if Card and Card.Parent then
-			local tw = TweenService:Create(Card, TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {BackgroundTransparency = 1, Position = UDim2.new(1, 50, 0, 0)})
+			local tw = TweenService:Create(Card, TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {BackgroundTransparency = 1, Position = UDim2.new(1, 40, 0, 0)})
 			tw:Play()
 			tw.Completed:Connect(function() Card:Destroy() end)
 		end
@@ -326,16 +326,16 @@ local function Notify(title, msg, duration)
 end
 
 -- ===================================================================== --
--- 4. ULTIMATE UI SETUP (REFINED, POLISHED & MANUAL ZOOM/SCALE)
+-- 4. ADAPTIVE AUTO-SCALE & COMPACT UI SETUP (OPTIMIZED FOR PHONE/SMALL SCREENS)
 -- ===================================================================== --
 local MainGui = Instance.new("ScreenGui"); MainGui.Name = "MofenkUltraHubV103"; MainGui.Parent = parentGui; MainGui.ResetOnSpawn = false
 
 local MainFrame = Instance.new("Frame"); MainFrame.Parent = MainGui
 MainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
-MainFrame.Size = UDim2.new(0, 980, 0, 640); MainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
+MainFrame.Size = UDim2.new(0, 880, 0, 560); MainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
 MainFrame.Active = true; MainFrame.Draggable = true; MainFrame.Visible = false; MainFrame.BackgroundColor3 = GLASS_THEME.Bg; MainFrame.BackgroundTransparency = 0.12
-local MainCorner = Instance.new("UICorner"); MainCorner.CornerRadius = UDim.new(0, 16); MainCorner.Parent = MainFrame
-local MainStroke = Instance.new("UIStroke"); MainStroke.Thickness = 2; MainStroke.Color = GLASS_THEME.Acc1; MainStroke.Parent = MainFrame
+local MainCorner = Instance.new("UICorner"); MainCorner.CornerRadius = UDim.new(0, 14); MainCorner.Parent = MainFrame
+local MainStroke = Instance.new("UIStroke"); MainStroke.Thickness = 1.8; MainStroke.Color = GLASS_THEME.Acc1; MainStroke.Parent = MainFrame
 
 local ScreenScale = Instance.new("UIScale"); ScreenScale.Parent = MainGui
 local baseAutoMultiplier = 1.0
@@ -343,8 +343,11 @@ local userManualZoom = 1.0
 
 local function UpdateScale()
 	local viewport = workspace.CurrentCamera.ViewportSize
-	local scaleX = viewport.X / 1250; local scaleY = viewport.Y / 720
-	baseAutoMultiplier = math.clamp(math.min(scaleX, scaleY), 0.80, 1.30)
+	-- Deteksi otomatis jika layar kecil (HP / Tablet) dan sesuaikan skala dasarnya agar tidak kepenuhan
+	local isMobileOrSmall = viewport.X < 900 or viewport.Y < 550
+	local targetBase = isMobileOrSmall and (viewport.X / 1100) or (viewport.X / 1300)
+	
+	baseAutoMultiplier = math.clamp(targetBase, 0.55, 1.20)
 	ScreenScale.Scale = baseAutoMultiplier * userManualZoom
 end
 UpdateScale(); workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(UpdateScale)
@@ -352,56 +355,56 @@ UpdateScale(); workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):
 ToggleBtn.MouseButton1Click:Connect(function() MainFrame.Visible = not MainFrame.Visible end)
 
 -- Top Header & Floating Status Bar
-local TopBar = Instance.new("Frame"); TopBar.Parent = MainFrame; TopBar.Size = UDim2.new(1, 0, 0, 54); TopBar.BackgroundColor3 = GLASS_THEME.Header; TopBar.BackgroundTransparency = 0.2
-local TopCorner = Instance.new("UICorner"); TopCorner.CornerRadius = UDim.new(0, 16); TopCorner.Parent = TopBar
+local TopBar = Instance.new("Frame"); TopBar.Parent = MainFrame; TopBar.Size = UDim2.new(1, 0, 0, 48); TopBar.BackgroundColor3 = GLASS_THEME.Header; TopBar.BackgroundTransparency = 0.2
+local TopCorner = Instance.new("UICorner"); TopCorner.CornerRadius = UDim.new(0, 14); TopCorner.Parent = TopBar
 
-local Title = Instance.new("TextLabel"); Title.Parent = TopBar; Title.Position = UDim2.new(0, 20, 0, 0); Title.Size = UDim2.new(0, 220, 1, 0); Title.Text = "👑 MOFENKHUB V103.2"; Title.TextColor3 = GLASS_THEME.Acc1; Title.TextSize = 14; Title.Font = Enum.Font.GothamBlack; Title.TextXAlignment = Enum.TextXAlignment.Left; Title.BackgroundTransparency = 1
+local Title = Instance.new("TextLabel"); Title.Parent = TopBar; Title.Position = UDim2.new(0, 16, 0, 0); Title.Size = UDim2.new(0, 200, 1, 0); Title.Text = "👑 MOFENKHUB V103.3"; Title.TextColor3 = GLASS_THEME.Acc1; Title.TextSize = 13; Title.Font = Enum.Font.GothamBlack; Title.TextXAlignment = Enum.TextXAlignment.Left; Title.BackgroundTransparency = 1
 
 -- Floating Global Status Bar inside Header
-local StatusBar = Instance.new("TextLabel"); StatusBar.Parent = TopBar; StatusBar.Position = UDim2.new(0, 240, 0, 10); StatusBar.Size = UDim2.new(0, 560, 0, 34); StatusBar.BackgroundColor3 = GLASS_THEME.Card; StatusBar.BackgroundTransparency = 0.4; StatusBar.TextColor3 = GLASS_THEME.SubText; StatusBar.TextSize = 11; StatusBar.Font = Enum.Font.GothamMedium; StatusBar.Text = "⚡ Status: Sinkronisasi Real-Time Aktif | Menunggu Aktivitas..."
-local SBC = Instance.new("UICorner"); SBC.CornerRadius = UDim.new(0, 8); SBC.Parent = StatusBar
+local StatusBar = Instance.new("TextLabel"); StatusBar.Parent = TopBar; StatusBar.Position = UDim2.new(0, 220, 0, 8); StatusBar.Size = UDim2.new(0, 500, 0, 32); StatusBar.BackgroundColor3 = GLASS_THEME.Card; StatusBar.BackgroundTransparency = 0.4; StatusBar.TextColor3 = GLASS_THEME.SubText; StatusBar.TextSize = 10; StatusBar.Font = Enum.Font.GothamMedium; StatusBar.Text = "⚡ Status: Auto-Scale & Sinkronisasi Aktif..."
+local SBC = Instance.new("UICorner"); SBC.CornerRadius = UDim.new(0, 6); SBC.Parent = StatusBar
 
 -- Close Button
-local CloseBtn = Instance.new("TextButton"); CloseBtn.Parent = TopBar; CloseBtn.Position = UDim2.new(1, -48, 0, 11); CloseBtn.Size = UDim2.new(0, 34, 0, 34); CloseBtn.Text = "✕"; CloseBtn.TextColor3 = GLASS_THEME.Text; CloseBtn.Font = Enum.Font.GothamBold; CloseBtn.TextSize = 16; CloseBtn.BackgroundColor3 = GLASS_THEME.Card; CloseBtn.BackgroundTransparency = 0.3
-local CC = Instance.new("UICorner"); CC.CornerRadius = UDim.new(0, 10); CC.Parent = CloseBtn
+local CloseBtn = Instance.new("TextButton"); CloseBtn.Parent = TopBar; CloseBtn.Position = UDim2.new(1, -42, 0, 8); CloseBtn.Size = UDim2.new(0, 32, 0, 32); CloseBtn.Text = "✕"; CloseBtn.TextColor3 = GLASS_THEME.Text; CloseBtn.Font = Enum.Font.GothamBold; CloseBtn.TextSize = 15; CloseBtn.BackgroundColor3 = GLASS_THEME.Card; CloseBtn.BackgroundTransparency = 0.3
+local CC = Instance.new("UICorner"); CC.CornerRadius = UDim.new(0, 8); CC.Parent = CloseBtn
 CloseBtn.MouseButton1Click:Connect(function() MainFrame.Visible = false end)
 
 -- Zoom Out Button (-)
-local ZoomOutBtn = Instance.new("TextButton"); ZoomOutBtn.Parent = TopBar; ZoomOutBtn.Position = UDim2.new(1, -88, 0, 11); ZoomOutBtn.Size = UDim2.new(0, 34, 0, 34); ZoomOutBtn.Text = "-"; ZoomOutBtn.TextColor3 = GLASS_THEME.Text; ZoomOutBtn.Font = Enum.Font.GothamBold; ZoomOutBtn.TextSize = 18; ZoomOutBtn.BackgroundColor3 = GLASS_THEME.Card; ZoomOutBtn.BackgroundTransparency = 0.3
-local ZOC = Instance.new("UICorner"); ZOC.CornerRadius = UDim.new(0, 10); ZOC.Parent = ZoomOutBtn
+local ZoomOutBtn = Instance.new("TextButton"); ZoomOutBtn.Parent = TopBar; ZoomOutBtn.Position = UDim2.new(1, -78, 0, 8); ZoomOutBtn.Size = UDim2.new(0, 32, 0, 32); ZoomOutBtn.Text = "-"; ZoomOutBtn.TextColor3 = GLASS_THEME.Text; ZoomOutBtn.Font = Enum.Font.GothamBold; ZoomOutBtn.TextSize = 16; ZoomOutBtn.BackgroundColor3 = GLASS_THEME.Card; ZoomOutBtn.BackgroundTransparency = 0.3
+local ZOC = Instance.new("UICorner"); ZOC.CornerRadius = UDim.new(0, 8); ZOC.Parent = ZoomOutBtn
 
 -- Zoom In Button (+)
-local ZoomInBtn = Instance.new("TextButton"); ZoomInBtn.Parent = TopBar; ZoomInBtn.Position = UDim2.new(1, -128, 0, 11); ZoomInBtn.Size = UDim2.new(0, 34, 0, 34); ZoomInBtn.Text = "+"; ZoomInBtn.TextColor3 = GLASS_THEME.Text; ZoomInBtn.Font = Enum.Font.GothamBold; ZoomInBtn.TextSize = 16; ZoomInBtn.BackgroundColor3 = GLASS_THEME.Card; ZoomInBtn.BackgroundTransparency = 0.3
-local ZIC = Instance.new("UICorner"); ZIC.CornerRadius = UDim.new(0, 10); ZIC.Parent = ZoomInBtn
+local ZoomInBtn = Instance.new("TextButton"); ZoomInBtn.Parent = TopBar; ZoomInBtn.Position = UDim2.new(1, -114, 0, 8); ZoomInBtn.Size = UDim2.new(0, 32, 0, 32); ZoomInBtn.Text = "+"; ZoomInBtn.TextColor3 = GLASS_THEME.Text; ZoomInBtn.Font = Enum.Font.GothamBold; ZoomInBtn.TextSize = 15; ZoomInBtn.BackgroundColor3 = GLASS_THEME.Card; ZoomInBtn.BackgroundTransparency = 0.3
+local ZIC = Instance.new("UICorner"); ZIC.CornerRadius = UDim.new(0, 8); ZIC.Parent = ZoomInBtn
 
--- Handle Zoom In/Out Actions
+-- Handle Zoom In/Out Actions with Auto-Scale Limits
 ZoomInBtn.MouseButton1Click:Connect(function()
-	userManualZoom = math.clamp(userManualZoom + 0.1, 0.7, 1.5)
+	userManualZoom = math.clamp(userManualZoom + 0.1, 0.5, 1.8)
 	ScreenScale.Scale = baseAutoMultiplier * userManualZoom
-	Notify("UI Scale", "UI diperbesar: " .. string.format("%.1f", userManualZoom) .. "x", 1.5)
+	Notify("UI Zoom", "Skala Diperbesar: " .. string.format("%.1f", userManualZoom) .. "x", 1.5)
 end)
 
 ZoomOutBtn.MouseButton1Click:Connect(function()
-	userManualZoom = math.clamp(userManualZoom - 0.1, 0.7, 1.5)
+	userManualZoom = math.clamp(userManualZoom - 0.1, 0.5, 1.8)
 	ScreenScale.Scale = baseAutoMultiplier * userManualZoom
-	Notify("UI Scale", "UI diperkecil: " .. string.format("%.1f", userManualZoom) .. "x", 1.5)
+	Notify("UI Zoom", "Skala Diperkecil: " .. string.format("%.1f", userManualZoom) .. "x", 1.5)
 end)
 
 -- Sidebar Navigation
-local Sidebar = Instance.new("ScrollingFrame"); Sidebar.Parent = MainFrame; Sidebar.Position = UDim2.new(0, 12, 0, 64); Sidebar.Size = UDim2.new(0, 200, 1, -74); Sidebar.BackgroundTransparency = 1; Sidebar.ScrollBarThickness = 3; Sidebar.AutomaticCanvasSize = Enum.AutomaticSize.Y; Sidebar.CanvasSize = UDim2.new(0,0,0,0)
-local SideLayout = Instance.new("UIListLayout"); Sidebar.ScrollingDirection = Enum.ScrollingDirection.Y; SideLayout.Parent = Sidebar; SideLayout.Padding = UDim.new(0, 6)
+local Sidebar = Instance.new("ScrollingFrame"); Sidebar.Parent = MainFrame; Sidebar.Position = UDim2.new(0, 10, 0, 56); Sidebar.Size = UDim2.new(0, 180, 1, -66); Sidebar.BackgroundTransparency = 1; Sidebar.ScrollBarThickness = 2; Sidebar.AutomaticCanvasSize = Enum.AutomaticSize.Y; Sidebar.CanvasSize = UDim2.new(0,0,0,0)
+local SideLayout = Instance.new("UIListLayout"); Sidebar.ScrollingDirection = Enum.ScrollingDirection.Y; SideLayout.Parent = Sidebar; SideLayout.Padding = UDim.new(0, 5)
 
 -- Content Area Frame
-local ContentArea = Instance.new("Frame"); ContentArea.Parent = MainFrame; ContentArea.Position = UDim2.new(0, 220, 0, 64); ContentArea.Size = UDim2.new(1, -232, 1, -74); ContentArea.BackgroundColor3 = GLASS_THEME.Header; ContentArea.BackgroundTransparency = 0.3
-local ContentCorner = Instance.new("UICorner"); ContentCorner.CornerRadius = UDim.new(0, 14); ContentCorner.Parent = ContentArea
+local ContentArea = Instance.new("Frame"); ContentArea.Parent = MainFrame; ContentArea.Position = UDim2.new(0, 198, 0, 56); ContentArea.Size = UDim2.new(1, -208, 1, -66); ContentArea.BackgroundColor3 = GLASS_THEME.Header; ContentArea.BackgroundTransparency = 0.3
+local ContentCorner = Instance.new("UICorner"); ContentCorner.CornerRadius = UDim.new(0, 12); ContentCorner.Parent = ContentArea
 
 local TabFrames, TabButtons = {}, {}
 local function CreateTab(name, icon)
-	local Btn = Instance.new("TextButton"); Btn.Parent = Sidebar; Btn.Size = UDim2.new(1, -4, 0, 42); Btn.Text = "   " .. icon .. "   " .. name; Btn.TextColor3 = GLASS_THEME.SubText; Btn.TextSize = 13; Btn.Font = Enum.Font.GothamBold; Btn.TextXAlignment = Enum.TextXAlignment.Left; Btn.BackgroundColor3 = GLASS_THEME.Card; Btn.BackgroundTransparency = 0.4
-	local Corner = Instance.new("UICorner"); Corner.CornerRadius = UDim.new(0, 10); Corner.Parent = Btn
+	local Btn = Instance.new("TextButton"); Btn.Parent = Sidebar; Btn.Size = UDim2.new(1, -4, 0, 38); Btn.Text = "  " .. icon .. "  " .. name; Btn.TextColor3 = GLASS_THEME.SubText; Btn.TextSize = 12; Btn.Font = Enum.Font.GothamBold; Btn.TextXAlignment = Enum.TextXAlignment.Left; Btn.BackgroundColor3 = GLASS_THEME.Card; Btn.BackgroundTransparency = 0.4
+	local Corner = Instance.new("UICorner"); Corner.CornerRadius = UDim.new(0, 8); Corner.Parent = Btn
 	
-	local Scroll = Instance.new("ScrollingFrame"); Scroll.Parent = ContentArea; Scroll.Size = UDim2.new(1, -18, 1, -18); Scroll.Position = UDim2.new(0, 9, 0, 9); Scroll.BackgroundTransparency = 1; Scroll.ScrollBarThickness = 5; Scroll.Visible = false; Scroll.AutomaticCanvasSize = Enum.AutomaticSize.Y; Scroll.CanvasSize = UDim2.new(0,0,0,0)
-	local Lay = Instance.new("UIListLayout"); Lay.Parent = Scroll; Scroll.ScrollingDirection = Enum.ScrollingDirection.Y; Lay.Padding = UDim.new(0, 12)
+	local Scroll = Instance.new("ScrollingFrame"); Scroll.Parent = ContentArea; Scroll.Size = UDim2.new(1, -14, 1, -14); Scroll.Position = UDim2.new(0, 7, 0, 7); Scroll.BackgroundTransparency = 1; Scroll.ScrollBarThickness = 4; Scroll.Visible = false; Scroll.AutomaticCanvasSize = Enum.AutomaticSize.Y; Scroll.CanvasSize = UDim2.new(0,0,0,0)
+	local Lay = Instance.new("UIListLayout"); Lay.Parent = Scroll; Scroll.ScrollingDirection = Enum.ScrollingDirection.Y; Lay.Padding = UDim.new(0, 10)
 	TabFrames[name] = Scroll; TabButtons[name] = Btn
 	
 	Btn.MouseButton1Click:Connect(function()
@@ -414,42 +417,42 @@ end
 
 local function AddGroup(parent, title)
 	local GroupCard = Instance.new("Frame"); GroupCard.Parent = parent; GroupCard.Size = UDim2.new(1, 0, 0, 0); GroupCard.AutomaticSize = Enum.AutomaticSize.Y; GroupCard.BackgroundColor3 = GLASS_THEME.Card; GroupCard.BackgroundTransparency = 0.25
-	local GC = Instance.new("UICorner"); GC.CornerRadius = UDim.new(0, 12); GC.Parent = GroupCard
-	local GS = Instance.new("UIStroke"); GS.Thickness = 1.2; GS.Color = GLASS_THEME.Acc1; GS.Transparency = 0.7; GS.Parent = GroupCard
-	local GLayout = Instance.new("UIListLayout"); GLayout.Parent = GroupCard; GLayout.Padding = UDim.new(0, 10); GLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-	local GPadding = Instance.new("UIPadding"); GPadding.Parent = GroupCard; GPadding.PaddingTop = UDim.new(0, 12); GPadding.PaddingBottom = UDim.new(0, 12); GPadding.PaddingLeft = UDim.new(0, 12); GPadding.PaddingRight = UDim.new(0, 12)
+	local GC = Instance.new("UICorner"); GC.CornerRadius = UDim.new(0, 10); GC.Parent = GroupCard
+	local GS = Instance.new("UIStroke"); GS.Thickness = 1; GS.Color = GLASS_THEME.Acc1; GS.Transparency = 0.7; GS.Parent = GroupCard
+	local GLayout = Instance.new("UIListLayout"); GLayout.Parent = GroupCard; GLayout.Padding = UDim.new(0, 8); GLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	local GPadding = Instance.new("UIPadding"); GPadding.Parent = GroupCard; GPadding.PaddingTop = UDim.new(0, 10); GPadding.PaddingBottom = UDim.new(0, 10); GPadding.PaddingLeft = UDim.new(0, 10); GPadding.PaddingRight = UDim.new(0, 10)
 	
 	if title and title ~= "" then
-		local HeaderLbl = Instance.new("TextLabel"); HeaderLbl.Parent = GroupCard; HeaderLbl.Size = UDim2.new(1, 0, 0, 28); HeaderLbl.Text = title; HeaderLbl.TextColor3 = GLASS_THEME.Acc1; HeaderLbl.TextSize = 14; HeaderLbl.Font = Enum.Font.GothamBlack; HeaderLbl.TextXAlignment = Enum.TextXAlignment.Left; HeaderLbl.BackgroundTransparency = 1
+		local HeaderLbl = Instance.new("TextLabel"); HeaderLbl.Parent = GroupCard; HeaderLbl.Size = UDim2.new(1, 0, 0, 24); HeaderLbl.Text = title; HeaderLbl.TextColor3 = GLASS_THEME.Acc1; HeaderLbl.TextSize = 12; HeaderLbl.Font = Enum.Font.GothamBlack; HeaderLbl.TextXAlignment = Enum.TextXAlignment.Left; HeaderLbl.BackgroundTransparency = 1
 	end
 	return GroupCard
 end
 
 local function AddToggle(parent, text, flag, callback)
-	local Frm = Instance.new("Frame"); Frm.Parent = parent; Frm.Size = UDim2.new(1, 0, 0, 42); Frm.BackgroundTransparency = 1
-	local L = Instance.new("TextLabel"); L.Parent = Frm; L.Position = UDim2.new(0, 6, 0, 0); L.Size = UDim2.new(0.68, 0, 1, 0); L.Text = text; L.TextColor3 = GLASS_THEME.Text; L.TextSize = 13; L.Font = Enum.Font.GothamMedium; L.TextXAlignment = Enum.TextXAlignment.Left; L.BackgroundTransparency = 1
-	local Sw = Instance.new("TextButton"); Sw.Parent = Frm; Sw.Position = UDim2.new(1, -52, 0.5, -13); Sw.Size = UDim2.new(0, 46, 0, 26); Sw.Text = ""; local SwC = Instance.new("UICorner"); SwC.CornerRadius = UDim.new(1, 0); SwC.Parent = Sw
-	local Knob = Instance.new("Frame"); Knob.Parent = Sw; Knob.Size = UDim2.new(0, 22, 0, 22); Knob.BackgroundColor3 = GLASS_THEME.Text; local KC = Instance.new("UICorner"); KC.CornerRadius = UDim.new(1, 0); KC.Parent = Knob
+	local Frm = Instance.new("Frame"); Frm.Parent = parent; Frm.Size = UDim2.new(1, 0, 0, 36); Frm.BackgroundTransparency = 1
+	local L = Instance.new("TextLabel"); L.Parent = Frm; L.Position = UDim2.new(0, 4, 0, 0); L.Size = UDim2.new(0.68, 0, 1, 0); L.Text = text; L.TextColor3 = GLASS_THEME.Text; L.TextSize = 12; L.Font = Enum.Font.GothamMedium; L.TextXAlignment = Enum.TextXAlignment.Left; L.BackgroundTransparency = 1
+	local Sw = Instance.new("TextButton"); Sw.Parent = Frm; Sw.Position = UDim2.new(1, -44, 0.5, -11); Sw.Size = UDim2.new(0, 40, 0, 22); Sw.Text = ""; local SwC = Instance.new("UICorner"); SwC.CornerRadius = UDim.new(1, 0); SwC.Parent = Sw
+	local Knob = Instance.new("Frame"); Knob.Parent = Sw; Knob.Size = UDim2.new(0, 18, 0, 18); Knob.BackgroundColor3 = GLASS_THEME.Text; local KC = Instance.new("UICorner"); KC.CornerRadius = UDim.new(1, 0); KC.Parent = Knob
 	
 	local function updateVisuals()
 		Sw.BackgroundColor3 = F[flag] and GLASS_THEME.Acc1 or Color3.fromRGB(30, 41, 59)
-		TweenService:Create(Knob, TweenInfo.new(0.2), {Position = F[flag] and UDim2.new(1, -24, 0.5, -11) or UDim2.new(0, 2, 0.5, -11)}):Play()
+		TweenService:Create(Knob, TweenInfo.new(0.2), {Position = F[flag] and UDim2.new(1, -20, 0.5, -9) or UDim2.new(0, 2, 0.5, -9)}):Play()
 	end
 	table.insert(ConfigUpdaters, updateVisuals)
 
 	Sw.MouseButton1Click:Connect(function()
 		F[flag] = not F[flag]
 		updateVisuals()
-		Notify("MofenkHub Toggle", text .. ": " .. (F[flag] and "AKTIF" or "NONAKTIF"), 2)
+		Notify("Toggle Status", text .. ": " .. (F[flag] and "AKTIF" or "NONAKTIF"), 1.5)
 		if callback then pcall(callback, F[flag]) end
 	end)
 	updateVisuals()
 end
 
 local function AddInput(parent, text, flag, isNum)
-	local Frm = Instance.new("Frame"); Frm.Parent = parent; Frm.Size = UDim2.new(1, 0, 0, 42); Frm.BackgroundTransparency = 1
-	local L = Instance.new("TextLabel"); L.Parent = Frm; L.Position = UDim2.new(0, 6, 0, 0); L.Size = UDim2.new(0.48, 0, 1, 0); L.Text = text; L.TextColor3 = GLASS_THEME.Text; L.TextSize = 13; L.Font = Enum.Font.GothamMedium; L.TextXAlignment = Enum.TextXAlignment.Left; L.BackgroundTransparency = 1
-	local Box = Instance.new("TextBox"); Box.Parent = Frm; Box.Position = UDim2.new(0.5, 0, 0.1, 0); Box.Size = UDim2.new(0.5, 0, 0.8, 0); Box.TextColor3 = GLASS_THEME.Acc1; Box.TextSize = 13; Box.Font = Enum.Font.GothamBold; Box.BackgroundColor3 = GLASS_THEME.Header; Box.BackgroundTransparency = 0.25; local BC = Instance.new("UICorner"); BC.CornerRadius = UDim.new(0, 8); BC.Parent = Box
+	local Frm = Instance.new("Frame"); Frm.Parent = parent; Frm.Size = UDim2.new(1, 0, 0, 38); Frm.BackgroundTransparency = 1
+	local L = Instance.new("TextLabel"); L.Parent = Frm; L.Position = UDim2.new(0, 4, 0, 0); L.Size = UDim2.new(0.48, 0, 1, 0); L.Text = text; L.TextColor3 = GLASS_THEME.Text; L.TextSize = 12; L.Font = Enum.Font.GothamMedium; L.TextXAlignment = Enum.TextXAlignment.Left; L.BackgroundTransparency = 1
+	local Box = Instance.new("TextBox"); Box.Parent = Frm; Box.Position = UDim2.new(0.5, 0, 0.1, 0); Box.Size = UDim2.new(0.5, 0, 0.8, 0); Box.TextColor3 = GLASS_THEME.Acc1; Box.TextSize = 12; Box.Font = Enum.Font.GothamBold; Box.BackgroundColor3 = GLASS_THEME.Header; Box.BackgroundTransparency = 0.25; local BC = Instance.new("UICorner"); BC.CornerRadius = UDim.new(0, 6); BC.Parent = Box
 	local BS = Instance.new("UIStroke"); BS.Thickness = 1; BS.Color = GLASS_THEME.Acc1; BS.Transparency = 0.6; BS.Parent = Box
 	
 	local function updateVisuals() Box.Text = tostring(F[flag] or "") end
@@ -461,33 +464,33 @@ end
 
 -- ADVANCED MULTI-SELECT DROPDOWN WITH DYNAMIC LABEL FEEDBACK
 local function AddDropdown(parent, title, options, flag, isMulti)
-	local Frm = Instance.new("Frame"); Frm.Parent = parent; Frm.Size = UDim2.new(1, 0, 0, 46); Frm.BackgroundTransparency = 1
-	local L = Instance.new("TextLabel"); L.Parent = Frm; L.Position = UDim2.new(0, 6, 0, 0); L.Size = UDim2.new(0.4, 0, 1, 0); L.Text = title; L.TextColor3 = GLASS_THEME.Text; L.TextSize = 13; L.Font = Enum.Font.GothamMedium; L.TextXAlignment = Enum.TextXAlignment.Left; L.BackgroundTransparency = 1
-	local Btn = Instance.new("TextButton"); Btn.Parent = Frm; Btn.Position = UDim2.new(0.42, 0, 0.1, 0); Btn.Size = UDim2.new(0.58, 0, 0.8, 0); Btn.TextColor3 = GLASS_THEME.Acc1; Btn.TextSize = 11; Btn.Font = Enum.Font.GothamBold; Btn.BackgroundColor3 = GLASS_THEME.Header; Btn.BackgroundTransparency = 0.25; local BC = Instance.new("UICorner"); BC.CornerRadius = UDim.new(0, 8); BC.Parent = Btn
+	local Frm = Instance.new("Frame"); Frm.Parent = parent; Frm.Size = UDim2.new(1, 0, 0, 40); Frm.BackgroundTransparency = 1
+	local L = Instance.new("TextLabel"); L.Parent = Frm; L.Position = UDim2.new(0, 4, 0, 0); L.Size = UDim2.new(0.4, 0, 1, 0); L.Text = title; L.TextColor3 = GLASS_THEME.Text; L.TextSize = 12; L.Font = Enum.Font.GothamMedium; L.TextXAlignment = Enum.TextXAlignment.Left; L.BackgroundTransparency = 1
+	local Btn = Instance.new("TextButton"); Btn.Parent = Frm; Btn.Position = UDim2.new(0.42, 0, 0.1, 0); Btn.Size = UDim2.new(0.58, 0, 0.8, 0); Btn.TextColor3 = GLASS_THEME.Acc1; Btn.TextSize = 11; Btn.Font = Enum.Font.GothamBold; Btn.BackgroundColor3 = GLASS_THEME.Header; Btn.BackgroundTransparency = 0.25; local BC = Instance.new("UICorner"); BC.CornerRadius = UDim.new(0, 6); BC.Parent = Btn
 	local BS = Instance.new("UIStroke"); BS.Thickness = 1; BS.Color = GLASS_THEME.Acc1; BS.Transparency = 0.6; BS.Parent = Btn
 	
-	local DropList = Instance.new("Frame"); DropList.Parent = MainFrame; DropList.Size = UDim2.new(0, 310, 0, 240); DropList.BackgroundColor3 = GLASS_THEME.Bg; DropList.Visible = false; DropList.ZIndex = 300
-	local DLC = Instance.new("UICorner"); DLC.CornerRadius = UDim.new(0, 10); DLC.Parent = DropList
-	local DLS = Instance.new("UIStroke"); DLS.Thickness = 1.5; DLS.Color = GLASS_THEME.Acc1; DLS.Parent = DropList
+	local DropList = Instance.new("Frame"); DropList.Parent = MainFrame; DropList.Size = UDim2.new(0, 280, 0, 220); DropList.BackgroundColor3 = GLASS_THEME.Bg; DropList.Visible = false; DropList.ZIndex = 300
+	local DLC = Instance.new("UICorner"); DLC.CornerRadius = UDim.new(0, 8); DLC.Parent = DropList
+	local DLS = Instance.new("UIStroke"); DLS.Thickness = 1.2; DLS.Color = GLASS_THEME.Acc1; DLS.Parent = DropList
 	
-	local SearchBox = Instance.new("TextBox"); SearchBox.Parent = DropList; SearchBox.Size = UDim2.new(1, -16, 0, 32); SearchBox.Position = UDim2.new(0, 8, 0, 8); SearchBox.PlaceholderText = "🔍 Cari Pilihan..."; SearchBox.Text = ""; SearchBox.TextColor3 = GLASS_THEME.Text; SearchBox.PlaceholderColor3 = GLASS_THEME.SubText; SearchBox.TextSize = 12; SearchBox.Font = Enum.Font.GothamMedium; SearchBox.BackgroundColor3 = GLASS_THEME.Header; SearchBox.ZIndex = 301
-	local SC = Instance.new("UICorner"); SC.CornerRadius = UDim.new(0, 6); SC.Parent = SearchBox
+	local SearchBox = Instance.new("TextBox"); SearchBox.Parent = DropList; SearchBox.Size = UDim2.new(1, -14, 0, 28); SearchBox.Position = UDim2.new(0, 7, 0, 7); SearchBox.PlaceholderText = "🔍 Cari Pilihan..."; SearchBox.Text = ""; SearchBox.TextColor3 = GLASS_THEME.Text; SearchBox.PlaceholderColor3 = GLASS_THEME.SubText; SearchBox.TextSize = 11; SearchBox.Font = Enum.Font.GothamMedium; SearchBox.BackgroundColor3 = GLASS_THEME.Header; SearchBox.ZIndex = 301
+	local SC = Instance.new("UICorner"); SC.CornerRadius = UDim.new(0, 5); SC.Parent = SearchBox
 	
-	local ActionHeader = Instance.new("Frame"); ActionHeader.Parent = DropList; ActionHeader.Position = UDim2.new(0, 8, 0, 44); ActionHeader.Size = UDim2.new(1, -16, 0, 28); ActionHeader.BackgroundTransparency = 1; ActionHeader.ZIndex = 301
+	local ActionHeader = Instance.new("Frame"); ActionHeader.Parent = DropList; ActionHeader.Position = UDim2.new(0, 7, 0, 40); ActionHeader.Size = UDim2.new(1, -14, 0, 24); ActionHeader.BackgroundTransparency = 1; ActionHeader.ZIndex = 301
 	
-	local BtnSelAll = Instance.new("TextButton"); BtnSelAll.Parent = ActionHeader; BtnSelAll.Size = UDim2.new(0.48, 0, 1, 0); BtnSelAll.Position = UDim2.new(0, 0, 0, 0); BtnSelAll.Text = "✅ Select All"; BtnSelAll.TextColor3 = GLASS_THEME.Acc1; BtnSelAll.Font = Enum.Font.GothamBold; BtnSelAll.TextSize = 11; BtnSelAll.BackgroundColor3 = GLASS_THEME.Card; BtnSelAll.ZIndex = 301
-	local SAC = Instance.new("UICorner"); SAC.CornerRadius = UDim.new(0, 5); SAC.Parent = BtnSelAll
+	local BtnSelAll = Instance.new("TextButton"); BtnSelAll.Parent = ActionHeader; BtnSelAll.Size = UDim2.new(0.48, 0, 1, 0); BtnSelAll.Position = UDim2.new(0, 0, 0, 0); BtnSelAll.Text = "✅ Select All"; BtnSelAll.TextColor3 = GLASS_THEME.Acc1; BtnSelAll.Font = Enum.Font.GothamBold; BtnSelAll.TextSize = 10; BtnSelAll.BackgroundColor3 = GLASS_THEME.Card; BtnSelAll.ZIndex = 301
+	local SAC = Instance.new("UICorner"); SAC.CornerRadius = UDim.new(0, 4); SAC.Parent = BtnSelAll
 	
-	local BtnClrAll = Instance.new("TextButton"); BtnClrAll.Parent = ActionHeader; BtnClrAll.Size = UDim2.new(0.48, 0, 1, 0); BtnClrAll.Position = UDim2.new(0.52, 0, 0, 0); BtnClrAll.Text = "✕ Clear All"; BtnClrAll.TextColor3 = Color3.fromRGB(239, 68, 68); BtnClrAll.Font = Enum.Font.GothamBold; BtnClrAll.TextSize = 11; BtnClrAll.BackgroundColor3 = GLASS_THEME.Card; BtnClrAll.ZIndex = 301
-	local CAC = Instance.new("UICorner"); CAC.CornerRadius = UDim.new(0, 5); CAC.Parent = BtnClrAll
+	local BtnClrAll = Instance.new("TextButton"); BtnClrAll.Parent = ActionHeader; BtnClrAll.Size = UDim2.new(0.48, 0, 1, 0); BtnClrAll.Position = UDim2.new(0.52, 0, 0, 0); BtnClrAll.Text = "✕ Clear All"; BtnClrAll.TextColor3 = Color3.fromRGB(239, 68, 68); BtnClrAll.Font = Enum.Font.GothamBold; BtnClrAll.TextSize = 10; BtnClrAll.BackgroundColor3 = GLASS_THEME.Card; BtnClrAll.ZIndex = 301
+	local CAC = Instance.new("UICorner"); CAC.CornerRadius = UDim.new(0, 4); CAC.Parent = BtnClrAll
 
-	local ScrollOpts = Instance.new("ScrollingFrame"); ScrollOpts.Parent = DropList; ScrollOpts.Position = UDim2.new(0, 8, 0, isMulti and 76 or 46); ScrollOpts.Size = UDim2.new(1, -16, 1, isMulti and -82 or -52); ScrollOpts.BackgroundTransparency = 1; ScrollOpts.ScrollBarThickness = 5; ScrollOpts.ZIndex = 301; ScrollOpts.AutomaticCanvasSize = Enum.AutomaticSize.Y; ScrollOpts.CanvasSize = UDim2.new(0,0,0,0)
-	local DLL = Instance.new("UIListLayout"); DLL.Parent = ScrollOpts; DLL.Padding = UDim.new(0, 4)
+	local ScrollOpts = Instance.new("ScrollingFrame"); ScrollOpts.Parent = DropList; ScrollOpts.Position = UDim2.new(0, 7, 0, isMulti and 68 or 40); ScrollOpts.Size = UDim2.new(1, -14, 1, isMulti and -74 or -46); ScrollOpts.BackgroundTransparency = 1; ScrollOpts.ScrollBarThickness = 4; ScrollOpts.ZIndex = 301; ScrollOpts.AutomaticCanvasSize = Enum.AutomaticSize.Y; ScrollOpts.CanvasSize = UDim2.new(0,0,0,0)
+	local DLL = Instance.new("UIListLayout"); DLL.Parent = ScrollOpts; DLL.Padding = UDim.new(0, 3)
 	
 	if not isMulti then ActionHeader.Visible = false end
 
 	local function UpdatePos()
-		if DropList.Visible then DropList.Position = UDim2.new(0, Btn.AbsolutePosition.X - MainFrame.AbsolutePosition.X, 0, (Btn.AbsolutePosition.Y - MainFrame.AbsolutePosition.Y) + Btn.AbsoluteSize.Y + 3) end
+		if DropList.Visible then DropList.Position = UDim2.new(0, Btn.AbsolutePosition.X - MainFrame.AbsolutePosition.X, 0, (Btn.AbsolutePosition.Y - MainFrame.AbsolutePosition.Y) + Btn.AbsoluteSize.Y + 2) end
 	end
 	Btn:GetPropertyChangedSignal("AbsolutePosition"):Connect(UpdatePos)
 
@@ -515,10 +518,10 @@ local function AddDropdown(parent, title, options, flag, isMulti)
 		
 		for _, opt in ipairs(options) do
 			if filterText == "" or string.find(string.lower(opt.label), filterText) then
-				local OptBtn = Instance.new("TextButton"); OptBtn.Parent = ScrollOpts; OptBtn.Size = UDim2.new(1, 0, 0, 36); OptBtn.Text = "  " .. tostring(opt.label); OptBtn.TextColor3 = GLASS_THEME.Text; OptBtn.TextSize = 11; OptBtn.Font = Enum.Font.GothamMedium; OptBtn.TextXAlignment = Enum.TextXAlignment.Left; OptBtn.BackgroundColor3 = GLASS_THEME.Card; OptBtn.BackgroundTransparency = 0.5; OptBtn.ZIndex = 302
-				local OC = Instance.new("UICorner"); OC.CornerRadius = UDim.new(0, 6); OC.Parent = OptBtn
+				local OptBtn = Instance.new("TextButton"); OptBtn.Parent = ScrollOpts; OptBtn.Size = UDim2.new(1, 0, 0, 32); OptBtn.Text = "  " .. tostring(opt.label); OptBtn.TextColor3 = GLASS_THEME.Text; OptBtn.TextSize = 11; OptBtn.Font = Enum.Font.GothamMedium; OptBtn.TextXAlignment = Enum.TextXAlignment.Left; OptBtn.BackgroundColor3 = GLASS_THEME.Card; OptBtn.BackgroundTransparency = 0.5; OptBtn.ZIndex = 302
+				local OC = Instance.new("UICorner"); OC.CornerRadius = UDim.new(0, 5); OC.Parent = OptBtn
 				
-				local check = Instance.new("Frame"); check.Parent = OptBtn; check.Size = UDim2.new(0, 18, 0, 18); check.Position = UDim2.new(1, -26, 0.5, -9); local cc = Instance.new("UICorner"); cc.CornerRadius = UDim.new(0, 4); cc.Parent = check; check.ZIndex = 302
+				local check = Instance.new("Frame"); check.Parent = OptBtn; check.Size = UDim2.new(0, 16, 0, 16); check.Position = UDim2.new(1, -22, 0.5, -8); local cc = Instance.new("UICorner"); cc.CornerRadius = UDim.new(0, 3); cc.Parent = check; check.ZIndex = 302
 				
 				local function updateVisuals()
 					local sel = false
@@ -591,7 +594,7 @@ local function GetOpts(mode)
 	elseif mode == "grade" and G.GradesMod then for n, g in pairs(G.GradesMod) do if type(g)=="table" and g.order then table.insert(t, {label=n, val=n, order=g.order}) end end; table.sort(t, function(a,b) return a.order<b.order end)
 	elseif mode == "trait" and G.TraitsMod then for n, g in pairs(G.TraitsMod) do if type(g)=="table" and g.order then table.insert(t, {label=n, val=n, order=g.order}) end end; table.sort(t, function(a,b) return a.order<b.order end)
 	elseif mode == "quirk" and G.QuirksMod then for n, q in pairs(G.QuirksMod) do if type(q)=="table" then table.insert(t, {label=n, val=n}) end end; table.sort(t, function(a,b) return a.label<b.label end)
-	elseif mode == "pot" and G.BoostConfig then for n, e in pairs(G.BoostConfig.entries or {}) do table.insert(t, {label=n.." [T"..tostring(e.tier).."]", val=n}) end; table.sort(t, function(a,b) return a.label<b.label end)
+	elseif mode == "pot" and G.BoostConfig then for n, e in pairs(G.BoostConfig.entries or {}) do table.insert(t, {label=n.." [T"..tostring(e.tier)..']', val=n}) end; table.sort(t, function(a,b) return a.label<b.label end)
 	elseif mode == "unit" then
 		local placed = {}; pcall(function() for _, d in pairs(slots()) do if d.unitId then placed[d.unitId]=true end end end)
 		for k, e in pairs(inventory()) do
@@ -652,13 +655,13 @@ TabFrames["Dashboard"].Visible = true; Sidebar:GetChildren()[2].BackgroundTransp
 
 -- 1. DASHBOARD TAB
 local G_Profile = AddGroup(T_Dash, "PROFIL & STATISTIK REAL-TIME")
-local ProfContainer = Instance.new("Frame"); ProfContainer.Parent = G_Profile; ProfContainer.Size = UDim2.new(1, 0, 0, 95); ProfContainer.BackgroundTransparency = 1
-local PImg = Instance.new("ImageLabel"); PImg.Parent = ProfContainer; PImg.AnchorPoint = Vector2.new(0, 0.5); PImg.Position = UDim2.new(0, 8, 0.5, 0); PImg.Size = UDim2.new(0, 76, 0, 76); pcall(function() PImg.Image = Players:GetUserThumbnailAsync(LocalPlayer.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size100x100) end); local PImgC = Instance.new("UICorner"); PImgC.CornerRadius = UDim.new(1,0); PImgC.Parent = PImg; local PStr = Instance.new("UIStroke"); PStr.Thickness = 2; PStr.Color = GLASS_THEME.Acc1; PStr.Parent = PImg
+local ProfContainer = Instance.new("Frame"); ProfContainer.Parent = G_Profile; ProfContainer.Size = UDim2.new(1, 0, 0, 85); ProfContainer.BackgroundTransparency = 1
+local PImg = Instance.new("ImageLabel"); PImg.Parent = ProfContainer; PImg.AnchorPoint = Vector2.new(0, 0.5); PImg.Position = UDim2.new(0, 6, 0.5, 0); PImg.Size = UDim2.new(0, 68, 0, 68); pcall(function() PImg.Image = Players:GetUserThumbnailAsync(LocalPlayer.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size100x100) end); local PImgC = Instance.new("UICorner"); PImgC.CornerRadius = UDim.new(1,0); PImgC.Parent = PImg; local PStr = Instance.new("UIStroke"); PStr.Thickness = 1.8; PStr.Color = GLASS_THEME.Acc1; PStr.Parent = PImg
 
-local PLbl = Instance.new("TextLabel"); PLbl.Parent = ProfContainer; PLbl.Position = UDim2.new(0, 98, 0, 0); PLbl.Size = UDim2.new(1, -108, 1, 0); PLbl.BackgroundTransparency = 1; PLbl.TextColor3 = GLASS_THEME.Text; PLbl.TextSize = 13; PLbl.Font = Enum.Font.GothamMedium; PLbl.TextXAlignment = Enum.TextXAlignment.Left; PLbl.TextYAlignment = Enum.TextYAlignment.Center
+local PLbl = Instance.new("TextLabel"); PLbl.Parent = ProfContainer; PLbl.Position = UDim2.new(0, 86, 0, 0); PLbl.Size = UDim2.new(1, -92, 1, 0); PLbl.BackgroundTransparency = 1; PLbl.TextColor3 = GLASS_THEME.Text; PLbl.TextSize = 12; PLbl.Font = Enum.Font.GothamMedium; PLbl.TextXAlignment = Enum.TextXAlignment.Left; PLbl.TextYAlignment = Enum.TextYAlignment.Center
 
 local G_Stats = AddGroup(T_Dash, "INVENTORY SPY & SYSTEM PERFORMANCE")
-local SLbl = Instance.new("TextLabel"); SLbl.Parent = G_Stats; SLbl.Size = UDim2.new(1, 0, 0, 110); SLbl.BackgroundTransparency = 1; SLbl.TextColor3 = GLASS_THEME.Text; SLbl.TextSize = 13; SLbl.Font = Enum.Font.GothamMedium; SLbl.TextXAlignment = Enum.TextXAlignment.Left; SLbl.TextYAlignment = Enum.TextYAlignment.Top
+local SLbl = Instance.new("TextLabel"); SLbl.Parent = G_Stats; SLbl.Size = UDim2.new(1, 0, 0, 95); SLbl.BackgroundTransparency = 1; SLbl.TextColor3 = GLASS_THEME.Text; SLbl.TextSize = 12; SLbl.Font = Enum.Font.GothamMedium; SLbl.TextXAlignment = Enum.TextXAlignment.Left; SLbl.TextYAlignment = Enum.TextYAlignment.Top
 
 task.spawn(function()
 	local lastTime = os.clock()
@@ -694,7 +697,6 @@ task.spawn(function()
 		local buffs = ""; if G.BuffController and G.BuffController.ActiveBuffs then for k,v in pairs(G.BuffController.ActiveBuffs) do buffs = buffs..k..", " end end; if buffs=="" then buffs="Tidak ada" end; STATE.activeBuffs = buffs
 		SLbl.Text = string.format("💎 Gems: %s | 🧬 Trait Rerolls: %s\n⚔️ Total Units: %d/100\n⚡ Quirks: %d | 🧬 Traits: %d | ⭐ Grades: %d\n🧪 Active Buffs: %s", FormatMoney(currencyAmount("Gems")), FormatMoney(currencyAmount("Trait Reroll")), tot, qrk, trt, grd, STATE.activeBuffs)
 		
-		-- Update Floating Global Status Bar text
 		if F.autoRoll then
 			StatusBar.Text = "⚡ Status: Auto Roll Aktif | Uang: " .. FormatMoney(m)
 		elseif F.tower then
@@ -713,7 +715,7 @@ end)
 local G_Farm1 = AddGroup(T_Farm, "PLOT, ROLL & REBIRTH AUTOMATION")
 AddToggle(G_Farm1, "Auto Collect Plot Balance", "collect")
 AddToggle(G_Farm1, "Auto Roll Dadu (Otomatis)", "autoRoll")
-AddToggle(G_Farm1, "Auto Smart Place Unit Terbaik (Inventory -> Base)", "autoBestPlaceBase")
+AddToggle(G_Farm1, "Auto Smart Place Unit Terbaik", "autoBestPlaceBase")
 AddToggle(G_Farm1, "Auto Rebirth (Anti-Spam Delay)", "rebirth")
 AddToggle(G_Farm1, "Auto Buy & Equip Best Dice Shop", "buyDice")
 
@@ -752,16 +754,16 @@ AddToggle(G_HauntedTwr, "Keluar di Lantai Tertentu", "hauntedExitOn")
 AddInput(G_HauntedTwr, "Batas Lantai Exit Haunted:", "hauntedExitFloor", true)
 
 local G_HauntedMon = AddGroup(T_Hlw, "LIVE MONITORING HAUNTED TOWER")
-local HauntedLbl = Instance.new("TextLabel"); HauntedLbl.Parent = G_HauntedMon; HauntedLbl.Size = UDim2.new(1,0,0,70); HauntedLbl.BackgroundTransparency = 1; HauntedLbl.TextColor3 = GLASS_THEME.Text; HauntedLbl.TextSize = 13; HauntedLbl.Font = Enum.Font.GothamMedium; HauntedLbl.TextXAlignment = Enum.TextXAlignment.Left; HauntedLbl.TextYAlignment = Enum.TextYAlignment.Top
+local HauntedLbl = Instance.new("TextLabel"); HauntedLbl.Parent = G_HauntedMon; HauntedLbl.Size = UDim2.new(1,0,0,60); HauntedLbl.BackgroundTransparency = 1; HauntedLbl.TextColor3 = GLASS_THEME.Text; HauntedLbl.TextSize = 12; HauntedLbl.Font = Enum.Font.GothamMedium; HauntedLbl.TextXAlignment = Enum.TextXAlignment.Left; HauntedLbl.TextYAlignment = Enum.TextYAlignment.Top
 task.spawn(function() while task.wait(0.5) do pcall(function() HauntedLbl.Text = string.format("🎃 Status: %s\n🏢 Lantai: %d | 🍬 Total Drops/Item: %d", STATE.hauntedLive, STATE.hauntedFloor, STATE.hauntedDrops) end) end end)
 
 -- 4. INVENTORY TAB
 local G_Inv = AddGroup(T_Inv, "MANAGEMENT, RARITY KEEP & AUTO LOCK")
-AddToggle(G_Inv, "Auto Sell General (Jual Rarity Tidak Dicentang)", "sellAuto")
-AddToggle(G_Inv, "Auto Sell Saat Inventory Penuh (Max Capacity)", "sellMaxInvent")
-AddInput(G_Inv, "Simpan Unit Terbaik (Keep Best Income):", "keepBest", true)
-AddDropdown(G_Inv, "Pilih Rarity yang Disimpan (Keep Rarity):", GetOpts("rarity"), "keepRarities", true)
-AddToggle(G_Inv, "Auto Lock Unit Berdasarkan Rarity Terpilih", "autoLockRarity")
+AddToggle(G_Inv, "Auto Sell General (Jual Rarity Lain)", "sellAuto")
+AddToggle(G_Inv, "Auto Sell Saat Inventory Penuh", "sellMaxInvent")
+AddInput(G_Inv, "Simpan Unit Terbaik (Keep Best):", "keepBest", true)
+AddDropdown(G_Inv, "Pilih Rarity yang Disimpan:", GetOpts("rarity"), "keepRarities", true)
+AddToggle(G_Inv, "Auto Lock Unit Rarity Terpilih", "autoLockRarity")
 AddToggle(G_Inv, "Auto Fusion Unit", "autoFuse")
 
 -- 5. POTIONS TAB
@@ -769,47 +771,47 @@ local G_Pot = AddGroup(T_Pot, "SMART POTION MANAGER")
 AddToggle(G_Pot, "Auto Gunakan Potion", "potionAuto")
 AddDropdown(G_Pot, "Pilih Potion Spesifik (Multi-Select):", GetOpts("pot"), "potionSpecific", true)
 
--- 6. QUIRK TAB (LIVE REROLL MONITORING)
+-- 6. QUIRK TAB
 local G_QrkCtrl = AddGroup(T_Qrk, "AUTO LOCK & QUIRK REROLL CONFIG")
-AddToggle(G_QrkCtrl, "Auto Lock Unit jika Quirk Target Didapat", "autoLockTarget")
+AddToggle(G_QrkCtrl, "Auto Lock Unit jika Quirk Target", "autoLockTarget")
 AddToggle(G_QrkCtrl, "Aktifkan Auto Quirk Reroll", "quirkAuto")
 AddDropdown(G_QrkCtrl, "Target Quirk (Multi-Select):", GetOpts("quirk"), "quirkTargets", true)
-AddDropdown(G_QrkCtrl, "Pilih Unit Reroll Quirk (Realtime Income):", GetOpts("unit"), "quirkUnits", true)
+AddDropdown(G_QrkCtrl, "Pilih Unit Reroll Quirk:", GetOpts("unit"), "quirkUnits", true)
 
 local G_QrkMon = AddGroup(T_Qrk, "⚡ REALTIME MONITORING QUIRK")
-local QrkLbl = Instance.new("TextLabel"); QrkLbl.Parent = G_QrkMon; QrkLbl.Size = UDim2.new(1,0,0,85); QrkLbl.BackgroundTransparency = 1; QrkLbl.TextColor3 = GLASS_THEME.Text; QrkLbl.TextSize = 13; QrkLbl.Font = Enum.Font.GothamMedium; QrkLbl.TextXAlignment = Enum.TextXAlignment.Left; QrkLbl.TextYAlignment = Enum.TextYAlignment.Top
+local QrkLbl = Instance.new("TextLabel"); QrkLbl.Parent = G_QrkMon; QrkLbl.Size = UDim2.new(1,0,0,75); QrkLbl.BackgroundTransparency = 1; QrkLbl.TextColor3 = GLASS_THEME.Text; QrkLbl.TextSize = 12; QrkLbl.Font = Enum.Font.GothamMedium; QrkLbl.TextXAlignment = Enum.TextXAlignment.Left; QrkLbl.TextYAlignment = Enum.TextYAlignment.Top
 task.spawn(function()
 	while task.wait(0.3) do pcall(function()
 		QrkLbl.Text = string.format("🎯 Unit Aktif: %s\n⚡ Quirk Saat Ini: %s\n📊 Log Roll: %s", STATE.quirkActiveUnit, STATE.quirkCurrentVal, STATE.quirkStatus)
 	end) end
 end)
 
--- 7. GRADE TAB (LIVE REROLL MONITORING)
+-- 7. GRADE TAB
 local G_GrdCtrl = AddGroup(T_Grd, "AUTO GRADE REROLL CONFIG")
 AddToggle(G_GrdCtrl, "Aktifkan Auto Grade Reroll", "gradeAuto")
 AddToggle(G_GrdCtrl, "Hanya Unit di Base (Placed)", "gradePlacedOnly")
 AddDropdown(G_GrdCtrl, "Target Grade (Multi-Select):", GetOpts("grade"), "gradeTargets", true)
-AddDropdown(G_GrdCtrl, "Pilih Unit Reroll Grade (Realtime Income):", GetOpts("unit"), "gradeUnits", true)
+AddDropdown(G_GrdCtrl, "Pilih Unit Reroll Grade:", GetOpts("unit"), "gradeUnits", true)
 AddInput(G_GrdCtrl, "Sisakan Gems Minimum:", "gemReserve", true)
 
 local G_GrdMon = AddGroup(T_Grd, "⭐ REALTIME MONITORING GRADE")
-local GrdLbl = Instance.new("TextLabel"); GrdLbl.Parent = G_GrdMon; GrdLbl.Size = UDim2.new(1,0,0,85); GrdLbl.BackgroundTransparency = 1; GrdLbl.TextColor3 = GLASS_THEME.Text; GrdLbl.TextSize = 13; GrdLbl.Font = Enum.Font.GothamMedium; GrdLbl.TextXAlignment = Enum.TextXAlignment.Left; GrdLbl.TextYAlignment = Enum.TextYAlignment.Top
+local GrdLbl = Instance.new("TextLabel"); GrdLbl.Parent = G_GrdMon; GrdLbl.Size = UDim2.new(1,0,0,75); GrdLbl.BackgroundTransparency = 1; GrdLbl.TextColor3 = GLASS_THEME.Text; GrdLbl.TextSize = 12; GrdLbl.Font = Enum.Font.GothamMedium; GrdLbl.TextXAlignment = Enum.TextXAlignment.Left; GrdLbl.TextYAlignment = Enum.TextYAlignment.Top
 task.spawn(function()
 	while task.wait(0.3) do pcall(function()
 		GrdLbl.Text = string.format("🎯 Unit Aktif: %s\n🌟 Grade Saat Ini: %s\n📊 Log Roll: %s", STATE.gradeActiveUnit, STATE.gradeCurrentVal, STATE.gradeStatus)
 	end) end
 end)
 
--- 8. TRAIT TAB (LIVE REROLL MONITORING)
+-- 8. TRAIT TAB
 local G_TrtCtrl = AddGroup(T_Trt, "AUTO TRAIT REROLL CONFIG")
 AddToggle(G_TrtCtrl, "Aktifkan Auto Trait Reroll", "traitAuto")
 AddToggle(G_TrtCtrl, "Hanya Unit di Base (Placed)", "traitPlacedOnly")
 AddDropdown(G_TrtCtrl, "Target Trait (Multi-Select):", GetOpts("trait"), "traitTargets", true)
-AddDropdown(G_TrtCtrl, "Pilih Unit Reroll Trait (Realtime Income):", GetOpts("unit"), "traitUnits", true)
+AddDropdown(G_TrtCtrl, "Pilih Unit Reroll Trait:", GetOpts("unit"), "traitUnits", true)
 AddInput(G_TrtCtrl, "Sisakan Trait Reroll Minimum:", "rerollReserve", true)
 
 local G_TrtMon = AddGroup(T_Trt, "🧬 REALTIME MONITORING TRAIT")
-local TrtLbl = Instance.new("TextLabel"); TrtLbl.Parent = G_TrtMon; TrtLbl.Size = UDim2.new(1,0,0,85); TrtLbl.BackgroundTransparency = 1; TrtLbl.TextColor3 = GLASS_THEME.Text; TrtLbl.TextSize = 13; TrtLbl.Font = Enum.Font.GothamMedium; TrtLbl.TextXAlignment = Enum.TextXAlignment.Left; TrtLbl.TextYAlignment = Enum.TextYAlignment.Top
+local TrtLbl = Instance.new("TextLabel"); TrtLbl.Parent = G_TrtMon; TrtLbl.Size = UDim2.new(1,0,0,75); TrtLbl.BackgroundTransparency = 1; TrtLbl.TextColor3 = GLASS_THEME.Text; TrtLbl.TextSize = 12; TrtLbl.Font = Enum.Font.GothamMedium; TrtLbl.TextXAlignment = Enum.TextXAlignment.Left; TrtLbl.TextYAlignment = Enum.TextYAlignment.Top
 task.spawn(function()
 	while task.wait(0.3) do pcall(function()
 		TrtLbl.Text = string.format("🎯 Unit Aktif: %s\n🧬 Trait Saat Ini: %s\n📊 Log Roll: %s", STATE.traitActiveUnit, STATE.traitCurrentVal, STATE.traitStatus)
@@ -819,34 +821,34 @@ end)
 -- 9. MAIN TOWER TAB
 local G_Twr = AddGroup(T_Twr, "MAIN TOWER FARMING SETUP")
 AddToggle(G_Twr, "Auto Main Tower Farming", "tower")
-AddToggle(G_Twr, "Mode MIX / Random Tower (Acak Terpilih)", "towerMix")
+AddToggle(G_Twr, "Mode MIX / Random Tower", "towerMix")
 AddDropdown(G_Twr, "Pilih Main Tower (Multi-Select):", GetOpts("towers"), "towerList", true)
 AddToggle(G_Twr, "Auto Equip Best Team Tower", "towerEquipBest")
 AddToggle(G_Twr, "Keluar di Lantai Tertentu", "towerExitOn")
 AddInput(G_Twr, "Batas Lantai Exit Tower:", "towerExitFloor", true)
 
 local G_TwrMon = AddGroup(T_Twr, "LIVE TOWER MONITORING & TRAIT DROPS")
-local TwrLbl = Instance.new("TextLabel"); TwrLbl.Parent = G_TwrMon; TwrLbl.Size = UDim2.new(1,0,0,70); TwrLbl.BackgroundTransparency = 1; TwrLbl.TextColor3 = GLASS_THEME.Text; TwrLbl.TextSize = 13; TwrLbl.Font = Enum.Font.GothamMedium; TwrLbl.TextXAlignment = Enum.TextXAlignment.Left; TwrLbl.TextYAlignment = Enum.TextYAlignment.Top
+local TwrLbl = Instance.new("TextLabel"); TwrLbl.Parent = G_TwrMon; TwrLbl.Size = UDim2.new(1,0,0,60); TwrLbl.BackgroundTransparency = 1; TwrLbl.TextColor3 = GLASS_THEME.Text; TwrLbl.TextSize = 12; TwrLbl.Font = Enum.Font.GothamMedium; TwrLbl.TextXAlignment = Enum.TextXAlignment.Left; TwrLbl.TextYAlignment = Enum.TextYAlignment.Top
 task.spawn(function() while task.wait(0.5) do pcall(function() TwrLbl.Text = string.format("🎮 Status: %s\n🏢 Lantai: %d | 💎 Gems Didapat: %d\n🧬 Trait Drops: %s", STATE.towerLive, STATE.towerFloor, STATE.towerDrops, tostring(STATE.towerTraitsGot)) end) end end)
 
--- 10. SETTINGS TAB (REORGANIZED & POLISHED)
+-- 10. SETTINGS TAB
 local G_SetConfig = AddGroup(T_Set, "📁 FILE CONFIGURATION MANAGEMENT")
 AddToggle(G_SetConfig, "Auto Load Config Saat Nyala", "autoLoadEnabled")
 AddInput(G_SetConfig, "Nama File Config:", "cfgName", false)
 
-local BtnSave = Instance.new("TextButton"); BtnSave.Parent = G_SetConfig; BtnSave.Size = UDim2.new(1, 0, 0, 36); BtnSave.Text = "💾 SAVE CONFIG SEKARANG"; BtnSave.Font = Enum.Font.GothamBold; BtnSave.TextSize = 13; BtnSave.TextColor3 = GLASS_THEME.Acc1; BtnSave.BackgroundColor3 = GLASS_THEME.Header; local BTS = Instance.new("UICorner"); BTS.CornerRadius = UDim.new(0,8); BTS.Parent = BtnSave
+local BtnSave = Instance.new("TextButton"); BtnSave.Parent = G_SetConfig; BtnSave.Size = UDim2.new(1, 0, 0, 34); BtnSave.Text = "💾 SAVE CONFIG SEKARANG"; BtnSave.Font = Enum.Font.GothamBold; BtnSave.TextSize = 12; BtnSave.TextColor3 = GLASS_THEME.Acc1; BtnSave.BackgroundColor3 = GLASS_THEME.Header; local BTS = Instance.new("UICorner"); BTS.CornerRadius = UDim.new(0,6); BTS.Parent = BtnSave
 BtnSave.MouseButton1Click:Connect(function() pcall(function() saveConfig(F.cfgName); Notify("Config Saved", "Berhasil disimpan: " .. tostring(F.cfgName)) end) end)
 
-local BtnLoad = Instance.new("TextButton"); BtnLoad.Parent = G_SetConfig; BtnLoad.Size = UDim2.new(1, 0, 0, 36); BtnLoad.Text = "📂 LOAD CONFIG PILIHAN"; BtnLoad.Font = Enum.Font.GothamBold; BtnLoad.TextSize = 13; BtnLoad.TextColor3 = GLASS_THEME.Acc1; BtnLoad.BackgroundColor3 = GLASS_THEME.Header; local BTL = Instance.new("UICorner"); BTL.CornerRadius = UDim.new(0,8); BTL.Parent = BtnLoad
+local BtnLoad = Instance.new("TextButton"); BtnLoad.Parent = G_SetConfig; BtnLoad.Size = UDim2.new(1, 0, 0, 34); BtnLoad.Text = "📂 LOAD CONFIG PILIHAN"; BtnLoad.Font = Enum.Font.GothamBold; BtnLoad.TextSize = 12; BtnLoad.TextColor3 = GLASS_THEME.Acc1; BtnLoad.BackgroundColor3 = GLASS_THEME.Header; local BTL = Instance.new("UICorner"); BTL.CornerRadius = UDim.new(0,6); BTL.Parent = BtnLoad
 BtnLoad.MouseButton1Click:Connect(function() pcall(function() loadConfig(F.cfgName); Notify("Config Loaded", "Berhasil dimuat: " .. tostring(F.cfgName)) end) end)
 
-local BtnDelete = Instance.new("TextButton"); BtnDelete.Parent = G_SetConfig; BtnDelete.Size = UDim2.new(1, 0, 0, 36); BtnDelete.Text = "🗑️ DELETE CONFIG PILIHAN"; BtnDelete.Font = Enum.Font.GothamBold; BtnDelete.TextSize = 13; BtnDelete.TextColor3 = Color3.fromRGB(239, 68, 68); BtnDelete.BackgroundColor3 = GLASS_THEME.Header; local BTD = Instance.new("UICorner"); BTD.CornerRadius = UDim.new(0,8); BTD.Parent = BtnDelete
+local BtnDelete = Instance.new("TextButton"); BtnDelete.Parent = G_SetConfig; BtnDelete.Size = UDim2.new(1, 0, 0, 34); BtnDelete.Text = "🗑️ DELETE CONFIG PILIHAN"; BtnDelete.Font = Enum.Font.GothamBold; BtnDelete.TextSize = 12; BtnDelete.TextColor3 = Color3.fromRGB(239, 68, 68); BtnDelete.BackgroundColor3 = GLASS_THEME.Header; local BTD = Instance.new("UICorner"); BTD.CornerRadius = UDim.new(0,6); BTD.Parent = BtnDelete
 
-local ListTitle = Instance.new("TextLabel"); ListTitle.Parent = G_SetConfig; ListTitle.Size = UDim2.new(1, 0, 0, 24); ListTitle.Text = "📁 PILIH CONFIG TERSEDIA:"; ListTitle.TextSize = 13; ListTitle.Font = Enum.Font.GothamBold; ListTitle.TextColor3 = GLASS_THEME.Acc1; ListTitle.BackgroundTransparency = 1
+local ListTitle = Instance.new("TextLabel"); ListTitle.Parent = G_SetConfig; ListTitle.Size = UDim2.new(1, 0, 0, 22); ListTitle.Text = "📁 PILIH CONFIG TERSEDIA:"; ListTitle.TextSize = 12; ListTitle.Font = Enum.Font.GothamBold; ListTitle.TextColor3 = GLASS_THEME.Acc1; ListTitle.BackgroundTransparency = 1
 
-local ConfigScroll = Instance.new("ScrollingFrame"); ConfigScroll.Parent = G_SetConfig; ConfigScroll.Size = UDim2.new(1, 0, 0, 110); ConfigScroll.BackgroundColor3 = GLASS_THEME.Header; ConfigScroll.BackgroundTransparency = 0.4; ConfigScroll.ScrollBarThickness = 5; ConfigScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y; ConfigScroll.CanvasSize = UDim2.new(0,0,0,0)
-local CSC = Instance.new("UICorner"); CSC.CornerRadius = UDim.new(0, 8); CSC.Parent = ConfigScroll
-local ConfigLayout = Instance.new("UIListLayout"); ConfigLayout.Parent = ConfigScroll; ConfigLayout.Padding = UDim.new(0, 5)
+local ConfigScroll = Instance.new("ScrollingFrame"); ConfigScroll.Parent = G_SetConfig; ConfigScroll.Size = UDim2.new(1, 0, 0, 100); ConfigScroll.BackgroundColor3 = GLASS_THEME.Header; ConfigScroll.BackgroundTransparency = 0.4; ConfigScroll.ScrollBarThickness = 4; ConfigScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y; ConfigScroll.CanvasSize = UDim2.new(0,0,0,0)
+local CSC = Instance.new("UICorner"); CSC.CornerRadius = UDim.new(0, 6); CSC.Parent = ConfigScroll
+local ConfigLayout = Instance.new("UIListLayout"); ConfigLayout.Parent = ConfigScroll; ConfigLayout.Padding = UDim.new(0, 4)
 
 local function RefreshConfigList()
 	for _, v in pairs(ConfigScroll:GetChildren()) do if v:IsA("TextButton") then v:Destroy() end end
@@ -854,8 +856,8 @@ local function RefreshConfigList()
 		pcall(function()
 			for _, file in ipairs(listfiles(CFG_FOLDER)) do
 				local fileName = file:match("([^/]+)$"):gsub("%.json$", "")
-				local FileBtn = Instance.new("TextButton"); FileBtn.Parent = ConfigScroll; FileBtn.Size = UDim2.new(1, 0, 0, 34); FileBtn.Text = "📄 " .. fileName; FileBtn.TextSize = 12; FileBtn.Font = Enum.Font.GothamMedium; FileBtn.TextColor3 = GLASS_THEME.Text; FileBtn.BackgroundColor3 = GLASS_THEME.Card; FileBtn.BackgroundTransparency = 0.3
-				local FBC = Instance.new("UICorner"); FBC.CornerRadius = UDim.new(0, 6); FBC.Parent = FileBtn
+				local FileBtn = Instance.new("TextButton"); FileBtn.Parent = ConfigScroll; FileBtn.Size = UDim2.new(1, 0, 0, 32); FileBtn.Text = "📄 " .. fileName; FileBtn.TextSize = 11; FileBtn.Font = Enum.Font.GothamMedium; FileBtn.TextColor3 = GLASS_THEME.Text; FileBtn.BackgroundColor3 = GLASS_THEME.Card; FileBtn.BackgroundTransparency = 0.3
+				local FBC = Instance.new("UICorner"); FBC.CornerRadius = UDim.new(0, 5); FBC.Parent = FileBtn
 				FileBtn.MouseButton1Click:Connect(function()
 					pcall(function()
 						F.cfgName = fileName
@@ -889,22 +891,22 @@ BtnDelete.MouseButton1Click:Connect(function()
 	end)
 end)
 
-local BtnRefresh = Instance.new("TextButton"); BtnRefresh.Parent = G_SetConfig; BtnRefresh.Size = UDim2.new(1, 0, 0, 34); BtnRefresh.Text = "🔄 REFRESH LIST CONFIG"; BtnRefresh.Font = Enum.Font.GothamBold; BtnRefresh.TextSize = 12; BtnRefresh.TextColor3 = GLASS_THEME.Acc1; BtnRefresh.BackgroundColor3 = GLASS_THEME.Card; local BTR = Instance.new("UICorner"); BTR.CornerRadius = UDim.new(0,8); BTR.Parent = BtnRefresh
+local BtnRefresh = Instance.new("TextButton"); BtnRefresh.Parent = G_SetConfig; BtnRefresh.Size = UDim2.new(1, 0, 0, 32); BtnRefresh.Text = "🔄 REFRESH LIST CONFIG"; BtnRefresh.Font = Enum.Font.GothamBold; BtnRefresh.TextSize = 11; BtnRefresh.TextColor3 = GLASS_THEME.Acc1; BtnRefresh.BackgroundColor3 = GLASS_THEME.Card; local BTR = Instance.new("UICorner"); BTR.CornerRadius = UDim.new(0,6); BTR.Parent = BtnRefresh
 BtnRefresh.MouseButton1Click:Connect(RefreshConfigList)
 
 local G_Web = AddGroup(T_Set, "🔔 DISCORD WEBHOOK NOTIFIER")
 AddToggle(G_Web, "Aktifkan Webhook Discord", "webhookEnabled")
 AddInput(G_Web, "Webhook URL:", "webhookUrl", false)
-local BtnTestWeb = Instance.new("TextButton"); BtnTestWeb.Parent = G_Web; BtnTestWeb.Size = UDim2.new(1, 0, 0, 34); BtnTestWeb.Text = "🔔 TEST KIRIM WEBHOOK"; BtnTestWeb.Font = Enum.Font.GothamBold; BtnTestWeb.TextSize = 12; BtnTestWeb.TextColor3 = GLASS_THEME.Acc1; BtnTestWeb.BackgroundColor3 = GLASS_THEME.Header; local BTWC = Instance.new("UICorner"); BTWC.CornerRadius = UDim.new(0,8); BTWC.Parent = BtnTestWeb
-BtnTestWeb.MouseButton1Click:Connect(function() SendWebhook("✅ Webhook Connected!", "MofenkHub V103.2 tersambung sukses.", 3447003); Notify("Webhook", "Test webhook dikirim.") end)
+local BtnTestWeb = Instance.new("TextButton"); BtnTestWeb.Parent = G_Web; BtnTestWeb.Size = UDim2.new(1, 0, 0, 32); BtnTestWeb.Text = "🔔 TEST KIRIM WEBHOOK"; BtnTestWeb.Font = Enum.Font.GothamBold; BtnTestWeb.TextSize = 11; BtnTestWeb.TextColor3 = GLASS_THEME.Acc1; BtnTestWeb.BackgroundColor3 = GLASS_THEME.Header; local BTWC = Instance.new("UICorner"); BTWC.CornerRadius = UDim.new(0,6); BTWC.Parent = BtnTestWeb
+BtnTestWeb.MouseButton1Click:Connect(function() SendWebhook("✅ Webhook Connected!", "MofenkHub V103.3 tersambung sukses.", 3447003); Notify("Webhook", "Test webhook dikirim.") end)
 
 local G_Set2 = AddGroup(T_Set, "⚡ OPTIMALISASI & SERVER UTILITY")
-AddToggle(G_Set2, "Anti-AFK Protection (Prevent Disconnect)", "afk")
-AddToggle(G_Set2, "FPS Boost (Optimasi Map Partikel)", "fpsOn", function(v) if v then pcall(function() game:GetService("Lighting").GlobalShadows = false; for _,e in ipairs(workspace:GetDescendants()) do if e:IsA("BasePart") then e.Material = Enum.Material.SmoothPlastic end end end) end end)
+AddToggle(G_Set2, "Anti-AFK Protection", "afk")
+AddToggle(G_Set2, "FPS Boost (Optimasi Partikel)", "fpsOn", function(v) if v then pcall(function() game:GetService("Lighting").GlobalShadows = false; for _,e in ipairs(workspace:GetDescendants()) do if e:IsA("BasePart") then e.Material = Enum.Material.SmoothPlastic end end end) end end)
 AddToggle(G_Set2, "Auto Claim Quests & Daily Rewards", "claimQuests")
 AddToggle(G_Set2, "Auto Redeem Codes", "codesAuto")
 
-local BtnHop = Instance.new("TextButton"); BtnHop.Parent = G_Set2; BtnHop.Size = UDim2.new(1, 0, 0, 38); BtnHop.Text = "🌐 SERVER HOP (PINDAH SERVER)"; BtnHop.Font = Enum.Font.GothamBlack; BtnHop.TextSize = 13; BtnHop.TextColor3 = GLASS_THEME.Acc1; BtnHop.BackgroundColor3 = GLASS_THEME.Header; local BTH = Instance.new("UICorner"); BTH.CornerRadius = UDim.new(0,8); BTH.Parent = BtnHop
+local BtnHop = Instance.new("TextButton"); BtnHop.Parent = G_Set2; BtnHop.Size = UDim2.new(1, 0, 0, 34); BtnHop.Text = "🌐 SERVER HOP (PINDAH SERVER)"; BtnHop.Font = Enum.Font.GothamBlack; BtnHop.TextSize = 12; BtnHop.TextColor3 = GLASS_THEME.Acc1; BtnHop.BackgroundColor3 = GLASS_THEME.Header; local BTH = Instance.new("UICorner"); BTH.CornerRadius = UDim.new(0,6); BTH.Parent = BtnHop
 
 local confirmHopClick = false
 BtnHop.MouseButton1Click:Connect(function()
@@ -941,7 +943,7 @@ BtnHop.MouseButton1Click:Connect(function()
 end)
 
 -- ===================================================================== --
--- 6. BACKEND THREADS (ENHANCED LIVE MONITORING & ANTI-COLLISION LOCK)
+-- 6. BACKEND THREADS
 -- ===================================================================== --
 
 -- Anti-AFK Protection
@@ -976,7 +978,7 @@ LocalPlayer.Idled:Connect(function()
 	end
 end)
 
--- AUTO LOCK / UNLOCK UNIT BERDASARKAN DYNAMIC RARITY (WITH SAFETY CHECK)
+-- AUTO LOCK / UNLOCK UNIT BERDASARKAN DYNAMIC RARITY
 task.spawn(function()
 	while _G.__ANIMEDICE == generation do
 		if F.autoLockRarity and R.LockUnit then
@@ -984,7 +986,6 @@ task.spawn(function()
 				for id, u in pairs(inventory()) do
 					if isUnitEntry(u) and not isBeingRolled(id) then
 						local rarity = getUnitRarity(u)
-						
 						local isSelectedRarity = false
 						for _, rName in ipairs(F.keepRarities or {}) do
 							if string.lower(tostring(rarity)) == string.lower(tostring(rName)) then
@@ -992,7 +993,6 @@ task.spawn(function()
 								break
 							end
 						end
-
 						local isLocked = u.attributes and u.attributes.locked
 						if isSelectedRarity and not isLocked then
 							R.LockUnit:FireServer(id, true)
@@ -1007,7 +1007,7 @@ task.spawn(function()
 	end
 end)
 
--- AUTO SELL INVENTORY THREAD (WITH SAFETY CHECK)
+-- AUTO SELL INVENTORY THREAD
 task.spawn(function()
 	while _G.__ANIMEDICE == generation do
 		if (F.sellAuto or F.sellMaxInvent) and R.SellInventory then
@@ -1029,7 +1029,6 @@ task.spawn(function()
 					if isUnitEntry(u) then
 						totalOwned += 1
 						local rarity = getUnitRarity(u)
-						
 						local isKeepRarity = false
 						for _, rName in ipairs(F.keepRarities or {}) do
 							if string.lower(tostring(rarity)) == string.lower(tostring(rName)) then
@@ -1051,7 +1050,6 @@ task.spawn(function()
 				local isFull = totalOwned >= (cap - 3)
 				if F.sellAuto or (F.sellMaxInvent and isFull) then
 					table.sort(sellCandidates, function(a, b) return a.value < b.value end)
-					
 					local keepQty = tonumber(F.keepBest) or 0
 					local sellCount = math.max(0, #sellCandidates - keepQty)
 					
@@ -1072,8 +1070,7 @@ task.spawn(function()
 							end
 						end)
 						if successSell then
-							Notify("Auto Sell", "Berhasil menjual " .. #list .. " unit di luar list Keep Rarity.", 3)
-							AddSpyLog("Auto Sell: Successfully sold " .. #list .. " units")
+							Notify("Auto Sell", "Berhasil menjual " .. #list .. " unit.", 3)
 						end
 					end
 				end
@@ -1083,9 +1080,7 @@ task.spawn(function()
 	end
 end)
 
--- REALTIME SEPARATE REROLL THREADS
-
--- 1. Quirk Reroll Thread
+-- REROLL THREADS (QUIRK, GRADE, TRAIT)
 task.spawn(function()
 	while _G.__ANIMEDICE == generation do
 		if F.quirkAuto and R.QuirkRoll and #F.quirkUnits > 0 then
@@ -1094,28 +1089,22 @@ task.spawn(function()
 				for _, unitId in ipairs(F.quirkUnits) do
 					local u = inv[unitId]
 					if u and u.attributes then
-						if R.LockUnit and not u.attributes.locked then
-							R.LockUnit:FireServer(unitId, true)
-						end
-
-						STATE.quirkActiveUnit = string.format("%s (Lv.%d | 💰$%s/s)", tostring(u.name), tonumber(u.attributes.level) or 1, FormatMoney(baseIncome(u)))
+						if R.LockUnit and not u.attributes.locked then R.LockUnit:FireServer(unitId, true) end
+						STATE.quirkActiveUnit = tostring(u.name)
 						local curQuirk = u.attributes.quirk or u.attributes.mutation or "None"
 						STATE.quirkCurrentVal = tostring(curQuirk)
 						
 						local isMatch = false
 						for _, target in ipairs(F.quirkTargets) do 
-							if string.lower(tostring(curQuirk)) == string.lower(tostring(target)) then 
-								isMatch = true 
-								break 
-							end 
+							if string.lower(tostring(curQuirk)) == string.lower(tostring(target)) then isMatch = true; break end 
 						end
 
 						if isMatch then
-							STATE.quirkStatus = string.format("[Quirk] > ✅ Berhasil didapat: %s", tostring(curQuirk))
-							Notify("Auto Quirk Target!", "Quirk > Berhasil didapat " .. tostring(curQuirk), 4)
-							SendWebhook("⚡ Quirk Matched!", "Berhasil mendapatkan Quirk **" .. tostring(curQuirk) .. "** untuk unit " .. tostring(u.name), 65280)
+							STATE.quirkStatus = "✅ Berhasil: " .. tostring(curQuirk)
+							Notify("Quirk Match!", "Didapat " .. tostring(curQuirk), 4)
+							SendWebhook("⚡ Quirk Matched!", "Berhasil mendapatkan Quirk **" .. tostring(curQuirk) .. "**", 65280)
 						else
-							STATE.quirkStatus = string.format("[Quirk] > Rolling... (Saat ini: %s)", tostring(curQuirk))
+							STATE.quirkStatus = "Rolling... (" .. tostring(curQuirk) .. ")"
 							R.QuirkRoll:FireServer(unitId)
 							task.wait(0.5)
 						end
@@ -1127,7 +1116,6 @@ task.spawn(function()
 	end
 end)
 
--- 2. Grade Reroll Thread
 task.spawn(function()
 	while _G.__ANIMEDICE == generation do
 		if F.gradeAuto and R.GradeRoll and #F.gradeUnits > 0 then
@@ -1136,28 +1124,22 @@ task.spawn(function()
 				for _, unitId in ipairs(F.gradeUnits) do
 					local u = inv[unitId]
 					if u and u.attributes and currencyAmount("Gems") > (F.gemReserve or 100) then
-						if R.LockUnit and not u.attributes.locked then
-							R.LockUnit:FireServer(unitId, true)
-						end
-
-						STATE.gradeActiveUnit = string.format("%s (Lv.%d | 💰$%s/s)", tostring(u.name), tonumber(u.attributes.level) or 1, FormatMoney(baseIncome(u)))
+						if R.LockUnit and not u.attributes.locked then R.LockUnit:FireServer(unitId, true) end
+						STATE.gradeActiveUnit = tostring(u.name)
 						local curGrade = u.attributes.grade or "None"
 						STATE.gradeCurrentVal = tostring(curGrade)
 
 						local isMatch = false
 						for _, target in ipairs(F.gradeTargets) do 
-							if string.lower(tostring(curGrade)) == string.lower(tostring(target)) then 
-								isMatch = true 
-								break 
-							end 
+							if string.lower(tostring(curGrade)) == string.lower(tostring(target)) then isMatch = true; break end 
 						end
 
 						if isMatch then
-							STATE.gradeStatus = string.format("[Grade] > ✅ Berhasil didapat: %s", tostring(curGrade))
-							Notify("Auto Grade Target!", "Grade > Berhasil didapat " .. tostring(curGrade), 4)
-							SendWebhook("⭐ Grade Matched!", "Berhasil mendapatkan Grade **" .. tostring(curGrade) .. "** untuk unit " .. tostring(u.name), 65280)
+							STATE.gradeStatus = "✅ Berhasil: " .. tostring(curGrade)
+							Notify("Grade Match!", "Didapat " .. tostring(curGrade), 4)
+							SendWebhook("⭐ Grade Matched!", "Berhasil mendapatkan Grade **" .. tostring(curGrade) .. "**", 65280)
 						else
-							STATE.gradeStatus = string.format("[Grade] > Rolling... (Saat ini: %s)", tostring(curGrade))
+							STATE.gradeStatus = "Rolling... (" .. tostring(curGrade) .. ")"
 							R.GradeRoll:FireServer(unitId)
 							task.wait(0.5)
 						end
@@ -1169,7 +1151,6 @@ task.spawn(function()
 	end
 end)
 
--- 3. Trait Reroll Thread
 task.spawn(function()
 	while _G.__ANIMEDICE == generation do
 		if F.traitAuto and R.TraitRoll and #F.traitUnits > 0 then
@@ -1178,28 +1159,22 @@ task.spawn(function()
 				for _, unitId in ipairs(F.traitUnits) do
 					local u = inv[unitId]
 					if u and u.attributes and currencyAmount("Trait Reroll") > (F.rerollReserve or 50) then
-						if R.LockUnit and not u.attributes.locked then
-							R.LockUnit:FireServer(unitId, true)
-						end
-
-						STATE.traitActiveUnit = string.format("%s (Lv.%d | 💰$%s/s)", tostring(u.name), tonumber(u.attributes.level) or 1, FormatMoney(baseIncome(u)))
+						if R.LockUnit and not u.attributes.locked then R.LockUnit:FireServer(unitId, true) end
+						STATE.traitActiveUnit = tostring(u.name)
 						local curTrait = u.attributes.trait or "None"
 						STATE.traitCurrentVal = tostring(curTrait)
 
 						local isMatch = false
 						for _, target in ipairs(F.traitTargets) do 
-							if string.lower(tostring(curTrait)) == string.lower(tostring(target)) then 
-								isMatch = true 
-								break 
-							end 
+							if string.lower(tostring(curTrait)) == string.lower(tostring(target)) then isMatch = true; break end 
 						end
 
 						if isMatch then
-							STATE.traitStatus = string.format("[Trait] > ✅ Berhasil didapat: %s", tostring(curTrait))
-							Notify("Auto Trait Target!", "Trait > Berhasil didapat " .. tostring(curTrait), 4)
-							SendWebhook("🧬 Trait Matched!", "Berhasil mendapatkan Trait **" .. tostring(curTrait) .. "** untuk unit " .. tostring(u.name), 65280)
+							STATE.traitStatus = "✅ Berhasil: " .. tostring(curTrait)
+							Notify("Trait Match!", "Didapat " .. tostring(curTrait), 4)
+							SendWebhook("🧬 Trait Matched!", "Berhasil mendapatkan Trait **" .. tostring(curTrait) .. "**", 65280)
 						else
-							STATE.traitStatus = string.format("[Trait] > Rolling... (Saat ini: %s)", tostring(curTrait))
+							STATE.traitStatus = "Rolling... (" .. tostring(curTrait) .. ")"
 							R.TraitRoll:FireServer(unitId)
 							task.wait(0.5)
 						end
@@ -1211,14 +1186,11 @@ task.spawn(function()
 	end
 end)
 
--- Halloween Teleport & Quests
+-- Halloween & Pumpkin
 task.spawn(function()
 	while _G.__ANIMEDICE == generation do
 		if F.halloweenTeleport and R.HWTeleport then
-			pcall(function()
-				R.HWTeleport:InvokeServer()
-				if R.HWSeenIntro then R.HWSeenIntro:FireServer() end
-			end)
+			pcall(function() R.HWTeleport:InvokeServer(); if R.HWSeenIntro then R.HWSeenIntro:FireServer() end end)
 		end
 		if F.halloweenQuest and R.HWQuestClaim then pcall(function() R.HWQuestClaim:FireServer() end) end
 		if F.halloweenPath and R.HWClaimPath then pcall(function() R.HWClaimPath:FireServer() end) end
@@ -1228,7 +1200,6 @@ task.spawn(function()
 	end
 end)
 
--- Pumpkin Roll & Auto Sell
 task.spawn(function()
 	while _G.__ANIMEDICE == generation do
 		if F.pumpkinAutoRoll and R.PumpkinRoll then
@@ -1243,50 +1214,23 @@ task.spawn(function()
 			end)
 		end
 		if R.PumpkinAutoSell then pcall(function() R.PumpkinAutoSell:FireServer(F.pumpkinAutoSell) end) end
-
-		if F.specificSellUnits and #F.specificSellUnits > 0 and R.SellInventory then
-			pcall(function()
-				local d = data()
-				local placed = {}
-				for _, slot in pairs(d.Slots or {}) do if slot.unitId then placed[slot.unitId] = true end end
-				for _, id in pairs(d.TowerTeam or {}) do placed[id] = true end
-
-				local sellList = {}
-				for id, u in pairs(d.Inventory or {}) do
-					if isUnitEntry(u) and u.name and not isBeingRolled(id) then
-						local isTarget = false
-						for _, targetName in ipairs(F.specificSellUnits) do
-							if u.name == targetName then isTarget = true break end
-						end
-						local isProt = (u.attributes and u.attributes.locked)
-						if isTarget and not placed[id] and not isProt then
-							table.insert(sellList, id)
-							if #sellList >= 150 then break end
-						end
-					end
-				end
-				if #sellList > 0 then R.SellInventory:InvokeServer(sellList) end
-			end)
-		end
 		task.wait(3)
 	end
 end)
 
 local function unlockedSlots() local arr={}; local rb = rebirthAmt(); pcall(function() for i=1, (G.PlotConfig.GetMaxSlots(rb) or 15) do if rb >= (G.PlotConfig.GetSlotRebirthRequirement(i) or 0) then table.insert(arr, i) end end end); return arr end
 
--- Auto Roll Thread
+-- Auto Roll Loop
 task.spawn(function()
 	while _G.__ANIMEDICE == generation do
 		if F.autoRoll then
-			pcall(function()
-				if R.RollDice then R.RollDice:InvokeServer() end
-			end)
+			pcall(function() if R.RollDice then R.RollDice:InvokeServer() end end)
 			task.wait(2.0 + math.random(0, 3) * 0.1)
 		else task.wait(1) end
 	end
 end)
 
--- Auto Best Place Base
+-- Auto Smart Place
 task.spawn(function()
 	while _G.__ANIMEDICE == generation do
 		if F.autoBestPlaceBase and R.EquipUnit and R.InteractSlot then
@@ -1294,9 +1238,7 @@ task.spawn(function()
 				local d = data()
 				local n = #unlockedSlots()
 				local ranked = {}
-				for id, u in pairs(d.Inventory or {}) do
-					if isUnitEntry(u) then ranked[#ranked + 1] = { id = id, v = baseIncome(u) } end
-				end
+				for id, u in pairs(d.Inventory or {}) do if isUnitEntry(u) then ranked[#ranked + 1] = { id = id, v = baseIncome(u) } end end
 				table.sort(ranked, function(a, b) return a.v > b.v end)
 
 				local want, placed = {}, {}
@@ -1304,9 +1246,7 @@ task.spawn(function()
 				for _, slot in pairs(d.Slots or {}) do if slot.unitId then placed[slot.unitId] = true end end
 
 				local bench = {}
-				for i = 1, math.min(n, #ranked) do
-					if not placed[ranked[i].id] then bench[#bench + 1] = ranked[i] end
-				end
+				for i = 1, math.min(n, #ranked) do if not placed[ranked[i].id] then bench[#bench + 1] = ranked[i] end end
 
 				if #bench > 0 then
 					local slotsArr = {}
@@ -1321,11 +1261,7 @@ task.spawn(function()
 						local slot = slotsArr[k]
 						if slot and (slot.id == nil or not want[slot.id]) and cand.v > slot.v * 1.1 then
 							local ok, equipped = pcall(function() return R.EquipUnit:InvokeServer(cand.id) end)
-							if ok and equipped == true then
-								task.wait(0.4)
-								R.InteractSlot:FireServer(slot.i)
-								task.wait(0.4)
-							end
+							if ok and equipped == true then task.wait(0.4); R.InteractSlot:FireServer(slot.i); task.wait(0.4) end
 						end
 					end
 				end
@@ -1335,7 +1271,7 @@ task.spawn(function()
 	end
 end)
 
--- Auto Buy & Equip Best Dice Shop
+-- Auto Buy & Equip Best Dice
 task.spawn(function()
 	while _G.__ANIMEDICE == generation do
 		if F.buyDice and G.DiceModule and R.BuyDice and R.EquipDice then
@@ -1344,42 +1280,31 @@ task.spawn(function()
 				local allDice = {}
 				local ok, all = pcall(G.DiceModule.GetAll)
 				if ok and type(all) == "table" then
-					for key, def in pairs(all) do
-						table.insert(allDice, { key = key, luck = tonumber(def.luck) or 0, price = tonumber(def.price) })
-					end
+					for key, def in pairs(all) do table.insert(allDice, { key = key, luck = tonumber(def.luck) or 0, price = tonumber(def.price) }) end
 					table.sort(allDice, function(a, b) return a.luck < b.luck end)
 				end
 
 				local owned = d.OwnedDice or {}
 				local bestOwnedName, bestOwnedLuck = "-", 0
 				for _, die in ipairs(allDice) do
-					if owned[die.key] and die.luck > bestOwnedLuck then
-						bestOwnedLuck = die.luck
-						bestOwnedName = die.key
-					end
+					if owned[die.key] and die.luck > bestOwnedLuck then bestOwnedLuck = die.luck; bestOwnedName = die.key end
 				end
 
 				local spendable = money()
 				for _, die in ipairs(allDice) do
-					if die.price and not owned[die.key] and spendable >= die.price then
-						if die.luck > bestOwnedLuck then
-							R.BuyDice:FireServer(die.key)
-							task.wait(0.3)
-							owned[die.key] = true
-						end
+					if die.price and not owned[die.key] and spendable >= die.price and die.luck > bestOwnedLuck then
+						R.BuyDice:FireServer(die.key); task.wait(0.3); owned[die.key] = true
 					end
 				end
 
-				if bestOwnedName ~= "-" and d.Dice ~= bestOwnedName then
-					R.EquipDice:FireServer(bestOwnedName)
-				end
+				if bestOwnedName ~= "-" and d.Dice ~= bestOwnedName then R.EquipDice:FireServer(bestOwnedName) end
 			end)
 		end
 		task.wait(5)
 	end
 end)
 
--- Farming Level & Rebirth Loop
+-- Farming Loop (Collect, Level, Rebirth, Upgrades)
 task.spawn(function()
 	local lastRebirth = 0
 	while _G.__ANIMEDICE == generation do
@@ -1414,7 +1339,7 @@ task.spawn(function()
 	end
 end)
 
--- Auto Potions Loop
+-- Potions Loop
 task.spawn(function()
 	while _G.__ANIMEDICE == generation do
 		if F.potionAuto and R.BoostUse then
@@ -1423,7 +1348,7 @@ task.spawn(function()
 				for key, e in pairs(inventory()) do
 					if e.name and e.amount and e.amount > 0 and G.BoostConfig and G.BoostConfig.entries[e.name] then
 						local shouldUse = (#F.potionSpecific == 0)
-						for _, sn in ipairs(F.potionSpecific) do if e.name == sn then shouldUse = true break end end
+						for _, sn in ipairs(F.potionSpecific) do if e.name == sn then shouldUse = true; break end end
 						if shouldUse and not active[e.name] then R.BoostUse:FireServer(key); task.wait(1) end
 					end
 				end
@@ -1433,160 +1358,99 @@ task.spawn(function()
 	end
 end)
 
--- DRAIN TOWER FUNCTION
+-- DRAIN & TOWERS (MAIN & HAUNTED)
 local function drainTower()
 	if not R.CancelTower then return end
 	pcall(function()
-		if R.CancelTower:IsA("RemoteFunction") then
-			R.CancelTower:InvokeServer()
-		elseif R.CancelTower:IsA("RemoteEvent") then
-			R.CancelTower:FireServer()
-		end
+		if R.CancelTower:IsA("RemoteFunction") then R.CancelTower:InvokeServer()
+		elseif R.CancelTower:IsA("RemoteEvent") then R.CancelTower:FireServer() end
 	end)
 	for _ = 1, 20 do
-		local ok, seq = pcall(function()
-			if R.CompleteFloor:IsA("RemoteFunction") then
-				return R.CompleteFloor:InvokeServer()
-			end
-		end)
-		if ok and type(seq) == "table" then
-			for _, ev in ipairs(seq) do if ev.action == "ended" then return end end
-		end
+		local ok, seq = pcall(function() if R.CompleteFloor:IsA("RemoteFunction") then return R.CompleteFloor:InvokeServer() end end)
+		if ok and type(seq) == "table" then for _, ev in ipairs(seq) do if ev.action == "ended" then return end end end
 		task.wait(0.2)
 	end
 end
 
--- MAIN TOWER FARMING THREAD
 task.spawn(function()
 	while _G.__ANIMEDICE == generation do
 		if F.tower and R.PlayTower and R.CompleteFloor then
-			drainTower()
-			task.wait(0.4)
-
+			drainTower(); task.wait(0.4)
 			if F.towerEquipBest and R.BestTowerTeam then pcall(function() R.BestTowerTeam:FireServer() end) end
 			task.wait(0.4)
 
 			local pickTower = "Dragon Tower"
-			local choices = (F.towerList and #F.towerList > 0) and F.towerList or {"Dragon Tower", "Demon Tower", "Ninja Tower", "Pirate Tower"}
-			if F.towerMix then
-				pickTower = choices[math.random(1, #choices)]
-			else
-				pickTower = choices[1]
-			end
+			local choices = (F.towerList and #F.towerList > 0) and F.towerList or {"Dragon Tower", "Demon Tower"}
+			pickTower = F.towerMix and choices[math.random(1, #choices)] or choices[1]
 
-			STATE.towerLive = "Memulai: " .. tostring(pickTower); STATE.towerDrops = 0; STATE.towerTraitsGot = "Mencari..."
-			
-			local okStart, started = false, false
+			STATE.towerLive = "Jalan: " .. tostring(pickTower); STATE.towerDrops = 0; STATE.towerTraitsGot = "Mencari..."
 			pcall(function()
-				if R.PlayTower:IsA("RemoteFunction") then
-					started = R.PlayTower:InvokeServer(pickTower)
-					okStart = true
-				elseif R.PlayTower:IsA("RemoteEvent") then
-					R.PlayTower:FireServer(pickTower)
-					okStart, started = true, true
-				end
+				if R.PlayTower:IsA("RemoteFunction") then R.PlayTower:InvokeServer(pickTower)
+				else R.PlayTower:FireServer(pickTower) end
 			end)
-
-			if not (okStart and started) then
-				drainTower()
-				task.wait(2.5)
-				pcall(function()
-					if R.PlayTower:IsA("RemoteFunction") then R.PlayTower:InvokeServer(pickTower)
-					else R.PlayTower:FireServer(pickTower) end
-				end)
-			end
 
 			local done, fails = false, 0
 			while F.tower and not done do
-				local okP, seq = pcall(function()
-					if R.CompleteFloor:IsA("RemoteFunction") then
-						return R.CompleteFloor:InvokeServer()
-					end
-				end)
+				local okP, seq = pcall(function() if R.CompleteFloor:IsA("RemoteFunction") then return R.CompleteFloor:InvokeServer() end end)
 				if okP and type(seq) == "table" and #seq > 0 then
 					fails = 0
 					for _, act in ipairs(seq) do
 						if act.action == "floorStarted" then 
 							STATE.towerFloor = tonumber(act.floor) or 1
-							if STATE.towerFloor > 0 and STATE.towerFloor % 10 == 0 then
-								Notify("🏰 Tower Milestone!", "Lantai " .. STATE.towerFloor .. " di " .. tostring(pickTower), 3)
-								SendWebhook("🏰 Tower Milestone!", "Berhasil mencapai **Lantai " .. STATE.towerFloor .. "** di " .. tostring(pickTower), 16753920)
-							end
 						elseif act.action == "floorCompleted" then
 							if act.rewards and act.rewards.Gems then STATE.towerDrops += act.rewards.Gems end
-							if act.rewards and (act.rewards.Trait or act.trait) then
-								STATE.towerTraitsGot = tostring(act.rewards.Trait or act.trait)
-							end
-						elseif act.action == "ended" then done = true break end
+							if act.rewards and (act.rewards.Trait or act.trait) then STATE.towerTraitsGot = tostring(act.rewards.Trait or act.trait) end
+						elseif act.action == "ended" then done = true; break end
 					end
 					if not done and F.towerExitOn and F.towerExitFloor > 0 and STATE.towerFloor >= F.towerExitFloor then
 						done = true; drainTower()
 					end
 				else fails += 1; if fails > 8 then done = true end; task.wait(1) end
 			end
-			drainTower()
-			task.wait(1.5)
+			drainTower(); task.wait(1.5)
 		else STATE.towerLive = "Standby"; STATE.towerTraitsGot = "Belum Ada"; task.wait(2) end
 	end
 end)
 
--- HAUNTED TOWER FARMING THREAD
 task.spawn(function()
 	while _G.__ANIMEDICE == generation do
 		if F.hauntedTower and R.PlayTower and R.CompleteFloor then
-			drainTower()
-			task.wait(0.4)
-
+			drainTower(); task.wait(0.4)
 			if F.hauntedEquipBest and R.BestTowerTeam then pcall(function() R.BestTowerTeam:FireServer() end) end
 			task.wait(0.4)
 			
 			local pickHaunted = "Haunted Front Yard"
-			local choices = (F.hauntedList and #F.hauntedList > 0) and F.hauntedList or {"Haunted Front Yard", "Haunted Crypt", "Haunted Attic", "Haunted Bell Tower"}
-			if F.hauntedMix then
-				pickHaunted = choices[math.random(1, #choices)]
-			else
-				pickHaunted = choices[1]
-			end
+			local choices = (F.hauntedList and #F.hauntedList > 0) and F.hauntedList or {"Haunted Front Yard"}
+			pickHaunted = F.hauntedMix and choices[math.random(1, #choices)] or choices[1]
 
-			STATE.hauntedLive = "Memulai: " .. tostring(pickHaunted); STATE.hauntedDrops = 0
-			
-			local okStart = pcall(function()
+			STATE.hauntedLive = "Jalan: " .. tostring(pickHaunted); STATE.hauntedDrops = 0
+			pcall(function()
 				if R.PlayTower:IsA("RemoteFunction") then R.PlayTower:InvokeServer(pickHaunted)
 				else R.PlayTower:FireServer(pickHaunted) end
 			end)
 
-			if okStart then
-				local done, fails = false, 0
-				while F.hauntedTower and not done do
-					local okP, seq = pcall(function()
-						if R.CompleteFloor:IsA("RemoteFunction") then return R.CompleteFloor:InvokeServer() end
-					end)
-					if okP and type(seq) == "table" and #seq > 0 then
-						fails = 0
-						for _, act in ipairs(seq) do
-							if act.action == "floorStarted" then 
-								STATE.hauntedFloor = tonumber(act.floor) or 1
-							elseif act.action == "floorCompleted" then
-								if act.rewards then
-									for _, amt in pairs(act.rewards) do
-										if type(amt) == "number" then STATE.hauntedDrops += amt end
-									end
-								end
-							elseif act.action == "ended" then done = true break end
-						end
-						if not done and F.hauntedExitOn and F.hauntedExitFloor > 0 and STATE.hauntedFloor >= F.hauntedExitFloor then
-							done = true; drainTower()
-						end
-					else fails += 1; if fails > 8 then done = true end; task.wait(1) end
-				end
+			local done, fails = false, 0
+			while F.hauntedTower and not done do
+				local okP, seq = pcall(function() if R.CompleteFloor:IsA("RemoteFunction") then return R.CompleteFloor:InvokeServer() end end)
+				if okP and type(seq) == "table" and #seq > 0 then
+					fails = 0
+					for _, act in ipairs(seq) do
+						if act.action == "floorStarted" then STATE.hauntedFloor = tonumber(act.floor) or 1
+						elseif act.action == "floorCompleted" then
+							if act.rewards then for _, amt in pairs(act.rewards) do if type(amt) == "number" then STATE.hauntedDrops += amt end end end
+						elseif act.action == "ended" then done = true; break end
+					end
+					if not done and F.hauntedExitOn and F.hauntedExitFloor > 0 and STATE.hauntedFloor >= F.hauntedExitFloor then
+						done = true; drainTower()
+					end
+				else fails += 1; if fails > 8 then done = true end; task.wait(1) end
 			end
-			drainTower()
-			task.wait(1.5)
+			drainTower(); task.wait(1.5)
 		else STATE.hauntedLive = "Standby"; task.wait(2) end
 	end
 end)
 
--- Auto Quests & Codes
+-- Quests & Codes
 task.spawn(function()
 	while _G.__ANIMEDICE == generation do
 		if F.claimQuests then
@@ -1616,5 +1480,5 @@ task.spawn(function()
 	end
 end)
 
-Notify("MofenkHub V103.2 Ready!", "Fitur Auto Scale & Manual Zoom Berhasil Ditambahkan.", 4)
-AddSpyLog("MofenkHub V103.2 Loaded Successfully.")
+Notify("MofenkHub V103.3 Ready!", "Adaptive Auto-Scale & Compact UI Aktif Otomatis.", 4)
+AddSpyLog("MofenkHub V103.3 Loaded Successfully.")
