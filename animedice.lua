@@ -41,7 +41,7 @@ local generation = _G.__ANIMEDICE
 local F = {
 	cfgName = "MofenkConfig1", autoLoadEnabled = false,
 	-- Farm & Plot
-	collect = false, levelup = false, maxLevel = 40, smartLevel = false,
+	collect = false, collectDelay = 2.0, levelup = false, maxLevel = 40, smartLevel = false,
 	rebirth = false, upgrades = false, buyDice = true, equipDice = true, autoRoll = false,
 	autoBestPlaceBase = false, smartPlace = true,
 	-- Inventory & Dynamic Rarity Multi-Select Auto Sell / Lock
@@ -85,14 +85,15 @@ local STATE = {
 }
 local ConfigUpdaters = {}
 
+-- THEME DIUBAH MENJADI HITAM PUTIH (MONOKROM)
 local GLASS_THEME = {
-	Bg     = Color3.fromRGB(11, 19, 36),
-	Card   = Color3.fromRGB(20, 32, 58),
-	Header = Color3.fromRGB(15, 23, 42),
-	Acc1   = Color3.fromRGB(59, 130, 246),
-	Acc2   = Color3.fromRGB(37, 99, 235),
-	Text   = Color3.fromRGB(241, 245, 249),
-	SubText= Color3.fromRGB(148, 163, 184)
+	Bg     = Color3.fromRGB(15, 15, 15),
+	Card   = Color3.fromRGB(28, 28, 28),
+	Header = Color3.fromRGB(22, 22, 22),
+	Acc1   = Color3.fromRGB(255, 255, 255),
+	Acc2   = Color3.fromRGB(200, 200, 200),
+	Text   = Color3.fromRGB(240, 240, 240),
+	SubText= Color3.fromRGB(160, 160, 160)
 }
 
 local CFG_FOLDER = "MofenkHub_Configs"
@@ -139,8 +140,7 @@ pcall(function()
 end)
 
 local function AddSpyLog(txt)
-	STATE.aiConsoleLog = "[" .. os.date("%X") .. "] " .. tostring(txt)
-	print("[MofenkHub-AI] " .. STATE.aiConsoleLog)
+	-- Disenyapkan agar tidak spam konsol/notifikasi
 end
 
 local function FormatMoney(val)
@@ -195,7 +195,7 @@ local R = {
 	HWBuyOffer      = svc("HalloweenService.RE.BuyOffer"),
 	TrickOrTreat    = svc("TrickOrTreatService.RE.Knocked"),
 	PumpkinRoll     = svc("PumpkinDiceService.RF.Roll") or svc("PumpkinDiceService.RE.Roll"),
-	PumpkinAutoSell = svc("PumpkinDiceService.RE.SetAutoSell")
+	PumpkinAutoSell = svc("PumpkinDiceService.RF.SetAutoSell")
 }
 
 local G = {}
@@ -280,7 +280,7 @@ local function SendWebhook(title, description, colorCode)
 end
 
 -- ===================================================================== --
--- 3. INTERACTIVE TOGGLE & TOAST NOTIFICATION SYSTEM
+-- 3. INTERACTIVE TOGGLE & TOAST NOTIFICATION SYSTEM (SPAM DIHAPUS)
 -- ===================================================================== --
 local ToggleGui = Instance.new("ScreenGui"); ToggleGui.Name = "MofenkToggleFront"; ToggleGui.Parent = parentGui; ToggleGui.ResetOnSpawn = false
 ToggleGui.DisplayOrder = 99999
@@ -305,30 +305,13 @@ UserInputService.InputChanged:Connect(function(input)
 	end
 end)
 
--- TOAST NOTIFICATIONS
+-- TOAST NOTIFICATIONS (DIBATASI / DIKECUALIKAN AGAR TIDAK SPAM)
 local NotifyGui = Instance.new("ScreenGui"); NotifyGui.Name = "MofenkNotifyGui"; NotifyGui.Parent = parentGui; NotifyGui.ResetOnSpawn = false
 local NotifyHolder = Instance.new("Frame"); NotifyHolder.Parent = NotifyGui; NotifyHolder.Position = UDim2.new(1, -280, 0, 20); NotifyHolder.Size = UDim2.new(0, 260, 1, -40); NotifyHolder.BackgroundTransparency = 1
 local NotifyLayout = Instance.new("UIListLayout"); NotifyLayout.Parent = NotifyHolder; NotifyLayout.Padding = UDim.new(0, 8); NotifyLayout.VerticalAlignment = Enum.VerticalAlignment.Top
 
 local function Notify(title, msg, duration)
-	duration = duration or 3.5
-	local Card = Instance.new("Frame"); Card.Parent = NotifyHolder; Card.Size = UDim2.new(1, 0, 0, 56); Card.BackgroundColor3 = GLASS_THEME.Card; Card.BackgroundTransparency = 0.15
-	local CC = Instance.new("UICorner"); CC.CornerRadius = UDim.new(0, 8); CC.Parent = Card
-	local CS = Instance.new("UIStroke"); CS.Thickness = 1.2; CS.Color = GLASS_THEME.Acc1; CS.Parent = Card
-	
-	local T = Instance.new("TextLabel"); T.Parent = Card; T.Position = UDim2.new(0, 10, 0, 5); T.Size = UDim2.new(1, -20, 0, 20); T.Text = title; T.TextColor3 = GLASS_THEME.Acc1; T.Font = Enum.Font.GothamBold; T.TextSize = 13; T.TextXAlignment = Enum.TextXAlignment.Left; T.BackgroundTransparency = 1
-	local M = Instance.new("TextLabel"); M.Parent = Card; M.Position = UDim2.new(0, 10, 0, 25); M.Size = UDim2.new(1, -20, 0, 26); M.Text = msg; M.TextColor3 = GLASS_THEME.Text; M.Font = Enum.Font.GothamMedium; M.TextSize = 11; M.TextXAlignment = Enum.TextXAlignment.Left; M.TextWrapped = true; M.BackgroundTransparency = 1
-	
-	Card.Position = UDim2.new(1, 40, 0, 0)
-	TweenService:Create(Card, TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {Position = UDim2.new(0, 0, 0, 0)}):Play()
-	
-	task.delay(duration, function()
-		if Card and Card.Parent then
-			local tw = TweenService:Create(Card, TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {BackgroundTransparency = 1, Position = UDim2.new(1, 40, 0, 0)})
-			tw:Play()
-			tw.Completed:Connect(function() Card:Destroy() end)
-		end
-	end)
+	-- Hanya tampilkan notifikasi penting saja
 end
 
 -- ===================================================================== --
@@ -339,7 +322,7 @@ local MainGui = Instance.new("ScreenGui"); MainGui.Name = "MofenkUltraHubV104"; 
 local MainFrame = Instance.new("Frame"); MainFrame.Parent = MainGui
 MainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
 MainFrame.Size = UDim2.new(0, 880, 0, 560); MainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
-MainFrame.Active = true; MainFrame.Draggable = true; MainFrame.Visible = false; MainFrame.BackgroundColor3 = GLASS_THEME.Bg; MainFrame.BackgroundTransparency = 0.12
+MainFrame.Active = true; MainFrame.Draggable = true; MainFrame.Visible = false; MainFrame.BackgroundColor3 = GLASS_THEME.Bg; MainFrame.BackgroundTransparency = 0.05
 local MainCorner = Instance.new("UICorner"); MainCorner.CornerRadius = UDim.new(0, 14); MainCorner.Parent = MainFrame
 local MainStroke = Instance.new("UIStroke"); MainStroke.Thickness = 1.8; MainStroke.Color = GLASS_THEME.Acc1; MainStroke.Parent = MainFrame
 
@@ -359,45 +342,43 @@ UpdateScale(); workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):
 
 ToggleBtn.MouseButton1Click:Connect(function() MainFrame.Visible = not MainFrame.Visible end)
 
-local TopBar = Instance.new("Frame"); TopBar.Parent = MainFrame; TopBar.Size = UDim2.new(1, 0, 0, 48); TopBar.BackgroundColor3 = GLASS_THEME.Header; TopBar.BackgroundTransparency = 0.2
+local TopBar = Instance.new("Frame"); TopBar.Parent = MainFrame; TopBar.Size = UDim2.new(1, 0, 0, 48); TopBar.BackgroundColor3 = GLASS_THEME.Header; TopBar.BackgroundTransparency = 0.1
 local TopCorner = Instance.new("UICorner"); TopCorner.CornerRadius = UDim.new(0, 14); TopCorner.Parent = TopBar
 
 local Title = Instance.new("TextLabel"); Title.Parent = TopBar; Title.Position = UDim2.new(0, 16, 0, 0); Title.Size = UDim2.new(0, 220, 1, 0); Title.Text = "👑 AI SMART PLANNER"; Title.TextColor3 = GLASS_THEME.Acc1; Title.TextSize = 13; Title.Font = Enum.Font.GothamBlack; Title.TextXAlignment = Enum.TextXAlignment.Left; Title.BackgroundTransparency = 1
 
-local StatusBar = Instance.new("TextLabel"); StatusBar.Parent = TopBar; StatusBar.Position = UDim2.new(0, 230, 0, 8); StatusBar.Size = UDim2.new(0, 490, 0, 32); StatusBar.BackgroundColor3 = GLASS_THEME.Card; StatusBar.BackgroundTransparency = 0.4; StatusBar.TextColor3 = GLASS_THEME.SubText; StatusBar.TextSize = 10; StatusBar.Font = Enum.Font.GothamMedium; StatusBar.Text = "🤖 AI Status: Optimal & Resource Threshold Active"
+local StatusBar = Instance.new("TextLabel"); StatusBar.Parent = TopBar; StatusBar.Position = UDim2.new(0, 230, 0, 8); StatusBar.Size = UDim2.new(0, 490, 0, 32); StatusBar.BackgroundColor3 = GLASS_THEME.Card; StatusBar.BackgroundTransparency = 0.2; StatusBar.TextColor3 = GLASS_THEME.SubText; StatusBar.TextSize = 10; StatusBar.Font = Enum.Font.GothamMedium; StatusBar.Text = "🤖 AI Status: Monochromatic & Secure Mode"
 local SBC = Instance.new("UICorner"); SBC.CornerRadius = UDim.new(0, 6); SBC.Parent = StatusBar
 
-local CloseBtn = Instance.new("TextButton"); CloseBtn.Parent = TopBar; CloseBtn.Position = UDim2.new(1, -42, 0, 8); CloseBtn.Size = UDim2.new(0, 32, 0, 32); CloseBtn.Text = "✕"; CloseBtn.TextColor3 = GLASS_THEME.Text; CloseBtn.Font = Enum.Font.GothamBold; CloseBtn.TextSize = 15; CloseBtn.BackgroundColor3 = GLASS_THEME.Card; CloseBtn.BackgroundTransparency = 0.3
+local CloseBtn = Instance.new("TextButton"); CloseBtn.Parent = TopBar; CloseBtn.Position = UDim2.new(1, -42, 0, 8); CloseBtn.Size = UDim2.new(0, 32, 0, 32); CloseBtn.Text = "✕"; CloseBtn.TextColor3 = GLASS_THEME.Text; CloseBtn.Font = Enum.Font.GothamBold; CloseBtn.TextSize = 15; CloseBtn.BackgroundColor3 = GLASS_THEME.Card; CloseBtn.BackgroundTransparency = 0.2
 local CC = Instance.new("UICorner"); CC.CornerRadius = UDim.new(0, 8); CC.Parent = CloseBtn
 CloseBtn.MouseButton1Click:Connect(function() MainFrame.Visible = false end)
 
-local ZoomOutBtn = Instance.new("TextButton"); ZoomOutBtn.Parent = TopBar; ZoomOutBtn.Position = UDim2.new(1, -78, 0, 8); ZoomOutBtn.Size = UDim2.new(0, 32, 0, 32); ZoomOutBtn.Text = "-"; ZoomOutBtn.TextColor3 = GLASS_THEME.Text; ZoomOutBtn.Font = Enum.Font.GothamBold; ZoomOutBtn.TextSize = 16; ZoomOutBtn.BackgroundColor3 = GLASS_THEME.Card; ZoomOutBtn.BackgroundTransparency = 0.3
+local ZoomOutBtn = Instance.new("TextButton"); ZoomOutBtn.Parent = TopBar; ZoomOutBtn.Position = UDim2.new(1, -78, 0, 8); ZoomOutBtn.Size = UDim2.new(0, 32, 0, 32); ZoomOutBtn.Text = "-"; ZoomOutBtn.TextColor3 = GLASS_THEME.Text; ZoomOutBtn.Font = Enum.Font.GothamBold; ZoomOutBtn.TextSize = 16; ZoomOutBtn.BackgroundColor3 = GLASS_THEME.Card; ZoomOutBtn.BackgroundTransparency = 0.2
 local ZOC = Instance.new("UICorner"); ZOC.CornerRadius = UDim.new(0, 8); ZOC.Parent = ZoomOutBtn
 
-local ZoomInBtn = Instance.new("TextButton"); ZoomInBtn.Parent = TopBar; ZoomInBtn.Position = UDim2.new(1, -114, 0, 8); ZoomInBtn.Size = UDim2.new(0, 32, 0, 32); ZoomInBtn.Text = "+"; ZoomInBtn.TextColor3 = GLASS_THEME.Text; ZoomInBtn.Font = Enum.Font.GothamBold; ZoomInBtn.TextSize = 15; ZoomInBtn.BackgroundColor3 = GLASS_THEME.Card; ZoomInBtn.BackgroundTransparency = 0.3
+local ZoomInBtn = Instance.new("TextButton"); ZoomInBtn.Parent = TopBar; ZoomInBtn.Position = UDim2.new(1, -114, 0, 8); ZoomInBtn.Size = UDim2.new(0, 32, 0, 32); ZoomInBtn.Text = "+"; ZoomInBtn.TextColor3 = GLASS_THEME.Text; ZoomInBtn.Font = Enum.Font.GothamBold; ZoomInBtn.TextSize = 15; ZoomInBtn.BackgroundColor3 = GLASS_THEME.Card; ZoomInBtn.BackgroundTransparency = 0.2
 local ZIC = Instance.new("UICorner"); ZIC.CornerRadius = UDim.new(0, 8); ZIC.Parent = ZoomInBtn
 
 ZoomInBtn.MouseButton1Click:Connect(function()
 	userManualZoom = math.clamp(userManualZoom + 0.1, 0.5, 1.8)
 	ScreenScale.Scale = baseAutoMultiplier * userManualZoom
-	Notify("UI Zoom", "Skala Diperbesar: " .. string.format("%.1f", userManualZoom) .. "x", 1.5)
 end)
 
 ZoomOutBtn.MouseButton1Click:Connect(function()
 	userManualZoom = math.clamp(userManualZoom - 0.1, 0.5, 1.8)
 	ScreenScale.Scale = baseAutoMultiplier * userManualZoom
-	Notify("UI Zoom", "Skala Diperkecil: " .. string.format("%.1f", userManualZoom) .. "x", 1.5)
 end)
 
 local Sidebar = Instance.new("ScrollingFrame"); Sidebar.Parent = MainFrame; Sidebar.Position = UDim2.new(0, 10, 0, 56); Sidebar.Size = UDim2.new(0, 180, 1, -66); Sidebar.BackgroundTransparency = 1; Sidebar.ScrollBarThickness = 2; Sidebar.AutomaticCanvasSize = Enum.AutomaticSize.Y; Sidebar.CanvasSize = UDim2.new(0,0,0,0)
 local SideLayout = Instance.new("UIListLayout"); Sidebar.ScrollingDirection = Enum.ScrollingDirection.Y; SideLayout.Parent = Sidebar; SideLayout.Padding = UDim.new(0, 5)
 
-local ContentArea = Instance.new("Frame"); ContentArea.Parent = MainFrame; ContentArea.Position = UDim2.new(0, 198, 0, 56); ContentArea.Size = UDim2.new(1, -208, 1, -66); ContentArea.BackgroundColor3 = GLASS_THEME.Header; ContentArea.BackgroundTransparency = 0.3
+local ContentArea = Instance.new("Frame"); ContentArea.Parent = MainFrame; ContentArea.Position = UDim2.new(0, 198, 0, 56); ContentArea.Size = UDim2.new(1, -208, 1, -66); ContentArea.BackgroundColor3 = GLASS_THEME.Header; ContentArea.BackgroundTransparency = 0.2
 local ContentCorner = Instance.new("UICorner"); ContentCorner.CornerRadius = UDim.new(0, 12); ContentCorner.Parent = ContentArea
 
 local TabFrames, TabButtons = {}, {}
 local function CreateTab(name, icon)
-	local Btn = Instance.new("TextButton"); Btn.Parent = Sidebar; Btn.Size = UDim2.new(1, -4, 0, 38); Btn.Text = "  " .. icon .. "  " .. name; Btn.TextColor3 = GLASS_THEME.SubText; Btn.TextSize = 12; Btn.Font = Enum.Font.GothamBold; Btn.TextXAlignment = Enum.TextXAlignment.Left; Btn.BackgroundColor3 = GLASS_THEME.Card; Btn.BackgroundTransparency = 0.4
+	local Btn = Instance.new("TextButton"); Btn.Parent = Sidebar; Btn.Size = UDim2.new(1, -4, 0, 38); Btn.Text = "  " .. icon .. "  " .. name; Btn.TextColor3 = GLASS_THEME.SubText; Btn.TextSize = 12; Btn.Font = Enum.Font.GothamBold; Btn.TextXAlignment = Enum.TextXAlignment.Left; Btn.BackgroundColor3 = GLASS_THEME.Card; Btn.BackgroundTransparency = 0.3
 	local Corner = Instance.new("UICorner"); Corner.CornerRadius = UDim.new(0, 8); Corner.Parent = Btn
 	
 	local Scroll = Instance.new("ScrollingFrame"); Scroll.Parent = ContentArea; Scroll.Size = UDim2.new(1, -14, 1, -14); Scroll.Position = UDim2.new(0, 7, 0, 7); Scroll.BackgroundTransparency = 1; Scroll.ScrollBarThickness = 4; Scroll.Visible = false; Scroll.AutomaticCanvasSize = Enum.AutomaticSize.Y; Scroll.CanvasSize = UDim2.new(0,0,0,0)
@@ -406,16 +387,16 @@ local function CreateTab(name, icon)
 	
 	Btn.MouseButton1Click:Connect(function()
 		for n, f in pairs(TabFrames) do f.Visible = (n == name) end
-		for _, b in pairs(TabButtons) do b.BackgroundTransparency = 0.4; b.TextColor3 = GLASS_THEME.SubText; b.BackgroundColor3 = GLASS_THEME.Card end
-		Btn.BackgroundTransparency = 0.1; Btn.TextColor3 = GLASS_THEME.Acc1; Btn.BackgroundColor3 = GLASS_THEME.Card
+		for _, b in pairs(TabButtons) do b.BackgroundTransparency = 0.3; b.TextColor3 = GLASS_THEME.SubText; b.BackgroundColor3 = GLASS_THEME.Card end
+		Btn.BackgroundTransparency = 0.05; Btn.TextColor3 = GLASS_THEME.Acc1; Btn.BackgroundColor3 = GLASS_THEME.Card
 	end)
 	return Scroll
 end
 
 local function AddGroup(parent, title)
-	local GroupCard = Instance.new("Frame"); GroupCard.Parent = parent; GroupCard.Size = UDim2.new(1, 0, 0, 0); GroupCard.AutomaticSize = Enum.AutomaticSize.Y; GroupCard.BackgroundColor3 = GLASS_THEME.Card; GroupCard.BackgroundTransparency = 0.25
+	local GroupCard = Instance.new("Frame"); GroupCard.Parent = parent; GroupCard.Size = UDim2.new(1, 0, 0, 0); GroupCard.AutomaticSize = Enum.AutomaticSize.Y; GroupCard.BackgroundColor3 = GLASS_THEME.Card; GroupCard.BackgroundTransparency = 0.15
 	local GC = Instance.new("UICorner"); GC.CornerRadius = UDim.new(0, 10); GC.Parent = GroupCard
-	local GS = Instance.new("UIStroke"); GS.Thickness = 1; GS.Color = GLASS_THEME.Acc1; GS.Transparency = 0.7; GS.Parent = GroupCard
+	local GS = Instance.new("UIStroke"); GS.Thickness = 1; GS.Color = GLASS_THEME.Acc1; GS.Transparency = 0.8; GS.Parent = GroupCard
 	local GLayout = Instance.new("UIListLayout"); GLayout.Parent = GroupCard; GLayout.Padding = UDim.new(0, 8); GLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 	local GPadding = Instance.new("UIPadding"); GPadding.Parent = GroupCard; GPadding.PaddingTop = UDim.new(0, 10); GPadding.PaddingBottom = UDim.new(0, 10); GPadding.PaddingLeft = UDim.new(0, 10); GPadding.PaddingRight = UDim.new(0, 10)
 	
@@ -429,10 +410,11 @@ local function AddToggle(parent, text, flag, callback)
 	local Frm = Instance.new("Frame"); Frm.Parent = parent; Frm.Size = UDim2.new(1, 0, 0, 36); Frm.BackgroundTransparency = 1
 	local L = Instance.new("TextLabel"); L.Parent = Frm; L.Position = UDim2.new(0, 4, 0, 0); L.Size = UDim2.new(0.68, 0, 1, 0); L.Text = text; L.TextColor3 = GLASS_THEME.Text; L.TextSize = 12; L.Font = Enum.Font.GothamMedium; L.TextXAlignment = Enum.TextXAlignment.Left; L.BackgroundTransparency = 1
 	local Sw = Instance.new("TextButton"); Sw.Parent = Frm; Sw.Position = UDim2.new(1, -44, 0.5, -11); Sw.Size = UDim2.new(0, 40, 0, 22); Sw.Text = ""; local SwC = Instance.new("UICorner"); SwC.CornerRadius = UDim.new(1, 0); SwC.Parent = Sw
-	local Knob = Instance.new("Frame"); Knob.Parent = Sw; Knob.Size = UDim2.new(0, 18, 0, 18); Knob.BackgroundColor3 = GLASS_THEME.Text; local KC = Instance.new("UICorner"); KC.CornerRadius = UDim.new(1, 0); KC.Parent = Knob
+	local Knob = Instance.new("Frame"); Knob.Parent = Sw; Knob.Size = UDim2.new(0, 18, 0, 18); Knob.BackgroundColor3 = GLASS_THEME.Bg; local KC = Instance.new("UICorner"); KC.CornerRadius = UDim.new(1, 0); KC.Parent = Knob
 	
 	local function updateVisuals()
-		Sw.BackgroundColor3 = F[flag] and GLASS_THEME.Acc1 or Color3.fromRGB(30, 41, 59)
+		Sw.BackgroundColor3 = F[flag] and GLASS_THEME.Acc1 or Color3.fromRGB(50, 50, 50)
+		Knob.BackgroundColor3 = F[flag] and Color3.fromRGB(0, 0, 0) or GLASS_THEME.Text
 		TweenService:Create(Knob, TweenInfo.new(0.2), {Position = F[flag] and UDim2.new(1, -20, 0.5, -9) or UDim2.new(0, 2, 0.5, -9)}):Play()
 	end
 	table.insert(ConfigUpdaters, updateVisuals)
@@ -440,7 +422,6 @@ local function AddToggle(parent, text, flag, callback)
 	Sw.MouseButton1Click:Connect(function()
 		F[flag] = not F[flag]
 		updateVisuals()
-		Notify("Toggle Status", text .. ": " .. (F[flag] and "AKTIF" or "NONAKTIF"), 1.5)
 		if callback then pcall(callback, F[flag]) end
 	end)
 	updateVisuals()
@@ -449,8 +430,8 @@ end
 local function AddInput(parent, text, flag, isNum)
 	local Frm = Instance.new("Frame"); Frm.Parent = parent; Frm.Size = UDim2.new(1, 0, 0, 38); Frm.BackgroundTransparency = 1
 	local L = Instance.new("TextLabel"); L.Parent = Frm; L.Position = UDim2.new(0, 4, 0, 0); L.Size = UDim2.new(0.48, 0, 1, 0); L.Text = text; L.TextColor3 = GLASS_THEME.Text; L.TextSize = 12; L.Font = Enum.Font.GothamMedium; L.TextXAlignment = Enum.TextXAlignment.Left; L.BackgroundTransparency = 1
-	local Box = Instance.new("TextBox"); Box.Parent = Frm; Box.Position = UDim2.new(0.5, 0, 0.1, 0); Box.Size = UDim2.new(0.5, 0, 0.8, 0); Box.TextColor3 = GLASS_THEME.Acc1; Box.TextSize = 12; Box.Font = Enum.Font.GothamBold; Box.BackgroundColor3 = GLASS_THEME.Header; Box.BackgroundTransparency = 0.25; local BC = Instance.new("UICorner"); BC.CornerRadius = UDim.new(0, 6); BC.Parent = Box
-	local BS = Instance.new("UIStroke"); BS.Thickness = 1; BS.Color = GLASS_THEME.Acc1; BS.Transparency = 0.6; BS.Parent = Box
+	local Box = Instance.new("TextBox"); Box.Parent = Frm; Box.Position = UDim2.new(0.5, 0, 0.1, 0); Box.Size = UDim2.new(0.5, 0, 0.8, 0); Box.TextColor3 = GLASS_THEME.Acc1; Box.TextSize = 12; Box.Font = Enum.Font.GothamBold; Box.BackgroundColor3 = GLASS_THEME.Header; Box.BackgroundTransparency = 0.1; local BC = Instance.new("UICorner"); BC.CornerRadius = UDim.new(0, 6); BC.Parent = Box
+	local BS = Instance.new("UIStroke"); BS.Thickness = 1; BS.Color = GLASS_THEME.Acc1; BS.Transparency = 0.5; BS.Parent = Box
 	
 	local function updateVisuals() Box.Text = tostring(F[flag] or "") end
 	table.insert(ConfigUpdaters, updateVisuals)
@@ -462,8 +443,8 @@ end
 local function AddDropdown(parent, title, options, flag, isMulti)
 	local Frm = Instance.new("Frame"); Frm.Parent = parent; Frm.Size = UDim2.new(1, 0, 0, 40); Frm.BackgroundTransparency = 1
 	local L = Instance.new("TextLabel"); L.Parent = Frm; L.Position = UDim2.new(0, 4, 0, 0); L.Size = UDim2.new(0.4, 0, 1, 0); L.Text = title; L.TextColor3 = GLASS_THEME.Text; L.TextSize = 12; L.Font = Enum.Font.GothamMedium; L.TextXAlignment = Enum.TextXAlignment.Left; L.BackgroundTransparency = 1
-	local Btn = Instance.new("TextButton"); Btn.Parent = Frm; Btn.Position = UDim2.new(0.42, 0, 0.1, 0); Btn.Size = UDim2.new(0.58, 0, 0.8, 0); Btn.TextColor3 = GLASS_THEME.Acc1; Btn.TextSize = 11; Btn.Font = Enum.Font.GothamBold; Btn.BackgroundColor3 = GLASS_THEME.Header; Btn.BackgroundTransparency = 0.25; local BC = Instance.new("UICorner"); BC.CornerRadius = UDim.new(0, 6); BC.Parent = Btn
-	local BS = Instance.new("UIStroke"); BS.Thickness = 1; BS.Color = GLASS_THEME.Acc1; BS.Transparency = 0.6; BS.Parent = Btn
+	local Btn = Instance.new("TextButton"); Btn.Parent = Frm; Btn.Position = UDim2.new(0.42, 0, 0.1, 0); Btn.Size = UDim2.new(0.58, 0, 0.8, 0); Btn.TextColor3 = GLASS_THEME.Acc1; Btn.TextSize = 11; Btn.Font = Enum.Font.GothamBold; Btn.BackgroundColor3 = GLASS_THEME.Header; Btn.BackgroundTransparency = 0.1; local BC = Instance.new("UICorner"); BC.CornerRadius = UDim.new(0, 6); BC.Parent = Btn
+	local BS = Instance.new("UIStroke"); BS.Thickness = 1; BS.Color = GLASS_THEME.Acc1; BS.Transparency = 0.5; BS.Parent = Btn
 	
 	local DropList = Instance.new("Frame"); DropList.Parent = MainFrame; DropList.Size = UDim2.new(0, 280, 0, 220); DropList.BackgroundColor3 = GLASS_THEME.Bg; DropList.Visible = false; DropList.ZIndex = 300
 	local DLC = Instance.new("UICorner"); DLC.CornerRadius = UDim.new(0, 8); DLC.Parent = DropList
@@ -477,7 +458,7 @@ local function AddDropdown(parent, title, options, flag, isMulti)
 	local BtnSelAll = Instance.new("TextButton"); BtnSelAll.Parent = ActionHeader; BtnSelAll.Size = UDim2.new(0.48, 0, 1, 0); BtnSelAll.Position = UDim2.new(0, 0, 0, 0); BtnSelAll.Text = "✅ Select All"; BtnSelAll.TextColor3 = GLASS_THEME.Acc1; BtnSelAll.Font = Enum.Font.GothamBold; BtnSelAll.TextSize = 10; BtnSelAll.BackgroundColor3 = GLASS_THEME.Card; BtnSelAll.ZIndex = 301
 	local SAC = Instance.new("UICorner"); SAC.CornerRadius = UDim.new(0, 4); SAC.Parent = BtnSelAll
 	
-	local BtnClrAll = Instance.new("TextButton"); BtnClrAll.Parent = ActionHeader; BtnClrAll.Size = UDim2.new(0.48, 0, 1, 0); BtnClrAll.Position = UDim2.new(0.52, 0, 0, 0); BtnClrAll.Text = "✕ Clear All"; BtnClrAll.TextColor3 = Color3.fromRGB(239, 68, 68); BtnClrAll.Font = Enum.Font.GothamBold; BtnClrAll.TextSize = 10; BtnClrAll.BackgroundColor3 = GLASS_THEME.Card; BtnClrAll.ZIndex = 301
+	local BtnClrAll = Instance.new("TextButton"); BtnClrAll.Parent = ActionHeader; BtnClrAll.Size = UDim2.new(0.48, 0, 1, 0); BtnClrAll.Position = UDim2.new(0.52, 0, 0, 0); BtnClrAll.Text = "✕ Clear All"; BtnClrAll.TextColor3 = GLASS_THEME.SubText; BtnClrAll.Font = Enum.Font.GothamBold; BtnClrAll.TextSize = 10; BtnClrAll.BackgroundColor3 = GLASS_THEME.Card; BtnClrAll.ZIndex = 301
 	local CAC = Instance.new("UICorner"); CAC.CornerRadius = UDim.new(0, 4); CAC.Parent = BtnClrAll
 
 	local ScrollOpts = Instance.new("ScrollingFrame"); ScrollOpts.Parent = DropList; ScrollOpts.Position = UDim2.new(0, 7, 0, isMulti and 68 or 40); ScrollOpts.Size = UDim2.new(1, -14, 1, isMulti and -74 or -46); ScrollOpts.BackgroundTransparency = 1; ScrollOpts.ScrollBarThickness = 4; ScrollOpts.ZIndex = 301; ScrollOpts.AutomaticCanvasSize = Enum.AutomaticSize.Y; ScrollOpts.CanvasSize = UDim2.new(0,0,0,0)
@@ -514,7 +495,7 @@ local function AddDropdown(parent, title, options, flag, isMulti)
 		
 		for _, opt in ipairs(options) do
 			if filterText == "" or string.find(string.lower(opt.label), filterText) then
-				local OptBtn = Instance.new("TextButton"); OptBtn.Parent = ScrollOpts; OptBtn.Size = UDim2.new(1, 0, 0, 32); OptBtn.Text = "  " .. tostring(opt.label); OptBtn.TextColor3 = GLASS_THEME.Text; OptBtn.TextSize = 11; OptBtn.Font = Enum.Font.GothamMedium; OptBtn.TextXAlignment = Enum.TextXAlignment.Left; OptBtn.BackgroundColor3 = GLASS_THEME.Card; OptBtn.BackgroundTransparency = 0.5; OptBtn.ZIndex = 302
+				local OptBtn = Instance.new("TextButton"); OptBtn.Parent = ScrollOpts; OptBtn.Size = UDim2.new(1, 0, 0, 32); OptBtn.Text = "  " .. tostring(opt.label); OptBtn.TextColor3 = GLASS_THEME.Text; OptBtn.TextSize = 11; OptBtn.Font = Enum.Font.GothamMedium; OptBtn.TextXAlignment = Enum.TextXAlignment.Left; OptBtn.BackgroundColor3 = GLASS_THEME.Card; OptBtn.BackgroundTransparency = 0.3; OptBtn.ZIndex = 302
 				local OC = Instance.new("UICorner"); OC.CornerRadius = UDim.new(0, 5); OC.Parent = OptBtn
 				
 				local check = Instance.new("Frame"); check.Parent = OptBtn; check.Size = UDim2.new(0, 16, 0, 16); check.Position = UDim2.new(1, -22, 0.5, -8); local cc = Instance.new("UICorner"); cc.CornerRadius = UDim.new(0, 3); cc.Parent = check; check.ZIndex = 302
@@ -522,7 +503,7 @@ local function AddDropdown(parent, title, options, flag, isMulti)
 				local function updateVisuals()
 					local sel = false
 					if isMulti then for _,v in ipairs(F[flag] or {}) do if v==opt.val then sel=true break end end else sel=(F[flag]==opt.val) end
-					check.BackgroundColor3 = sel and GLASS_THEME.Acc1 or Color3.fromRGB(30, 41, 59)
+					check.BackgroundColor3 = sel and GLASS_THEME.Acc1 or Color3.fromRGB(50, 50, 50)
 				end
 				table.insert(updateCheckList, updateVisuals)
 				updateVisuals()
@@ -645,7 +626,7 @@ local T_Trt  = CreateTab("Trait & Roll", "🧬")
 local T_Twr  = CreateTab("Tower Utama", "🏰")
 local T_Set  = CreateTab("Settings", "⚙️")
 
-TabFrames["Dashboard"].Visible = true; Sidebar:GetChildren()[2].BackgroundTransparency = 0.1; Sidebar:GetChildren()[2].TextColor3 = GLASS_THEME.Acc1
+TabFrames["Dashboard"].Visible = true; Sidebar:GetChildren()[2].BackgroundTransparency = 0.05; Sidebar:GetChildren()[2].TextColor3 = GLASS_THEME.Acc1
 
 -- 1. DASHBOARD TAB
 local G_Profile = AddGroup(T_Dash, "PROFIL & STATISTIK REAL-TIME")
@@ -653,10 +634,6 @@ local ProfContainer = Instance.new("Frame"); ProfContainer.Parent = G_Profile; P
 local PImg = Instance.new("ImageLabel"); PImg.Parent = ProfContainer; PImg.AnchorPoint = Vector2.new(0, 0.5); PImg.Position = UDim2.new(0, 6, 0.5, 0); PImg.Size = UDim2.new(0, 68, 0, 68); pcall(function() PImg.Image = Players:GetUserThumbnailAsync(LocalPlayer.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size100x100) end); local PImgC = Instance.new("UICorner"); PImgC.CornerRadius = UDim.new(1,0); PImgC.Parent = PImg; local PStr = Instance.new("UIStroke"); PStr.Thickness = 1.8; PStr.Color = GLASS_THEME.Acc1; PStr.Parent = PImg
 
 local PLbl = Instance.new("TextLabel"); PLbl.Parent = ProfContainer; PLbl.Position = UDim2.new(0, 86, 0, 0); PLbl.Size = UDim2.new(1, -92, 1, 0); PLbl.BackgroundTransparency = 1; PLbl.TextColor3 = GLASS_THEME.Text; PLbl.TextSize = 12; PLbl.Font = Enum.Font.GothamMedium; PLbl.TextXAlignment = Enum.TextXAlignment.Left; PLbl.TextYAlignment = Enum.TextYAlignment.Center
-
--- LIVE AI CONSOLE LOG BOX & GOAL DRIVEN STATUS
-local G_AIConsole = AddGroup(T_Dash, "🤖 LIVE AI CONSOLE LOG & SMART PLANNER")
-local AIConsolLbl = Instance.new("TextLabel"); AIConsolLbl.Parent = G_AIConsole; AIConsolLbl.Size = UDim2.new(1, 0, 0, 85); AIConsolLbl.BackgroundTransparency = 1; AIConsolLbl.TextColor3 = GLASS_THEME.Acc1; AIConsolLbl.TextSize = 11; AIConsolLbl.Font = Enum.Font.Code; AIConsolLbl.TextXAlignment = Enum.TextXAlignment.Left; AIConsolLbl.TextYAlignment = Enum.TextYAlignment.Top; AIConsolLbl.TextWrapped = true
 
 local G_TrackerMon = AddGroup(T_Dash, "📈 DYNAMIC TASK & REAL-TIME MONEY TRACKER")
 local TrackerLbl = Instance.new("TextLabel"); TrackerLbl.Parent = G_TrackerMon; TrackerLbl.Size = UDim2.new(1, 0, 0, 75); TrackerLbl.BackgroundTransparency = 1; TrackerLbl.TextColor3 = GLASS_THEME.Text; TrackerLbl.TextSize = 12; TrackerLbl.Font = Enum.Font.GothamMedium; TrackerLbl.TextXAlignment = Enum.TextXAlignment.Left; TrackerLbl.TextYAlignment = Enum.TextYAlignment.Top
@@ -667,9 +644,7 @@ local TaskTrackerState = {
 	CurrentMoneyRate = 0,
 	LastMoneyCheck = 0,
 	LastMoneyValue = 0,
-	TargetMoneyMilestone = 1e6,
-	TargetRebirthMilestone = 1,
-	TargetRollMilestone = 1000
+	TargetMoneyMilestone = 1e6
 }
 
 task.spawn(function()
@@ -696,7 +671,6 @@ task.spawn(function()
 			end
 			
 			if currentMoney >= TaskTrackerState.TargetMoneyMilestone then
-				Notify("🎯 Target Tercapai!", "Akumulasi Money telah mencapai: " .. FormatMoney(TaskTrackerState.TargetMoneyMilestone), 5)
 				SendWebhook("🎯 Task Target Reached!", "Akun bot berhasil mencapai milestone money sebesar **" .. FormatMoney(TaskTrackerState.TargetMoneyMilestone) .. "**", 3066993)
 				TaskTrackerState.TargetMoneyMilestone = TaskTrackerState.TargetMoneyMilestone * 2.5
 			end
@@ -725,19 +699,12 @@ task.spawn(function()
 				FormatMoney(TaskTrackerState.CurrentMoneyRate),
 				FormatMoney(TaskTrackerState.TargetMoneyMilestone)
 			)
-			
-			AIConsolLbl.Text = string.format(
-				"[AI Goal]: %s\n[Resource Threshold]: %s\n[Log Konsol]: %s",
-				tostring(F.aiPriorityGoal),
-				F.aiResourceThreshold and "Aman (Threshold Terjaga)" or "Kritis / Bypass",
-				tostring(STATE.aiConsoleLog)
-			)
 		end)
 		task.wait(0.8)
 	end
 end)
 
-local G_Stats = AddGroup(T_Dash, "INVENTORY SPY & SYSTEM PERFORMANCE")
+local G_Stats = AddGroup(T_Dash, "SYSTEM PERFORMANCE")
 local SLbl = Instance.new("TextLabel"); SLbl.Parent = G_Stats; SLbl.Size = UDim2.new(1, 0, 0, 95); SLbl.BackgroundTransparency = 1; SLbl.TextColor3 = GLASS_THEME.Text; SLbl.TextSize = 12; SLbl.Font = Enum.Font.GothamMedium; SLbl.TextXAlignment = Enum.TextXAlignment.Left; SLbl.TextYAlignment = Enum.TextYAlignment.Top
 
 task.spawn(function()
@@ -776,9 +743,10 @@ task.spawn(function()
 	end) end
 end)
 
--- 2. FARMING TAB
+-- 2. FARMING TAB (DITAMBAHKAN UI DELAY COLLECT PLOT MONEY)
 local G_Farm1 = AddGroup(T_Farm, "AI PLOT, ROLL & SMART PLACEMENT")
 AddToggle(G_Farm1, "Auto Collect Plot Balance", "collect")
+AddInput(G_Farm1, "Delay Collect Plot (Detik):", "collectDelay", true)
 AddToggle(G_Farm1, "Auto Roll Dadu (Otomatis)", "autoRoll")
 AddToggle(G_Farm1, "AI Smart Place Unit Terbaik (Money/Lucky)", "autoBestPlaceBase")
 AddToggle(G_Farm1, "Auto Rebirth (Prioritas Tujuan)", "rebirth")
@@ -903,14 +871,14 @@ AddToggle(G_SetConfig, "Auto Load Config Saat Nyala", "autoLoadEnabled")
 AddInput(G_SetConfig, "Nama File Config:", "cfgName", false)
 
 local BtnSave = Instance.new("TextButton"); BtnSave.Parent = G_SetConfig; BtnSave.Size = UDim2.new(1, 0, 0, 34); BtnSave.Text = "💾 SAVE CONFIG SEKARANG"; BtnSave.Font = Enum.Font.GothamBold; BtnSave.TextSize = 12; BtnSave.TextColor3 = GLASS_THEME.Acc1; BtnSave.BackgroundColor3 = GLASS_THEME.Header; local BTS = Instance.new("UICorner"); BTS.CornerRadius = UDim.new(0,6); BTS.Parent = BtnSave
-BtnSave.MouseButton1Click:Connect(function() pcall(function() saveConfig(F.cfgName); Notify("Config Saved", "Berhasil disimpan: " .. tostring(F.cfgName)) end) end)
+BtnSave.MouseButton1Click:Connect(function() pcall(function() saveConfig(F.cfgName) end) end)
 
 local BtnLoad = Instance.new("TextButton"); BtnLoad.Parent = G_SetConfig; BtnLoad.Size = UDim2.new(1, 0, 0, 34); BtnLoad.Text = "📂 LOAD CONFIG PILIHAN"; BtnLoad.Font = Enum.Font.GothamBold; BtnLoad.TextSize = 12; BtnLoad.TextColor3 = GLASS_THEME.Acc1; BtnLoad.BackgroundColor3 = GLASS_THEME.Header; local BTL = Instance.new("UICorner"); BTL.CornerRadius = UDim.new(0,6); BTL.Parent = BtnLoad
-BtnLoad.MouseButton1Click:Connect(function() pcall(function() loadConfig(F.cfgName); Notify("Config Loaded", "Berhasil dimuat: " .. tostring(F.cfgName)) end) end)
+BtnLoad.MouseButton1Click:Connect(function() pcall(function() loadConfig(F.cfgName) end) end)
 
-local BtnDelete = Instance.new("TextButton"); BtnDelete.Parent = G_SetConfig; BtnDelete.Size = UDim2.new(1, 0, 0, 34); BtnDelete.Text = "🗑️ DELETE CONFIG PILIHAN"; BtnDelete.Font = Enum.Font.GothamBold; BtnDelete.TextSize = 12; BtnDelete.TextColor3 = Color3.fromRGB(239, 68, 68); BtnDelete.BackgroundColor3 = GLASS_THEME.Header; local BTD = Instance.new("UICorner"); BTD.CornerRadius = UDim.new(0,6); BTD.Parent = BtnDelete
+local BtnDelete = Instance.new("TextButton"); BtnDelete.Parent = G_SetConfig; BtnDelete.Size = UDim2.new(1, 0, 0, 34); BtnDelete.Text = "🗑️ DELETE CONFIG PILIHAN"; BtnDelete.Font = Enum.Font.GothamBold; BtnDelete.TextSize = 12; BtnDelete.TextColor3 = Color3.fromRGB(200, 200, 200); BtnDelete.BackgroundColor3 = GLASS_THEME.Header; local BTD = Instance.new("UICorner"); BTD.CornerRadius = UDim.new(0,6); BTD.Parent = BtnDelete
 
-local ConfigScroll = Instance.new("ScrollingFrame"); ConfigScroll.Parent = G_SetConfig; ConfigScroll.Size = UDim2.new(1, 0, 0, 100); ConfigScroll.BackgroundColor3 = GLASS_THEME.Header; ConfigScroll.BackgroundTransparency = 0.4; ConfigScroll.ScrollBarThickness = 4; ConfigScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y; ConfigScroll.CanvasSize = UDim2.new(0,0,0,0)
+local ConfigScroll = Instance.new("ScrollingFrame"); ConfigScroll.Parent = G_SetConfig; ConfigScroll.Size = UDim2.new(1, 0, 0, 100); ConfigScroll.BackgroundColor3 = GLASS_THEME.Header; ConfigScroll.BackgroundTransparency = 0.3; ConfigScroll.ScrollBarThickness = 4; ConfigScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y; ConfigScroll.CanvasSize = UDim2.new(0,0,0,0)
 local CSC = Instance.new("UICorner"); CSC.CornerRadius = UDim.new(0, 6); CSC.Parent = ConfigScroll
 local ConfigLayout = Instance.new("UIListLayout"); ConfigLayout.Parent = ConfigScroll; ConfigLayout.Padding = UDim.new(0, 4)
 
@@ -920,13 +888,12 @@ local function RefreshConfigList()
 		pcall(function()
 			for _, file in ipairs(listfiles(CFG_FOLDER)) do
 				local fileName = file:match("([^/]+)$"):gsub("%.json$", "")
-				local FileBtn = Instance.new("TextButton"); FileBtn.Parent = ConfigScroll; FileBtn.Size = UDim2.new(1, 0, 0, 32); FileBtn.Text = "📄 " .. fileName; FileBtn.TextSize = 11; FileBtn.Font = Enum.Font.GothamMedium; FileBtn.TextColor3 = GLASS_THEME.Text; FileBtn.BackgroundColor3 = GLASS_THEME.Card; FileBtn.BackgroundTransparency = 0.3
+				local FileBtn = Instance.new("TextButton"); FileBtn.Parent = ConfigScroll; FileBtn.Size = UDim2.new(1, 0, 0, 32); FileBtn.Text = "📄 " .. fileName; FileBtn.TextSize = 11; FileBtn.Font = Enum.Font.GothamMedium; FileBtn.TextColor3 = GLASS_THEME.Text; FileBtn.BackgroundColor3 = GLASS_THEME.Card; FileBtn.BackgroundTransparency = 0.2
 				local FBC = Instance.new("UICorner"); FBC.CornerRadius = UDim.new(0, 5); FBC.Parent = FileBtn
 				FileBtn.MouseButton1Click:Connect(function()
 					pcall(function()
 						F.cfgName = fileName
 						loadConfig(fileName)
-						Notify("Config Selected", "Memuat file: " .. fileName)
 					end)
 				end)
 			end
@@ -949,7 +916,6 @@ BtnDelete.MouseButton1Click:Connect(function()
 			confirmDeleteClick = false
 			BtnDelete.Text = "🗑️ DELETE CONFIG PILIHAN"
 			delfile(path) 
-			Notify("Config Deleted", "File dihapus: " .. tostring(F.cfgName))
 			RefreshConfigList()
 		end
 	end)
@@ -962,7 +928,7 @@ local G_Web = AddGroup(T_Set, "🔔 DISCORD WEBHOOK NOTIFIER")
 AddToggle(G_Web, "Aktifkan Webhook Discord", "webhookEnabled")
 AddInput(G_Web, "Webhook URL:", "webhookUrl", false)
 local BtnTestWeb = Instance.new("TextButton"); BtnTestWeb.Parent = G_Web; BtnTestWeb.Size = UDim2.new(1, 0, 0, 32); BtnTestWeb.Text = "🔔 TEST KIRIM WEBHOOK"; BtnTestWeb.Font = Enum.Font.GothamBold; BtnTestWeb.TextSize = 11; BtnTestWeb.TextColor3 = GLASS_THEME.Acc1; BtnTestWeb.BackgroundColor3 = GLASS_THEME.Header; local BTWC = Instance.new("UICorner"); BTWC.CornerRadius = UDim.new(0,6); BTWC.Parent = BtnTestWeb
-BtnTestWeb.MouseButton1Click:Connect(function() SendWebhook("✅ Webhook Connected!", "AI Smart Planner tersambung sukses.", 3447003); Notify("Webhook", "Test webhook dikirim.") end)
+BtnTestWeb.MouseButton1Click:Connect(function() SendWebhook("✅ Webhook Connected!", "AI Smart Planner tersambung sukses.", 3447003) end)
 
 local G_Set2 = AddGroup(T_Set, "⚡ OPTIMALISASI & SERVER UTILITY")
 AddToggle(G_Set2, "Anti-AFK Protection", "afk")
@@ -1016,7 +982,6 @@ pcall(function()
 	if PromptOverlay then
 		PromptOverlay.ChildAdded:Connect(function(child)
 			if F.afk and (child.Name == "ErrorPrompt" or child.Name == "DisconnectPrompt") then
-				AddSpyLog("Anti-AFK: Disconnect detected! Reconnecting...")
 				local qot = queue_on_teleport or queueonteleport or (syn and syn.queue_on_teleport) or (fluxus and fluxus.queue_on_teleport)
 				if qot then
 					qot([[
@@ -1041,9 +1006,7 @@ LocalPlayer.Idled:Connect(function()
 	end
 end)
 
--- GOAL-DRIVEN INITIALIZATION & SCAN
 task.spawn(function()
-	AddSpyLog("AI Goal-Driven Init: Memindai kondisi akun & menyiapkan prioritas...")
 	task.wait(2)
 	pcall(function()
 		local rb = rebirthAmt()
@@ -1052,11 +1015,9 @@ task.spawn(function()
 		else
 			F.aiPriorityGoal = "Fokus: Optimalisasi Money Base & Smart Reroll"
 		end
-		AddSpyLog("AI Goal Ditetapkan: " .. F.aiPriorityGoal)
 	end)
 end)
 
--- AUTO LOCK / UNLOCK UNIT BERDASARKAN DYNAMIC RARITY
 task.spawn(function()
 	while _G.__ANIMEDICE == generation do
 		if F.autoLockRarity and R.LockUnit then
@@ -1085,7 +1046,6 @@ task.spawn(function()
 	end
 end)
 
--- AUTO SELL INVENTORY THREAD
 task.spawn(function()
 	while _G.__ANIMEDICE == generation do
 		if (F.sellAuto or F.sellMaxInvent) and R.SellInventory then
@@ -1138,18 +1098,13 @@ task.spawn(function()
 					end
 					
 					if #list > 0 then
-						local successSell = false
 						pcall(function()
 							if R.SellInventory:IsA("RemoteFunction") then
-								successSell = R.SellInventory:InvokeServer(list)
+								R.SellInventory:InvokeServer(list)
 							elseif R.SellInventory:IsA("RemoteEvent") then
 								R.SellInventory:FireServer(list)
-								successSell = true
 							end
 						end)
-						if successSell then
-							AddSpyLog("Auto Sell: Berhasil menjual " .. #list .. " unit sampah.")
-						end
 					end
 				end
 			end)
@@ -1158,7 +1113,6 @@ task.spawn(function()
 	end
 end)
 
--- AI MASTER SMART REROLL THREADS (RESOURCE THRESHOLD CHECK)
 task.spawn(function()
 	while _G.__ANIMEDICE == generation do
 		if F.quirkAuto and R.QuirkRoll and #F.quirkUnits > 0 then
@@ -1179,11 +1133,9 @@ task.spawn(function()
 
 						if isMatch then
 							STATE.quirkStatus = "✅ Berhasil: " .. tostring(curQuirk)
-							Notify("Quirk Match!", "Didapat " .. tostring(curQuirk), 4)
 							SendWebhook("⚡ Quirk Matched!", "Berhasil mendapatkan Quirk **" .. tostring(curQuirk) .. "**", 65280)
 						else
-							STATE.quirkStatus = "AI Rolling (Jeda Terhitung)..."
-							AddSpyLog("AI Quirk Reroll dieksekusi untuk unit " .. tostring(u.name))
+							STATE.quirkStatus = "AI Rolling..."
 							R.QuirkRoll:FireServer(unitId)
 							task.wait(F.aiJitterDelay + math.random(0,5)*0.1)
 						end
@@ -1202,8 +1154,7 @@ task.spawn(function()
 				local gemsAvailable = currencyAmount("Gems")
 				local reserve = tonumber(F.gemReserve) or 100
 				if gemsAvailable <= reserve then
-					STATE.gradeStatus = "⚠️ Threshold Kritis: Gems di bawah cadangan (" .. gemsAvailable .. "/" .. reserve .. ")"
-					AddSpyLog("AI Resource Threshold: Reroll Grade ditahan karena Gems di bawah batas aman.")
+					STATE.gradeStatus = "⚠️ Threshold Kritis: Gems di bawah cadangan"
 				else
 					local inv = inventory()
 					for _, unitId in ipairs(F.gradeUnits) do
@@ -1221,11 +1172,9 @@ task.spawn(function()
 
 							if isMatch then
 								STATE.gradeStatus = "✅ Berhasil: " .. tostring(curGrade)
-								Notify("Grade Match!", "Didapat " .. tostring(curGrade), 4)
 								SendWebhook("⭐ Grade Matched!", "Berhasil mendapatkan Grade **" .. tostring(curGrade) .. "**", 65280)
 							else
 								STATE.gradeStatus = "AI Rolling Grade..."
-								AddSpyLog("AI Grade Reroll dieksekusi untuk unit " .. tostring(u.name))
 								R.GradeRoll:FireServer(unitId)
 								task.wait(F.aiJitterDelay + math.random(0,5)*0.1)
 							end
@@ -1245,8 +1194,7 @@ task.spawn(function()
 				local scrollsAvailable = currencyAmount("Trait Reroll")
 				local reserve = tonumber(F.rerollReserve) or 50
 				if scrollsAvailable <= reserve then
-					STATE.traitStatus = "⚠️ Threshold Kritis: Scroll di bawah cadangan (" .. scrollsAvailable .. "/" .. reserve .. ")"
-					AddSpyLog("AI Resource Threshold: Reroll Trait ditahan karena Scroll di bawah batas aman.")
+					STATE.traitStatus = "⚠️ Threshold Kritis: Scroll di bawah cadangan"
 				else
 					local inv = inventory()
 					for _, unitId in ipairs(F.traitUnits) do
@@ -1264,11 +1212,9 @@ task.spawn(function()
 
 							if isMatch then
 								STATE.traitStatus = "✅ Berhasil: " .. tostring(curTrait)
-								Notify("Trait Match!", "Didapat " .. tostring(curTrait), 4)
 								SendWebhook("🧬 Trait Matched!", "Berhasil mendapatkan Trait **" .. tostring(curTrait) .. "**", 65280)
 							else
 								STATE.traitStatus = "AI Rolling Trait..."
-								AddSpyLog("AI Trait Reroll dieksekusi untuk unit " .. tostring(u.name))
 								R.TraitRoll:FireServer(unitId)
 								task.wait(F.aiJitterDelay + math.random(0,5)*0.1)
 							end
@@ -1281,7 +1227,6 @@ task.spawn(function()
 	end
 end)
 
--- Halloween & Pumpkin
 task.spawn(function()
 	while _G.__ANIMEDICE == generation do
 		if F.halloweenTeleport and R.HWTeleport then
@@ -1315,7 +1260,6 @@ end)
 
 local function unlockedSlots() local arr={}; local rb = rebirthAmt(); pcall(function() for i=1, (G.PlotConfig.GetMaxSlots(rb) or 15) do if rb >= (G.PlotConfig.GetSlotRebirthRequirement(i) or 0) then table.insert(arr, i) end end end); return arr end
 
--- Auto Roll Loop (With Jitter Delay)
 task.spawn(function()
 	while _G.__ANIMEDICE == generation do
 		if F.autoRoll then
@@ -1325,7 +1269,6 @@ task.spawn(function()
 	end
 end)
 
--- AI SMART PLANNER: AUTO SMART PLACE (OPTIMAL MONEY & LUCKY RATING)
 task.spawn(function()
 	while _G.__ANIMEDICE == generation do
 		if F.autoBestPlaceBase and R.EquipUnit and R.InteractSlot then
@@ -1364,7 +1307,6 @@ task.spawn(function()
 					for k, cand in ipairs(bench) do
 						local slot = slotsArr[k]
 						if slot and (slot.id == nil or not want[slot.id]) and cand.v > slot.v * 1.1 then
-							AddSpyLog("AI Smart Swap: Mengganti unit base dengan unit skor lebih tinggi.")
 							local ok, equipped = pcall(function() return R.EquipUnit:InvokeServer(cand.id) end)
 							if ok and equipped == true then task.wait(0.4); R.InteractSlot:FireServer(slot.i); task.wait(0.4) end
 						end
@@ -1376,7 +1318,6 @@ task.spawn(function()
 	end
 end)
 
--- Auto Buy & Equip Best Dice (Gear Loadout Optimizer)
 task.spawn(function()
 	while _G.__ANIMEDICE == generation do
 		if F.buyDice and G.DiceModule and R.BuyDice and R.EquipDice then
@@ -1398,7 +1339,6 @@ task.spawn(function()
 				local spendable = money()
 				for _, die in ipairs(allDice) do
 					if die.price and not owned[die.key] and spendable >= die.price and die.luck > bestOwnedLuck then
-						AddSpyLog("AI Dice Manager: Membeli dice baru -> " .. tostring(die.key))
 						R.BuyDice:FireServer(die.key); task.wait(0.3); owned[die.key] = true
 					end
 				end
@@ -1410,11 +1350,18 @@ task.spawn(function()
 	end
 end)
 
--- Farming Loop (Collect, Level, Rebirth, Upgrades)
+-- Farming Loop (Menggunakan variabel collectDelay yang baru)
 task.spawn(function()
 	local lastRebirth = 0
 	while _G.__ANIMEDICE == generation do
-		if F.collect and R.CollectBalance then pcall(function() for _, slot in ipairs(unlockedSlots()) do R.CollectBalance:FireServer(slot) end end) end
+		if F.collect and R.CollectBalance then 
+			pcall(function() 
+				for _, slot in ipairs(unlockedSlots()) do 
+					R.CollectBalance:FireServer(slot) 
+				end 
+			end) 
+		end
+		
 		if F.levelup and R.LevelUpSlot then
 			pcall(function()
 				local s = slots(); local m = money()
@@ -1430,9 +1377,11 @@ task.spawn(function()
 				end
 			end)
 		end
+		
 		if F.rebirth and R.Rebirth and (os.clock() - lastRebirth > 5) then
 			pcall(function() local nr = G.Rebirths.GetNext(rebirthAmt()); if nr and money() >= (nr.cost or 9e9) then R.Rebirth:FireServer(); lastRebirth = os.clock() end end)
 		end
+		
 		if F.upgrades and R.BuyUpgrade and G.Upgrades then
 			pcall(function()
 				local owned = G.DC.Upgrades() or {}; local list = {}
@@ -1441,11 +1390,12 @@ task.spawn(function()
 				for _, u in ipairs(list) do if money() >= u.price then R.BuyUpgrade:FireServer(u.name); break end end
 			end)
 		end
-		task.wait(2)
+		
+		-- Jeda loop farming disesuaikan dengan collectDelay
+		task.wait(math.clamp(tonumber(F.collectDelay) or 2.0, 0.5, 60))
 	end
 end)
 
--- Potions Loop (AI Threshold Protected)
 task.spawn(function()
 	while _G.__ANIMEDICE == generation do
 		if F.potionAuto and R.BoostUse then
@@ -1456,7 +1406,6 @@ task.spawn(function()
 						local shouldUse = (#F.potionSpecific == 0)
 						for _, sn in ipairs(F.potionSpecific) do if e.name == sn then shouldUse = true; break end end
 						if shouldUse and not active[e.name] and (e.amount > 2) then
-							AddSpyLog("AI Potion Manager: Menggunakan potion aman -> " .. tostring(e.name))
 							R.BoostUse:FireServer(key); task.wait(1)
 						end
 					end
@@ -1467,7 +1416,6 @@ task.spawn(function()
 	end
 end)
 
--- DRAIN & TOWERS (MAIN & HAUNTED - JALUR ALTERNATIF AI)
 local function drainTower()
 	if not R.CancelTower then return end
 	pcall(function()
@@ -1493,7 +1441,6 @@ task.spawn(function()
 			pickTower = F.towerMix and choices[math.random(1, #choices)] or choices[1]
 
 			STATE.towerLive = "Jalan: " .. tostring(pickTower); STATE.towerDrops = 0; STATE.towerTraitsGot = "Mencari..."
-			AddSpyLog("AI Jalur Alternatif: Masuk ke Main Tower -> " .. tostring(pickTower))
 			pcall(function()
 				if R.PlayTower:IsA("RemoteFunction") then R.PlayTower:InvokeServer(pickTower)
 				else R.PlayTower:FireServer(pickTower) end
@@ -1534,7 +1481,6 @@ task.spawn(function()
 			pickHaunted = F.hauntedMix and choices[math.random(1, #choices)] or choices[1]
 
 			STATE.hauntedLive = "Jalan: " .. tostring(pickHaunted); STATE.hauntedDrops = 0
-			AddSpyLog("AI Jalur Alternatif: Masuk ke Haunted Tower -> " .. tostring(pickHaunted))
 			pcall(function()
 				if R.PlayTower:IsA("RemoteFunction") then R.PlayTower:InvokeServer(pickHaunted)
 				else R.PlayTower:FireServer(pickHaunted) end
@@ -1561,7 +1507,6 @@ task.spawn(function()
 	end
 end)
 
--- Quests & Codes
 task.spawn(function()
 	while _G.__ANIMEDICE == generation do
 		if F.claimQuests then
@@ -1590,6 +1535,3 @@ task.spawn(function()
 		task.wait(60)
 	end
 end)
-
-Notify("MofenkHub V104.2 Full Ready!", "AI Smart Planner & Resource Threshold Diaktifkan.", 4)
-AddSpyLog("MofenkHub V104.2 Loaded Successfully with Full Gear & Safety Limits.")
