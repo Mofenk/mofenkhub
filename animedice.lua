@@ -139,10 +139,6 @@ pcall(function()
 	end
 end)
 
-local function AddSpyLog(txt)
-	-- Disenyapkan agar tidak spam konsol/notifikasi
-end
-
 local function FormatMoney(val)
 	val = tonumber(val) or 0
 	if val >= 1e12 then return string.format("%.2fT", val/1e12)
@@ -180,7 +176,6 @@ local R = {
 	QuestClaim      = svc("QuestService.RE.Claim"), 
 	ClaimDaily      = svc("DailyRewardService.RE.Claim"),
 	ClaimOffline    = svc("OfflineEarningsService.RE.Claim"), 
-	ClaimGroup      = svc("GroupRewardService.RE.Claim"),
 	SellInventory   = svc("SellService.RF.SellInventory") or svc("SellService.RE.SellInventory"),
 	UpdateAutoSell  = svc("SellService.RE.UpdateAutoSell"),
 	Fuse            = svc("FusingService.RE.Fuse"),
@@ -305,14 +300,9 @@ UserInputService.InputChanged:Connect(function(input)
 	end
 end)
 
--- TOAST NOTIFICATIONS (DIBATASI / DIKECUALIKAN AGAR TIDAK SPAM)
 local NotifyGui = Instance.new("ScreenGui"); NotifyGui.Name = "MofenkNotifyGui"; NotifyGui.Parent = parentGui; NotifyGui.ResetOnSpawn = false
 local NotifyHolder = Instance.new("Frame"); NotifyHolder.Parent = NotifyGui; NotifyHolder.Position = UDim2.new(1, -280, 0, 20); NotifyHolder.Size = UDim2.new(0, 260, 1, -40); NotifyHolder.BackgroundTransparency = 1
 local NotifyLayout = Instance.new("UIListLayout"); NotifyLayout.Parent = NotifyHolder; NotifyLayout.Padding = UDim.new(0, 8); NotifyLayout.VerticalAlignment = Enum.VerticalAlignment.Top
-
-local function Notify(title, msg, duration)
-	-- Hanya tampilkan notifikasi penting saja
-end
 
 -- ===================================================================== --
 -- 4. ADAPTIVE AUTO-SCALE & COMPACT UI SETUP
@@ -743,7 +733,7 @@ task.spawn(function()
 	end) end
 end)
 
--- 2. FARMING TAB (DITAMBAHKAN UI DELAY COLLECT PLOT MONEY)
+-- 2. FARMING TAB
 local G_Farm1 = AddGroup(T_Farm, "AI PLOT, ROLL & SMART PLACEMENT")
 AddToggle(G_Farm1, "Auto Collect Plot Balance", "collect")
 AddInput(G_Farm1, "Delay Collect Plot (Detik):", "collectDelay", true)
@@ -1350,7 +1340,6 @@ task.spawn(function()
 	end
 end)
 
--- Farming Loop (Menggunakan variabel collectDelay yang baru)
 task.spawn(function()
 	local lastRebirth = 0
 	while _G.__ANIMEDICE == generation do
@@ -1391,7 +1380,6 @@ task.spawn(function()
 			end)
 		end
 		
-		-- Jeda loop farming disesuaikan dengan collectDelay
 		task.wait(math.clamp(tonumber(F.collectDelay) or 2.0, 0.5, 60))
 	end
 end)
@@ -1511,7 +1499,8 @@ task.spawn(function()
 	while _G.__ANIMEDICE == generation do
 		if F.claimQuests then
 			pcall(function()
-				if R.ClaimDaily then R.ClaimDaily:FireServer() end; if R.ClaimOffline then R.ClaimOffline:FireServer() end; if R.ClaimGroup then R.ClaimGroup:FireServer() end
+				if R.ClaimDaily then R.ClaimDaily:FireServer() end
+				if R.ClaimOffline then R.ClaimOffline:FireServer() end
 				if R.QuestClaim and G.DC and G.DC.Quests and G.QuestConfig then
 					local now = workspace:GetServerTimeNow()
 					for _, p in ipairs({"Daily", "Weekly"}) do
