@@ -1,5 +1,5 @@
 -- ===================================================================== --
--- 👑 MOFENKHUB V104.2 — FULL AI SMART PLANNER & RESOURCE THRESHOLD EDITION
+-- 👑 MOFENKHUB V104.3 — OPTIMIZED & DEEP ANTI-AFK EDITION
 -- ===================================================================== --
 
 --!nocheck
@@ -63,10 +63,6 @@ local F = {
 	traitAuto = false, traitAll = false, traitPlacedOnly = false, traitTargets = {}, traitUnits = {}, rerollReserve = 50,
 	-- Main Tower Setup
 	tower = false, towerMix = false, towerList = {"Dragon Tower", "Demon Tower"}, towerEquipBest = true, towerExitOn = false, towerExitFloor = 50,
-	-- Halloween & Haunted Tower
-	halloweenTeleport = false, halloweenQuest = false, halloweenPath = false, halloweenOffer = false, trickOrTreat = false,
-	pumpkinRollQty = 1, pumpkinAutoRoll = false, pumpkinAutoSell = false,
-	hauntedTower = false, hauntedMix = false, hauntedList = {"Haunted Front Yard", "Haunted Crypt", "Haunted Attic", "Haunted Bell Tower"}, hauntedEquipBest = true, hauntedExitOn = false, hauntedExitFloor = 50,
 	-- Client & Misc
 	wsOn = false, wsValue = 16, noclip = false, afk = true, fpsOn = false,
 	codesAuto = false, claimQuests = false,
@@ -76,7 +72,6 @@ local F = {
 
 local STATE = {
 	towerLive = "Standby", towerFloor = 0, towerDrops = 0, towerTraitsGot = "Belum Ada",
-	hauntedLive = "Standby", hauntedFloor = 0, hauntedDrops = 0, activeBuffs = "Tidak Ada",
 	pingMs = 0, fpsCurrent = 60,
 	quirkActiveUnit = "-", quirkCurrentVal = "-", quirkStatus = "Standby",
 	gradeActiveUnit = "-", gradeCurrentVal = "-", gradeStatus = "Standby",
@@ -85,7 +80,6 @@ local STATE = {
 }
 local ConfigUpdaters = {}
 
--- THEME DIUBAH MENJADI HITAM PUTIH (MONOKROM)
 local GLASS_THEME = {
 	Bg     = Color3.fromRGB(15, 15, 15),
 	Card   = Color3.fromRGB(28, 28, 28),
@@ -182,15 +176,7 @@ local R = {
 	InteractSlot    = svc("PlotService.RE.InteractSlot"),
 	EquipUnit       = svc("UnitService.RF.Equip") or svc("UnitService.RE.Equip"),
 	UnequipUnit     = svc("UnitService.RF.Unequip") or svc("UnitService.RE.Unequip"),
-	LockUnit        = svc("UnitService.RE.SetLock") or svc("InventoryService.RE.Lock"),
-	HWTeleport      = svc("HalloweenService.RF.Teleport"),
-	HWSeenIntro     = svc("HalloweenService.RE.SeenIntro"),
-	HWQuestClaim    = svc("HalloweenQuestService.RE.Claim"),
-	HWClaimPath     = svc("HalloweenService.RE.ClaimAllPath"),
-	HWBuyOffer      = svc("HalloweenService.RE.BuyOffer"),
-	TrickOrTreat    = svc("TrickOrTreatService.RE.Knocked"),
-	PumpkinRoll     = svc("PumpkinDiceService.RF.Roll") or svc("PumpkinDiceService.RE.Roll"),
-	PumpkinAutoSell = svc("PumpkinDiceService.RF.SetAutoSell")
+	LockUnit        = svc("UnitService.RE.SetLock") or svc("InventoryService.RE.Lock")
 }
 
 local G = {}
@@ -275,7 +261,7 @@ local function SendWebhook(title, description, colorCode)
 end
 
 -- ===================================================================== --
--- 3. INTERACTIVE TOGGLE & TOAST NOTIFICATION SYSTEM (SPAM DIHAPUS)
+-- 3. INTERACTIVE TOGGLE & TOAST NOTIFICATION SYSTEM
 -- ===================================================================== --
 local ToggleGui = Instance.new("ScreenGui"); ToggleGui.Name = "MofenkToggleFront"; ToggleGui.Parent = parentGui; ToggleGui.ResetOnSpawn = false
 ToggleGui.DisplayOrder = 99999
@@ -571,15 +557,6 @@ local function GetOpts(mode)
 			end
 		end
 		table.sort(t, function(a,b) return a.inc > b.inc end)
-	elseif mode == "unit_name" then
-		local addedNames = {}
-		for _, e in pairs(inventory()) do
-			if isUnitEntry(e) and e.name and not addedNames[e.name] then
-				addedNames[e.name] = true
-				table.insert(t, {label = e.name, val = e.name})
-			end
-		end
-		table.sort(t, function(a,b) return a.label < b.label end)
 	elseif mode == "towers" then
 		local addedTowers = {}
 		pcall(function()
@@ -591,7 +568,7 @@ local function GetOpts(mode)
 				end
 			end
 		end)
-		local defaultTowers = {"Dragon Tower", "Demon Tower", "Ninja Tower", "Pirate Tower", "Hunter Tower", "Cursed Tower", "Halloween Tower", "Haunted Front Yard", "Haunted Crypt", "Haunted Attic", "Haunted Bell Tower"}
+		local defaultTowers = {"Dragon Tower", "Demon Tower", "Ninja Tower", "Pirate Tower", "Hunter Tower", "Cursed Tower"}
 		for _, name in ipairs(defaultTowers) do
 			if not addedTowers[name] then
 				table.insert(t, {label=name, val=name})
@@ -603,11 +580,10 @@ local function GetOpts(mode)
 end
 
 -- ===================================================================== --
--- 5. TABS ASSEMBLY
+-- 5. TABS ASSEMBLY (HALLOWEEN REMOVED)
 -- ===================================================================== --
 local T_Dash = CreateTab("Dashboard", "📊")
 local T_Farm = CreateTab("Farming", "⛏️")
-local T_Hlw  = CreateTab("Halloween", "🎃")
 local T_Inv  = CreateTab("Inventory", "🎒")
 local T_Pot  = CreateTab("Potions", "🧪")
 local T_Qrk  = CreateTab("Quirk & Roll", "⚡")
@@ -747,40 +723,7 @@ AddToggle(G_Farm2, "Auto Level Up Unit Plot", "levelup")
 AddInput(G_Farm2, "Max Level Unit Batas:", "maxLevel", true)
 AddToggle(G_Farm2, "Auto Upgrade Skill Tree Pad", "upgrades")
 
--- 3. HALLOWEEN TAB
-local G_HlwTeleport = AddGroup(T_Hlw, "HALLOWEEN WORLD & INTRO")
-AddToggle(G_HlwTeleport, "Auto Teleport Ke Halloween World", "halloweenTeleport")
-
-local G_HlwRoll = AddGroup(T_Hlw, "PUMPKIN DICE & SPECIFIC AUTO SELL")
-AddDropdown(G_HlwRoll, "Kuantitas Pumpkin Roll:", {{label="Roll 1x", val=1}, {label="Roll 5x", val=5}}, "pumpkinRollQty", false)
-AddToggle(G_HlwRoll, "Auto Roll Pumpkin Dice", "pumpkinAutoRoll")
-AddToggle(G_HlwRoll, "Auto Sell Pumpkin Units (Server)", "pumpkinAutoSell")
-AddDropdown(G_HlwRoll, "Nama Unit Spesifik Auto Sell:", GetOpts("unit_name"), "specificSellUnits", true)
-
-local G_HlwQuests = AddGroup(T_Hlw, "HALLOWEEN REWARDS & EVENT")
-AddToggle(G_HlwQuests, "Auto Claim Halloween Quests", "halloweenQuest")
-AddToggle(G_HlwQuests, "Auto Claim Halloween Path Rewards", "halloweenPath")
-AddToggle(G_HlwQuests, "Auto Buy Halloween Special Offers", "halloweenOffer")
-AddToggle(G_HlwQuests, "Auto Trick or Treat (Knock Doors)", "trickOrTreat")
-
-local G_HauntedTwr = AddGroup(T_Hlw, "HAUNTED TOWER FARMING (JALUR ALTERNATIF AI)")
-AddToggle(G_HauntedTwr, "Auto Haunted Tower Farming", "hauntedTower")
-AddToggle(G_HauntedTwr, "Mode MIX / Random Haunted Tower", "hauntedMix")
-AddDropdown(G_HauntedTwr, "Pilih Haunted Tower (Multi-Select):", {
-	{label="Haunted Front Yard", val="Haunted Front Yard"},
-	{label="Haunted Crypt", val="Haunted Crypt"},
-	{label="Haunted Attic", val="Haunted Attic"},
-	{label="Haunted Bell Tower", val="Haunted Bell Tower"}
-}, "hauntedList", true)
-AddToggle(G_HauntedTwr, "Auto Equip Best Team Tower", "hauntedEquipBest")
-AddToggle(G_HauntedTwr, "Keluar di Lantai Tertentu", "hauntedExitOn")
-AddInput(G_HauntedTwr, "Batas Lantai Exit Haunted:", "hauntedExitFloor", true)
-
-local G_HauntedMon = AddGroup(T_Hlw, "LIVE MONITORING HAUNTED TOWER")
-local HauntedLbl = Instance.new("TextLabel"); HauntedLbl.Parent = G_HauntedMon; HauntedLbl.Size = UDim2.new(1,0,0,60); HauntedLbl.BackgroundTransparency = 1; HauntedLbl.TextColor3 = GLASS_THEME.Text; HauntedLbl.TextSize = 12; HauntedLbl.Font = Enum.Font.GothamMedium; HauntedLbl.TextXAlignment = Enum.TextXAlignment.Left; HauntedLbl.TextYAlignment = Enum.TextYAlignment.Top
-task.spawn(function() while task.wait(0.5) do pcall(function() HauntedLbl.Text = string.format("🎃 Status: %s\n🏢 Lantai: %d | 🍬 Total Drops/Item: %d", STATE.hauntedLive, STATE.hauntedFloor, STATE.hauntedDrops) end) end end)
-
--- 4. INVENTORY TAB
+-- 3. INVENTORY TAB
 local G_Inv = AddGroup(T_Inv, "MANAGEMENT, RARITY KEEP & AUTO LOCK")
 AddToggle(G_Inv, "Auto Sell General (Jual Rarity Lain)", "sellAuto")
 AddToggle(G_Inv, "Auto Sell Saat Inventory Penuh", "sellMaxInvent")
@@ -789,12 +732,12 @@ AddDropdown(G_Inv, "Pilih Rarity yang Disimpan:", GetOpts("rarity"), "keepRariti
 AddToggle(G_Inv, "Auto Lock Unit Rarity Terpilih", "autoLockRarity")
 AddToggle(G_Inv, "Auto Fusion Unit", "autoFuse")
 
--- 5. POTIONS TAB
+-- 4. POTIONS TAB
 local G_Pot = AddGroup(T_Pot, "AI THRESHOLD POTION MANAGER")
 AddToggle(G_Pot, "Auto Gunakan Potion (Berdasarkan Resource Safe)", "potionAuto")
 AddDropdown(G_Pot, "Pilih Potion Spesifik (Multi-Select):", GetOpts("pot"), "potionSpecific", true)
 
--- 6. QUIRK TAB
+-- 5. QUIRK TAB
 local G_QrkCtrl = AddGroup(T_Qrk, "AI THRESHOLD & QUIRK REROLL CONFIG")
 AddToggle(G_QrkCtrl, "Auto Lock Unit jika Quirk Target", "autoLockTarget")
 AddToggle(G_QrkCtrl, "Aktifkan Auto Quirk Reroll (Smart Threshold)", "quirkAuto")
@@ -810,7 +753,7 @@ task.spawn(function()
 	end) end
 end)
 
--- 7. GRADE TAB
+-- 6. GRADE TAB
 local G_GrdCtrl = AddGroup(T_Grd, "AI THRESHOLD & GRADE REROLL CONFIG")
 AddToggle(G_GrdCtrl, "Aktifkan Auto Grade Reroll (Smart Threshold)", "gradeAuto")
 AddToggle(G_GrdCtrl, "Hanya Unit di Base (Placed)", "gradePlacedOnly")
@@ -826,7 +769,7 @@ task.spawn(function()
 	end) end
 end)
 
--- 8. TRAIT TAB
+-- 7. TRAIT TAB
 local G_TrtCtrl = AddGroup(T_Trt, "AI THRESHOLD & TRAIT REROLL CONFIG")
 AddToggle(G_TrtCtrl, "Aktifkan Auto Trait Reroll (Smart Threshold)", "traitAuto")
 AddToggle(G_TrtCtrl, "Hanya Unit di Base (Placed)", "traitPlacedOnly")
@@ -842,7 +785,7 @@ task.spawn(function()
 	end) end
 end)
 
--- 9. MAIN TOWER TAB
+-- 8. MAIN TOWER TAB
 local G_Twr = AddGroup(T_Twr, "MAIN TOWER FARMING SETUP (JALUR ALTERNATIF)")
 AddToggle(G_Twr, "Auto Main Tower Farming", "tower")
 AddToggle(G_Twr, "Mode MIX / Random Tower", "towerMix")
@@ -855,7 +798,7 @@ local G_TwrMon = AddGroup(T_Twr, "LIVE TOWER MONITORING & TRAIT DROPS")
 local TwrLbl = Instance.new("TextLabel"); TwrLbl.Parent = G_TwrMon; TwrLbl.Size = UDim2.new(1,0,0,60); TwrLbl.BackgroundTransparency = 1; TwrLbl.TextColor3 = GLASS_THEME.Text; TwrLbl.TextSize = 12; TwrLbl.Font = Enum.Font.GothamMedium; TwrLbl.TextXAlignment = Enum.TextXAlignment.Left; TwrLbl.TextYAlignment = Enum.TextYAlignment.Top
 task.spawn(function() while task.wait(0.5) do pcall(function() TwrLbl.Text = string.format("🎮 Status: %s\n🏢 Lantai: %d | 💎 Gems Didapat: %d\n🧬 Trait Drops: %s", STATE.towerLive, STATE.towerFloor, STATE.towerDrops, tostring(STATE.towerTraitsGot)) end) end end)
 
--- 10. SETTINGS TAB
+-- 9. SETTINGS TAB
 local G_SetConfig = AddGroup(T_Set, "📁 FILE CONFIGURATION MANAGEMENT")
 AddToggle(G_SetConfig, "Auto Load Config Saat Nyala", "autoLoadEnabled")
 AddInput(G_SetConfig, "Nama File Config:", "cfgName", false)
@@ -921,7 +864,7 @@ local BtnTestWeb = Instance.new("TextButton"); BtnTestWeb.Parent = G_Web; BtnTes
 BtnTestWeb.MouseButton1Click:Connect(function() SendWebhook("✅ Webhook Connected!", "AI Smart Planner tersambung sukses.", 3447003) end)
 
 local G_Set2 = AddGroup(T_Set, "⚡ OPTIMALISASI & SERVER UTILITY")
-AddToggle(G_Set2, "Anti-AFK Protection", "afk")
+AddToggle(G_Set2, "Deep Anti-AFK & Auto Reconnect", "afk")
 AddToggle(G_Set2, "FPS Boost (Optimasi Partikel)", "fpsOn", function(v) if v then pcall(function() game:GetService("Lighting").GlobalShadows = false; for _,e in ipairs(workspace:GetDescendants()) do if e:IsA("BasePart") then e.Material = Enum.Material.SmoothPlastic end end end) end end)
 AddToggle(G_Set2, "Auto Claim Quests & Daily Rewards", "claimQuests")
 AddToggle(G_Set2, "Auto Redeem Codes", "codesAuto")
@@ -963,26 +906,51 @@ BtnHop.MouseButton1Click:Connect(function()
 end)
 
 -- ===================================================================== --
--- 6. BACKEND THREADS & GOAL-DRIVEN AI INITIALIZATION
+-- 6. DEEP ANTI-AFK & AUTO RECONNECT THREADS
 -- ===================================================================== --
 
 local vu = game:GetService("VirtualUser")
+
+-- Deteksi Prompt Error / Disconnect / Kick otomatis reconnect
 pcall(function()
-	local PromptOverlay = CoreGui:FindFirstChild("PromptOverlay", true) or LocalPlayer.PlayerGui:FindFirstChild("PromptOverlay", true)
-	if PromptOverlay then
-		PromptOverlay.ChildAdded:Connect(function(child)
-			if F.afk and (child.Name == "ErrorPrompt" or child.Name == "DisconnectPrompt") then
-				local qot = queue_on_teleport or queueonteleport or (syn and syn.queue_on_teleport) or (fluxus and fluxus.queue_on_teleport)
-				if qot then
-					qot([[
-						task.wait(3)
-						loadstring(game:HttpGet("https://raw.githubusercontent.com/Mofenk/mofenkhub/refs/heads/main/animedice.lua"))()
-					]])
-				end
+	local function SetupPromptListener(parentObj)
+		parentObj.ChildAdded:Connect(function(child)
+			if F.afk and (child.Name == "ErrorPrompt" or child.Name == "DisconnectPrompt" or child.Name == "PromptDialog") then
 				task.wait(2)
 				pcall(function() TeleportService:Teleport(game.PlaceId, LocalPlayer) end)
 			end
 		end)
+	end
+	SetupPromptListener(CoreGui)
+	SetupPromptListener(LocalPlayer:WaitForChild("PlayerGui"))
+end)
+
+-- Handle Game Client Connection Loss (Disconnect Event)
+pcall(function()
+	game:GetService("CoreGui").RobloxGui.PromptOverlay.ChildAdded:Connect(function(child)
+		if F.afk and (child.Name == "ErrorPrompt" or child.Name == "DisconnectPrompt") then
+			task.wait(1)
+			TeleportService:Teleport(game.PlaceId, LocalPlayer)
+		end
+	end)
+end)
+
+-- Deep Anti-AFK Simulation Loop (Meniru Aktivitas Human)
+task.spawn(function()
+	while task.wait(30) do
+		if F.afk then
+			pcall(function()
+				-- Simulasi Virtual Button Click & Camera Micro-Jitter
+				vu:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+				task.wait(0.5)
+				vu:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+				
+				local cam = workspace.CurrentCamera
+				if cam then
+					cam.CFrame = cam.CFrame * CFrame.Angles(0, math.rad(math.random(-2, 2)), 0)
+				end
+			end)
+		end
 	end
 end)
 
@@ -1217,37 +1185,6 @@ task.spawn(function()
 	end
 end)
 
-task.spawn(function()
-	while _G.__ANIMEDICE == generation do
-		if F.halloweenTeleport and R.HWTeleport then
-			pcall(function() R.HWTeleport:InvokeServer(); if R.HWSeenIntro then R.HWSeenIntro:FireServer() end end)
-		end
-		if F.halloweenQuest and R.HWQuestClaim then pcall(function() R.HWQuestClaim:FireServer() end) end
-		if F.halloweenPath and R.HWClaimPath then pcall(function() R.HWClaimPath:FireServer() end) end
-		if F.halloweenOffer and R.HWBuyOffer then pcall(function() R.HWBuyOffer:FireServer() end) end
-		if F.trickOrTreat and R.TrickOrTreat then pcall(function() R.TrickOrTreat:FireServer() end) end
-		task.wait(5)
-	end
-end)
-
-task.spawn(function()
-	while _G.__ANIMEDICE == generation do
-		if F.pumpkinAutoRoll and R.PumpkinRoll then
-			pcall(function()
-				local qty = tonumber(F.pumpkinRollQty) or 1
-				for i = 1, qty do
-					if not F.pumpkinAutoRoll then break end
-					if R.PumpkinRoll:IsA("RemoteFunction") then R.PumpkinRoll:InvokeServer()
-					elseif R.PumpkinRoll:IsA("RemoteEvent") then R.PumpkinRoll:FireServer() end
-					task.wait(0.3)
-				end
-			end)
-		end
-		if R.PumpkinAutoSell then pcall(function() R.PumpkinAutoSell:FireServer(F.pumpkinAutoSell) end) end
-		task.wait(3)
-	end
-end)
-
 local function unlockedSlots() local arr={}; local rb = rebirthAmt(); pcall(function() for i=1, (G.PlotConfig.GetMaxSlots(rb) or 15) do if rb >= (G.PlotConfig.GetSlotRebirthRequirement(i) or 0) then table.insert(arr, i) end end end); return arr end
 
 task.spawn(function()
@@ -1454,44 +1391,6 @@ task.spawn(function()
 			end
 			drainTower(); task.wait(1.5)
 		else STATE.towerLive = "Standby"; STATE.towerTraitsGot = "Belum Ada"; task.wait(2) end
-	end
-end)
-
-task.spawn(function()
-	while _G.__ANIMEDICE == generation do
-		if F.hauntedTower and R.PlayTower and R.CompleteFloor then
-			drainTower(); task.wait(0.4)
-			if F.hauntedEquipBest and R.BestTowerTeam then pcall(function() R.BestTowerTeam:FireServer() end) end
-			task.wait(0.4)
-			
-			local pickHaunted = "Haunted Front Yard"
-			local choices = (F.hauntedList and #F.hauntedList > 0) and F.hauntedList or {"Haunted Front Yard"}
-			pickHaunted = F.hauntedMix and choices[math.random(1, #choices)] or choices[1]
-
-			STATE.hauntedLive = "Jalan: " .. tostring(pickHaunted); STATE.hauntedDrops = 0
-			pcall(function()
-				if R.PlayTower:IsA("RemoteFunction") then R.PlayTower:InvokeServer(pickHaunted)
-				else R.PlayTower:FireServer(pickHaunted) end
-			end)
-
-			local done, fails = false, 0
-			while F.hauntedTower and not done do
-				local okP, seq = pcall(function() if R.CompleteFloor:IsA("RemoteFunction") then return R.CompleteFloor:InvokeServer() end end)
-				if okP and type(seq) == "table" and #seq > 0 then
-					fails = 0
-					for _, act in ipairs(seq) do
-						if act.action == "floorStarted" then STATE.hauntedFloor = tonumber(act.floor) or 1
-						elseif act.action == "floorCompleted" then
-							if act.rewards then for _, amt in pairs(act.rewards) do if type(amt) == "number" then STATE.hauntedDrops += amt end end end
-						elseif act.action == "ended" then done = true; break end
-					end
-					if not done and F.hauntedExitOn and F.hauntedExitFloor > 0 and STATE.hauntedFloor >= F.hauntedExitFloor then
-						done = true; drainTower()
-					end
-				else fails += 1; if fails > 8 then done = true end; task.wait(1) end
-			end
-			drainTower(); task.wait(1.5)
-		else STATE.hauntedLive = "Standby"; task.wait(2) end
 	end
 end)
 
