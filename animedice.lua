@@ -1,5 +1,5 @@
 -- ===================================================================== --
--- 👑 MOFENKHUB V105.1 — FIXED UI STROKE ERROR & 24/7 BULLETPROOF
+-- 👑 MOFENKHUB V105.2 — APPLE EVENT, LEAF TOWER & AUTUMN TELEPORT EDITION
 -- ===================================================================== --
 
 --!nocheck
@@ -46,8 +46,9 @@ local F = {
 	autoBestPlaceBase = false, smartPlace = true,
 	-- Leaf Dice & Leaf Tower
 	autoLeafRoll = false, leafTower = false, leafTowerExitOn = false, leafTowerExitFloor = 50,
-	-- Event Features (AppleShop & Autumn)
-	autoAppleShop = false, autoAutumnEvent = false,
+	-- Apple & Autumn Event Features
+	autoCollectAppleBoard = false, autoUpgradeAppleBoard = false,
+	autoAppleShop = false, appleShopItem = "Apple", autoAutumnEvent = false,
 	-- Inventory & Dynamic Rarity Multi-Select Auto Sell / Lock
 	sellAuto = false, sellMaxInvent = false, keepBest = 0, autoFuse = false,
 	keepRarities = {"Mythic", "Secret", "Divine", "Godly"},
@@ -76,7 +77,7 @@ local F = {
 
 local STATE = {
 	towerLive = "Standby", towerFloor = 0, towerDrops = 0, towerTraitsGot = "Belum Ada",
-	leafTowerLive = "Standby", leafTowerFloor = 0,
+	leafTowerLive = "Standby", leafTowerFloor = 0, appleBoardStatus = "Standby",
 	pingMs = 0, fpsCurrent = 60,
 	quirkActiveUnit = "-", quirkCurrentVal = "-", quirkStatus = "Standby",
 	gradeActiveUnit = "-", gradeCurrentVal = "-", gradeStatus = "Standby",
@@ -160,6 +161,8 @@ local R = {
 	LeafRoll        = svc("LeafDiceService.RE.Roll") or svc("LeafDiceService.RF.Roll"),
 	LeafSetAuto     = svc("LeafDiceService.RE.SetAutoRoll"),
 	AppleShopBuy    = svc("AppleShopService.RF.Buy") or svc("AppleShopService.RE.Buy"),
+	AppleCollect    = svc("AppleBoardService.RE.Collect") or svc("AppleService.RE.Collect") or svc("AppleBoard.RE.Collect"),
+	AppleUpgrade    = svc("AppleBoardService.RE.Upgrade") or svc("AppleService.RE.Upgrade") or svc("AppleBoard.RE.Upgrade"),
 	AutumnClaim     = svc("AutumnQ...RE.Claim") or svc("Network.Autumn.RE.Claim"),
 	TeleportBuild   = svc("BuildExperiencePlayTestTeleport"),
 	CollectBalance  = svc("PlotService.RE.CollectBalance"), 
@@ -332,9 +335,9 @@ local TopBar = Instance.new("Frame"); TopBar.Parent = MainFrame; TopBar.Size = U
 local TopCorner = Instance.new("UICorner"); TopCorner.CornerRadius = UDim.new(0, 14); TopCorner.Parent = TopBar
 local TopStroke = Instance.new("UIStroke"); TopStroke.Thickness = 1; TopStroke.Color = GLASS_THEME.Border; TopStroke.Parent = TopBar
 
-local Title = Instance.new("TextLabel"); Title.Parent = TopBar; Title.Position = UDim2.new(0, 16, 0, 0); Title.Size = UDim2.new(0, 220, 1, 0); Title.Text = "👑 MOFENKHUB V105.1"; Title.TextColor3 = GLASS_THEME.Acc1; Title.TextSize = 13; Title.Font = Enum.Font.GothamBlack; Title.TextXAlignment = Enum.TextXAlignment.Left; Title.BackgroundTransparency = 1
+local Title = Instance.new("TextLabel"); Title.Parent = TopBar; Title.Position = UDim2.new(0, 16, 0, 0); Title.Size = UDim2.new(0, 220, 1, 0); Title.Text = "👑 MOFENKHUB V105.2"; Title.TextColor3 = GLASS_THEME.Acc1; Title.TextSize = 13; Title.Font = Enum.Font.GothamBlack; Title.TextXAlignment = Enum.TextXAlignment.Left; Title.BackgroundTransparency = 1
 
-local StatusBar = Instance.new("TextLabel"); StatusBar.Parent = TopBar; StatusBar.Position = UDim2.new(0, 230, 0, 8); StatusBar.Size = UDim2.new(0, 480, 0, 32); StatusBar.BackgroundColor3 = GLASS_THEME.Card; StatusBar.BackgroundTransparency = 0.2; StatusBar.TextColor3 = GLASS_THEME.SubText; StatusBar.TextSize = 10; StatusBar.Font = Enum.Font.GothamMedium; StatusBar.Text = "🤖 AI Status: 24/7 Cloud Anti-AFK & Event Active"
+local StatusBar = Instance.new("TextLabel"); StatusBar.Parent = TopBar; StatusBar.Position = UDim2.new(0, 230, 0, 8); StatusBar.Size = UDim2.new(0, 480, 0, 32); StatusBar.BackgroundColor3 = GLASS_THEME.Card; StatusBar.BackgroundTransparency = 0.2; StatusBar.TextColor3 = GLASS_THEME.SubText; StatusBar.TextSize = 10; StatusBar.Font = Enum.Font.GothamMedium; StatusBar.Text = "🤖 AI Status: Apple Farm, Leaf Tower & Autumn Teleport Active"
 local SBC = Instance.new("UICorner"); SBC.CornerRadius = UDim.new(0, 6); SBC.Parent = StatusBar
 local SBStroke = Instance.new("UIStroke"); SBStroke.Thickness = 1; SBStroke.Color = GLASS_THEME.Border; SBStroke.Parent = StatusBar
 
@@ -561,6 +564,14 @@ local function GetOpts(mode)
 	elseif mode == "trait" and G.TraitsMod then for n, g in pairs(G.TraitsMod) do if type(g)=="table" and g.order then table.insert(t, {label=n, val=n, order=g.order}) end end; table.sort(t, function(a,b) return a.order<b.order end)
 	elseif mode == "quirk" and G.QuirksMod then for n, q in pairs(G.QuirksMod) do if type(q)=="table" then table.insert(t, {label=n, val=n}) end end; table.sort(t, function(a,b) return a.label<b.label end)
 	elseif mode == "pot" and G.BoostConfig then for n, e in pairs(G.BoostConfig.entries or {}) do table.insert(t, {label=n.." [T"..tostring(e.tier)..']', val=n}) end; table.sort(t, function(a,b) return a.label<b.label end)
+	elseif mode == "appleshop" then
+		t = {
+			{label = "🍎 Apple Pack (Standard)", val = "Apple"},
+			{label = "🌟 Lucky Boost Apple", val = "LuckyBoost"},
+			{label = "⚡ Speed Boost Apple", val = "SpeedBoost"},
+			{label = "💎 Gem Reward Box", val = "GemBox"},
+			{label = "🎁 Special Event Box", val = "EventBox"}
+		}
 	elseif mode == "unit" then
 		local placed = {}; pcall(function() for _, d in pairs(slots()) do if d.unitId then placed[d.unitId]=true end end end)
 		for k, e in pairs(inventory()) do
@@ -740,12 +751,17 @@ AddToggle(G_Farm2, "Auto Level Up Unit Plot", "levelup")
 AddInput(G_Farm2, "Max Level Unit Batas:", "maxLevel", true)
 AddToggle(G_Farm2, "Auto Upgrade Skill Tree Pad", "upgrades")
 
--- 3. EVENT TAB (NEW TAB FOR APPLE SHOP & AUTUMN)
-local G_Evnt1 = AddGroup(T_Evnt, "🍎 APPLE SHOP & EVENT AUTOMATION")
-AddToggle(G_Evnt1, "Auto Buy Apple Shop Event Items", "autoAppleShop")
+-- 3. EVENT TAB (APPLE FARM, BOARD UPGRADE, SHOP LIST & AUTUMN TELEPORT)
+local G_Evnt1 = AddGroup(T_Evnt, "🍎 APPLE BOARD & FARMING EVENT")
+AddToggle(G_Evnt1, "Auto Collect Apple Board / Farm", "autoCollectAppleBoard")
+AddToggle(G_Evnt1, "Auto Upgrade Apple Board (Grid/Level)", "autoUpgradeAppleBoard")
 AddToggle(G_Evnt1, "Auto Claim Autumn / Seasonal Event Rewards", "autoAutumnEvent")
 
-local BtnTeleportEvent = Instance.new("TextButton"); BtnTeleportEvent.Parent = G_Evnt1; BtnTeleportEvent.Size = UDim2.new(1, 0, 0, 36); BtnTeleportEvent.Text = "🚀 TELEPORT KE EVENT WORLD / LOBBY"; BtnTeleportEvent.Font = Enum.Font.GothamBold; BtnTeleportEvent.TextSize = 12; BtnTeleportEvent.TextColor3 = GLASS_THEME.Acc1; BtnTeleportEvent.BackgroundColor3 = GLASS_THEME.Header; local BTE = Instance.new("UICorner"); BTE.CornerRadius = UDim.new(0,6); BTE.Parent = BtnTeleportEvent
+local G_EvntShop = AddGroup(T_Evnt, "🛍️ APPLE SHOP LIST & AUTO BUY")
+AddToggle(G_EvntShop, "Aktifkan Auto Buy Apple Shop", "autoAppleShop")
+AddDropdown(G_EvntShop, "Pilih Item Shop Target:", GetOpts("appleshop"), "appleShopItem", false)
+
+local BtnTeleportEvent = Instance.new("TextButton"); BtnTeleportEvent.Parent = G_Evnt1; BtnTeleportEvent.Size = UDim2.new(1, 0, 0, 36); BtnTeleportEvent.Text = "🚀 TELEPORT KE AUTUMN WORLD / EVENT"; BtnTeleportEvent.Font = Enum.Font.GothamBold; BtnTeleportEvent.TextSize = 12; BtnTeleportEvent.TextColor3 = GLASS_THEME.Acc1; BtnTeleportEvent.BackgroundColor3 = GLASS_THEME.Header; local BTE = Instance.new("UICorner"); BTE.CornerRadius = UDim.new(0,6); BTE.Parent = BtnTeleportEvent
 local BTEStroke = Instance.new("UIStroke"); BTEStroke.Thickness = 1; BTEStroke.Color = GLASS_THEME.Border; BTEStroke.Parent = BtnTeleportEvent
 
 BtnTeleportEvent.MouseButton1Click:Connect(function()
@@ -824,7 +840,7 @@ end)
 -- 9. MAIN TOWER TAB (INCLUDING AUTO LEAF TOWER)
 local G_Twr = AddGroup(T_Twr, "MAIN TOWER & LEAF TOWER SETUP")
 AddToggle(G_Twr, "Auto Main Tower Farming", "tower")
-AddToggle(G_Twr, "Auto Leaf Tower Farming (New)", "leafTower")
+AddToggle(G_Twr, "Auto Leaf Tower Farming", "leafTower")
 AddToggle(G_Twr, "Mode MIX / Random Tower", "towerMix")
 AddDropdown(G_Twr, "Pilih Main Tower (Multi-Select):", GetOpts("towers"), "towerList", true)
 AddToggle(G_Twr, "Auto Equip Best Team Tower", "towerEquipBest")
@@ -973,7 +989,6 @@ pcall(function()
 	end)
 end)
 
--- 24/7 Memory Garbage Collection & Anti-Crash
 task.spawn(function()
 	while task.wait(300) do
 		if F.afk then
@@ -1024,7 +1039,7 @@ task.spawn(function()
 end)
 
 -- ===================================================================== --
--- 7. AUTOMATION LOOPS (LEAF DICE, EVENT SHOP, TOWERS, REROLLS)
+-- 7. AUTOMATION LOOPS (APPLE BOARD, LEAF DICE, SHOP, TOWERS, REROLLS)
 -- ===================================================================== --
 
 -- Auto Leaf Dice Roll
@@ -1043,13 +1058,25 @@ task.spawn(function()
 	end
 end)
 
--- Auto Apple Shop & Autumn Event
+-- Auto Apple Board Collect, Board Upgrade, Shop Buy & Autumn Event
 task.spawn(function()
 	while _G.__ANIMEDICE == generation do
-		if F.autoAppleShop and R.AppleShopBuy then
+		if F.autoCollectAppleBoard and R.AppleCollect then
 			pcall(function()
-				if R.AppleShopBuy:IsA("RemoteFunction") then R.AppleShopBuy:InvokeServer("Apple")
-				elseif R.AppleShopBuy:IsA("RemoteEvent") then R.AppleShopBuy:FireServer("Apple") end
+				if R.AppleCollect:IsA("RemoteFunction") then R.AppleCollect:InvokeServer()
+				elseif R.AppleCollect:IsA("RemoteEvent") then R.AppleCollect:FireServer() end
+			end)
+		end
+		if F.autoUpgradeAppleBoard and R.AppleUpgrade then
+			pcall(function()
+				if R.AppleUpgrade:IsA("RemoteFunction") then R.AppleUpgrade:InvokeServer()
+				elseif R.AppleUpgrade:IsA("RemoteEvent") then R.AppleUpgrade:FireServer() end
+			end)
+		end
+		if F.autoAppleShop and R.AppleShopBuy and F.appleShopItem then
+			pcall(function()
+				if R.AppleShopBuy:IsA("RemoteFunction") then R.AppleShopBuy:InvokeServer(F.appleShopItem)
+				elseif R.AppleShopBuy:IsA("RemoteEvent") then R.AppleShopBuy:FireServer(F.appleShopItem) end
 			end)
 		end
 		if F.autoAutumnEvent and R.AutumnClaim then
@@ -1058,7 +1085,7 @@ task.spawn(function()
 				elseif R.AutumnClaim:IsA("RemoteEvent") then R.AutumnClaim:FireServer() end
 			end)
 		end
-		task.wait(10)
+		task.wait(6)
 	end
 end)
 
