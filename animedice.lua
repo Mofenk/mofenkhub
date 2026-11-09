@@ -1,5 +1,6 @@
+
 -- ===================================================================== --
--- 👑 MOFENKHUB V105.4 — FULL RESTORED & EVENT TAB EDITION
+-- 👑 MOFENKHUB V105.5 — PROFESSIONAL ELITE UI & FULL AUTOMATION EDITION
 -- ===================================================================== --
 
 --!nocheck
@@ -272,10 +273,37 @@ local function SendWebhook(title, description, colorCode)
 end
 
 -- ===================================================================== --
--- 3. INTERACTIVE TOGGLE & TOAST NOTIFICATION SYSTEM
+-- 3. INTERACTIVE TOGGLE, KEYBIND & TOAST NOTIFICATION SYSTEM
 -- ===================================================================== --
 local ToggleGui = Instance.new("ScreenGui"); ToggleGui.Name = "MofenkToggleFront"; ToggleGui.Parent = parentGui; ToggleGui.ResetOnSpawn = false
 ToggleGui.DisplayOrder = 99999
+
+-- Toast Popup Notification Function
+local ToastContainer = Instance.new("Frame"); ToastContainer.Parent = ToggleGui; ToastContainer.Size = UDim2.new(0, 300, 1, 0); ToastContainer.Position = UDim2.new(1, -315, 0, 0); ToastContainer.BackgroundTransparency = 1; ToastContainer.ZIndex = 99999
+local ToastLayout = Instance.new("UIListLayout"); ToastLayout.Parent = ToastContainer; ToastLayout.VerticalAlignment = Enum.VerticalAlignment.Bottom; ToastLayout.Padding = UDim.new(0, 8); ToastLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right
+
+local function ShowToast(title, message, duration)
+	duration = duration or 3.5
+	pcall(function()
+		local Toast = Instance.new("Frame"); Toast.Parent = ToastContainer; Toast.Size = UDim2.new(0, 280, 0, 64); Toast.BackgroundColor3 = GLASS_THEME.Card; Toast.BackgroundTransparency = 0.1; Toast.ZIndex = 100000
+		local TC = Instance.new("UICorner"); TC.CornerRadius = UDim.new(0, 10); TC.Parent = Toast
+		local TS = Instance.new("UIStroke"); TS.Thickness = 1.2; TS.Color = GLASS_THEME.Acc1; TS.Parent = Toast
+		
+		local TTitle = Instance.new("TextLabel"); TTitle.Parent = Toast; TTitle.Position = UDim2.new(0, 12, 0, 8); TTitle.Size = UDim2.new(1, -24, 0, 20); TTitle.Text = title; TTitle.TextColor3 = GLASS_THEME.Acc1; TTitle.TextSize = 12; TTitle.Font = Enum.Font.GothamBold; TTitle.TextXAlignment = Enum.TextXAlignment.Left; TTitle.BackgroundTransparency = 1; TTitle.ZIndex = 100001
+		local TMsg = Instance.new("TextLabel"); TMsg.Parent = Toast; TMsg.Position = UDim2.new(0, 12, 0, 28); TMsg.Size = UDim2.new(1, -24, 0, 28); TMsg.Text = message; TMsg.TextColor3 = GLASS_THEME.Text; TMsg.TextSize = 11; TMsg.Font = Enum.Font.GothamMedium; TMsg.TextXAlignment = Enum.TextXAlignment.Left; TMsg.TextWrapped = true; TMsg.BackgroundTransparency = 1; TMsg.ZIndex = 100001
+		
+		Toast.Position = UDim2.new(1, 300, 0, 0)
+		TweenService:Create(Toast, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Position = UDim2.new(0, 0, 0, 0)}):Play()
+		
+		task.delay(duration, function()
+			pcall(function()
+				local tw = TweenService:Create(Toast, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Position = UDim2.new(1, 300, 0, 0)})
+				tw:Play()
+				tw.Completed:Connect(function() Toast:Destroy() end)
+			end)
+		end)
+	end)
+end
 
 local ToggleBtn = Instance.new("TextButton"); ToggleBtn.Parent = ToggleGui; ToggleBtn.Size = UDim2.new(0, 52, 0, 52); ToggleBtn.Position = UDim2.new(0.02, 0, 0.4, 0)
 ToggleBtn.BackgroundColor3 = GLASS_THEME.Card; ToggleBtn.Text = "AI"; ToggleBtn.Font = Enum.Font.GothamBlack; ToggleBtn.TextSize = 22; ToggleBtn.TextColor3 = GLASS_THEME.Acc1; ToggleBtn.ZIndex = 99999
@@ -298,7 +326,7 @@ UserInputService.InputChanged:Connect(function(input)
 end)
 
 -- ===================================================================== --
--- 4. ADAPTIVE AUTO-SCALE & COMPACT UI SETUP WITH BORDER GROUPS
+-- 4. ADAPTIVE AUTO-SCALE & COMPACT UI SETUP WITH COLLAPSIBLE GROUPS
 -- ===================================================================== --
 local MainGui = Instance.new("ScreenGui"); MainGui.Name = "MofenkUltraHubV105"; MainGui.Parent = parentGui; MainGui.ResetOnSpawn = false
 
@@ -308,6 +336,14 @@ MainFrame.Size = UDim2.new(0, 900, 0, 580); MainFrame.Position = UDim2.new(0.5, 
 MainFrame.Active = true; MainFrame.Draggable = true; MainFrame.Visible = false; MainFrame.BackgroundColor3 = GLASS_THEME.Bg; MainFrame.BackgroundTransparency = 0.05
 local MainCorner = Instance.new("UICorner"); MainCorner.CornerRadius = UDim.new(0, 14); MainCorner.Parent = MainFrame
 local MainStroke = Instance.new("UIStroke"); MainStroke.Thickness = 2.0; MainStroke.Color = GLASS_THEME.Border; MainStroke.Parent = MainFrame
+
+-- Keybind toggle (RightShift)
+UserInputService.InputBegan:Connect(function(input, gp)
+	if input.KeyCode == Enum.KeyCode.RightShift then
+		MainFrame.Visible = not MainFrame.Visible
+		ShowToast("UI Toggled", MainFrame.Visible ? "Hub dibuka via RightShift" : "Hub disembunyikan", 2.0)
+	end
+end)
 
 local ScreenScale = Instance.new("UIScale"); ScreenScale.Parent = MainGui
 local baseAutoMultiplier = 1.0
@@ -328,9 +364,9 @@ local TopBar = Instance.new("Frame"); TopBar.Parent = MainFrame; TopBar.Size = U
 local TopCorner = Instance.new("UICorner"); TopCorner.CornerRadius = UDim.new(0, 14); TopCorner.Parent = TopBar
 local TopStroke = Instance.new("UIStroke"); TopStroke.Thickness = 1; TopStroke.Color = GLASS_THEME.Border; TopStroke.Parent = TopBar
 
-local Title = Instance.new("TextLabel"); Title.Parent = TopBar; Title.Position = UDim2.new(0, 16, 0, 0); Title.Size = UDim2.new(0, 220, 1, 0); Title.Text = "👑 MOFENKHUB V105.4"; Title.TextColor3 = GLASS_THEME.Acc1; Title.TextSize = 13; Title.Font = Enum.Font.GothamBlack; Title.TextXAlignment = Enum.TextXAlignment.Left; Title.BackgroundTransparency = 1
+local Title = Instance.new("TextLabel"); Title.Parent = TopBar; Title.Position = UDim2.new(0, 16, 0, 0); Title.Size = UDim2.new(0, 220, 1, 0); Title.Text = "👑 MOFENKHUB V105.5"; Title.TextColor3 = GLASS_THEME.Acc1; Title.TextSize = 13; Title.Font = Enum.Font.GothamBlack; Title.TextXAlignment = Enum.TextXAlignment.Left; Title.BackgroundTransparency = 1
 
-local StatusBar = Instance.new("TextLabel"); StatusBar.Parent = TopBar; StatusBar.Position = UDim2.new(0, 230, 0, 8); StatusBar.Size = UDim2.new(0, 480, 0, 32); StatusBar.BackgroundColor3 = GLASS_THEME.Card; StatusBar.BackgroundTransparency = 0.2; StatusBar.TextColor3 = GLASS_THEME.SubText; StatusBar.TextSize = 10; StatusBar.Font = Enum.Font.GothamMedium; StatusBar.Text = "🤖 AI Status: Full Features Restored & Event Ready"
+local StatusBar = Instance.new("TextLabel"); StatusBar.Parent = TopBar; StatusBar.Position = UDim2.new(0, 230, 0, 8); StatusBar.Size = UDim2.new(0, 480, 0, 32); StatusBar.BackgroundColor3 = GLASS_THEME.Card; StatusBar.BackgroundTransparency = 0.2; StatusBar.TextColor3 = GLASS_THEME.SubText; StatusBar.TextSize = 10; StatusBar.Font = Enum.Font.GothamMedium; StatusBar.Text = "🤖 Elite Status: Professional UI & Full Automation Active"
 local SBC = Instance.new("UICorner"); SBC.CornerRadius = UDim.new(0, 6); SBC.Parent = StatusBar
 local SBStroke = Instance.new("UIStroke"); SBStroke.Thickness = 1; SBStroke.Color = GLASS_THEME.Border; SBStroke.Parent = StatusBar
 
@@ -385,6 +421,7 @@ local function CreateTab(name, icon)
 	return Scroll
 end
 
+-- Professional Collapsible Group Component
 local function AddGroup(parent, title)
 	local GroupCard = Instance.new("Frame"); GroupCard.Parent = parent; GroupCard.Size = UDim2.new(1, 0, 0, 0); GroupCard.AutomaticSize = Enum.AutomaticSize.Y; GroupCard.BackgroundColor3 = GLASS_THEME.Card; GroupCard.BackgroundTransparency = 0.15
 	local GC = Instance.new("UICorner"); GC.CornerRadius = UDim.new(0, 10); GC.Parent = GroupCard
@@ -393,7 +430,19 @@ local function AddGroup(parent, title)
 	local GPadding = Instance.new("UIPadding"); GPadding.Parent = GroupCard; GPadding.PaddingTop = UDim.new(0, 10); GPadding.PaddingBottom = UDim.new(0, 10); GPadding.PaddingLeft = UDim.new(0, 10); GPadding.PaddingRight = UDim.new(0, 10)
 	
 	if title and title ~= "" then
-		local HeaderLbl = Instance.new("TextLabel"); HeaderLbl.Parent = GroupCard; HeaderLbl.Size = UDim2.new(1, 0, 0, 24); HeaderLbl.Text = title; HeaderLbl.TextColor3 = GLASS_THEME.Acc1; HeaderLbl.TextSize = 12; HeaderLbl.Font = Enum.Font.GothamBlack; HeaderLbl.TextXAlignment = Enum.TextXAlignment.Left; HeaderLbl.BackgroundTransparency = 1
+		local HeaderBtn = Instance.new("TextButton"); HeaderBtn.Parent = GroupCard; HeaderBtn.Size = UDim2.new(1, 0, 0, 24); HeaderBtn.Text = "  ▼ " .. title; HeaderBtn.TextColor3 = GLASS_THEME.Acc1; HeaderBtn.TextSize = 12; HeaderBtn.Font = Enum.Font.GothamBlack; HeaderBtn.TextXAlignment = Enum.TextXAlignment.Left; HeaderBtn.BackgroundTransparency = 1
+		
+		local contentElements = {}
+		HeaderBtn.MouseButton1Click:Connect(function()
+			local isCollapsed = false
+			for _, child in ipairs(GroupCard:GetChildren()) do
+				if child ~= HeaderBtn and not child:IsA("UIListLayout") and not child:IsA("UIPadding") and not child:IsA("UICorner") and not child:IsA("UIStroke") then
+					child.Visible = not child.Visible
+					isCollapsed = not child.Visible
+				end
+			end
+			HeaderBtn.Text = (isCollapsed and "  ▶ " or "  ▼ ") .. title
+		end)
 	end
 	return GroupCard
 end
@@ -600,7 +649,7 @@ local function GetOpts(mode)
 end
 
 -- ===================================================================== --
--- 5. TABS ASSEMBLY (RESTRUCTURED EVENT TAB & MONITORING)
+-- 5. TABS ASSEMBLY (ELITE UI COLLAPSIBLE SECTIONS)
 -- ===================================================================== --
 local T_Dash = CreateTab("Dashboard", "📊")
 local T_Farm = CreateTab("Farming", "⛏️")
@@ -643,6 +692,7 @@ task.spawn(function()
 			end
 			if currentMoney >= TaskTrackerState.TargetMoneyMilestone then
 				SendWebhook("🎯 Task Target Reached!", "Akun bot berhasil mencapai milestone money sebesar **" .. FormatMoney(TaskTrackerState.TargetMoneyMilestone) .. "**", 3066993)
+				ShowToast("Milestone Tercapai!", "Money menyentuh " .. FormatMoney(TaskTrackerState.TargetMoneyMilestone), 5.0)
 				TaskTrackerState.TargetMoneyMilestone = TaskTrackerState.TargetMoneyMilestone * 2.5
 			end
 		end)
@@ -656,7 +706,7 @@ task.spawn(function()
 			local dur = math.floor(os.clock() - TaskTrackerState.SessionStartTime)
 			local h, m, s = math.floor(dur / 3600), math.floor((dur % 3600) / 60), dur % 60
 			local totEarned = math.max(0, money() - TaskTrackerState.StartingMoney)
-			TrackerLbl.Text = string.format("⏱️ Durasi Sesi: %02d:%02d:%02d\n💰 Pendapatan Sesi Ini: +$%s (%s/detik)\n🎯 Target Money Berikutnya: %s\n📊 Status: Berjalan 24/7", h, m, s, FormatMoney(totEarned), FormatMoney(TaskTrackerState.CurrentMoneyRate), FormatMoney(TaskTrackerState.TargetMoneyMilestone))
+			TrackerLbl.Text = string.format("⏱️ Durasi Sesi: %02d:%02d:%02d\n💰 Pendapatan Sesi Ini: +$%s (%s/detik)\n🎯 Target Money Berikutnya: %s\n📊 Status: Elite 24/7 Active", h, m, s, FormatMoney(totEarned), FormatMoney(TaskTrackerState.CurrentMoneyRate), FormatMoney(TaskTrackerState.TargetMoneyMilestone))
 		end)
 		task.wait(0.8)
 	end
@@ -714,6 +764,7 @@ local BTEStroke = Instance.new("UIStroke"); BTEStroke.Thickness = 1; BTEStroke.C
 BtnTeleportEvent.MouseButton1Click:Connect(function()
 	pcall(function()
 		STATE.autumnStatus = "Menghubungkan ke Autumn World..."
+		ShowToast("Teleporting", "Menuju Autumn World...", 2.5)
 		if R.TeleportBuild then
 			if R.TeleportBuild:IsA("RemoteEvent") then R.TeleportBuild:FireServer("AutumnWorld")
 			elseif R.TeleportBuild:IsA("RemoteFunction") then R.TeleportBuild:InvokeServer("AutumnWorld") end
@@ -825,11 +876,11 @@ AddInput(G_SetConfig, "Nama File Config:", "cfgName", false)
 
 local BtnSave = Instance.new("TextButton"); BtnSave.Parent = G_SetConfig; BtnSave.Size = UDim2.new(1, 0, 0, 34); BtnSave.Text = "💾 SAVE CONFIG SEKARANG"; BtnSave.Font = Enum.Font.GothamBold; BtnSave.TextSize = 12; BtnSave.TextColor3 = GLASS_THEME.Acc1; BtnSave.BackgroundColor3 = GLASS_THEME.Header; local BTS = Instance.new("UICorner"); BTS.CornerRadius = UDim.new(0,6); BTS.Parent = BtnSave
 local BTSStroke = Instance.new("UIStroke"); BTSStroke.Thickness = 1; BTSStroke.Color = GLASS_THEME.Border; BTSStroke.Parent = BtnSave
-BtnSave.MouseButton1Click:Connect(function() pcall(function() saveConfig(F.cfgName) end) end)
+BtnSave.MouseButton1Click:Connect(function() pcall(function() saveConfig(F.cfgName); ShowToast("Config Saved", "Konfigurasi '" .. tostring(F.cfgName) .. "' berhasil disimpan.", 3.0) end) end)
 
 local BtnLoad = Instance.new("TextButton"); BtnLoad.Parent = G_SetConfig; BtnLoad.Size = UDim2.new(1, 0, 0, 34); BtnLoad.Text = "📂 LOAD CONFIG PILIHAN"; BtnLoad.Font = Enum.Font.GothamBold; BtnLoad.TextSize = 12; BtnLoad.TextColor3 = GLASS_THEME.Acc1; BtnLoad.BackgroundColor3 = GLASS_THEME.Header; local BTL = Instance.new("UICorner"); BTL.CornerRadius = UDim.new(0,6); BTL.Parent = BtnLoad
 local BTLStroke = Instance.new("UIStroke"); BTLStroke.Thickness = 1; BTLStroke.Color = GLASS_THEME.Border; BTLStroke.Parent = BtnLoad
-BtnLoad.MouseButton1Click:Connect(function() pcall(function() loadConfig(F.cfgName) end) end)
+BtnLoad.MouseButton1Click:Connect(function() pcall(function() loadConfig(F.cfgName); ShowToast("Config Loaded", "Konfigurasi '" .. tostring(F.cfgName) .. "' dimuat sukses.", 3.0) end) end)
 
 local BtnDelete = Instance.new("TextButton"); BtnDelete.Parent = G_SetConfig; BtnDelete.Size = UDim2.new(1, 0, 0, 34); BtnDelete.Text = "🗑️ DELETE CONFIG PILIHAN"; BtnDelete.Font = Enum.Font.GothamBold; BtnDelete.TextSize = 12; BtnDelete.TextColor3 = Color3.fromRGB(200, 200, 200); BtnDelete.BackgroundColor3 = GLASS_THEME.Header; local BTD = Instance.new("UICorner"); BTD.CornerRadius = UDim.new(0,6); BTD.Parent = BtnDelete
 local BTDStroke = Instance.new("UIStroke"); BTDStroke.Thickness = 1; BTDStroke.Color = GLASS_THEME.Border; BTDStroke.Parent = BtnDelete
@@ -846,7 +897,7 @@ local function RefreshConfigList()
 				local fileName = file:match("([^/]+)$"):gsub("%.json$", "")
 				local FileBtn = Instance.new("TextButton"); FileBtn.Parent = ConfigScroll; FileBtn.Size = UDim2.new(1, 0, 0, 32); FileBtn.Text = "📄 " .. fileName; FileBtn.TextSize = 11; FileBtn.Font = Enum.Font.GothamMedium; FileBtn.TextColor3 = GLASS_THEME.Text; FileBtn.BackgroundColor3 = GLASS_THEME.Card; FileBtn.BackgroundTransparency = 0.2
 				local FBC = Instance.new("UICorner"); FBC.CornerRadius = UDim.new(0, 5); FBC.Parent = FileBtn
-				FileBtn.MouseButton1Click:Connect(function() pcall(function() F.cfgName = fileName; loadConfig(fileName) end) end)
+				FileBtn.MouseButton1Click:Connect(function() pcall(function() F.cfgName = fileName; loadConfig(fileName); ShowToast("Loaded", fileName, 2.0) end) end)
 			end
 		end)
 	end
@@ -865,6 +916,7 @@ BtnDelete.MouseButton1Click:Connect(function()
 			end
 			confirmDeleteClick = false; BtnDelete.Text = "🗑️ DELETE CONFIG PILIHAN"
 			delfile(path); RefreshConfigList()
+			ShowToast("Deleted", "Config dihapus.", 2.5)
 		end
 	end)
 end)
@@ -876,7 +928,7 @@ local G_Web = AddGroup(T_Set, "🔔 DISCORD WEBHOOK NOTIFIER")
 AddToggle(G_Web, "Aktifkan Webhook Discord", "webhookEnabled")
 AddInput(G_Web, "Webhook URL:", "webhookUrl", false)
 local BtnTestWeb = Instance.new("TextButton"); BtnTestWeb.Parent = G_Web; BtnTestWeb.Size = UDim2.new(1, 0, 0, 32); BtnTestWeb.Text = "🔔 TEST KIRIM WEBHOOK"; BtnTestWeb.Font = Enum.Font.GothamBold; BtnTestWeb.TextSize = 11; BtnTestWeb.TextColor3 = GLASS_THEME.Acc1; BtnTestWeb.BackgroundColor3 = GLASS_THEME.Header; local BTWC = Instance.new("UICorner"); BTWC.CornerRadius = UDim.new(0,6); BTWC.Parent = BtnTestWeb
-BtnTestWeb.MouseButton1Click:Connect(function() SendWebhook("✅ Webhook Connected!", "AI Smart Planner tersambung sukses.", 3447003) end)
+BtnTestWeb.MouseButton1Click:Connect(function() SendWebhook("✅ Webhook Connected!", "Elite AI Smart Planner tersambung sukses.", 3447003); ShowToast("Webhook", "Test terkirim sukses!", 2.5) end)
 
 local G_Set2 = AddGroup(T_Set, "⚡ OPTIMALISASI & SERVER UTILITY")
 AddToggle(G_Set2, "Deep Anti-AFK & Auto Reconnect (24/7)", "afk")
@@ -895,6 +947,7 @@ BtnHop.MouseButton1Click:Connect(function()
 			return
 		end
 		confirmHopClick = false; BtnHop.Text = "🌐 SERVER HOP (PINDAH SERVER)"
+		ShowToast("Server Hop", "Mencari server optimal...", 3.0)
 		local cursor = ""; local servers = {}
 		repeat
 			local url = "https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100" .. (cursor ~= "" and "&cursor=" .. cursor or "")
@@ -1113,6 +1166,7 @@ task.spawn(function()
 						if isMatch then
 							STATE.quirkStatus = "✅ Berhasil: " .. tostring(curQuirk)
 							SendWebhook("⚡ Quirk Matched!", "Berhasil mendapatkan Quirk **" .. tostring(curQuirk) .. "**", 65280)
+							ShowToast("🎯 Quirk Matched!", tostring(curQuirk) .. " didapat!", 6.0)
 						else
 							STATE.quirkStatus = "AI Rolling..."
 							R.QuirkRoll:FireServer(unitId)
@@ -1153,6 +1207,7 @@ task.spawn(function()
 							if isMatch then
 								STATE.gradeStatus = "✅ Berhasil: " .. tostring(curGrade)
 								SendWebhook("⭐ Grade Matched!", "Berhasil mendapatkan Grade **" .. tostring(curGrade) .. "**", 65280)
+								ShowToast("⭐ Grade Matched!", tostring(curGrade) .. " didapat!", 6.0)
 							else
 								STATE.gradeStatus = "AI Rolling Grade..."
 								R.GradeRoll:FireServer(unitId)
@@ -1194,6 +1249,7 @@ task.spawn(function()
 							if isMatch then
 								STATE.traitStatus = "✅ Berhasil: " .. tostring(curTrait)
 								SendWebhook("🧬 Trait Matched!", "Berhasil mendapatkan Trait **" .. tostring(curTrait) .. "**", 65280)
+								ShowToast("🧬 Trait Matched!", tostring(curTrait) .. " didapat!", 6.0)
 							else
 								STATE.traitStatus = "AI Rolling Trait..."
 								R.TraitRoll:FireServer(unitId)
@@ -1208,7 +1264,6 @@ task.spawn(function()
 	end
 end)
 
--- Slot unprotection helper
 local function unlockedSlots() local arr={}; local rb = rebirthAmt(); pcall(function() for i=1, (G.PlotConfig.GetMaxSlots(rb) or 15) do if rb >= (G.PlotConfig.GetSlotRebirthRequirement(i) or 0) then table.insert(arr, i) end end end); return arr end
 
 -- Auto Roll Dadu Utama
