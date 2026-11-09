@@ -1,5 +1,5 @@
 -- ===================================================================== --
--- 👑 MOFENKHUB V105.0 — ULTIMATE 24/7 AUTOMATION & EVENT EDITION
+-- 👑 MOFENKHUB V105.1 — FIXED UI STROKE ERROR & 24/7 BULLETPROOF
 -- ===================================================================== --
 
 --!nocheck
@@ -332,7 +332,7 @@ local TopBar = Instance.new("Frame"); TopBar.Parent = MainFrame; TopBar.Size = U
 local TopCorner = Instance.new("UICorner"); TopCorner.CornerRadius = UDim.new(0, 14); TopCorner.Parent = TopBar
 local TopStroke = Instance.new("UIStroke"); TopStroke.Thickness = 1; TopStroke.Color = GLASS_THEME.Border; TopStroke.Parent = TopBar
 
-local Title = Instance.new("TextLabel"); Title.Parent = TopBar; Title.Position = UDim2.new(0, 16, 0, 0); Title.Size = UDim2.new(0, 220, 1, 0); Title.Text = "👑 MOFENKHUB V105.0"; Title.TextColor3 = GLASS_THEME.Acc1; Title.TextSize = 13; Title.Font = Enum.Font.GothamBlack; Title.TextXAlignment = Enum.TextXAlignment.Left; Title.BackgroundTransparency = 1
+local Title = Instance.new("TextLabel"); Title.Parent = TopBar; Title.Position = UDim2.new(0, 16, 0, 0); Title.Size = UDim2.new(0, 220, 1, 0); Title.Text = "👑 MOFENKHUB V105.1"; Title.TextColor3 = GLASS_THEME.Acc1; Title.TextSize = 13; Title.Font = Enum.Font.GothamBlack; Title.TextXAlignment = Enum.TextXAlignment.Left; Title.BackgroundTransparency = 1
 
 local StatusBar = Instance.new("TextLabel"); StatusBar.Parent = TopBar; StatusBar.Position = UDim2.new(0, 230, 0, 8); StatusBar.Size = UDim2.new(0, 480, 0, 32); StatusBar.BackgroundColor3 = GLASS_THEME.Card; StatusBar.BackgroundTransparency = 0.2; StatusBar.TextColor3 = GLASS_THEME.SubText; StatusBar.TextSize = 10; StatusBar.Font = Enum.Font.GothamMedium; StatusBar.Text = "🤖 AI Status: 24/7 Cloud Anti-AFK & Event Active"
 local SBC = Instance.new("UICorner"); SBC.CornerRadius = UDim.new(0, 6); SBC.Parent = StatusBar
@@ -746,7 +746,7 @@ AddToggle(G_Evnt1, "Auto Buy Apple Shop Event Items", "autoAppleShop")
 AddToggle(G_Evnt1, "Auto Claim Autumn / Seasonal Event Rewards", "autoAutumnEvent")
 
 local BtnTeleportEvent = Instance.new("TextButton"); BtnTeleportEvent.Parent = G_Evnt1; BtnTeleportEvent.Size = UDim2.new(1, 0, 0, 36); BtnTeleportEvent.Text = "🚀 TELEPORT KE EVENT WORLD / LOBBY"; BtnTeleportEvent.Font = Enum.Font.GothamBold; BtnTeleportEvent.TextSize = 12; BtnTeleportEvent.TextColor3 = GLASS_THEME.Acc1; BtnTeleportEvent.BackgroundColor3 = GLASS_THEME.Header; local BTE = Instance.new("UICorner"); BTE.CornerRadius = UDim.new(0,6); BTE.Parent = BtnTeleportEvent
-local BTEStroke = Instance.new("UIStroke"); BTEStroke.Thickness = 1; BTEStroke.BorderColor3 = GLASS_THEME.Border; BTEStroke.Parent = BtnTeleportEvent
+local BTEStroke = Instance.new("UIStroke"); BTEStroke.Thickness = 1; BTEStroke.Color = GLASS_THEME.Border; BTEStroke.Parent = BtnTeleportEvent
 
 BtnTeleportEvent.MouseButton1Click:Connect(function()
 	pcall(function()
@@ -841,15 +841,15 @@ AddToggle(G_SetConfig, "Auto Load Config Saat Nyala", "autoLoadEnabled")
 AddInput(G_SetConfig, "Nama File Config:", "cfgName", false)
 
 local BtnSave = Instance.new("TextButton"); BtnSave.Parent = G_SetConfig; BtnSave.Size = UDim2.new(1, 0, 0, 34); BtnSave.Text = "💾 SAVE CONFIG SEKARANG"; BtnSave.Font = Enum.Font.GothamBold; BtnSave.TextSize = 12; BtnSave.TextColor3 = GLASS_THEME.Acc1; BtnSave.BackgroundColor3 = GLASS_THEME.Header; local BTS = Instance.new("UICorner"); BTS.CornerRadius = UDim.new(0,6); BTS.Parent = BtnSave
-local BTSStroke = Instance.new("UIStroke"); BTSStroke.Thickness = 1; BTSStroke.BorderColor3 = GLASS_THEME.Border; BTSStroke.Parent = BtnSave
+local BTSStroke = Instance.new("UIStroke"); BTSStroke.Thickness = 1; BTSStroke.Color = GLASS_THEME.Border; BTSStroke.Parent = BtnSave
 BtnSave.MouseButton1Click:Connect(function() pcall(function() saveConfig(F.cfgName) end) end)
 
 local BtnLoad = Instance.new("TextButton"); BtnLoad.Parent = G_SetConfig; BtnLoad.Size = UDim2.new(1, 0, 0, 34); BtnLoad.Text = "📂 LOAD CONFIG PILIHAN"; BtnLoad.Font = Enum.Font.GothamBold; BtnLoad.TextSize = 12; BtnLoad.TextColor3 = GLASS_THEME.Acc1; BtnLoad.BackgroundColor3 = GLASS_THEME.Header; local BTL = Instance.new("UICorner"); BTL.CornerRadius = UDim.new(0,6); BTL.Parent = BtnLoad
-local BTLStroke = Instance.new("UIStroke"); BTLStroke.Thickness = 1; BTLStroke.BorderColor3 = GLASS_THEME.Border; BTLStroke.Parent = BtnLoad
+local BTLStroke = Instance.new("UIStroke"); BTLStroke.Thickness = 1; BTLStroke.Color = GLASS_THEME.Border; BTLStroke.Parent = BtnLoad
 BtnLoad.MouseButton1Click:Connect(function() pcall(function() loadConfig(F.cfgName) end) end)
 
 local BtnDelete = Instance.new("TextButton"); BtnDelete.Parent = G_SetConfig; BtnDelete.Size = UDim2.new(1, 0, 0, 34); BtnDelete.Text = "🗑️ DELETE CONFIG PILIHAN"; BtnDelete.Font = Enum.Font.GothamBold; BtnDelete.TextSize = 12; BtnDelete.TextColor3 = Color3.fromRGB(200, 200, 200); BtnDelete.BackgroundColor3 = GLASS_THEME.Header; local BTD = Instance.new("UICorner"); BTD.CornerRadius = UDim.new(0,6); BTD.Parent = BtnDelete
-local BTDStroke = Instance.new("UIStroke"); BTDStroke.Thickness = 1; BTDStroke.BorderColor3 = GLASS_THEME.Border; BTDStroke.Parent = BtnDelete
+local BTDStroke = Instance.new("UIStroke"); BTDStroke.Thickness = 1; BTDStroke.Color = GLASS_THEME.Border; BTDStroke.Parent = BtnDelete
 
 local ConfigScroll = Instance.new("ScrollingFrame"); ConfigScroll.Parent = G_SetConfig; ConfigScroll.Size = UDim2.new(1, 0, 0, 100); ConfigScroll.BackgroundColor3 = GLASS_THEME.Header; ConfigScroll.BackgroundTransparency = 0.3; ConfigScroll.ScrollBarThickness = 4; ConfigScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y; ConfigScroll.CanvasSize = UDim2.new(0,0,0,0)
 local CSC = Instance.new("UICorner"); CSC.CornerRadius = UDim.new(0, 6); CSC.Parent = ConfigScroll
@@ -1533,7 +1533,7 @@ task.spawn(function()
 		end
 		if F.codesAuto and R.RedeemCode then
 			pcall(function()
-				defaultCodes = { "RELEASE", "UPDATE1", "UPDATE2", "UPDATE3", "UPDATE4", "1KCCU", "5KCCU", "10KCCU", "20KCCU", "30KCCU", "40KCCU", "100KLIKES" }
+				local defaultCodes = { "RELEASE", "UPDATE1", "UPDATE2", "UPDATE3", "UPDATE4", "1KCCU", "5KCCU", "10KCCU", "20KCCU", "30KCCU", "40KCCU", "100KLIKES" }
 				local redeemed = G.DC.RedeemedCodes() or {}
 				for _, c in ipairs(defaultCodes) do if not redeemed[c] then R.RedeemCode:FireServer(c); task.wait(0.5) end end
 			end)
