@@ -1,6 +1,5 @@
-
 -- ===================================================================== --
--- 👑 MOFENKHUB V105.5 — PROFESSIONAL ELITE UI & FULL AUTOMATION EDITION
+-- 👑 MOFENKHUB V105.6 — SAFE WRAPPER & ELITE UI EDITION
 -- ===================================================================== --
 
 --!nocheck
@@ -146,7 +145,7 @@ local function FormatMoney(val)
 end
 
 -- ===================================================================== --
--- 2. FRAMEWORK & MODULE SERVICES BINDINGS
+-- 2. FRAMEWORK & SAFE REMOTE BINDINGS WRAPPER
 -- ===================================================================== --
 local Network = ReplicatedStorage:WaitForChild("Network", 15); local Framework = ReplicatedStorage:WaitForChild("Framework", 15)
 local function svc(p) local n = Network; for x in string.gmatch(p, "[^%.]+") do n = n and n:FindFirstChild(x) end; return n end
@@ -192,6 +191,21 @@ local R = {
 	UnequipUnit     = svc("UnitService.RF.Unequip") or svc("UnitService.RE.Unequip"),
 	LockUnit        = svc("UnitService.RE.SetLock") or svc("InventoryService.RE.Lock")
 }
+
+-- Safe Remote Invocation Wrapper (Mencegah Error Nil Value)
+local function safeCall(remote, ...)
+	if not remote then return nil end
+	local success, res = pcall(function(...)
+		if remote:IsA("RemoteFunction") then
+			return remote:InvokeServer(...)
+		elseif remote:IsA("RemoteEvent") then
+			remote:FireServer(...)
+			return true
+		end
+	end, ...)
+	if success then return res end
+	return nil
+end
 
 local G = {}
 pcall(function()
@@ -278,7 +292,6 @@ end
 local ToggleGui = Instance.new("ScreenGui"); ToggleGui.Name = "MofenkToggleFront"; ToggleGui.Parent = parentGui; ToggleGui.ResetOnSpawn = false
 ToggleGui.DisplayOrder = 99999
 
--- Toast Popup Notification Function
 local ToastContainer = Instance.new("Frame"); ToastContainer.Parent = ToggleGui; ToastContainer.Size = UDim2.new(0, 300, 1, 0); ToastContainer.Position = UDim2.new(1, -315, 0, 0); ToastContainer.BackgroundTransparency = 1; ToastContainer.ZIndex = 99999
 local ToastLayout = Instance.new("UIListLayout"); ToastLayout.Parent = ToastContainer; ToastLayout.VerticalAlignment = Enum.VerticalAlignment.Bottom; ToastLayout.Padding = UDim.new(0, 8); ToastLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right
 
@@ -337,11 +350,10 @@ MainFrame.Active = true; MainFrame.Draggable = true; MainFrame.Visible = false; 
 local MainCorner = Instance.new("UICorner"); MainCorner.CornerRadius = UDim.new(0, 14); MainCorner.Parent = MainFrame
 local MainStroke = Instance.new("UIStroke"); MainStroke.Thickness = 2.0; MainStroke.Color = GLASS_THEME.Border; MainStroke.Parent = MainFrame
 
--- Keybind toggle (RightShift)
 UserInputService.InputBegan:Connect(function(input, gp)
 	if input.KeyCode == Enum.KeyCode.RightShift then
 		MainFrame.Visible = not MainFrame.Visible
-		ShowToast("UI Toggled", MainFrame.Visible ? "Hub dibuka via RightShift" : "Hub disembunyikan", 2.0)
+		ShowToast("UI Toggled", MainFrame.Visible and "Hub dibuka via RightShift" or "Hub disembunyikan", 2.0)
 	end
 end)
 
@@ -364,9 +376,9 @@ local TopBar = Instance.new("Frame"); TopBar.Parent = MainFrame; TopBar.Size = U
 local TopCorner = Instance.new("UICorner"); TopCorner.CornerRadius = UDim.new(0, 14); TopCorner.Parent = TopBar
 local TopStroke = Instance.new("UIStroke"); TopStroke.Thickness = 1; TopStroke.Color = GLASS_THEME.Border; TopStroke.Parent = TopBar
 
-local Title = Instance.new("TextLabel"); Title.Parent = TopBar; Title.Position = UDim2.new(0, 16, 0, 0); Title.Size = UDim2.new(0, 220, 1, 0); Title.Text = "👑 MOFENKHUB V105.5"; Title.TextColor3 = GLASS_THEME.Acc1; Title.TextSize = 13; Title.Font = Enum.Font.GothamBlack; Title.TextXAlignment = Enum.TextXAlignment.Left; Title.BackgroundTransparency = 1
+local Title = Instance.new("TextLabel"); Title.Parent = TopBar; Title.Position = UDim2.new(0, 16, 0, 0); Title.Size = UDim2.new(0, 220, 1, 0); Title.Text = "👑 MOFENKHUB V105.6"; Title.TextColor3 = GLASS_THEME.Acc1; Title.TextSize = 13; Title.Font = Enum.Font.GothamBlack; Title.TextXAlignment = Enum.TextXAlignment.Left; Title.BackgroundTransparency = 1
 
-local StatusBar = Instance.new("TextLabel"); StatusBar.Parent = TopBar; StatusBar.Position = UDim2.new(0, 230, 0, 8); StatusBar.Size = UDim2.new(0, 480, 0, 32); StatusBar.BackgroundColor3 = GLASS_THEME.Card; StatusBar.BackgroundTransparency = 0.2; StatusBar.TextColor3 = GLASS_THEME.SubText; StatusBar.TextSize = 10; StatusBar.Font = Enum.Font.GothamMedium; StatusBar.Text = "🤖 Elite Status: Professional UI & Full Automation Active"
+local StatusBar = Instance.new("TextLabel"); StatusBar.Parent = TopBar; StatusBar.Position = UDim2.new(0, 230, 0, 8); StatusBar.Size = UDim2.new(0, 480, 0, 32); StatusBar.BackgroundColor3 = GLASS_THEME.Card; StatusBar.BackgroundTransparency = 0.2; StatusBar.TextColor3 = GLASS_THEME.SubText; StatusBar.TextSize = 10; StatusBar.Font = Enum.Font.GothamMedium; StatusBar.Text = "🤖 Safe Elite Status: Anti-Nil Protection Active"
 local SBC = Instance.new("UICorner"); SBC.CornerRadius = UDim.new(0, 6); SBC.Parent = StatusBar
 local SBStroke = Instance.new("UIStroke"); SBStroke.Thickness = 1; SBStroke.Color = GLASS_THEME.Border; SBStroke.Parent = StatusBar
 
@@ -421,7 +433,6 @@ local function CreateTab(name, icon)
 	return Scroll
 end
 
--- Professional Collapsible Group Component
 local function AddGroup(parent, title)
 	local GroupCard = Instance.new("Frame"); GroupCard.Parent = parent; GroupCard.Size = UDim2.new(1, 0, 0, 0); GroupCard.AutomaticSize = Enum.AutomaticSize.Y; GroupCard.BackgroundColor3 = GLASS_THEME.Card; GroupCard.BackgroundTransparency = 0.15
 	local GC = Instance.new("UICorner"); GC.CornerRadius = UDim.new(0, 10); GC.Parent = GroupCard
@@ -432,7 +443,6 @@ local function AddGroup(parent, title)
 	if title and title ~= "" then
 		local HeaderBtn = Instance.new("TextButton"); HeaderBtn.Parent = GroupCard; HeaderBtn.Size = UDim2.new(1, 0, 0, 24); HeaderBtn.Text = "  ▼ " .. title; HeaderBtn.TextColor3 = GLASS_THEME.Acc1; HeaderBtn.TextSize = 12; HeaderBtn.Font = Enum.Font.GothamBlack; HeaderBtn.TextXAlignment = Enum.TextXAlignment.Left; HeaderBtn.BackgroundTransparency = 1
 		
-		local contentElements = {}
 		HeaderBtn.MouseButton1Click:Connect(function()
 			local isCollapsed = false
 			for _, child in ipairs(GroupCard:GetChildren()) do
@@ -756,7 +766,7 @@ AddToggle(G_Farm2, "Auto Level Up Unit Plot", "levelup")
 AddInput(G_Farm2, "Max Level Unit Batas:", "maxLevel", true)
 AddToggle(G_Farm2, "Auto Upgrade Skill Tree Pad", "upgrades")
 
--- 3. EVENT TAB (DIPINDAHKAN & DILENGKAPI: LEAF DICE, LEAF TOWER, APPLE BOARD, SHOP, MONITORING & TELEPORT)
+-- 3. EVENT TAB
 local G_EvntTeleport = AddGroup(T_Evnt, "🚀 AUTUMN WORLD / EVENT TELEPORT")
 local BtnTeleportEvent = Instance.new("TextButton"); BtnTeleportEvent.Parent = G_EvntTeleport; BtnTeleportEvent.Size = UDim2.new(1, 0, 0, 40); BtnTeleportEvent.Text = "🚀 TELEPORT KE AUTUMN WORLD (LOBBY/WORLD)"; BtnTeleportEvent.Font = Enum.Font.GothamBlack; BtnTeleportEvent.TextSize = 12; BtnTeleportEvent.TextColor3 = GLASS_THEME.Acc1; BtnTeleportEvent.BackgroundColor3 = GLASS_THEME.Header; local BTE = Instance.new("UICorner"); BTE.CornerRadius = UDim.new(0,6); BTE.Parent = BtnTeleportEvent
 local BTEStroke = Instance.new("UIStroke"); BTEStroke.Thickness = 1; BTEStroke.Color = GLASS_THEME.Border; BTEStroke.Parent = BtnTeleportEvent
@@ -766,8 +776,7 @@ BtnTeleportEvent.MouseButton1Click:Connect(function()
 		STATE.autumnStatus = "Menghubungkan ke Autumn World..."
 		ShowToast("Teleporting", "Menuju Autumn World...", 2.5)
 		if R.TeleportBuild then
-			if R.TeleportBuild:IsA("RemoteEvent") then R.TeleportBuild:FireServer("AutumnWorld")
-			elseif R.TeleportBuild:IsA("RemoteFunction") then R.TeleportBuild:InvokeServer("AutumnWorld") end
+			safeCall(R.TeleportBuild, "AutumnWorld")
 		else
 			TeleportService:Teleport(game.PlaceId, LocalPlayer)
 		end
@@ -928,7 +937,7 @@ local G_Web = AddGroup(T_Set, "🔔 DISCORD WEBHOOK NOTIFIER")
 AddToggle(G_Web, "Aktifkan Webhook Discord", "webhookEnabled")
 AddInput(G_Web, "Webhook URL:", "webhookUrl", false)
 local BtnTestWeb = Instance.new("TextButton"); BtnTestWeb.Parent = G_Web; BtnTestWeb.Size = UDim2.new(1, 0, 0, 32); BtnTestWeb.Text = "🔔 TEST KIRIM WEBHOOK"; BtnTestWeb.Font = Enum.Font.GothamBold; BtnTestWeb.TextSize = 11; BtnTestWeb.TextColor3 = GLASS_THEME.Acc1; BtnTestWeb.BackgroundColor3 = GLASS_THEME.Header; local BTWC = Instance.new("UICorner"); BTWC.CornerRadius = UDim.new(0,6); BTWC.Parent = BtnTestWeb
-BtnTestWeb.MouseButton1Click:Connect(function() SendWebhook("✅ Webhook Connected!", "Elite AI Smart Planner tersambung sukses.", 3447003); ShowToast("Webhook", "Test terkirim sukses!", 2.5) end)
+BtnTestWeb.MouseButton1Click:Connect(function() SendWebhook("✅ Webhook Connected!", "Safe Elite AI Smart Planner tersambung sukses.", 3447003); ShowToast("Webhook", "Test terkirim sukses!", 2.5) end)
 
 local G_Set2 = AddGroup(T_Set, "⚡ OPTIMALISASI & SERVER UTILITY")
 AddToggle(G_Set2, "Deep Anti-AFK & Auto Reconnect (24/7)", "afk")
@@ -963,23 +972,17 @@ BtnHop.MouseButton1Click:Connect(function()
 end)
 
 -- ===================================================================== --
--- 7. COMPLETE AUTOMATION LOOPS (RESTORED ALL SYSTEMS)
+-- 7. SAFE AUTOMATION LOOPS (WITH NIL ERROR PROTECTION)
 -- ===================================================================== --
 
 -- Auto Leaf Dice Roll & Sell
 task.spawn(function()
 	while _G.__ANIMEDICE == generation do
 		if F.autoLeafRoll and R.LeafRoll then
-			pcall(function()
-				if R.LeafRoll:IsA("RemoteFunction") then R.LeafRoll:InvokeServer(F.leafDiceType)
-				elseif R.LeafRoll:IsA("RemoteEvent") then R.LeafRoll:FireServer(F.leafDiceType) end
-			end)
+			safeCall(R.LeafRoll, F.leafDiceType)
 		end
 		if F.sellLeafAuto and R.LeafSell then
-			pcall(function()
-				if R.LeafSell:IsA("RemoteFunction") then R.LeafSell:InvokeServer()
-				elseif R.LeafSell:IsA("RemoteEvent") then R.LeafSell:FireServer() end
-			end)
+			safeCall(R.LeafSell)
 		end
 		task.wait(1.5)
 	end
@@ -991,16 +994,14 @@ task.spawn(function()
 		if F.autoCollectAppleBoard and R.AppleCollect then
 			pcall(function()
 				STATE.appleBoardStatus = "Collecting..."
-				if R.AppleCollect:IsA("RemoteFunction") then R.AppleCollect:InvokeServer()
-				elseif R.AppleCollect:IsA("RemoteEvent") then R.AppleCollect:FireServer() end
+				safeCall(R.AppleCollect)
 			end)
 		end
 		if F.autoUpgradeAppleBoard and R.AppleUpgrade then
 			pcall(function()
 				STATE.appleBoardStatus = "Upgrading All Boards..."
 				for i = 1, 5 do
-					if R.AppleUpgrade:IsA("RemoteFunction") then R.AppleUpgrade:InvokeServer(i)
-					elseif R.AppleUpgrade:IsA("RemoteEvent") then R.AppleUpgrade:FireServer(i) end
+					safeCall(R.AppleUpgrade, i)
 					task.wait(0.2)
 				end
 			end)
@@ -1008,16 +1009,10 @@ task.spawn(function()
 			STATE.appleBoardStatus = "Active Standby"
 		end
 		if F.autoAppleShop and R.AppleShopBuy and F.appleShopItem then
-			pcall(function()
-				if R.AppleShopBuy:IsA("RemoteFunction") then R.AppleShopBuy:InvokeServer(F.appleShopItem)
-				elseif R.AppleShopBuy:IsA("RemoteEvent") then R.AppleShopBuy:FireServer(F.appleShopItem) end
-			end)
+			safeCall(R.AppleShopBuy, F.appleShopItem)
 		end
 		if F.autoAutumnEvent and R.AutumnClaim then
-			pcall(function()
-				if R.AutumnClaim:IsA("RemoteFunction") then R.AutumnClaim:InvokeServer()
-				elseif R.AutumnClaim:IsA("RemoteEvent") then R.AutumnClaim:FireServer() end
-			end)
+			safeCall(R.AutumnClaim)
 		end
 		task.wait(5)
 	end
@@ -1027,24 +1022,16 @@ end)
 task.spawn(function()
 	while _G.__ANIMEDICE == generation do
 		if F.leafTower and R.PlayLeafTower and R.CompleteLeafFlr then
-			pcall(function()
-				if R.CancelLeafTower then
-					if R.CancelLeafTower:IsA("RemoteFunction") then R.CancelLeafTower:InvokeServer()
-					elseif R.CancelLeafTower:IsA("RemoteEvent") then R.CancelLeafTower:FireServer() end
-				end
-			end)
+			safeCall(R.CancelLeafTower)
 			task.wait(0.4)
-			pcall(function()
-				local tName = type(F.leafTowerList) == "table" and F.leafTowerList[1] or "Leaf Tower 1"
-				if R.PlayLeafTower:IsA("RemoteFunction") then R.PlayLeafTower:InvokeServer(tName)
-				else R.PlayLeafTower:FireServer(tName) end
-			end)
+			local tName = type(F.leafTowerList) == "table" and F.leafTowerList[1] or "Leaf Tower 1"
+			safeCall(R.PlayLeafTower, tName)
 
 			local done, fails = false, 0
 			STATE.leafTowerLive = "Berjalan..."
 			while F.leafTower and not done do
-				local okP, seq = pcall(function() if R.CompleteLeafFlr:IsA("RemoteFunction") then return R.CompleteLeafFlr:InvokeServer() end end)
-				if okP and type(seq) == "table" and #seq > 0 then
+				local seq = safeCall(R.CompleteLeafFlr)
+				if type(seq) == "table" and #seq > 0 then
 					fails = 0
 					for _, act in ipairs(seq) do
 						if act.action == "floorStarted" then STATE.leafTowerFloor = tonumber(act.floor) or 1
@@ -1073,8 +1060,8 @@ task.spawn(function()
 							if string.lower(tostring(rarity)) == string.lower(tostring(rName)) then isSelectedRarity = true; break end
 						end
 						local isLocked = u.attributes and u.attributes.locked
-						if isSelectedRarity and not isLocked then R.LockUnit:FireServer(id, true)
-						elseif not isSelectedRarity and isLocked then R.LockUnit:FireServer(id, false) end
+						if isSelectedRarity and not isLocked then safeCall(R.LockUnit, id, true)
+						elseif not isSelectedRarity and isLocked then safeCall(R.LockUnit, id, false) end
 					end
 				end
 			end)
@@ -1112,7 +1099,7 @@ task.spawn(function()
 
 						if not isKeepRarity and not placed[id] and not isBeingRolled(id) then
 							if u.attributes and u.attributes.locked and R.LockUnit then
-								R.LockUnit:FireServer(id, false); task.wait(0.05)
+								safeCall(R.LockUnit, id, false); task.wait(0.05)
 							end
 							table.insert(sellCandidates, { id = id, value = baseIncome(u) })
 						end
@@ -1132,10 +1119,7 @@ task.spawn(function()
 					end
 					
 					if #list > 0 then
-						pcall(function()
-							if R.SellInventory:IsA("RemoteFunction") then R.SellInventory:InvokeServer(list)
-							elseif R.SellInventory:IsA("RemoteEvent") then R.SellInventory:FireServer(list) end
-						end)
+						safeCall(R.SellInventory, list)
 					end
 				end
 			end)
@@ -1153,7 +1137,7 @@ task.spawn(function()
 				for _, unitId in ipairs(F.quirkUnits) do
 					local u = inv[unitId]
 					if u and u.attributes then
-						if R.LockUnit and not u.attributes.locked then R.LockUnit:FireServer(unitId, true) end
+						if R.LockUnit and not u.attributes.locked then safeCall(R.LockUnit, unitId, true) end
 						STATE.quirkActiveUnit = tostring(u.name)
 						local curQuirk = u.attributes.quirk or u.attributes.mutation or "None"
 						STATE.quirkCurrentVal = tostring(curQuirk)
@@ -1169,7 +1153,7 @@ task.spawn(function()
 							ShowToast("🎯 Quirk Matched!", tostring(curQuirk) .. " didapat!", 6.0)
 						else
 							STATE.quirkStatus = "AI Rolling..."
-							R.QuirkRoll:FireServer(unitId)
+							safeCall(R.QuirkRoll, unitId)
 							task.wait(1.2 + math.random(0,3)*0.1)
 						end
 					end
@@ -1194,7 +1178,7 @@ task.spawn(function()
 					for _, unitId in ipairs(F.gradeUnits) do
 						local u = inv[unitId]
 						if u and u.attributes then
-							if R.LockUnit and not u.attributes.locked then R.LockUnit:FireServer(unitId, true) end
+							if R.LockUnit and not u.attributes.locked then safeCall(R.LockUnit, unitId, true) end
 							STATE.gradeActiveUnit = tostring(u.name)
 							local curGrade = u.attributes.grade or "None"
 							STATE.gradeCurrentVal = tostring(curGrade)
@@ -1210,7 +1194,7 @@ task.spawn(function()
 								ShowToast("⭐ Grade Matched!", tostring(curGrade) .. " didapat!", 6.0)
 							else
 								STATE.gradeStatus = "AI Rolling Grade..."
-								R.GradeRoll:FireServer(unitId)
+								safeCall(R.GradeRoll, unitId)
 								task.wait(1.2 + math.random(0,3)*0.1)
 							end
 						end
@@ -1236,7 +1220,7 @@ task.spawn(function()
 					for _, unitId in ipairs(F.traitUnits) do
 						local u = inv[unitId]
 						if u and u.attributes then
-							if R.LockUnit and not u.attributes.locked then R.LockUnit:FireServer(unitId, true) end
+							if R.LockUnit and not u.attributes.locked then safeCall(R.LockUnit, unitId, true) end
 							STATE.traitActiveUnit = tostring(u.name)
 							local curTrait = u.attributes.trait or "None"
 							STATE.traitCurrentVal = tostring(curTrait)
@@ -1252,7 +1236,7 @@ task.spawn(function()
 								ShowToast("🧬 Trait Matched!", tostring(curTrait) .. " didapat!", 6.0)
 							else
 								STATE.traitStatus = "AI Rolling Trait..."
-								R.TraitRoll:FireServer(unitId)
+								safeCall(R.TraitRoll, unitId)
 								task.wait(1.2 + math.random(0,3)*0.1)
 							end
 						end
@@ -1270,7 +1254,7 @@ local function unlockedSlots() local arr={}; local rb = rebirthAmt(); pcall(func
 task.spawn(function()
 	while _G.__ANIMEDICE == generation do
 		if F.autoRoll then
-			pcall(function() if R.RollDice then R.RollDice:InvokeServer() end end)
+			safeCall(R.RollDice)
 			task.wait(1.0 + math.random(0, 4) * 0.1)
 		else task.wait(1) end
 	end
@@ -1315,8 +1299,8 @@ task.spawn(function()
 					for k, cand in ipairs(bench) do
 						local slot = slotsArr[k]
 						if slot and (slot.id == nil or not want[slot.id]) and cand.v > slot.v * 1.1 then
-							local ok, equipped = pcall(function() return R.EquipUnit:InvokeServer(cand.id) end)
-							if ok and equipped == true then task.wait(0.4); R.InteractSlot:FireServer(slot.i); task.wait(0.4) end
+							local equipped = safeCall(R.EquipUnit, cand.id)
+							if equipped == true then task.wait(0.4); safeCall(R.InteractSlot, slot.i); task.wait(0.4) end
 						end
 					end
 				end
@@ -1348,11 +1332,11 @@ task.spawn(function()
 				local spendable = money()
 				for _, die in ipairs(allDice) do
 					if die.price and not owned[die.key] and spendable >= die.price and die.luck > bestOwnedLuck then
-						R.BuyDice:FireServer(die.key); task.wait(0.3); owned[die.key] = true
+						safeCall(R.BuyDice, die.key); task.wait(0.3); owned[die.key] = true
 					end
 				end
 
-				if bestOwnedName ~= "-" and d.Dice ~= bestOwnedName then R.EquipDice:FireServer(bestOwnedName) end
+				if bestOwnedName ~= "-" and d.Dice ~= bestOwnedName then safeCall(R.EquipDice, bestOwnedName) end
 			end)
 		end
 		task.wait(5)
@@ -1364,7 +1348,7 @@ task.spawn(function()
 	local lastRebirth = 0
 	while _G.__ANIMEDICE == generation do
 		if F.collect and R.CollectBalance then 
-			pcall(function() for _, slot in ipairs(unlockedSlots()) do R.CollectBalance:FireServer(slot) end end) 
+			pcall(function() for _, slot in ipairs(unlockedSlots()) do safeCall(R.CollectBalance, slot) end end) 
 		end
 		
 		if F.levelup and R.LevelUpSlot then
@@ -1376,7 +1360,7 @@ task.spawn(function()
 						local e = inventory()[d.unitId]
 						if e and e.attributes and (tonumber(e.attributes.level) or 1) < F.maxLevel then
 							local price = 0; pcall(function() price = G.UnitUtil.GetLevelPrice(e.name, e.attributes) end)
-							if m >= price then R.LevelUpSlot:FireServer(tonumber(slot)); m = m - price; task.wait(0.1) end
+							if m >= price then safeCall(R.LevelUpSlot, tonumber(slot)); m = m - price; task.wait(0.1) end
 						end
 					end
 				end
@@ -1384,7 +1368,7 @@ task.spawn(function()
 		end
 		
 		if F.rebirth and R.Rebirth and (os.clock() - lastRebirth > 5) then
-			pcall(function() local nr = G.Rebirths.GetNext(rebirthAmt()); if nr and money() >= (nr.cost or 9e9) then R.Rebirth:FireServer(); lastRebirth = os.clock() end end)
+			pcall(function() local nr = G.Rebirths.GetNext(rebirthAmt()); if nr and money() >= (nr.cost or 9e9) then safeCall(R.Rebirth); lastRebirth = os.clock() end end)
 		end
 		
 		if F.upgrades and R.BuyUpgrade and G.Upgrades then
@@ -1392,7 +1376,7 @@ task.spawn(function()
 				local owned = G.DC.Upgrades() or {}; local list = {}
 				for n, u in pairs(G.Upgrades) do if type(u)=="table" and u.price and not owned[n] then table.insert(list, {name=n, price=u.price}) end end
 				table.sort(list, function(a,b) return a.price < b.price end)
-				for _, u in ipairs(list) do if money() >= u.price then R.BuyUpgrade:FireServer(u.name); break end end
+				for _, u in ipairs(list) do if money() >= u.price then safeCall(R.BuyUpgrade, u.name); break end end
 			end)
 		end
 		
@@ -1411,7 +1395,7 @@ task.spawn(function()
 						local shouldUse = (#F.potionSpecific == 0)
 						for _, sn in ipairs(F.potionSpecific) do if e.name == sn then shouldUse = true; break end end
 						if shouldUse and not active[e.name] and (e.amount > 2) then
-							R.BoostUse:FireServer(key); task.wait(1)
+							safeCall(R.BoostUse, key); task.wait(1)
 						end
 					end
 				end
@@ -1424,13 +1408,10 @@ end)
 -- Main Tower Helper & Loop
 local function drainTower()
 	if not R.CancelTower then return end
-	pcall(function()
-		if R.CancelTower:IsA("RemoteFunction") then R.CancelTower:InvokeServer()
-		elseif R.CancelTower:IsA("RemoteEvent") then R.CancelTower:FireServer() end
-	end)
+	safeCall(R.CancelTower)
 	for _ = 1, 20 do
-		local ok, seq = pcall(function() if R.CompleteFloor:IsA("RemoteFunction") then return R.CompleteFloor:InvokeServer() end end)
-		if ok and type(seq) == "table" then for _, ev in ipairs(seq) do if ev.action == "ended" then return end end end
+		local seq = safeCall(R.CompleteFloor)
+		if type(seq) == "table" then for _, ev in ipairs(seq) do if ev.action == "ended" then return end end end
 		task.wait(0.2)
 	end
 end
@@ -1439,7 +1420,7 @@ task.spawn(function()
 	while _G.__ANIMEDICE == generation do
 		if F.tower and R.PlayTower and R.CompleteFloor then
 			drainTower(); task.wait(0.4)
-			if F.towerEquipBest and R.BestTowerTeam then pcall(function() R.BestTowerTeam:FireServer() end) end
+			if F.towerEquipBest and R.BestTowerTeam then safeCall(R.BestTowerTeam) end
 			task.wait(0.4)
 
 			local pickTower = "Dragon Tower"
@@ -1447,15 +1428,12 @@ task.spawn(function()
 			pickTower = F.towerMix and choices[math.random(1, #choices)] or choices[1]
 
 			STATE.towerLive = "Jalan: " .. tostring(pickTower); STATE.towerDrops = 0; STATE.towerTraitsGot = "Mencari..."
-			pcall(function()
-				if R.PlayTower:IsA("RemoteFunction") then R.PlayTower:InvokeServer(pickTower)
-				else R.PlayTower:FireServer(pickTower) end
-			end)
+			safeCall(R.PlayTower, pickTower)
 
 			local done, fails = false, 0
 			while F.tower and not done do
-				local okP, seq = pcall(function() if R.CompleteFloor:IsA("RemoteFunction") then return R.CompleteFloor:InvokeServer() end end)
-				if okP and type(seq) == "table" and #seq > 0 then
+				local seq = safeCall(R.CompleteFloor)
+				if type(seq) == "table" and #seq > 0 then
 					fails = 0
 					for _, act in ipairs(seq) do
 						if act.action == "floorStarted" then STATE.towerFloor = tonumber(act.floor) or 1
@@ -1479,15 +1457,15 @@ task.spawn(function()
 	while _G.__ANIMEDICE == generation do
 		if F.claimQuests then
 			pcall(function()
-				if R.ClaimDaily then R.ClaimDaily:FireServer() end
-				if R.ClaimOffline then R.ClaimOffline:FireServer() end
+				safeCall(R.ClaimDaily)
+				safeCall(R.ClaimOffline)
 				if R.QuestClaim and G.DC and G.DC.Quests and G.QuestConfig then
 					local now = workspace:GetServerTimeNow()
 					for _, p in ipairs({"Daily", "Weekly"}) do
 						local q = G.DC.Quests[p]()
 						if q and (tonumber(q.expiresAt) or 0) > math.floor(now) then
 							for _, def in ipairs(G.QuestConfig.Periods[p].quests) do
-								if not (q.claimed and q.claimed[def.id]) and (tonumber(q.progress[def.id]) or 0) >= (tonumber(def.target) or 9e9) then R.QuestClaim:FireServer(p, def.id, q.expiresAt); task.wait(0.5) end
+								if not (q.claimed and q.claimed[def.id]) and (tonumber(q.progress[def.id]) or 0) >= (tonumber(def.target) or 9e9) then safeCall(R.QuestClaim, p, def.id, q.expiresAt); task.wait(0.5) end
 							end
 						end
 					end
@@ -1498,7 +1476,7 @@ task.spawn(function()
 			pcall(function()
 				local defaultCodes = { "RELEASE", "UPDATE1", "UPDATE2", "UPDATE3", "UPDATE4", "1KCCU", "5KCCU", "10KCCU", "20KCCU", "30KCCU", "100KLIKES" }
 				local redeemed = G.DC.RedeemedCodes() or {}
-				for _, c in ipairs(defaultCodes) do if not redeemed[c] then R.RedeemCode:FireServer(c); task.wait(0.5) end end
+				for _, c in ipairs(defaultCodes) do if not redeemed[c] then safeCall(R.RedeemCode, c); task.wait(0.5) end end
 			end)
 		end
 		task.wait(60)
