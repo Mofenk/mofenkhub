@@ -1,5 +1,5 @@
 -- ===================================================================== --
--- 👑 MOFENKHUB V105.6 — SAFE WRAPPER & ELITE UI EDITION
+-- 👑 MOFENKHUB V105.7 — ANTI-SPAM NOTIFICATION & ELITE UI EDITION
 -- ===================================================================== --
 
 --!nocheck
@@ -68,6 +68,8 @@ local F = {
 	-- Client & Misc
 	wsOn = false, wsValue = 16, noclip = false, afk = true, fpsOn = false,
 	codesAuto = false, claimQuests = false,
+	-- Notification & Anti-Spam Control
+	aiNotifEnabled = true, notifCooldown = 3.0,
 	-- Webhook
 	webhookEnabled = false, webhookUrl = ""
 }
@@ -83,6 +85,7 @@ local STATE = {
 }
 local ConfigUpdaters = {}
 local activeDropdownFrames = {}
+local lastNotifTick = 0
 
 local GLASS_THEME = {
 	Bg     = Color3.fromRGB(12, 12, 12),
@@ -192,7 +195,6 @@ local R = {
 	LockUnit        = svc("UnitService.RE.SetLock") or svc("InventoryService.RE.Lock")
 }
 
--- Safe Remote Invocation Wrapper (Mencegah Error Nil Value)
 local function safeCall(remote, ...)
 	if not remote then return nil end
 	local success, res = pcall(function(...)
@@ -287,7 +289,7 @@ local function SendWebhook(title, description, colorCode)
 end
 
 -- ===================================================================== --
--- 3. INTERACTIVE TOGGLE, KEYBIND & TOAST NOTIFICATION SYSTEM
+-- 3. INTERACTIVE TOGGLE, KEYBIND & ANTI-SPAM TOAST NOTIFICATION SYSTEM
 -- ===================================================================== --
 local ToggleGui = Instance.new("ScreenGui"); ToggleGui.Name = "MofenkToggleFront"; ToggleGui.Parent = parentGui; ToggleGui.ResetOnSpawn = false
 ToggleGui.DisplayOrder = 99999
@@ -296,14 +298,21 @@ local ToastContainer = Instance.new("Frame"); ToastContainer.Parent = ToggleGui;
 local ToastLayout = Instance.new("UIListLayout"); ToastLayout.Parent = ToastContainer; ToastLayout.VerticalAlignment = Enum.VerticalAlignment.Bottom; ToastLayout.Padding = UDim.new(0, 8); ToastLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right
 
 local function ShowToast(title, message, duration)
+	if not F.aiNotifEnabled then return end
+	local now = os.clock()
+	if (now - lastNotifTick) < (F.notifCooldown or 3.0) then return end -- Anti-Spam Cooldown Guard
+	lastNotifTick = now
+
 	duration = duration or 3.5
 	pcall(function()
-		local Toast = Instance.new("Frame"); Toast.Parent = ToastContainer; Toast.Size = UDim2.new(0, 280, 0, 64); Toast.BackgroundColor3 = GLASS_THEME.Card; Toast.BackgroundTransparency = 0.1; Toast.ZIndex = 100000
+		local Toast = Instance.new("Frame"); Toast.Parent = ToastContainer; Toast.Size = UDim2.new(0, 280, 0, 0); Toast.AutomaticSize = Enum.AutomaticSize.Y; Toast.BackgroundColor3 = GLASS_THEME.Card; Toast.BackgroundTransparency = 0.1; Toast.ZIndex = 100000
 		local TC = Instance.new("UICorner"); TC.CornerRadius = UDim.new(0, 10); TC.Parent = Toast
 		local TS = Instance.new("UIStroke"); TS.Thickness = 1.2; TS.Color = GLASS_THEME.Acc1; TS.Parent = Toast
+		local TP = Instance.new("UIPadding"); TP.Parent = Toast; TP.PaddingTop = UDim.new(0, 8); TP.PaddingBottom = UDim.new(0, 8); TP.PaddingLeft = UDim.new(0, 12); TP.PaddingRight = UDim.new(0, 12)
+		local TLayout = Instance.new("UIListLayout"); TLayout.Parent = Toast; TLayout.Padding = UDim.new(0, 4)
 		
-		local TTitle = Instance.new("TextLabel"); TTitle.Parent = Toast; TTitle.Position = UDim2.new(0, 12, 0, 8); TTitle.Size = UDim2.new(1, -24, 0, 20); TTitle.Text = title; TTitle.TextColor3 = GLASS_THEME.Acc1; TTitle.TextSize = 12; TTitle.Font = Enum.Font.GothamBold; TTitle.TextXAlignment = Enum.TextXAlignment.Left; TTitle.BackgroundTransparency = 1; TTitle.ZIndex = 100001
-		local TMsg = Instance.new("TextLabel"); TMsg.Parent = Toast; TMsg.Position = UDim2.new(0, 12, 0, 28); TMsg.Size = UDim2.new(1, -24, 0, 28); TMsg.Text = message; TMsg.TextColor3 = GLASS_THEME.Text; TMsg.TextSize = 11; TMsg.Font = Enum.Font.GothamMedium; TMsg.TextXAlignment = Enum.TextXAlignment.Left; TMsg.TextWrapped = true; TMsg.BackgroundTransparency = 1; TMsg.ZIndex = 100001
+		local TTitle = Instance.new("TextLabel"); TTitle.Parent = Toast; TTitle.Size = UDim2.new(1, 0, 0, 18); TTitle.Text = title; TTitle.TextColor3 = GLASS_THEME.Acc1; TTitle.TextSize = 12; TTitle.Font = Enum.Font.GothamBold; TTitle.TextXAlignment = Enum.TextXAlignment.Left; TTitle.BackgroundTransparency = 1; TTitle.ZIndex = 100001
+		local TMsg = Instance.new("TextLabel"); TMsg.Parent = Toast; TMsg.Size = UDim2.new(1, 0, 0, 0); TMsg.AutomaticSize = Enum.AutomaticSize.Y; TMsg.Text = message; TMsg.TextColor3 = GLASS_THEME.Text; TMsg.TextSize = 11; TMsg.Font = Enum.Font.GothamMedium; TMsg.TextXAlignment = Enum.TextXAlignment.Left; TMsg.TextWrapped = true; TMsg.BackgroundTransparency = 1; TMsg.ZIndex = 100001
 		
 		Toast.Position = UDim2.new(1, 300, 0, 0)
 		TweenService:Create(Toast, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Position = UDim2.new(0, 0, 0, 0)}):Play()
@@ -376,9 +385,9 @@ local TopBar = Instance.new("Frame"); TopBar.Parent = MainFrame; TopBar.Size = U
 local TopCorner = Instance.new("UICorner"); TopCorner.CornerRadius = UDim.new(0, 14); TopCorner.Parent = TopBar
 local TopStroke = Instance.new("UIStroke"); TopStroke.Thickness = 1; TopStroke.Color = GLASS_THEME.Border; TopStroke.Parent = TopBar
 
-local Title = Instance.new("TextLabel"); Title.Parent = TopBar; Title.Position = UDim2.new(0, 16, 0, 0); Title.Size = UDim2.new(0, 220, 1, 0); Title.Text = "👑 MOFENKHUB V105.6"; Title.TextColor3 = GLASS_THEME.Acc1; Title.TextSize = 13; Title.Font = Enum.Font.GothamBlack; Title.TextXAlignment = Enum.TextXAlignment.Left; Title.BackgroundTransparency = 1
+local Title = Instance.new("TextLabel"); Title.Parent = TopBar; Title.Position = UDim2.new(0, 16, 0, 0); Title.Size = UDim2.new(0, 220, 1, 0); Title.Text = "👑 MOFENKHUB V105.7"; Title.TextColor3 = GLASS_THEME.Acc1; Title.TextSize = 13; Title.Font = Enum.Font.GothamBlack; Title.TextXAlignment = Enum.TextXAlignment.Left; Title.BackgroundTransparency = 1
 
-local StatusBar = Instance.new("TextLabel"); StatusBar.Parent = TopBar; StatusBar.Position = UDim2.new(0, 230, 0, 8); StatusBar.Size = UDim2.new(0, 480, 0, 32); StatusBar.BackgroundColor3 = GLASS_THEME.Card; StatusBar.BackgroundTransparency = 0.2; StatusBar.TextColor3 = GLASS_THEME.SubText; StatusBar.TextSize = 10; StatusBar.Font = Enum.Font.GothamMedium; StatusBar.Text = "🤖 Safe Elite Status: Anti-Nil Protection Active"
+local StatusBar = Instance.new("TextLabel"); StatusBar.Parent = TopBar; StatusBar.Position = UDim2.new(0, 230, 0, 8); StatusBar.Size = UDim2.new(0, 480, 0, 32); StatusBar.BackgroundColor3 = GLASS_THEME.Card; StatusBar.BackgroundTransparency = 0.2; StatusBar.TextColor3 = GLASS_THEME.SubText; StatusBar.TextSize = 10; StatusBar.Font = Enum.Font.GothamMedium; StatusBar.Text = "🤖 Safe Elite Status: Anti-Spam Notif Active"
 local SBC = Instance.new("UICorner"); SBC.CornerRadius = UDim.new(0, 6); SBC.Parent = StatusBar
 local SBStroke = Instance.new("UIStroke"); SBStroke.Thickness = 1; SBStroke.Color = GLASS_THEME.Border; SBStroke.Parent = StatusBar
 
@@ -879,6 +888,10 @@ local TwrLbl = Instance.new("TextLabel"); TwrLbl.Parent = G_TwrMon; TwrLbl.Size 
 task.spawn(function() while task.wait(0.5) do pcall(function() TwrLbl.Text = string.format("🎮 Status: %s\n🏢 Lantai: %d | 💎 Gems: %d\n🧬 Trait: %s", STATE.towerLive, STATE.towerFloor, STATE.towerDrops, tostring(STATE.towerTraitsGot)) end) end end)
 
 -- 10. SETTINGS TAB
+local G_SetNotif = AddGroup(T_Set, "🔔 AI NOTIFICATION & ANTI-SPAM CONTROL")
+AddToggle(G_SetNotif, "Aktifkan Pop-up Notifikasi AI", "aiNotifEnabled")
+AddInput(G_SetNotif, "Cooldown Anti-Spam (Detik):", "notifCooldown", true)
+
 local G_SetConfig = AddGroup(T_Set, "📁 FILE CONFIGURATION MANAGEMENT")
 AddToggle(G_SetConfig, "Auto Load Config Saat Nyala", "autoLoadEnabled")
 AddInput(G_SetConfig, "Nama File Config:", "cfgName", false)
